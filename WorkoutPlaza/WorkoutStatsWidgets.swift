@@ -1,0 +1,415 @@
+//
+//  WorkoutStatsWidgets.swift
+//  WorkoutPlaza
+//
+//  Created by bbdyno on 1/13/26.
+//
+
+import UIKit
+import SnapKit
+
+// MARK: - Base Stat Widget
+class BaseStatWidget: UIView, Selectable {
+
+    // MARK: - Selectable Properties
+    var isSelected: Bool = false
+    var currentColor: UIColor = .label {
+        didSet {
+            updateColors()
+        }
+    }
+    var currentFontStyle: FontStyle = .system {
+        didSet {
+            updateFonts()
+        }
+    }
+    var itemIdentifier: String = UUID().uuidString
+    var resizeHandles: [ResizeHandleView] = []
+    var selectionBorderLayer: CAShapeLayer?
+    weak var selectionDelegate: SelectionDelegate?
+
+    // Font scaling properties
+    var initialSize: CGSize = .zero
+    var baseFontSizes: [String: CGFloat] = [:]  // labelName: baseSize
+    
+    // Movement properties
+    private var initialCenter: CGPoint = .zero
+
+    // MARK: - UI Components
+    let titleLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .secondaryLabel
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.5
+        return label
+    }()
+
+    let valueLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 24, weight: .bold)
+        label.textColor = .label
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.1 // Allow significant shrinking for long text like dates
+        return label
+    }()
+
+    let unitLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14, weight: .regular)
+        label.textColor = .secondaryLabel
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.5
+        return label
+    }()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupView()
+        setupGestures()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupView() {
+        // Background, shadow, and border removed for clean look
+        backgroundColor = .clear
+
+        addSubview(titleLabel)
+        addSubview(valueLabel)
+        addSubview(unitLabel)
+        
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(12)
+        }
+        
+        valueLabel.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.leading.equalToSuperview().inset(12)
+        }
+        
+        unitLabel.snp.makeConstraints { make in
+            make.bottom.equalTo(valueLabel.snp.bottom).offset(-2)
+            make.leading.equalTo(valueLabel.snp.trailing).offset(4)
+            make.trailing.lessThanOrEqualToSuperview().inset(12)
+        }
+    }
+    
+    private func setupGestures() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        tapGesture.cancelsTouchesInView = false
+        addGestureRecognizer(tapGesture)
+
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        addGestureRecognizer(panGesture)
+
+        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
+        addGestureRecognizer(pinchGesture)
+
+        isUserInteractionEnabled = true
+    }
+    
+    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+        guard let view = gesture.view, let superview = view.superview else { return }
+        
+        switch gesture.state {
+        case .began:
+            initialCenter = view.center
+            
+        case .changed:
+            let translation = gesture.translation(in: superview)
+            
+            // Calculate new proposed center based on initial center + total translation
+            let proposedCenter = CGPoint(
+                x: initialCenter.x + translation.x,
+                y: initialCenter.y + translation.y
+            )
+            
+            // Snap to 5pt grid based on origin
+            let snapStep: CGFloat = 5.0
+            let width = view.frame.width
+            let height = view.frame.height
+            
+            // Convert center to origin
+            let proposedOriginX = proposedCenter.x - width / 2
+            let proposedOriginY = proposedCenter.y - height / 2
+            
+            // Snap origin
+            let snappedOriginX = round(proposedOriginX / snapStep) * snapStep
+            let snappedOriginY = round(proposedOriginY / snapStep) * snapStep
+            
+            // Convert snapped origin back to center
+            let snappedCenter = CGPoint(
+                x: snappedOriginX + width / 2,
+                y: snappedOriginY + height / 2
+            )
+            
+            view.center = snappedCenter
+            
+            // Update handles position
+            if isSelected {
+                positionResizeHandles()
+            }
+            
+        default:
+            break
+        }
+    }
+    
+    @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+        guard let view = gesture.view else { return }
+
+        if gesture.state == .began || gesture.state == .changed {
+            view.transform = view.transform.scaledBy(x: gesture.scale, y: gesture.scale)
+            gesture.scale = 1.0
+            
+            if isSelected {
+                positionResizeHandles()
+            }
+        }
+    }
+
+    @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        selectionDelegate?.itemWasSelected(self)
+    }
+
+    // MARK: - Selectable Methods
+    func applyColor(_ color: UIColor) {
+        currentColor = color
+        updateColors()
+    }
+
+    func updateColors() {
+        valueLabel.textColor = currentColor
+        titleLabel.textColor = currentColor.withAlphaComponent(0.7)
+        unitLabel.textColor = currentColor.withAlphaComponent(0.7)
+    }
+
+    func updateFonts() {
+        // Store base font sizes if not already stored
+        if baseFontSizes.isEmpty {
+            baseFontSizes["title"] = 12
+            baseFontSizes["value"] = 24
+            baseFontSizes["unit"] = 14
+        }
+
+        // Calculate scale factor based on current size
+        let scaleFactor = calculateScaleFactor()
+
+        let titleSize = (baseFontSizes["title"] ?? 12) * scaleFactor
+        let valueSize = (baseFontSizes["value"] ?? 24) * scaleFactor
+        let unitSize = (baseFontSizes["unit"] ?? 14) * scaleFactor
+
+        titleLabel.font = currentFontStyle.font(size: titleSize, weight: .medium)
+        valueLabel.font = currentFontStyle.font(size: valueSize, weight: .bold)
+        unitLabel.font = currentFontStyle.font(size: unitSize, weight: .regular)
+
+        print("🔤 Font updated: style=\(currentFontStyle.displayName), scale=\(scaleFactor), valueSize=\(valueSize)")
+    }
+
+    func applyFont(_ fontStyle: FontStyle) {
+        currentFontStyle = fontStyle
+        // Store initial size when font is first applied
+        if initialSize == .zero {
+            initialSize = bounds.size
+        }
+        updateFonts()
+    }
+
+    func calculateScaleFactor() -> CGFloat {
+        guard initialSize != .zero else {
+            // If initial size not set, use current size as initial
+            initialSize = bounds.size
+            return 1.0
+        }
+
+        // Calculate scale based on average of width and height change
+        let widthScale = bounds.width / initialSize.width
+        let heightScale = bounds.height / initialSize.height
+        let averageScale = (widthScale + heightScale) / 2.0
+
+        // Clamp scale factor between 0.5 and 3.0
+        return min(max(averageScale, 0.5), 3.0)
+    }
+
+    // MARK: - Hit Testing
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        // Check if touch is on a resize handle first
+        for handle in resizeHandles {
+            let handlePoint = convert(point, to: handle)
+            if handle.point(inside: handlePoint, with: event) {
+                return handle
+            }
+        }
+
+        // Otherwise, return default behavior
+        return super.hitTest(point, with: event)
+    }
+
+    // MARK: - Layout
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        // Update fonts when size changes (during resize)
+        if initialSize != .zero && bounds.size != initialSize {
+            updateFonts()
+        }
+
+        if isSelected {
+            positionResizeHandles()
+        }
+    }
+}
+
+// MARK: - Distance Widget
+class DistanceWidget: BaseStatWidget {
+    func configure(distance: Double) {
+        titleLabel.text = "거리"
+        valueLabel.text = String(format: "%.2f", distance / 1000)
+        unitLabel.text = "km"
+    }
+}
+
+// MARK: - Duration Widget
+class DurationWidget: BaseStatWidget {
+    func configure(duration: TimeInterval) {
+        titleLabel.text = "시간"
+        
+        let hours = Int(duration) / 3600
+        let minutes = Int(duration) / 60 % 60
+        let seconds = Int(duration) % 60
+        
+        if hours > 0 {
+            valueLabel.text = String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            valueLabel.text = String(format: "%02d:%02d", minutes, seconds)
+        }
+        unitLabel.text = ""
+    }
+}
+
+// MARK: - Pace Widget
+class PaceWidget: BaseStatWidget {
+    func configure(pace: Double) {
+        titleLabel.text = "평균 페이스"
+        let minutes = Int(pace)
+        let seconds = Int((pace - Double(minutes)) * 60)
+        valueLabel.text = String(format: "%d:%02d", minutes, seconds)
+        unitLabel.text = "/km"
+    }
+}
+
+// MARK: - Speed Widget
+class SpeedWidget: BaseStatWidget {
+    func configure(speed: Double) {
+        titleLabel.text = "평균 속도"
+        valueLabel.text = String(format: "%.1f", speed)
+        unitLabel.text = "km/h"
+    }
+}
+
+// MARK: - Calories Widget
+class CaloriesWidget: BaseStatWidget {
+    func configure(calories: Double) {
+        titleLabel.text = "칼로리"
+        valueLabel.text = String(format: "%.0f", calories)
+        unitLabel.text = "kcal"
+    }
+}
+
+// MARK: - Workout Type Widget
+class WorkoutTypeWidget: BaseStatWidget {
+    private let iconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .systemBlue
+        return imageView
+    }()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupIcon()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupIcon() {
+        addSubview(iconImageView)
+        iconImageView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.centerY.equalTo(valueLabel)
+            make.width.height.equalTo(32)
+        }
+        
+        valueLabel.snp.remakeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.leading.equalTo(iconImageView.snp.trailing).offset(8)
+        }
+    }
+    
+    func configure(workoutType: String) {
+        titleLabel.text = "운동 종류"
+        valueLabel.text = workoutType
+        unitLabel.text = ""
+        
+        // 아이콘 설정
+        switch workoutType {
+        case "러닝":
+            iconImageView.image = UIImage(systemName: "figure.run")
+        case "사이클링":
+            iconImageView.image = UIImage(systemName: "bicycle")
+        case "걷기":
+            iconImageView.image = UIImage(systemName: "figure.walk")
+        case "하이킹":
+            iconImageView.image = UIImage(systemName: "figure.hiking")
+        default:
+            iconImageView.image = UIImage(systemName: "figure.mixed.cardio")
+        }
+    }
+}
+
+// MARK: - Date Widget
+class DateWidget: BaseStatWidget {
+    func configure(startDate: Date) {
+        titleLabel.text = "날짜"
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy.MM.dd"
+        let dateString = formatter.string(from: startDate)
+        
+        formatter.dateFormat = "HH:mm"
+        let timeString = formatter.string(from: startDate)
+        
+        valueLabel.text = dateString
+        unitLabel.text = timeString
+    }
+}
+
+// MARK: - Current Date Time Widget
+class CurrentDateTimeWidget: BaseStatWidget {
+    func configure(date: Date) {
+        // Set smaller base font size for long date string
+        baseFontSizes["title"] = 12
+        baseFontSizes["value"] = 16 // Much smaller than default 24
+        baseFontSizes["unit"] = 14
+        
+        titleLabel.text = "운동 일시"
+        
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR") // Ensure Korean locale for "오후"
+        formatter.dateFormat = "yyyy년 M월 d일 a h시 m분" // 2026년 1월 12일 오후 8시 50분
+        
+        let dateTimeString = formatter.string(from: date)
+        
+        valueLabel.text = dateTimeString
+        unitLabel.text = "" // No unit for combined date/time
+        
+        // Force font update with new base sizes
+        updateFonts()
+    }
+}

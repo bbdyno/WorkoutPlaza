@@ -1,0 +1,126 @@
+//
+//  SelectableProtocol.swift
+//  WorkoutPlaza
+//
+//  Created by bbdyno on 1/13/26.
+//
+
+import UIKit
+
+// MARK: - Selectable Protocol
+protocol Selectable: UIView {
+    var isSelected: Bool { get set }
+    var currentColor: UIColor { get set }
+    var itemIdentifier: String { get }
+    var resizeHandles: [ResizeHandleView] { get set }
+    var selectionBorderLayer: CAShapeLayer? { get set }
+    var selectionDelegate: SelectionDelegate? { get set }
+
+    func showSelectionState()
+    func hideSelectionState()
+    func applyColor(_ color: UIColor)
+}
+
+// MARK: - Selection Delegate
+protocol SelectionDelegate: AnyObject {
+    func itemWasSelected(_ item: Selectable)
+    func itemWasDeselected(_ item: Selectable)
+}
+
+// MARK: - Default Implementation
+extension Selectable {
+
+    func showSelectionState() {
+        isSelected = true
+        createSelectionBorder()
+        createResizeHandles()
+        positionResizeHandles()
+        bringSubviewsToFront()
+    }
+
+    func hideSelectionState() {
+        isSelected = false
+        removeSelectionBorder()
+        removeResizeHandles()
+    }
+
+    func createSelectionBorder() {
+        guard selectionBorderLayer == nil else { return }
+
+        let borderLayer = CAShapeLayer()
+        borderLayer.strokeColor = UIColor.systemBlue.cgColor
+        borderLayer.fillColor = UIColor.clear.cgColor
+        borderLayer.lineWidth = 2
+        borderLayer.lineDashPattern = [6, 3]
+
+        layer.insertSublayer(borderLayer, at: 0)
+        selectionBorderLayer = borderLayer
+    }
+
+    func removeSelectionBorder() {
+        selectionBorderLayer?.removeFromSuperlayer()
+        selectionBorderLayer = nil
+    }
+
+    func createResizeHandles() {
+        guard resizeHandles.isEmpty else { return }
+        guard let superview = superview else { return }
+
+        let positions: [ResizeHandlePosition] = [.topLeft, .topRight, .bottomLeft, .bottomRight]
+
+        for position in positions {
+            let handle = ResizeHandleView(position: position)
+            handle.parentView = self
+            superview.addSubview(handle)
+            resizeHandles.append(handle)
+        }
+    }
+
+    func removeResizeHandles() {
+        for handle in resizeHandles {
+            handle.removeFromSuperview()
+        }
+        resizeHandles.removeAll()
+    }
+
+    func positionResizeHandles() {
+        for handle in resizeHandles {
+            switch handle.position {
+            case .topLeft:
+                handle.center = frame.origin
+            case .topRight:
+                handle.center = CGPoint(x: frame.maxX, y: frame.minY)
+            case .bottomLeft:
+                handle.center = CGPoint(x: frame.minX, y: frame.maxY)
+            case .bottomRight:
+                handle.center = CGPoint(x: frame.maxX, y: frame.maxY)
+            }
+        }
+
+        // Update selection border
+        updateSelectionBorder()
+    }
+
+    func updateSelectionBorder() {
+        guard let borderLayer = selectionBorderLayer else { return }
+
+        let borderPath = UIBezierPath(rect: bounds)
+        borderLayer.path = borderPath.cgPath
+        borderLayer.frame = bounds
+    }
+
+    func bringSubviewsToFront() {
+        guard let superview = superview else { return }
+        for handle in resizeHandles {
+            superview.bringSubviewToFront(handle)
+        }
+    }
+}
+
+// MARK: - Resize Handle Position
+enum ResizeHandlePosition {
+    case topLeft
+    case topRight
+    case bottomLeft
+    case bottomRight
+}
