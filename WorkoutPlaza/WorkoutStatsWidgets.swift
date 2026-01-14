@@ -637,17 +637,40 @@ class TextWidget: UIView, Selectable {
             view.transform = view.transform.scaledBy(x: gesture.scale, y: gesture.scale)
             gesture.scale = 1.0
 
+            // Update fonts based on transform scale
+            updateFontsFromTransform()
+
             if isSelected {
                 positionResizeHandles()
             }
         }
     }
 
+    private func updateFontsFromTransform() {
+        // Calculate scale from transform
+        let scaleX = sqrt(transform.a * transform.a + transform.c * transform.c)
+        let scaleY = sqrt(transform.b * transform.b + transform.d * transform.d)
+        let averageScale = (scaleX + scaleY) / 2.0
+
+        // Apply to font size
+        let fontSize = baseFontSize * averageScale
+        let clampedSize = min(max(fontSize, baseFontSize * 0.5), baseFontSize * 3.0)
+
+        textLabel.font = currentFontStyle.font(size: clampedSize, weight: .bold)
+    }
+
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
-        selectionDelegate?.itemWasSelected(self)
+        // If already selected, open edit dialog
+        if isSelected {
+            textDelegate?.textWidgetDidRequestEdit(self)
+        } else {
+            // Otherwise, select the widget
+            selectionDelegate?.itemWasSelected(self)
+        }
     }
 
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+        // Double tap also opens edit dialog
         textDelegate?.textWidgetDidRequestEdit(self)
     }
 
@@ -693,6 +716,31 @@ class TextWidget: UIView, Selectable {
         let averageScale = (widthScale + heightScale) / 2.0
 
         return min(max(averageScale, 0.5), 3.0)
+    }
+
+    // MARK: - Layout
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        // Always update fonts when size changes
+        if !transform.isIdentity {
+            // Transform-based scaling (pinch gesture)
+            updateFontsFromTransform()
+        } else if initialSize != .zero && bounds.size != .zero {
+            // Frame-based scaling (resize handles)
+            let scaleFactor = calculateScaleFactor()
+            let fontSize = baseFontSize * scaleFactor
+            let clampedSize = min(max(fontSize, baseFontSize * 0.5), baseFontSize * 3.0)
+
+            textLabel.font = currentFontStyle.font(size: clampedSize, weight: .bold)
+
+            print("📏 TextWidget layoutSubviews: bounds=\(bounds.size), initial=\(initialSize), scale=\(scaleFactor), fontSize=\(clampedSize)")
+        }
+
+        // Update selection border if selected
+        if isSelected {
+            updateSelectionBorder()
+        }
     }
 
     // MARK: - Hit Testing
