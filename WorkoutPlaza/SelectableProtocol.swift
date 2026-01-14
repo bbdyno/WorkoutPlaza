@@ -11,6 +11,7 @@ import UIKit
 protocol Selectable: UIView {
     var isSelected: Bool { get set }
     var currentColor: UIColor { get set }
+    var currentFontStyle: FontStyle { get set }
     var itemIdentifier: String { get }
     var resizeHandles: [ResizeHandleView] { get set }
     var selectionBorderLayer: CAShapeLayer? { get set }
@@ -19,6 +20,7 @@ protocol Selectable: UIView {
     func showSelectionState()
     func hideSelectionState()
     func applyColor(_ color: UIColor)
+    func applyFont(_ fontStyle: FontStyle)
 }
 
 // MARK: - Selection Delegate

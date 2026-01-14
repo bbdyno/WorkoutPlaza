@@ -18,6 +18,7 @@ class RouteMapView: UIView, Selectable {
             routeLayer.strokeColor = lineColor.cgColor
         }
     }
+    var currentFontStyle: FontStyle = .system  // Not used for RouteMapView, but required by protocol
     var itemIdentifier: String = UUID().uuidString
     var resizeHandles: [ResizeHandleView] = []
     var selectionBorderLayer: CAShapeLayer?
@@ -207,6 +208,11 @@ class RouteMapView: UIView, Selectable {
         currentColor = color
         lineColor = color
         routeLayer.strokeColor = color.cgColor
+    }
+
+    func applyFont(_ fontStyle: FontStyle) {
+        currentFontStyle = fontStyle
+        // RouteMapView doesn't use fonts, so this is a no-op
     }
 
     // MARK: - Hit Testing

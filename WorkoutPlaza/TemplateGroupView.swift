@@ -12,6 +12,7 @@ class TemplateGroupView: UIView, Selectable {
     // MARK: - Selectable Properties
     var isSelected: Bool = false
     var currentColor: UIColor = .systemBlue
+    var currentFontStyle: FontStyle = .system  // Not directly used, but required by protocol
     var itemIdentifier: String = UUID().uuidString
     var resizeHandles: [ResizeHandleView] = []
     var selectionBorderLayer: CAShapeLayer?
@@ -190,6 +191,11 @@ class TemplateGroupView: UIView, Selectable {
     // MARK: - Selectable Methods
     func applyColor(_ color: UIColor) {
         // Groups don't change color
+    }
+
+    func applyFont(_ fontStyle: FontStyle) {
+        currentFontStyle = fontStyle
+        // Groups don't use fonts, so this is a no-op
     }
 
     // MARK: - Hit Testing

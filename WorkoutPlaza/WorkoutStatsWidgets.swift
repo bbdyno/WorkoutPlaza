@@ -208,6 +208,78 @@ class BaseStatWidget: UIView, Selectable {
         unitLabel.font = currentFontStyle.font(size: unitSize, weight: .regular)
 
         print("🔤 Font updated: style=\(currentFontStyle.displayName), scale=\(scaleFactor), valueSize=\(valueSize)")
+
+        // Auto-resize to fit content if font style changed
+        autoResizeToFitContent()
+    }
+
+    // MARK: - Auto Resize
+    func autoResizeToFitContent() {
+        // Force layout to get accurate label sizes
+        layoutIfNeeded()
+
+        // Calculate required size based on label content
+        let titleHeight = titleLabel.intrinsicContentSize.height
+        let valueHeight = valueLabel.intrinsicContentSize.height
+        let unitHeight = unitLabel.intrinsicContentSize.height
+
+        let valuePlusUnit = max(valueHeight, unitHeight)
+
+        // Calculate total height needed (with padding)
+        let topPadding: CGFloat = 12
+        let bottomPadding: CGFloat = 12
+        let titleToValueSpacing: CGFloat = 4
+
+        let requiredHeight = topPadding + titleHeight + titleToValueSpacing + valuePlusUnit + bottomPadding
+
+        // Calculate required width based on content
+        let titleWidth = titleLabel.intrinsicContentSize.width
+        let valueWidth = valueLabel.intrinsicContentSize.width + unitLabel.intrinsicContentSize.width + 4
+        let requiredContentWidth = max(titleWidth, valueWidth)
+
+        let sidePadding: CGFloat = 12 * 2
+        let requiredWidth = requiredContentWidth + sidePadding
+
+        // Only resize if content doesn't fit in current frame
+        let currentWidth = bounds.width
+        let currentHeight = bounds.height
+
+        var newWidth = currentWidth
+        var newHeight = currentHeight
+
+        // Expand if needed, but don't shrink too much (maintain minimum size)
+        let minWidth: CGFloat = 80
+        let minHeight: CGFloat = 60
+
+        if requiredWidth > currentWidth || requiredWidth < currentWidth * 0.7 {
+            newWidth = max(requiredWidth, minWidth)
+        }
+
+        if requiredHeight > currentHeight || requiredHeight < currentHeight * 0.7 {
+            newHeight = max(requiredHeight, minHeight)
+        }
+
+        // Only update if size changed significantly (more than 2pt)
+        if abs(newWidth - currentWidth) > 2 || abs(newHeight - currentHeight) > 2 {
+            let newFrame = CGRect(
+                x: frame.origin.x,
+                y: frame.origin.y,
+                width: newWidth,
+                height: newHeight
+            )
+
+            frame = newFrame
+
+            // Update initial size to prevent scaling issues
+            initialSize = newFrame.size
+
+            // Update selection handles if selected
+            if isSelected {
+                positionResizeHandles()
+            }
+
+            print("📏 Auto-resized widget: \(currentWidth)x\(currentHeight) -> \(newWidth)x\(newHeight)")
+        }
     }
 
     func applyFont(_ fontStyle: FontStyle) {
@@ -397,19 +469,242 @@ class CurrentDateTimeWidget: BaseStatWidget {
         baseFontSizes["title"] = 12
         baseFontSizes["value"] = 16 // Much smaller than default 24
         baseFontSizes["unit"] = 14
-        
+
         titleLabel.text = "운동 일시"
-        
+
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR") // Ensure Korean locale for "오후"
         formatter.dateFormat = "yyyy년 M월 d일 a h시 m분" // 2026년 1월 12일 오후 8시 50분
-        
+
         let dateTimeString = formatter.string(from: date)
-        
+
         valueLabel.text = dateTimeString
         unitLabel.text = "" // No unit for combined date/time
-        
+
         // Force font update with new base sizes
         updateFonts()
+    }
+}
+
+// MARK: - Text Widget Delegate
+protocol TextWidgetDelegate: AnyObject {
+    func textWidgetDidRequestEdit(_ widget: TextWidget)
+}
+
+// MARK: - Text Widget (for custom text input)
+class TextWidget: UIView, Selectable {
+
+    // MARK: - Selectable Properties
+    var isSelected: Bool = false
+    var currentColor: UIColor = .label {
+        didSet {
+            updateColors()
+        }
+    }
+    var currentFontStyle: FontStyle = .system {
+        didSet {
+            updateFonts()
+        }
+    }
+    var itemIdentifier: String = UUID().uuidString
+    var resizeHandles: [ResizeHandleView] = []
+    var selectionBorderLayer: CAShapeLayer?
+    weak var selectionDelegate: SelectionDelegate?
+
+    // Text widget specific delegate
+    weak var textDelegate: TextWidgetDelegate?
+
+    // Font scaling properties
+    var initialSize: CGSize = .zero
+    var baseFontSize: CGFloat = 20
+
+    // Movement properties
+    private var initialCenter: CGPoint = .zero
+
+    // MARK: - UI Components
+    let textLabel: UILabel = {
+        let label = UILabel()
+        label.backgroundColor = .clear
+        label.textColor = .label
+        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.5
+        return label
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupView()
+        setupGestures()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupView() {
+        backgroundColor = .clear
+
+        addSubview(textLabel)
+        textLabel.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(8)
+        }
+
+        // Set default text
+        textLabel.text = "텍스트 입력"
+    }
+
+    private func setupGestures() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        tapGesture.cancelsTouchesInView = false
+        tapGesture.numberOfTapsRequired = 1
+        addGestureRecognizer(tapGesture)
+
+        let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
+        doubleTapGesture.numberOfTapsRequired = 2
+        addGestureRecognizer(doubleTapGesture)
+
+        // Single tap should wait for double tap to fail
+        tapGesture.require(toFail: doubleTapGesture)
+
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        addGestureRecognizer(panGesture)
+
+        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
+        addGestureRecognizer(pinchGesture)
+
+        isUserInteractionEnabled = true
+    }
+
+    func configure(text: String = "텍스트 입력") {
+        textLabel.text = text
+        initialSize = bounds.size
+        updateFonts()
+    }
+
+    func updateText(_ text: String) {
+        textLabel.text = text
+    }
+
+    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+        guard let view = gesture.view, let superview = view.superview else { return }
+
+        switch gesture.state {
+        case .began:
+            initialCenter = view.center
+
+        case .changed:
+            let translation = gesture.translation(in: superview)
+
+            let proposedCenter = CGPoint(
+                x: initialCenter.x + translation.x,
+                y: initialCenter.y + translation.y
+            )
+
+            // Snap to 5pt grid
+            let snapStep: CGFloat = 5.0
+            let width = view.frame.width
+            let height = view.frame.height
+
+            let proposedOriginX = proposedCenter.x - width / 2
+            let proposedOriginY = proposedCenter.y - height / 2
+
+            let snappedOriginX = round(proposedOriginX / snapStep) * snapStep
+            let snappedOriginY = round(proposedOriginY / snapStep) * snapStep
+
+            let snappedCenter = CGPoint(
+                x: snappedOriginX + width / 2,
+                y: snappedOriginY + height / 2
+            )
+
+            view.center = snappedCenter
+
+            if isSelected {
+                positionResizeHandles()
+            }
+
+        default:
+            break
+        }
+    }
+
+    @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+        guard let view = gesture.view else { return }
+
+        if gesture.state == .began || gesture.state == .changed {
+            view.transform = view.transform.scaledBy(x: gesture.scale, y: gesture.scale)
+            gesture.scale = 1.0
+
+            if isSelected {
+                positionResizeHandles()
+            }
+        }
+    }
+
+    @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        selectionDelegate?.itemWasSelected(self)
+    }
+
+    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+        textDelegate?.textWidgetDidRequestEdit(self)
+    }
+
+    // MARK: - Selectable Methods
+    func applyColor(_ color: UIColor) {
+        currentColor = color
+        updateColors()
+    }
+
+    func updateColors() {
+        textLabel.textColor = currentColor
+    }
+
+    func updateFonts() {
+        if initialSize == .zero {
+            initialSize = bounds.size
+        }
+
+        let scaleFactor = calculateScaleFactor()
+        let fontSize = baseFontSize * scaleFactor
+
+        textLabel.font = currentFontStyle.font(size: fontSize, weight: .bold)
+
+        print("🔤 Text widget font updated: style=\(currentFontStyle.displayName), size=\(fontSize)")
+    }
+
+    func applyFont(_ fontStyle: FontStyle) {
+        currentFontStyle = fontStyle
+        if initialSize == .zero {
+            initialSize = bounds.size
+        }
+        updateFonts()
+    }
+
+    func calculateScaleFactor() -> CGFloat {
+        guard initialSize != .zero else {
+            initialSize = bounds.size
+            return 1.0
+        }
+
+        let widthScale = bounds.width / initialSize.width
+        let heightScale = bounds.height / initialSize.height
+        let averageScale = (widthScale + heightScale) / 2.0
+
+        return min(max(averageScale, 0.5), 3.0)
+    }
+
+    // MARK: - Hit Testing
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        // Check if touch is on a resize handle first
+        for handle in resizeHandles {
+            let handlePoint = convert(point, to: handle)
+            if handle.point(inside: handlePoint, with: event) {
+                return handle
+            }
+        }
+
+        return super.hitTest(point, with: event)
     }
 }

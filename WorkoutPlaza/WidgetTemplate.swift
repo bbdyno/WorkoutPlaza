@@ -133,6 +133,7 @@ enum WidgetType: String, Codable {
     case speed = "Speed"
     case calories = "Calories"
     case date = "Date"
+    case text = "Text"
     case composite = "Composite"
 }
 
