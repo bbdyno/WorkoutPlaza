@@ -162,4 +162,67 @@ class TemplateManager {
 
         return UIColor(red: red, green: green, blue: blue, alpha: 1.0)
     }
+
+    // MARK: - Helper: Convert absolute coordinates to ratios
+    static func createRatioBasedItem(
+        type: WidgetType,
+        frame: CGRect,
+        canvasSize: CGSize,
+        color: String? = nil,
+        font: String? = nil
+    ) -> WidgetItem {
+        let positionRatio = WidgetItem.PositionRatio(
+            x: frame.origin.x / canvasSize.width,
+            y: frame.origin.y / canvasSize.height
+        )
+
+        let sizeRatio = WidgetItem.SizeRatio(
+            width: frame.width / canvasSize.width,
+            height: frame.height / canvasSize.height
+        )
+
+        return WidgetItem(
+            type: type,
+            positionRatio: positionRatio,
+            sizeRatio: sizeRatio,
+            color: color,
+            font: font
+        )
+    }
+
+    // MARK: - Helper: Convert ratio to absolute coordinates
+    static func absoluteFrame(from item: WidgetItem, canvasSize: CGSize, templateCanvasSize: CGSize? = nil) -> CGRect {
+        // Use ratio-based positioning if available (version 2.0+)
+        if let positionRatio = item.positionRatio, let sizeRatio = item.sizeRatio {
+            let x = positionRatio.x * canvasSize.width
+            let y = positionRatio.y * canvasSize.height
+            let width = sizeRatio.width * canvasSize.width
+            let height = sizeRatio.height * canvasSize.height
+
+            return CGRect(x: x, y: y, width: width, height: height)
+        }
+
+        // Fallback to legacy absolute positioning (version 1.0)
+        // Scale from template canvas size if available
+        if let templateSize = templateCanvasSize {
+            let scaleX = canvasSize.width / templateSize.width
+            let scaleY = canvasSize.height / templateSize.height
+            let scale = min(scaleX, scaleY)
+
+            return CGRect(
+                x: item.position.x * scale,
+                y: item.position.y * scale,
+                width: item.size.width * scale,
+                height: item.size.height * scale
+            )
+        }
+
+        // No scaling information available - use as-is
+        return CGRect(
+            x: item.position.x,
+            y: item.position.y,
+            width: item.size.width,
+            height: item.size.height
+        )
+    }
 }
