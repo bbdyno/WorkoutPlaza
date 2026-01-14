@@ -655,21 +655,60 @@ class WorkoutDetailViewController: UIViewController {
         widgets.removeAll()
         selectionManager.deselectAll()
 
-        // Calculate scale factor to fit template into current canvas size
-        let templateOriginalWidth: CGFloat = 414
-        let templateOriginalHeight: CGFloat = 700
+        print("📐 Applying template '\(template.name)' version \(template.version)")
 
+        // Get template canvas size
+        let templateCanvasSize: CGSize
+        if let tCanvasSize = template.canvasSize {
+            templateCanvasSize = CGSize(width: tCanvasSize.width, height: tCanvasSize.height)
+        } else {
+            // For very old templates without canvas size, assume a default
+            templateCanvasSize = CGSize(width: 414, height: 700)
+        }
+
+        // STEP 1: Change canvas aspect ratio to match template
+        let detectedAspectRatio = AspectRatio.detect(from: templateCanvasSize)
+        print("   Template canvas size: \(templateCanvasSize.width)x\(templateCanvasSize.height)")
+        print("   Detected aspect ratio: \(detectedAspectRatio.displayName)")
+
+        // Update aspect ratio control and canvas size
+        if let index = AspectRatio.allCases.firstIndex(of: detectedAspectRatio) {
+            aspectRatioControl.selectedSegmentIndex = index
+            currentAspectRatio = detectedAspectRatio
+            updateCanvasSize()
+
+            // Force immediate layout update
+            view.layoutIfNeeded()
+        }
+
+        // STEP 2: Get updated canvas size after aspect ratio change
         let canvasSize = contentView.bounds.size
-        let scaleX = canvasSize.width / templateOriginalWidth
-        let scaleY = canvasSize.height / templateOriginalHeight
-        let scale = min(scaleX, scaleY)
+        print("   New canvas size: \(canvasSize.width)x\(canvasSize.height)")
 
-        print("📐 Template scale: \(scale) (canvas: \(canvasSize.width)x\(canvasSize.height))")
+        // STEP 3: Apply background image aspect ratio if available
+        if let aspectRatio = template.backgroundImageAspectRatio {
+            print("   Background image aspect ratio: \(aspectRatio)")
+            // Note: This will be applied when user selects a background image
+            // Store it for later use
+        }
 
-        // Create all widgets directly
+        // STEP 4: Apply background transform if available
+        if let transformData = template.backgroundTransform {
+            let transform = BackgroundTransform(
+                scale: transformData.scale,
+                offset: CGPoint(x: transformData.offsetX, y: transformData.offsetY)
+            )
+            backgroundTransform = transform
+            if !backgroundImageView.isHidden {
+                applyBackgroundTransform(transform)
+            }
+            print("   Background transform applied: scale=\(transformData.scale)")
+        }
+
+        // STEP 5: Create all widgets in the new canvas
         for item in template.items {
-            let position = CGPoint(x: item.position.x * scale, y: item.position.y * scale)
-            let size = CGSize(width: item.size.width * scale, height: item.size.height * scale)
+            // Use ratio-based positioning (version 2.0+) or fallback to legacy
+            let frame = TemplateManager.absoluteFrame(from: item, canvasSize: canvasSize, templateCanvasSize: templateCanvasSize)
 
             var widget: UIView?
 
@@ -678,8 +717,8 @@ class WorkoutDetailViewController: UIViewController {
                 let mapView = RouteMapView()
                 mapView.setRoute(data.route)
                 routeMapView = mapView
-                mapView.frame = CGRect(origin: position, size: size)
-                mapView.initialSize = size
+                mapView.frame = frame
+                mapView.initialSize = frame.size
 
                 if let colorHex = item.color, let color = TemplateManager.color(from: colorHex) {
                     mapView.applyColor(color)
@@ -689,48 +728,48 @@ class WorkoutDetailViewController: UIViewController {
             case .distance:
                 let w = DistanceWidget()
                 w.configure(distance: data.distance)
-                w.frame = CGRect(origin: position, size: size)
-                w.initialSize = size
+                w.frame = frame
+                w.initialSize = frame.size
                 applyItemStyles(to: w, item: item)
                 widget = w
 
             case .duration:
                 let w = DurationWidget()
                 w.configure(duration: data.duration)
-                w.frame = CGRect(origin: position, size: size)
-                w.initialSize = size
+                w.frame = frame
+                w.initialSize = frame.size
                 applyItemStyles(to: w, item: item)
                 widget = w
 
             case .pace:
                 let w = PaceWidget()
                 w.configure(pace: data.pace)
-                w.frame = CGRect(origin: position, size: size)
-                w.initialSize = size
+                w.frame = frame
+                w.initialSize = frame.size
                 applyItemStyles(to: w, item: item)
                 widget = w
 
             case .speed:
                 let w = SpeedWidget()
                 w.configure(speed: data.avgSpeed)
-                w.frame = CGRect(origin: position, size: size)
-                w.initialSize = size
+                w.frame = frame
+                w.initialSize = frame.size
                 applyItemStyles(to: w, item: item)
                 widget = w
 
             case .calories:
                 let w = CaloriesWidget()
                 w.configure(calories: data.calories)
-                w.frame = CGRect(origin: position, size: size)
-                w.initialSize = size
+                w.frame = frame
+                w.initialSize = frame.size
                 applyItemStyles(to: w, item: item)
                 widget = w
 
             case .date:
                 let w = DateWidget()
                 w.configure(startDate: data.startDate)
-                w.frame = CGRect(origin: position, size: size)
-                w.initialSize = size
+                w.frame = frame
+                w.initialSize = frame.size
                 applyItemStyles(to: w, item: item)
                 widget = w
 
@@ -775,6 +814,23 @@ class WorkoutDetailViewController: UIViewController {
     private func exportCurrentLayout() {
         // Create template from current layout
         let items = createTemplateItemsFromCurrentLayout()
+        let canvasSize = contentView.bounds.size
+
+        // Capture background image aspect ratio if present
+        var backgroundImageAspectRatio: CGFloat? = nil
+        if let image = backgroundImageView.image, !backgroundImageView.isHidden {
+            backgroundImageAspectRatio = image.size.width / image.size.height
+        }
+
+        // Capture background transform if present
+        var backgroundTransformData: BackgroundTransformData? = nil
+        if let transform = backgroundTransform {
+            backgroundTransformData = BackgroundTransformData(
+                scale: transform.scale,
+                offsetX: transform.offset.x,
+                offsetY: transform.offset.y
+            )
+        }
 
         let alert = UIAlertController(title: "템플릿 저장", message: "템플릿 이름과 설명을 입력하세요", preferredStyle: .alert)
 
@@ -790,10 +846,15 @@ class WorkoutDetailViewController: UIViewController {
             guard let name = alert?.textFields?[0].text, !name.isEmpty else { return }
             let description = alert?.textFields?[1].text ?? ""
 
-            let template = TemplateManager.shared.createTemplateFromCurrentLayout(
+            // Create template with version 2.0 including canvas size and background info
+            let template = WidgetTemplate(
                 name: name,
                 description: description,
-                items: items
+                version: "2.0",
+                items: items,
+                canvasSize: WidgetTemplate.CanvasSize(width: canvasSize.width, height: canvasSize.height),
+                backgroundImageAspectRatio: backgroundImageAspectRatio,
+                backgroundTransform: backgroundTransformData
             )
 
             do {
@@ -811,11 +872,10 @@ class WorkoutDetailViewController: UIViewController {
 
     private func createTemplateItemsFromCurrentLayout() -> [WidgetItem] {
         var items: [WidgetItem] = []
+        let canvasSize = contentView.bounds.size
 
         for widget in widgets {
             let frame = widget.frame
-            let position = WidgetItem.Position(x: frame.origin.x, y: frame.origin.y)
-            let size = WidgetItem.Size(width: frame.width, height: frame.height)
 
             var type: WidgetType?
             var color: String?
@@ -844,10 +904,11 @@ class WorkoutDetailViewController: UIViewController {
             }
 
             if let widgetType = type {
-                let item = WidgetItem(
+                // Create ratio-based item (version 2.0)
+                let item = TemplateManager.createRatioBasedItem(
                     type: widgetType,
-                    position: position,
-                    size: size,
+                    frame: frame,
+                    canvasSize: canvasSize,
                     color: color,
                     font: font
                 )
@@ -1463,6 +1524,22 @@ enum AspectRatio: CaseIterable {
         case .portrait4_5: return CGSize(width: 1080, height: 1350)
         case .portrait9_16: return CGSize(width: 1080, height: 1920)
         }
+    }
+
+    // Detect aspect ratio from canvas size
+    static func detect(from size: CGSize) -> AspectRatio {
+        let calculatedRatio = size.height / size.width
+        let epsilon: CGFloat = 0.1  // Tolerance for ratio matching
+
+        // Find the closest matching aspect ratio
+        for aspectRatio in AspectRatio.allCases {
+            if abs(calculatedRatio - aspectRatio.ratio) < epsilon {
+                return aspectRatio
+            }
+        }
+
+        // Default to 9:16 if no match found
+        return .portrait9_16
     }
 }
 
