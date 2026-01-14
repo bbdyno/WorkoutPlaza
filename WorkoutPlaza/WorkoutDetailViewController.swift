@@ -773,6 +773,15 @@ class WorkoutDetailViewController: UIViewController {
                 applyItemStyles(to: w, item: item)
                 widget = w
 
+            case .text:
+                let w = TextWidget()
+                w.configure(text: "텍스트 입력")  // Default text, will be updated from template if available
+                w.textDelegate = self
+                w.frame = frame
+                w.initialSize = frame.size
+                applyItemStyles(to: w, item: item)
+                widget = w
+
             case .composite:
                 break
             }
@@ -794,7 +803,7 @@ class WorkoutDetailViewController: UIViewController {
         print("✅ Applied template directly: \(template.name)")
     }
 
-    private func applyItemStyles(to widget: BaseStatWidget, item: WidgetItem) {
+    private func applyItemStyles(to widget: any Selectable, item: WidgetItem) {
         if let colorHex = item.color, let color = TemplateManager.color(from: colorHex) {
             widget.applyColor(color)
         }
@@ -896,11 +905,16 @@ class WorkoutDetailViewController: UIViewController {
                 type = .calories
             } else if widget is DateWidget {
                 type = .date
+            } else if widget is TextWidget {
+                type = .text
             }
 
             if let statWidget = widget as? BaseStatWidget {
                 color = TemplateManager.hexString(from: statWidget.currentColor)
                 font = statWidget.currentFontStyle.rawValue
+            } else if let textWidget = widget as? TextWidget {
+                color = TemplateManager.hexString(from: textWidget.currentColor)
+                font = textWidget.currentFontStyle.rawValue
             }
 
             if let widgetType = type {
@@ -940,6 +954,7 @@ class WorkoutDetailViewController: UIViewController {
         case calories = "칼로리"
         case date = "날짜"
         case currentDateTime = "현재 날짜 및 시간"
+        case text = "텍스트"
     }
     
     private func canAddWidget(_ type: SingleWidgetType) -> Bool {
@@ -960,6 +975,8 @@ class WorkoutDetailViewController: UIViewController {
             return !widgets.contains(where: { $0 is DateWidget })
         case .currentDateTime:
             return !widgets.contains(where: { $0 is CurrentDateTimeWidget })
+        case .text:
+            return true  // Multiple text widgets allowed
         }
     }
 
@@ -1037,8 +1054,15 @@ class WorkoutDetailViewController: UIViewController {
             w.configure(date: data.startDate)
             widget = w
             size = CGSize(width: 300, height: 80)
+
+        case .text:
+            let w = TextWidget()
+            w.configure(text: "텍스트 입력")
+            w.textDelegate = self
+            widget = w
+            size = CGSize(width: 200, height: 60)
         }
-        
+
         if let widget = widget {
             // Position in center of visible area
             let centerX = view.bounds.width / 2 - size.width / 2
@@ -1059,8 +1083,8 @@ class WorkoutDetailViewController: UIViewController {
 
     // MARK: - 템플릿 변경
     @objc private func changeTemplate() {
-        let actionSheet = UIAlertController(title: "템플릿 선택", message: nil, preferredStyle: .actionSheet)
-        
+        let actionSheet = UIAlertController(title: "배경 옵션", message: nil, preferredStyle: .actionSheet)
+
         let templates: [(name: String, style: BackgroundTemplateView.TemplateStyle, colors: [UIColor])] = [
             ("블루 그라데이션", .gradient1, [UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0), UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)]),
             ("퍼플 그라데이션", .gradient2, [UIColor(red: 0.5, green: 0.2, blue: 0.8, alpha: 1.0), UIColor(red: 0.8, green: 0.3, blue: 0.9, alpha: 1.0)]),
@@ -1069,7 +1093,7 @@ class WorkoutDetailViewController: UIViewController {
             ("다크", .dark, [UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0), UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)]),
             ("미니멀", .minimal, [.white])
         ]
-        
+
         for template in templates {
             let action = UIAlertAction(title: template.name, style: .default) { [weak self] _ in
                 self?.applyTemplate(template.style)
@@ -1077,25 +1101,87 @@ class WorkoutDetailViewController: UIViewController {
             action.setValue(iconForGradient(colors: template.colors), forKey: "image")
             actionSheet.addAction(action)
         }
-        
+
         // Random
         actionSheet.addAction(UIAlertAction(title: "랜덤", style: .default) { [weak self] _ in
             self?.backgroundTemplateView.applyRandomTemplate()
         })
-        
+
         // Custom
         actionSheet.addAction(UIAlertAction(title: "커스텀 그라데이션...", style: .default) { [weak self] _ in
             self?.presentCustomGradientPicker()
         })
-        
+
+        // Overlay control
+        actionSheet.addAction(UIAlertAction(title: "오버레이 설정...", style: .default) { [weak self] _ in
+            self?.showOverlayControl()
+        })
+
         actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
-        
+
         // iPad support
         if let popover = actionSheet.popoverPresentationController {
             popover.barButtonItem = navigationItem.rightBarButtonItems?[2]
         }
-        
+
         present(actionSheet, animated: true)
+    }
+
+    private func showOverlayControl() {
+        let alert = UIAlertController(title: "배경 오버레이", message: "어두운 오버레이를 추가하여 위젯 가독성을 높일 수 있습니다.", preferredStyle: .alert)
+
+        // Add slider to control opacity
+        let sliderVC = UIViewController()
+        sliderVC.preferredContentSize = CGSize(width: 270, height: 80)
+
+        let slider = UISlider()
+        slider.minimumValue = 0
+        slider.maximumValue = 0.8
+        let currentAlpha = dimOverlay.isHidden ? 0 : dimOverlay.backgroundColor?.cgColor.alpha ?? 0.3
+        slider.value = Float(currentAlpha)
+        slider.addTarget(self, action: #selector(overlaySliderChanged(_:)), for: .valueChanged)
+
+        let label = UILabel()
+        label.text = "불투명도: \(Int(slider.value * 100))%"
+        label.font = .systemFont(ofSize: 14)
+        label.textAlignment = .center
+        label.tag = 999  // Tag for updating
+
+        sliderVC.view.addSubview(label)
+        sliderVC.view.addSubview(slider)
+
+        label.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(10)
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+
+        slider.snp.makeConstraints { make in
+            make.top.equalTo(label.snp.bottom).offset(10)
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+
+        alert.setValue(sliderVC, forKey: "contentViewController")
+
+        alert.addAction(UIAlertAction(title: "끄기", style: .destructive) { [weak self] _ in
+            self?.dimOverlay.isHidden = true
+        })
+
+        alert.addAction(UIAlertAction(title: "완료", style: .default))
+
+        present(alert, animated: true)
+    }
+
+    @objc private func overlaySliderChanged(_ slider: UISlider) {
+        let opacity = CGFloat(slider.value)
+        dimOverlay.backgroundColor = UIColor.black.withAlphaComponent(opacity)
+        dimOverlay.isHidden = opacity < 0.01
+
+        // Update label
+        if let alert = presentedViewController as? UIAlertController,
+           let contentVC = alert.value(forKey: "contentViewController") as? UIViewController,
+           let label = contentVC.view.viewWithTag(999) as? UILabel {
+            label.text = "불투명도: \(Int(slider.value * 100))%"
+        }
     }
     
     private func presentCustomGradientPicker() {
@@ -1482,6 +1568,37 @@ extension WorkoutDetailViewController: UIDocumentPickerDelegate {
 
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         controller.dismiss(animated: true)
+    }
+}
+
+// MARK: - TextWidgetDelegate
+extension WorkoutDetailViewController: TextWidgetDelegate {
+    func textWidgetDidRequestEdit(_ widget: TextWidget) {
+        let currentText = widget.textLabel.text ?? ""
+
+        let alert = UIAlertController(
+            title: "텍스트 편집",
+            message: "위젯에 표시할 텍스트를 입력하세요",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.text = currentText
+            textField.placeholder = "텍스트 입력"
+            textField.clearButtonMode = .whileEditing
+        }
+
+        alert.addAction(UIAlertAction(title: "완료", style: .default) { [weak alert, weak widget] _ in
+            guard let textField = alert?.textFields?.first,
+                  let newText = textField.text,
+                  !newText.isEmpty else { return }
+
+            widget?.updateText(newText)
+        })
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        present(alert, animated: true)
     }
 }
 
