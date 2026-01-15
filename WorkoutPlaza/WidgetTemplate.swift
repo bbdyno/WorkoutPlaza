@@ -134,6 +134,7 @@ enum WidgetType: String, Codable {
     case calories = "Calories"
     case date = "Date"
     case text = "Text"
+    case location = "Location"
     case composite = "Composite"
 }
 
