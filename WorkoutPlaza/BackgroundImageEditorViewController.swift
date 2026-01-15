@@ -31,6 +31,57 @@ class BackgroundImageEditorViewController: UIViewController {
 
     private var initialTransform: BackgroundTransform?
 
+    // MARK: - Overlay Controls
+    private let overlayControlsContainer = UIView()
+    private let overlayToggle = UISwitch()
+    private let overlayLabel: UILabel = {
+        let label = UILabel()
+        label.text = "색상 오버레이"
+        label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.textColor = .white
+        return label
+    }()
+
+    private var colorPresetsCollectionView: UICollectionView!
+    private let customColorButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("커스텀", for: .normal)
+        button.setTitleColor(.label, for: .normal)
+        button.backgroundColor = .systemGray5
+        button.layer.cornerRadius = 8
+        return button
+    }()
+
+    private let opacitySlider: UISlider = {
+        let slider = UISlider()
+        slider.minimumValue = 0.0
+        slider.maximumValue = 1.0
+        slider.value = 0.5
+        return slider
+    }()
+
+    private let opacityLabel: UILabel = {
+        let label = UILabel()
+        label.text = "50%"
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = .white
+        label.textAlignment = .center
+        return label
+    }()
+
+    // Overlay state
+    private let overlayView = UIView()
+    private var overlayEnabled = false
+    private var overlayColor: UIColor = .black
+    private var overlayOpacity: CGFloat = 0.5
+
+    private let presetColors: [UIColor] = [
+        .black, .white, .systemBlue, .systemRed,
+        .systemGreen, .systemYellow, .systemPurple, .systemOrange
+    ]
+
+    private var instructionLabel: UILabel!
+
     // MARK: - Initialization
     init(image: UIImage, initialTransform: BackgroundTransform? = nil, canvasSize: CGSize = CGSize(width: 360, height: 640)) {
         self.originalImage = image
@@ -106,7 +157,7 @@ class BackgroundImageEditorViewController: UIViewController {
         setupGuideLayer()
 
         // Instructions label
-        let instructionLabel = UILabel()
+        instructionLabel = UILabel()
         instructionLabel.text = "핀치로 확대/축소, 드래그로 이동하세요"
         instructionLabel.textColor = .white
         instructionLabel.font = .systemFont(ofSize: 14)
@@ -124,6 +175,9 @@ class BackgroundImageEditorViewController: UIViewController {
             instructionLabel.heightAnchor.constraint(equalToConstant: 32),
             instructionLabel.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, constant: -40)
         ])
+
+        // Setup overlay controls
+        setupOverlayControls()
     }
     
     private func setupGuideLayer() {
@@ -132,6 +186,96 @@ class BackgroundImageEditorViewController: UIViewController {
         guideLayer.lineWidth = 2
         guideLayer.lineDashPattern = [6, 4]
         guideView.layer.addSublayer(guideLayer)
+    }
+
+    private func setupOverlayControls() {
+        // Container setup
+        overlayControlsContainer.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+        overlayControlsContainer.layer.cornerRadius = 12
+        view.addSubview(overlayControlsContainer)
+        overlayControlsContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        // Toggle
+        overlayToggle.isOn = false
+        overlayToggle.addTarget(self, action: #selector(overlayToggleChanged), for: .valueChanged)
+        overlayControlsContainer.addSubview(overlayLabel)
+        overlayControlsContainer.addSubview(overlayToggle)
+        overlayLabel.translatesAutoresizingMaskIntoConstraints = false
+        overlayToggle.translatesAutoresizingMaskIntoConstraints = false
+
+        // Collection view for color presets
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.minimumInteritemSpacing = 8
+        layout.minimumLineSpacing = 8
+        layout.itemSize = CGSize(width: 36, height: 36)
+
+        colorPresetsCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        colorPresetsCollectionView.backgroundColor = .clear
+        colorPresetsCollectionView.delegate = self
+        colorPresetsCollectionView.dataSource = self
+        colorPresetsCollectionView.showsHorizontalScrollIndicator = false
+        colorPresetsCollectionView.register(ColorSwatchCell.self, forCellWithReuseIdentifier: "ColorSwatchCell")
+        colorPresetsCollectionView.isHidden = true
+        overlayControlsContainer.addSubview(colorPresetsCollectionView)
+        colorPresetsCollectionView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Custom color button
+        customColorButton.addTarget(self, action: #selector(selectCustomColor), for: .touchUpInside)
+        customColorButton.isHidden = true
+        overlayControlsContainer.addSubview(customColorButton)
+        customColorButton.translatesAutoresizingMaskIntoConstraints = false
+
+        // Opacity slider
+        opacitySlider.addTarget(self, action: #selector(opacitySliderChanged), for: .valueChanged)
+        opacitySlider.isHidden = true
+        overlayControlsContainer.addSubview(opacitySlider)
+        opacitySlider.translatesAutoresizingMaskIntoConstraints = false
+
+        opacityLabel.isHidden = true
+        overlayControlsContainer.addSubview(opacityLabel)
+        opacityLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        // Layout constraints
+        NSLayoutConstraint.activate([
+            // Container
+            overlayControlsContainer.topAnchor.constraint(equalTo: instructionLabel.bottomAnchor, constant: 12),
+            overlayControlsContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            overlayControlsContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            overlayControlsContainer.heightAnchor.constraint(equalToConstant: 140),
+
+            // Toggle row
+            overlayLabel.topAnchor.constraint(equalTo: overlayControlsContainer.topAnchor, constant: 12),
+            overlayLabel.leadingAnchor.constraint(equalTo: overlayControlsContainer.leadingAnchor, constant: 16),
+
+            overlayToggle.centerYAnchor.constraint(equalTo: overlayLabel.centerYAnchor),
+            overlayToggle.trailingAnchor.constraint(equalTo: overlayControlsContainer.trailingAnchor, constant: -16),
+
+            // Color presets row
+            colorPresetsCollectionView.topAnchor.constraint(equalTo: overlayLabel.bottomAnchor, constant: 12),
+            colorPresetsCollectionView.leadingAnchor.constraint(equalTo: overlayControlsContainer.leadingAnchor, constant: 16),
+            colorPresetsCollectionView.heightAnchor.constraint(equalToConstant: 40),
+            colorPresetsCollectionView.trailingAnchor.constraint(equalTo: customColorButton.leadingAnchor, constant: -8),
+
+            customColorButton.centerYAnchor.constraint(equalTo: colorPresetsCollectionView.centerYAnchor),
+            customColorButton.trailingAnchor.constraint(equalTo: overlayControlsContainer.trailingAnchor, constant: -16),
+            customColorButton.widthAnchor.constraint(equalToConstant: 70),
+            customColorButton.heightAnchor.constraint(equalToConstant: 36),
+
+            // Opacity row
+            opacitySlider.topAnchor.constraint(equalTo: colorPresetsCollectionView.bottomAnchor, constant: 12),
+            opacitySlider.leadingAnchor.constraint(equalTo: overlayControlsContainer.leadingAnchor, constant: 16),
+            opacitySlider.trailingAnchor.constraint(equalTo: opacityLabel.leadingAnchor, constant: -8),
+
+            opacityLabel.centerYAnchor.constraint(equalTo: opacitySlider.centerYAnchor),
+            opacityLabel.trailingAnchor.constraint(equalTo: overlayControlsContainer.trailingAnchor, constant: -16),
+            opacityLabel.widthAnchor.constraint(equalToConstant: 50)
+        ])
+
+        // Setup overlay view
+        overlayView.isHidden = true
+        overlayView.isUserInteractionEnabled = false
+        scrollView.addSubview(overlayView)
     }
 
     private func setupImage() {
@@ -160,6 +304,8 @@ class BackgroundImageEditorViewController: UIViewController {
         } else {
             scrollView.zoomScale = 1.0
         }
+
+        updateOverlayView()
     }
 
     private func centerImage() {
@@ -177,6 +323,70 @@ class BackgroundImageEditorViewController: UIViewController {
         )
     }
 
+    // MARK: - Overlay Methods
+    @objc private func overlayToggleChanged() {
+        overlayEnabled = overlayToggle.isOn
+
+        UIView.animate(withDuration: 0.25) {
+            self.colorPresetsCollectionView.isHidden = !self.overlayEnabled
+            self.customColorButton.isHidden = !self.overlayEnabled
+            self.opacitySlider.isHidden = !self.overlayEnabled
+            self.opacityLabel.isHidden = !self.overlayEnabled
+        }
+
+        updateOverlayView()
+    }
+
+    @objc private func opacitySliderChanged(_ slider: UISlider) {
+        overlayOpacity = CGFloat(slider.value)
+        opacityLabel.text = "\(Int(slider.value * 100))%"
+
+        if overlayEnabled {
+            updateOverlayView()
+        }
+    }
+
+    @objc private func selectCustomColor() {
+        let picker = UIColorPickerViewController()
+        picker.selectedColor = overlayColor
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    private func updateOverlayView() {
+        guard overlayEnabled else {
+            overlayView.isHidden = true
+            return
+        }
+
+        overlayView.isHidden = false
+        overlayView.backgroundColor = overlayColor.withAlphaComponent(overlayOpacity)
+        overlayView.frame = imageView.frame
+    }
+
+    private func composeImageWithOverlay() -> UIImage? {
+        let imageSize = originalImage.size
+
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = originalImage.scale
+        format.opaque = false // Allow transparency for overlay
+
+        let renderer = UIGraphicsImageRenderer(size: imageSize, format: format)
+
+        let composedImage = renderer.image { rendererContext in
+            let cgContext = rendererContext.cgContext
+
+            // Draw original image
+            originalImage.draw(at: .zero)
+
+            // Draw overlay with specified color and opacity
+            cgContext.setFillColor(overlayColor.withAlphaComponent(overlayOpacity).cgColor)
+            cgContext.fill(CGRect(origin: .zero, size: imageSize))
+        }
+
+        return composedImage
+    }
+
     // MARK: - Actions
     @objc private func cancelTapped() {
         dismiss(animated: true)
@@ -188,7 +398,15 @@ class BackgroundImageEditorViewController: UIViewController {
             offset: scrollView.contentOffset
         )
 
-        delegate?.backgroundImageEditor(self, didFinishEditing: originalImage, transform: transform)
+        // Compose final image with overlay if enabled
+        let finalImage: UIImage
+        if overlayEnabled {
+            finalImage = composeImageWithOverlay() ?? originalImage
+        } else {
+            finalImage = originalImage
+        }
+
+        delegate?.backgroundImageEditor(self, didFinishEditing: finalImage, transform: transform)
         dismiss(animated: true)
     }
 
@@ -204,17 +422,18 @@ class BackgroundImageEditorViewController: UIViewController {
         let safeArea = view.safeAreaLayoutGuide.layoutFrame
         let availableSize = CGSize(
             width: safeArea.width - 40,
-            height: safeArea.height - 100 // Space for label and buttons
+            height: safeArea.height - 200 // Increased space for overlay controls
         )
-        
+
         let scaleX = availableSize.width / canvasSize.width
         let scaleY = availableSize.height / canvasSize.height
         let scale = min(1.0, min(scaleX, scaleY))
-        
+
         containerView.transform = CGAffineTransform(scaleX: scale, y: scale)
-        containerView.center = CGPoint(x: safeArea.midX, y: safeArea.midY)
-        
+        containerView.center = CGPoint(x: safeArea.midX, y: safeArea.midY + 60) // Offset for overlay controls
+
         centerImage()
+        updateOverlayView()
     }
 }
 
@@ -226,5 +445,39 @@ extension BackgroundImageEditorViewController: UIScrollViewDelegate {
 
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
         centerImage()
+        updateOverlayView()
+    }
+}
+
+// MARK: - UICollectionViewDataSource
+extension BackgroundImageEditorViewController: UICollectionViewDataSource {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return presetColors.count
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ColorSwatchCell", for: indexPath) as! ColorSwatchCell
+        cell.configure(with: presetColors[indexPath.item])
+        return cell
+    }
+}
+
+// MARK: - UICollectionViewDelegate
+extension BackgroundImageEditorViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        overlayColor = presetColors[indexPath.item]
+        if overlayEnabled {
+            updateOverlayView()
+        }
+    }
+}
+
+// MARK: - UIColorPickerViewControllerDelegate
+extension BackgroundImageEditorViewController: UIColorPickerViewControllerDelegate {
+    func colorPickerViewControllerDidFinish(_ viewController: UIColorPickerViewController) {
+        overlayColor = viewController.selectedColor
+        if overlayEnabled {
+            updateOverlayView()
+        }
     }
 }
