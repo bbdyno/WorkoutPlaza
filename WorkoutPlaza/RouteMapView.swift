@@ -91,42 +91,70 @@ class RouteMapView: UIView, Selectable {
     
     private func drawRoute() {
         guard !routeLocations.isEmpty else { return }
-        
+
         // 경로의 좌표 범위 계산
         var minLat = routeLocations[0].coordinate.latitude
         var maxLat = minLat
         var minLon = routeLocations[0].coordinate.longitude
         var maxLon = minLon
-        
+
         for location in routeLocations {
             minLat = min(minLat, location.coordinate.latitude)
             maxLat = max(maxLat, location.coordinate.latitude)
             minLon = min(minLon, location.coordinate.longitude)
             maxLon = max(maxLon, location.coordinate.longitude)
         }
-        
+
         let latRange = maxLat - minLat
         let lonRange = maxLon - minLon
-        
+
+        // 경도를 실제 거리로 보정 (위도의 중간값에서의 경도 보정)
+        let centerLat = (minLat + maxLat) / 2
+        let lonRangeCorrected = lonRange * cos(centerLat * .pi / 180)
+
         // 여백 추가
         let padding: CGFloat = 20
         let drawWidth = bounds.width - padding * 2
         let drawHeight = bounds.height - padding * 2
-        
-        // 경로 생성
+
+        // 실제 비율을 유지하면서 bounds에 맞추기
+        // 위도 범위와 보정된 경도 범위 중 더 큰 비율에 맞춤
+        let latToLonRatio = latRange / lonRangeCorrected
+        var scale: CGFloat = 1.0
+        var xOffset: CGFloat = 0
+        var yOffset: CGFloat = 0
+
+        if latToLonRatio > drawHeight / drawWidth {
+            // 위도(남북) 범위가 상대적으로 더 큼 - 높이를 기준으로
+            scale = drawHeight / latRange
+            let scaledWidth = lonRangeCorrected * scale
+            xOffset = (drawWidth - scaledWidth) / 2
+        } else {
+            // 경도(동서) 범위가 상대적으로 더 큼 - 너비를 기준으로
+            scale = drawWidth / lonRangeCorrected
+            let scaledHeight = latRange * scale
+            yOffset = (drawHeight - scaledHeight) / 2
+        }
+
+        // 경로 생성 - 북쪽이 위로 가도록
         let path = UIBezierPath()
-        
+
         for (index, location) in routeLocations.enumerated() {
-            let x = CGFloat((location.coordinate.longitude - minLon) / lonRange) * drawWidth + padding
-            let y = drawHeight - CGFloat((location.coordinate.latitude - minLat) / latRange) * drawHeight + padding
-            
+            // 경도(동서): 동쪽으로 갈수록 x가 증가
+            let normalizedLon = (location.coordinate.longitude - minLon) * cos(centerLat * .pi / 180)
+            let x = normalizedLon * scale + padding + xOffset
+
+            // 위도(남북): 북쪽으로 갈수록 y가 감소 (화면 좌표계)
+            let normalizedLat = (location.coordinate.latitude - minLat)
+            let y = drawHeight - (normalizedLat * scale) + padding - yOffset
+
             if index == 0 {
                 path.move(to: CGPoint(x: x, y: y))
             } else {
                 path.addLine(to: CGPoint(x: x, y: y))
             }
         }
-        
+
         routeLayer.path = path.cgPath
     }
     

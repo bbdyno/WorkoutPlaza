@@ -782,6 +782,24 @@ class WorkoutDetailViewController: UIViewController {
                 applyItemStyles(to: w, item: item)
                 widget = w
 
+            case .location:
+                guard let firstLocation = data.route.first else {
+                    print("⚠️ No GPS data for location widget in template")
+                    break
+                }
+
+                let w = LocationWidget()
+                w.frame = frame
+                w.initialSize = frame.size
+                applyItemStyles(to: w, item: item)
+
+                // Configure asynchronously
+                w.configure(location: firstLocation) { success in
+                    print(success ? "✅ Location widget loaded from template" : "⚠️ Location widget geocoding failed")
+                }
+
+                widget = w
+
             case .composite:
                 break
             }
@@ -907,6 +925,8 @@ class WorkoutDetailViewController: UIViewController {
                 type = .date
             } else if widget is TextWidget {
                 type = .text
+            } else if widget is LocationWidget {
+                type = .location
             }
 
             if let statWidget = widget as? BaseStatWidget {
@@ -915,6 +935,9 @@ class WorkoutDetailViewController: UIViewController {
             } else if let textWidget = widget as? TextWidget {
                 color = TemplateManager.hexString(from: textWidget.currentColor)
                 font = textWidget.currentFontStyle.rawValue
+            } else if let locationWidget = widget as? LocationWidget {
+                color = TemplateManager.hexString(from: locationWidget.currentColor)
+                font = locationWidget.currentFontStyle.rawValue
             }
 
             if let widgetType = type {
@@ -955,6 +978,7 @@ class WorkoutDetailViewController: UIViewController {
         case date = "날짜"
         case currentDateTime = "현재 날짜 및 시간"
         case text = "텍스트"
+        case location = "위치"
     }
     
     private func canAddWidget(_ type: SingleWidgetType) -> Bool {
@@ -977,6 +1001,8 @@ class WorkoutDetailViewController: UIViewController {
             return !widgets.contains(where: { $0 is CurrentDateTimeWidget })
         case .text:
             return true  // Multiple text widgets allowed
+        case .location:
+            return !widgets.contains(where: { $0 is LocationWidget })
         }
     }
 
@@ -1061,6 +1087,32 @@ class WorkoutDetailViewController: UIViewController {
             w.textDelegate = self
             widget = w
             size = CGSize(width: 200, height: 60)
+
+        case .location:
+            guard let firstLocation = data.route.first else {
+                // Show error if no GPS data
+                let alert = UIAlertController(
+                    title: "위치 정보 없음",
+                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                present(alert, animated: true)
+                return
+            }
+
+            let w = LocationWidget()
+            widget = w
+            size = CGSize(width: 220, height: 50)
+
+            // Configure asynchronously (geocoding takes time)
+            w.configure(location: firstLocation) { [weak self] success in
+                if success {
+                    print("✅ Location widget configured successfully")
+                } else {
+                    print("⚠️ Location widget configuration failed")
+                }
+            }
         }
 
         if let widget = widget {
