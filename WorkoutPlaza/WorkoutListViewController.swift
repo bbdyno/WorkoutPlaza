@@ -380,9 +380,11 @@ extension WorkoutListViewController: ImportWorkoutViewControllerDelegate {
     func importWorkoutViewController(_ controller: ImportWorkoutViewController, didImport data: ImportedWorkoutData, mode: ImportMode, attachTo: WorkoutData?) {
         switch mode {
         case .createNew:
-            // Open WorkoutDetailViewController with imported data
-            // For now, show a success message
-            showImportSuccess(ownerName: data.ownerName)
+            // Open WorkoutDetailViewController with imported data only (no health data required)
+            let detailVC = WorkoutDetailViewController()
+            detailVC.workoutData = nil  // No health data
+            detailVC.importedWorkoutData = data
+            navigationController?.pushViewController(detailVC, animated: true)
 
         case .attachToExisting:
             if let workoutData = attachTo {

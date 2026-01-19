@@ -135,6 +135,10 @@ class ImportWorkoutViewController: UIViewController {
         return label
     }()
 
+    // Containers for conditional display
+    private var ownerNameContainer: UIView?
+    private var layoutContainer: UIView?
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -145,7 +149,9 @@ class ImportWorkoutViewController: UIViewController {
     // MARK: - Setup
     private func setupUI() {
         view.backgroundColor = .systemGroupedBackground
-        title = "운동 기록 가져오기"
+
+        // Set title based on mode
+        title = importMode == .createNew ? "내 기록으로 가져오기" : "타인 기록 가져오기"
 
         // Navigation buttons
         navigationItem.leftBarButtonItem = UIBarButtonItem(
@@ -178,24 +184,27 @@ class ImportWorkoutViewController: UIViewController {
         contentStackView.addArrangedSubview(headerLabel)
         contentStackView.setCustomSpacing(24, after: headerLabel)
 
-        // Add owner name section
-        let ownerNameContainer = createSectionContainer()
-        ownerNameContainer.addSubview(ownerNameLabel)
-        ownerNameContainer.addSubview(ownerNameTextField)
+        // Add owner name section - ONLY for attachToExisting mode
+        if importMode == .attachToExisting {
+            let container = createSectionContainer()
+            container.addSubview(ownerNameLabel)
+            container.addSubview(ownerNameTextField)
 
-        ownerNameLabel.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(12)
+            ownerNameLabel.snp.makeConstraints { make in
+                make.top.leading.trailing.equalToSuperview().inset(12)
+            }
+
+            ownerNameTextField.snp.makeConstraints { make in
+                make.top.equalTo(ownerNameLabel.snp.bottom).offset(8)
+                make.leading.trailing.bottom.equalToSuperview().inset(12)
+                make.height.equalTo(44)
+            }
+
+            contentStackView.addArrangedSubview(container)
+            ownerNameContainer = container
+
+            ownerNameTextField.addTarget(self, action: #selector(ownerNameChanged), for: .editingChanged)
         }
-
-        ownerNameTextField.snp.makeConstraints { make in
-            make.top.equalTo(ownerNameLabel.snp.bottom).offset(8)
-            make.leading.trailing.bottom.equalToSuperview().inset(12)
-            make.height.equalTo(44)
-        }
-
-        contentStackView.addArrangedSubview(ownerNameContainer)
-
-        ownerNameTextField.addTarget(self, action: #selector(ownerNameChanged), for: .editingChanged)
 
         // Add fields selection section
         contentStackView.addArrangedSubview(fieldsHeaderLabel)
@@ -210,37 +219,40 @@ class ImportWorkoutViewController: UIViewController {
         setupFieldCheckboxes()
         contentStackView.addArrangedSubview(fieldsContainer)
 
-        // Add layout option section
-        contentStackView.addArrangedSubview(layoutOptionLabel)
+        // Add layout option section - ONLY for attachToExisting mode
+        if importMode == .attachToExisting {
+            contentStackView.addArrangedSubview(layoutOptionLabel)
 
-        let layoutContainer = createSectionContainer()
-        let layoutStack = UIStackView()
-        layoutStack.axis = .vertical
-        layoutStack.spacing = 8
+            let container = createSectionContainer()
+            let layoutStack = UIStackView()
+            layoutStack.axis = .vertical
+            layoutStack.spacing = 8
 
-        let toggleRow = UIView()
-        toggleRow.addSubview(useCurrentLayoutLabel)
-        toggleRow.addSubview(useCurrentLayoutSwitch)
+            let toggleRow = UIView()
+            toggleRow.addSubview(useCurrentLayoutLabel)
+            toggleRow.addSubview(useCurrentLayoutSwitch)
 
-        useCurrentLayoutLabel.snp.makeConstraints { make in
-            make.leading.top.bottom.equalToSuperview()
-            make.trailing.lessThanOrEqualTo(useCurrentLayoutSwitch.snp.leading).offset(-12)
+            useCurrentLayoutLabel.snp.makeConstraints { make in
+                make.leading.top.bottom.equalToSuperview()
+                make.trailing.lessThanOrEqualTo(useCurrentLayoutSwitch.snp.leading).offset(-12)
+            }
+
+            useCurrentLayoutSwitch.snp.makeConstraints { make in
+                make.trailing.centerY.equalToSuperview()
+            }
+
+            layoutStack.addArrangedSubview(toggleRow)
+            layoutStack.addArrangedSubview(layoutDescriptionLabel)
+
+            container.addSubview(layoutStack)
+            layoutStack.snp.makeConstraints { make in
+                make.edges.equalToSuperview().inset(12)
+            }
+
+            useCurrentLayoutSwitch.addTarget(self, action: #selector(layoutToggleChanged), for: .valueChanged)
+            contentStackView.addArrangedSubview(container)
+            layoutContainer = container
         }
-
-        useCurrentLayoutSwitch.snp.makeConstraints { make in
-            make.trailing.centerY.equalToSuperview()
-        }
-
-        layoutStack.addArrangedSubview(toggleRow)
-        layoutStack.addArrangedSubview(layoutDescriptionLabel)
-
-        layoutContainer.addSubview(layoutStack)
-        layoutStack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(12)
-        }
-
-        useCurrentLayoutSwitch.addTarget(self, action: #selector(layoutToggleChanged), for: .valueChanged)
-        contentStackView.addArrangedSubview(layoutContainer)
 
         // Add preview section
         contentStackView.addArrangedSubview(previewHeaderLabel)
@@ -320,12 +332,16 @@ class ImportWorkoutViewController: UIViewController {
     private func configureWithWorkout() {
         guard let workout = shareableWorkout else { return }
 
-        // Set header text
+        // Set header text based on mode
         let creatorName = workout.creator?.name ?? "알 수 없음"
-        headerLabel.text = "\(creatorName)님의 \(workout.workout.type) 기록"
+        if importMode == .createNew {
+            headerLabel.text = "\(workout.workout.type) 기록"
+        } else {
+            headerLabel.text = "\(creatorName)님의 \(workout.workout.type) 기록"
+        }
 
-        // Pre-fill owner name
-        if let creator = workout.creator?.name {
+        // Pre-fill owner name (only for attachToExisting mode)
+        if importMode == .attachToExisting, let creator = workout.creator?.name {
             ownerNameTextField.text = creator
             ownerName = creator
         }
@@ -342,8 +358,13 @@ class ImportWorkoutViewController: UIViewController {
     @objc private func importTapped() {
         guard let workout = shareableWorkout else { return }
 
-        // Validate owner name
-        let finalOwnerName = ownerName.isEmpty ? (workout.creator?.name ?? "알 수 없음") : ownerName
+        // For createNew mode, owner name is not needed
+        let finalOwnerName: String
+        if importMode == .createNew {
+            finalOwnerName = ""  // Not used for my own record
+        } else {
+            finalOwnerName = ownerName.isEmpty ? (workout.creator?.name ?? "알 수 없음") : ownerName
+        }
 
         // Create imported workout data
         let importedData = ImportedWorkoutData(
@@ -390,13 +411,15 @@ class ImportWorkoutViewController: UIViewController {
         // Clear existing preview
         previewStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        // Owner name label
-        let ownerLabel = UILabel()
-        let displayOwnerName = ownerName.isEmpty ? (workout.creator?.name ?? "알 수 없음") : ownerName
-        ownerLabel.text = "\(displayOwnerName)의 기록"
-        ownerLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-        ownerLabel.textColor = .systemOrange
-        previewStackView.addArrangedSubview(ownerLabel)
+        // Owner name label - only for attachToExisting mode
+        if importMode == .attachToExisting {
+            let ownerLabel = UILabel()
+            let displayOwnerName = ownerName.isEmpty ? (workout.creator?.name ?? "알 수 없음") : ownerName
+            ownerLabel.text = "\(displayOwnerName)의 기록"
+            ownerLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+            ownerLabel.textColor = .systemOrange
+            previewStackView.addArrangedSubview(ownerLabel)
+        }
 
         // Selected fields preview
         let data = workout.workout
