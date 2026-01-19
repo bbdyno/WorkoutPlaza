@@ -7,6 +7,7 @@
 
 import UIKit
 import SnapKit
+import UniformTypeIdentifiers
 
 class WorkoutListViewController: UIViewController {
     
@@ -79,35 +80,22 @@ class WorkoutListViewController: UIViewController {
 
         do {
             let shareableWorkout = try ShareManager.shared.importWorkout(from: url)
-            showImportOptions(for: shareableWorkout, fileURL: url)
+
+            // Check if current top view controller is WorkoutDetailViewController
+            if let topVC = navigationController?.topViewController, topVC is WorkoutDetailViewController {
+                // Forward to WorkoutDetailViewController
+                NotificationCenter.default.post(
+                    name: .didReceiveSharedWorkoutInDetail,
+                    object: nil,
+                    userInfo: ["workout": shareableWorkout]
+                )
+            } else {
+                // On list screen - go directly to import as my record
+                openImportWorkoutViewController(with: shareableWorkout, mode: .createNew)
+            }
         } catch {
             showImportError(error)
         }
-    }
-
-    private func showImportOptions(for workout: ShareableWorkout, fileURL: URL) {
-        let creatorName = workout.creator?.name ?? "알 수 없음"
-        let workoutType = workout.workout.type
-
-        let alert = UIAlertController(
-            title: "운동 기록 가져오기",
-            message: "\(creatorName)님의 \(workoutType) 기록을 가져왔습니다.\n어떻게 처리할까요?",
-            preferredStyle: .alert
-        )
-
-        // Option 1: Create new record
-        alert.addAction(UIAlertAction(title: "내 기록 작성", style: .default) { [weak self] _ in
-            self?.openImportWorkoutViewController(with: workout, mode: .createNew)
-        })
-
-        // Option 2: Attach to existing record
-        alert.addAction(UIAlertAction(title: "기존 기록에 첨부", style: .default) { [weak self] _ in
-            self?.showWorkoutSelectionForAttachment(workout: workout)
-        })
-
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-
-        present(alert, animated: true)
     }
 
     private func openImportWorkoutViewController(with workout: ShareableWorkout, mode: ImportMode, attachTo: WorkoutData? = nil) {
@@ -158,29 +146,52 @@ class WorkoutListViewController: UIViewController {
     private func setupUI() {
         title = "운동 기록"
         view.backgroundColor = .systemGroupedBackground // Modern grouped background
-        
+
         // Modern Navigation Bar
         navigationController?.navigationBar.prefersLargeTitles = true
-        
+
+        // Import button (left)
+        let importButton = UIBarButtonItem(
+            image: UIImage(systemName: "square.and.arrow.down"),
+            style: .plain,
+            target: self,
+            action: #selector(showImportRecordPicker)
+        )
+        navigationItem.leftBarButtonItem = importButton
+
         view.addSubview(tableView)
         view.addSubview(loadingIndicator)
         view.addSubview(emptyLabel)
-        
+
         tableView.tableHeaderView = headerView
         tableView.backgroundColor = .clear // Let system grouped color show
-        
+
         tableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
-        
+
         loadingIndicator.snp.makeConstraints { make in
             make.center.equalToSuperview()
         }
-        
+
         emptyLabel.snp.makeConstraints { make in
             make.center.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(40)
         }
+    }
+
+    @objc private func showImportRecordPicker() {
+        // Use custom UTType for .wplaza files, fallback to json/data for compatibility
+        var contentTypes: [UTType] = [.json, .data]
+        if let wplazaType = UTType("com.workoutplaza.workout") {
+            contentTypes.insert(wplazaType, at: 0)
+        }
+
+        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: contentTypes)
+        documentPicker.delegate = self
+        documentPicker.allowsMultipleSelection = false
+        documentPicker.shouldShowFileExtensions = true
+        present(documentPicker, animated: true)
     }
     
     private func requestHealthKitAuthorization() {
@@ -516,5 +527,31 @@ class WorkoutCell: UITableViewCell {
         default:
             iconImageView.image = UIImage(systemName: "figure.mixed.cardio")
         }
+    }
+}
+
+// MARK: - UIDocumentPickerDelegate
+extension WorkoutListViewController: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let fileURL = urls.first else { return }
+
+        let shouldStopAccessing = fileURL.startAccessingSecurityScopedResource()
+        defer {
+            if shouldStopAccessing {
+                fileURL.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        do {
+            let shareableWorkout = try ShareManager.shared.importWorkout(from: fileURL)
+            // Open ImportWorkoutViewController with createNew mode
+            openImportWorkoutViewController(with: shareableWorkout, mode: .createNew)
+        } catch {
+            showImportError(error)
+        }
+    }
+
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        controller.dismiss(animated: true)
     }
 }
