@@ -8,11 +8,13 @@
 import UIKit
 import SnapKit
 import PhotosUI
+import UniformTypeIdentifiers
 
 class WorkoutDetailViewController: UIViewController {
-    
+
     var workoutData: WorkoutData?
-    
+    var importedWorkoutData: ImportedWorkoutData?
+
     private let scrollView = UIScrollView()
     private let contentView: UIView = {
         let view = UIView()
@@ -53,11 +55,67 @@ class WorkoutDetailViewController: UIViewController {
     private var widgets: [UIView] = []
 
     // Template Group
-    // private var templateGroup: TemplateGroupView? // Removed
+    private var templateGroups: [TemplateGroupView] = []
     private var isInGroupMode: Bool = false
 
     // Selection and Color
     private let selectionManager = SelectionManager()
+
+    // Document Picker Purpose Tracking
+    private enum DocumentPickerPurpose {
+        case templateImport
+        case workoutImport
+    }
+    private var documentPickerPurpose: DocumentPickerPurpose = .templateImport
+
+    // Multi-select floating toolbar
+    private lazy var multiSelectToolbar: UIView = {
+        let toolbar = UIView()
+        toolbar.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.95)
+        toolbar.layer.cornerRadius = 12
+        toolbar.layer.shadowColor = UIColor.black.cgColor
+        toolbar.layer.shadowOffset = CGSize(width: 0, height: 2)
+        toolbar.layer.shadowOpacity = 0.2
+        toolbar.layer.shadowRadius = 8
+        toolbar.isHidden = true
+        return toolbar
+    }()
+
+    private lazy var groupButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "rectangle.3.group"), for: .normal)
+        button.setTitle(" 그룹", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        button.addTarget(self, action: #selector(groupSelectedWidgets), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var ungroupButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "rectangle.3.group.slash"), for: .normal)
+        button.setTitle(" 해제", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        button.addTarget(self, action: #selector(ungroupSelectedWidget), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var cancelMultiSelectButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "xmark.circle"), for: .normal)
+        button.setTitle(" 취소", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        button.tintColor = .systemRed
+        button.addTarget(self, action: #selector(exitMultiSelectMode), for: .touchUpInside)
+        return button
+    }()
+
+    private let multiSelectCountLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14, weight: .semibold)
+        label.textColor = .label
+        label.text = "0개 선택"
+        return label
+    }()
 
     // Background transform
     private var backgroundTransform: BackgroundTransform?
@@ -101,7 +159,16 @@ class WorkoutDetailViewController: UIViewController {
         setupUI()
         setupDefaultBackground()
         setupSelectionAndColorSystem()
+        setupMultiSelectToolbar()
+        setupLongPressGesture()
         configureWithWorkoutData()
+
+        // Handle imported workout data if present
+        if let importedData = importedWorkoutData {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.addImportedWorkoutGroup(importedData)
+            }
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -370,6 +437,581 @@ class WorkoutDetailViewController: UIViewController {
         selectionManager.delegate = self
     }
 
+    // MARK: - Multi-Select Setup
+    private func setupMultiSelectToolbar() {
+        view.addSubview(multiSelectToolbar)
+
+        // Add buttons to toolbar
+        let stackView = UIStackView(arrangedSubviews: [
+            multiSelectCountLabel,
+            groupButton,
+            ungroupButton,
+            cancelMultiSelectButton
+        ])
+        stackView.axis = .horizontal
+        stackView.spacing = 16
+        stackView.alignment = .center
+        stackView.distribution = .fill
+
+        multiSelectToolbar.addSubview(stackView)
+
+        multiSelectToolbar.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-80)
+            make.height.equalTo(50)
+        }
+
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
+        }
+    }
+
+    private func setupLongPressGesture() {
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+        longPressGesture.minimumPressDuration = 0.5
+        contentView.addGestureRecognizer(longPressGesture)
+    }
+
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began else { return }
+
+        let location = gesture.location(in: contentView)
+
+        // Check if long-pressed on a widget
+        for widget in widgets {
+            if widget.frame.contains(location), let selectable = widget as? Selectable {
+                // Enter multi-select mode
+                selectionManager.enterMultiSelectMode()
+                selectionManager.selectItem(selectable)
+                showMultiSelectToolbar()
+
+                // Haptic feedback
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                return
+            }
+        }
+
+        // Check template groups
+        for group in templateGroups {
+            if group.frame.contains(location) {
+                selectionManager.enterMultiSelectMode()
+                selectionManager.selectItem(group)
+                showMultiSelectToolbar()
+
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                return
+            }
+        }
+    }
+
+    private func showMultiSelectToolbar() {
+        multiSelectToolbar.isHidden = false
+        multiSelectToolbar.alpha = 0
+        UIView.animate(withDuration: 0.25) {
+            self.multiSelectToolbar.alpha = 1
+        }
+        updateMultiSelectToolbarState()
+    }
+
+    private func hideMultiSelectToolbar() {
+        UIView.animate(withDuration: 0.25, animations: {
+            self.multiSelectToolbar.alpha = 0
+        }) { _ in
+            self.multiSelectToolbar.isHidden = true
+        }
+    }
+
+    private func updateMultiSelectToolbarState() {
+        let selectedItems = selectionManager.getSelectedItems()
+        let count = selectedItems.count
+        multiSelectCountLabel.text = "\(count)개 선택"
+
+        // Enable group button only if 2+ non-group items selected
+        let nonGroupItems = selectedItems.filter { !($0 is TemplateGroupView) }
+        groupButton.isEnabled = nonGroupItems.count >= 2
+
+        // Enable ungroup button only if a group is selected
+        let hasGroup = selectedItems.contains { $0 is TemplateGroupView }
+        ungroupButton.isEnabled = hasGroup && selectedItems.count == 1
+    }
+
+    @objc private func groupSelectedWidgets() {
+        let selectedItems = selectionManager.getSelectedItems()
+        let widgetsToGroup = selectedItems.compactMap { $0 as? UIView }.filter { !($0 is TemplateGroupView) }
+
+        guard widgetsToGroup.count >= 2 else { return }
+
+        // Check for group conflicts
+        let conflictResult = GroupManager.shared.canGroupWidgets(widgetsToGroup)
+        if !conflictResult.isAllowed {
+            showGroupConflictAlert(reason: conflictResult.denialReason ?? "그룹화할 수 없습니다")
+            return
+        }
+
+        // IMPORTANT: Hide selection state BEFORE moving widgets to group
+        // This removes resize handles from contentView
+        for widget in widgetsToGroup {
+            if let selectable = widget as? Selectable {
+                selectable.hideSelectionState()
+            }
+        }
+
+        // Determine the group type based on widget origins
+        let groupType = determineGroupTypeForWidgets(widgetsToGroup)
+
+        // Calculate bounding frame for all selected widgets
+        var minX = CGFloat.greatestFiniteMagnitude
+        var minY = CGFloat.greatestFiniteMagnitude
+        var maxX = CGFloat.leastNormalMagnitude
+        var maxY = CGFloat.leastNormalMagnitude
+
+        for widget in widgetsToGroup {
+            minX = min(minX, widget.frame.minX)
+            minY = min(minY, widget.frame.minY)
+            maxX = max(maxX, widget.frame.maxX)
+            maxY = max(maxY, widget.frame.maxY)
+        }
+
+        // Add padding
+        let padding: CGFloat = 16
+        let groupFrame = CGRect(
+            x: minX - padding,
+            y: minY - padding,
+            width: maxX - minX + (padding * 2),
+            height: maxY - minY + (padding * 2)
+        )
+
+        // Create group
+        let group = TemplateGroupView(items: widgetsToGroup, frame: groupFrame, groupType: groupType)
+        group.groupDelegate = self
+        group.selectionDelegate = self
+        selectionManager.registerItem(group)
+
+        contentView.addSubview(group)
+        templateGroups.append(group)
+
+        // Remove widgets from main widgets array (they're now in the group)
+        for widget in widgetsToGroup {
+            widgets.removeAll { $0 === widget }
+            if let selectable = widget as? Selectable {
+                selectionManager.unregisterItem(selectable)
+            }
+        }
+
+        // Clear multi-select state (don't auto-select the group)
+        selectedItemIdentifiersClear()
+        hideMultiSelectToolbar()
+
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+
+    private func selectedItemIdentifiersClear() {
+        // Manually clear the multi-select mode without trying to hide already-hidden items
+        selectionManager.exitMultiSelectMode()
+    }
+
+    private func determineGroupTypeForWidgets(_ widgets: [UIView]) -> WidgetGroupType {
+        // Check if any widget is from an imported group
+        for widget in widgets {
+            if let parentGroup = GroupManager.shared.findParentGroup(for: widget) {
+                if parentGroup.groupType == .importedRecord {
+                    return .importedRecord
+                }
+            }
+        }
+        return .myRecord
+    }
+
+    private func showGroupConflictAlert(reason: String) {
+        let alert = UIAlertController(
+            title: "그룹화 불가",
+            message: reason,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
+
+        // Haptic feedback for error
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+    }
+
+    @objc private func ungroupSelectedWidget() {
+        guard let selectedItem = selectionManager.currentlySelectedItem as? TemplateGroupView else { return }
+
+        // Ungroup items
+        let ungroupedItems = selectedItem.ungroupItems(to: contentView)
+
+        // Re-register widgets
+        for item in ungroupedItems {
+            widgets.append(item)
+            if var selectable = item as? Selectable {
+                selectable.selectionDelegate = self
+                selectionManager.registerItem(selectable)
+            }
+        }
+
+        // Remove group
+        selectionManager.unregisterItem(selectedItem)
+        templateGroups.removeAll { $0 === selectedItem }
+        selectedItem.removeFromSuperview()
+
+        // Exit multi-select mode
+        selectionManager.exitMultiSelectMode()
+        hideMultiSelectToolbar()
+
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+
+    @objc private func exitMultiSelectMode() {
+        selectionManager.exitMultiSelectMode()
+        hideMultiSelectToolbar()
+    }
+
+    // MARK: - Import Workout Group
+    private func addImportedWorkoutGroup(_ importedData: ImportedWorkoutData) {
+        var importedWidgets: [UIView] = []
+        let originalData = importedData.originalData
+
+        // Check if we should use current layout
+        if importedData.useCurrentLayout {
+            importedWidgets = createImportedWidgetsMatchingCurrentLayout(importedData)
+        } else {
+            importedWidgets = createImportedWidgetsWithDefaultLayout(importedData)
+        }
+
+        // Create group from imported widgets if we have more than one
+        guard importedWidgets.count > 1 else {
+            // If only one widget, just add it to the widgets array
+            widgets.append(contentsOf: importedWidgets)
+            for widget in importedWidgets {
+                if let selectable = widget as? Selectable {
+                    selectionManager.registerItem(selectable)
+                }
+            }
+            return
+        }
+
+        // Calculate bounding frame for all imported widgets
+        var minX = CGFloat.greatestFiniteMagnitude
+        var minY = CGFloat.greatestFiniteMagnitude
+        var maxX = CGFloat.leastNormalMagnitude
+        var maxY = CGFloat.leastNormalMagnitude
+
+        for widget in importedWidgets {
+            minX = min(minX, widget.frame.minX)
+            minY = min(minY, widget.frame.minY)
+            maxX = max(maxX, widget.frame.maxX)
+            maxY = max(maxY, widget.frame.maxY)
+        }
+
+        // Add padding
+        let padding: CGFloat = 16
+        let groupFrame = CGRect(
+            x: minX - padding,
+            y: minY - padding,
+            width: maxX - minX + (padding * 2),
+            height: maxY - minY + (padding * 2)
+        )
+
+        // Create group with imported record type
+        let group = TemplateGroupView(
+            items: importedWidgets,
+            frame: groupFrame,
+            groupType: .importedRecord,
+            ownerName: importedData.ownerName
+        )
+        group.groupDelegate = self
+        group.selectionDelegate = self
+        selectionManager.registerItem(group)
+
+        contentView.addSubview(group)
+        templateGroups.append(group)
+
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+
+        print("✅ Added imported workout group for \(importedData.ownerName)")
+    }
+
+    // MARK: - Create Imported Widgets with Default Layout
+    private func createImportedWidgetsWithDefaultLayout(_ importedData: ImportedWorkoutData) -> [UIView] {
+        var importedWidgets: [UIView] = []
+        let startX: CGFloat = 30
+        var currentY: CGFloat = 500  // Start below existing widgets
+        let widgetSize = CGSize(width: 160, height: 80)
+        let routeSize = CGSize(width: 200, height: 150)  // Smaller route widget size
+        let spacing: CGFloat = 10
+
+        // Add owner name label (TextWidget)
+        let ownerWidget = TextWidget()
+        ownerWidget.configure(text: "\(importedData.ownerName)의 기록")
+        ownerWidget.applyColor(.systemOrange)
+        ownerWidget.textDelegate = self
+        ownerWidget.frame = CGRect(x: startX, y: currentY, width: 200, height: 40)
+        ownerWidget.initialSize = CGSize(width: 200, height: 40)
+        contentView.addSubview(ownerWidget)
+        ownerWidget.selectionDelegate = self
+        importedWidgets.append(ownerWidget)
+        currentY += 50
+
+        let originalData = importedData.originalData
+
+        // Add route widget if selected and has route data
+        if importedData.selectedFields.contains(.route) && importedData.hasRoute {
+            let routeMap = RouteMapView()
+            routeMap.setRoute(importedData.routeLocations)
+            // Calculate optimal size based on route aspect ratio
+            let optimalSize = routeMap.calculateOptimalSize(maxDimension: 200)
+            routeMap.frame = CGRect(x: startX, y: currentY, width: optimalSize.width, height: optimalSize.height)
+            routeMap.initialSize = optimalSize
+            contentView.addSubview(routeMap)
+            routeMap.selectionDelegate = self
+            importedWidgets.append(routeMap)
+            currentY += optimalSize.height + spacing
+        }
+
+        // Add distance widget if selected
+        if importedData.selectedFields.contains(.distance) {
+            let w = DistanceWidget()
+            w.configure(distance: originalData.distance)
+            w.frame = CGRect(x: startX, y: currentY, width: widgetSize.width, height: widgetSize.height)
+            w.initialSize = widgetSize
+            contentView.addSubview(w)
+            w.selectionDelegate = self
+            importedWidgets.append(w)
+        }
+
+        // Add duration widget if selected
+        if importedData.selectedFields.contains(.duration) {
+            let w = DurationWidget()
+            w.configure(duration: originalData.duration)
+            w.frame = CGRect(x: startX + widgetSize.width + spacing, y: currentY, width: widgetSize.width, height: widgetSize.height)
+            w.initialSize = widgetSize
+            contentView.addSubview(w)
+            w.selectionDelegate = self
+            importedWidgets.append(w)
+        }
+
+        currentY += widgetSize.height + spacing
+
+        // Add pace widget if selected
+        if importedData.selectedFields.contains(.pace) {
+            let w = PaceWidget()
+            w.configure(pace: originalData.pace)
+            w.frame = CGRect(x: startX, y: currentY, width: widgetSize.width, height: widgetSize.height)
+            w.initialSize = widgetSize
+            contentView.addSubview(w)
+            w.selectionDelegate = self
+            importedWidgets.append(w)
+        }
+
+        // Add speed widget if selected
+        if importedData.selectedFields.contains(.speed) {
+            let w = SpeedWidget()
+            w.configure(speed: originalData.avgSpeed)
+            w.frame = CGRect(x: startX + widgetSize.width + spacing, y: currentY, width: widgetSize.width, height: widgetSize.height)
+            w.initialSize = widgetSize
+            contentView.addSubview(w)
+            w.selectionDelegate = self
+            importedWidgets.append(w)
+        }
+
+        currentY += widgetSize.height + spacing
+
+        // Add calories widget if selected
+        if importedData.selectedFields.contains(.calories) {
+            let w = CaloriesWidget()
+            w.configure(calories: originalData.calories)
+            w.frame = CGRect(x: startX, y: currentY, width: widgetSize.width, height: widgetSize.height)
+            w.initialSize = widgetSize
+            contentView.addSubview(w)
+            w.selectionDelegate = self
+            importedWidgets.append(w)
+        }
+
+        // Add date widget if selected
+        if importedData.selectedFields.contains(.date) {
+            let w = DateWidget()
+            w.configure(startDate: originalData.startDate)
+            w.frame = CGRect(x: startX + widgetSize.width + spacing, y: currentY, width: widgetSize.width, height: widgetSize.height)
+            w.initialSize = widgetSize
+            contentView.addSubview(w)
+            w.selectionDelegate = self
+            importedWidgets.append(w)
+        }
+
+        return importedWidgets
+    }
+
+    // MARK: - Create Imported Widgets Matching Current Layout
+    private func createImportedWidgetsMatchingCurrentLayout(_ importedData: ImportedWorkoutData) -> [UIView] {
+        var importedWidgets: [UIView] = []
+        let originalData = importedData.originalData
+
+        // Gather all widgets including those inside groups
+        var allWidgets: [UIView] = widgets
+        for group in templateGroups {
+            allWidgets.append(contentsOf: group.groupedItems)
+        }
+
+        // First, add owner name label at the top
+        let ownerWidget = TextWidget()
+        ownerWidget.configure(text: "\(importedData.ownerName)의 기록")
+        ownerWidget.applyColor(.systemOrange)
+        ownerWidget.textDelegate = self
+
+        // Find position below existing widgets or at a reasonable offset
+        var maxY: CGFloat = 0
+        for widget in widgets {
+            maxY = max(maxY, widget.frame.maxY)
+        }
+        for group in templateGroups {
+            maxY = max(maxY, group.frame.maxY)
+        }
+        if let routeMap = routeMapView {
+            maxY = max(maxY, routeMap.frame.maxY)
+        }
+        let offsetY = maxY + 30
+
+        ownerWidget.frame = CGRect(x: 30, y: offsetY, width: 200, height: 40)
+        ownerWidget.initialSize = CGSize(width: 200, height: 40)
+        contentView.addSubview(ownerWidget)
+        ownerWidget.selectionDelegate = self
+        importedWidgets.append(ownerWidget)
+
+        // Helper to convert widget frame to contentView coordinates
+        func frameInContentView(_ widget: UIView) -> CGRect {
+            if let superview = widget.superview, superview != contentView {
+                return superview.convert(widget.frame, to: contentView)
+            }
+            return widget.frame
+        }
+
+        // Match each imported field to existing widget positions/sizes
+        for widget in allWidgets {
+            var newWidget: UIView?
+            var shouldAdd = false
+
+            // Create widget based on type if selected
+            if widget is RouteMapView && importedData.selectedFields.contains(.route) && importedData.hasRoute {
+                let routeMap = RouteMapView()
+                routeMap.setRoute(importedData.routeLocations)
+                // Calculate optimal size for the imported route (not copy from existing)
+                let existingFrame = frameInContentView(widget)
+                let maxDimension = max(existingFrame.width, existingFrame.height)
+                let optimalSize = routeMap.calculateOptimalSize(maxDimension: maxDimension)
+                routeMap.frame = CGRect(origin: .zero, size: optimalSize)
+                routeMap.initialSize = optimalSize
+                newWidget = routeMap
+                shouldAdd = true
+            } else if widget is DistanceWidget && importedData.selectedFields.contains(.distance) {
+                let w = DistanceWidget()
+                w.configure(distance: originalData.distance)
+                newWidget = w
+                shouldAdd = true
+            } else if widget is DurationWidget && importedData.selectedFields.contains(.duration) {
+                let w = DurationWidget()
+                w.configure(duration: originalData.duration)
+                newWidget = w
+                shouldAdd = true
+            } else if widget is PaceWidget && importedData.selectedFields.contains(.pace) {
+                let w = PaceWidget()
+                w.configure(pace: originalData.pace)
+                newWidget = w
+                shouldAdd = true
+            } else if widget is SpeedWidget && importedData.selectedFields.contains(.speed) {
+                let w = SpeedWidget()
+                w.configure(speed: originalData.avgSpeed)
+                newWidget = w
+                shouldAdd = true
+            } else if widget is CaloriesWidget && importedData.selectedFields.contains(.calories) {
+                let w = CaloriesWidget()
+                w.configure(calories: originalData.calories)
+                newWidget = w
+                shouldAdd = true
+            } else if widget is DateWidget && importedData.selectedFields.contains(.date) {
+                let w = DateWidget()
+                w.configure(startDate: originalData.startDate)
+                newWidget = w
+                shouldAdd = true
+            }
+
+            if shouldAdd, let newWidget = newWidget {
+                // Get original widget's frame in contentView coordinates
+                let originalFrame = frameInContentView(widget)
+
+                // For RouteMapView, use its pre-calculated optimal size, only update position
+                if let routeMap = newWidget as? RouteMapView {
+                    // Center the route widget at the same position as original
+                    let centerX = originalFrame.midX
+                    let centerY = originalFrame.midY + offsetY + 50
+                    let newFrame = CGRect(
+                        x: centerX - routeMap.frame.width / 2,
+                        y: centerY - routeMap.frame.height / 2,
+                        width: routeMap.frame.width,
+                        height: routeMap.frame.height
+                    )
+                    routeMap.frame = newFrame
+                    routeMap.selectionDelegate = self
+                } else {
+                    // Copy position and size from existing widget, offset by Y
+                    let newFrame = CGRect(
+                        x: originalFrame.origin.x,
+                        y: originalFrame.origin.y + offsetY + 50,  // Offset from owner label
+                        width: originalFrame.width,
+                        height: originalFrame.height
+                    )
+                    newWidget.frame = newFrame
+
+                    if var selectable = newWidget as? Selectable {
+                        (newWidget as? BaseStatWidget)?.initialSize = newFrame.size
+                        selectable.selectionDelegate = self
+                    }
+                }
+
+                contentView.addSubview(newWidget)
+                importedWidgets.append(newWidget)
+            }
+        }
+
+        // Also check routeMapView separately
+        if let existingRoute = routeMapView, importedData.selectedFields.contains(.route) && importedData.hasRoute {
+            // Check if we haven't already added a route widget
+            let hasRoute = importedWidgets.contains { $0 is RouteMapView }
+            if !hasRoute {
+                let routeMap = RouteMapView()
+                routeMap.setRoute(importedData.routeLocations)
+                // Calculate optimal size for the imported route
+                let maxDimension = max(existingRoute.frame.width, existingRoute.frame.height)
+                let optimalSize = routeMap.calculateOptimalSize(maxDimension: maxDimension)
+                // Center at the same position as original
+                let centerX = existingRoute.frame.midX
+                let centerY = existingRoute.frame.midY + offsetY + 50
+                let newFrame = CGRect(
+                    x: centerX - optimalSize.width / 2,
+                    y: centerY - optimalSize.height / 2,
+                    width: optimalSize.width,
+                    height: optimalSize.height
+                )
+                routeMap.frame = newFrame
+                routeMap.initialSize = optimalSize
+                routeMap.selectionDelegate = self
+                contentView.addSubview(routeMap)
+                importedWidgets.append(routeMap)
+            }
+        }
+
+        return importedWidgets
+    }
+
     // MARK: - Aspect Ratio Management
     @objc private func aspectRatioChanged() {
         guard let selectedRatio = AspectRatio.allCases[safe: aspectRatioControl.selectedSegmentIndex] else { return }
@@ -408,8 +1050,10 @@ class WorkoutDetailViewController: UIViewController {
         if previousCanvasSize.width > 0 && previousCanvasSize.height > 0 && previousCanvasSize != newCanvasSize {
             let scaleX = newCanvasSize.width / previousCanvasSize.width
             let scaleY = newCanvasSize.height / previousCanvasSize.height
+            // Use area-preserving uniform scale for aspect-ratio-locked widgets (reversible)
+            let uniformScale = sqrt(scaleX * scaleY)
 
-            print("📐 Scaling widgets: \(scaleX) x \(scaleY)")
+            print("📐 Scaling widgets: \(scaleX) x \(scaleY), uniform: \(uniformScale)")
 
             // Scale individual widgets
             for widget in widgets {
@@ -417,22 +1061,21 @@ class WorkoutDetailViewController: UIViewController {
                 var newHeight = widget.frame.height * scaleY
                 var newX = widget.frame.origin.x * scaleX
                 var newY = widget.frame.origin.y * scaleY
-                
+
                 if widget is RouteMapView {
-                    // Maintain aspect ratio for Route Map
-                    let scale = min(scaleX, scaleY)
-                    newWidth = widget.frame.width * scale
-                    newHeight = widget.frame.height * scale
-                    
+                    // Use uniform scale to maintain aspect ratio AND be reversible
+                    newWidth = widget.frame.width * uniformScale
+                    newHeight = widget.frame.height * uniformScale
+
                     // Center the widget in its new relative position
                     let oldCenter = CGPoint(x: widget.frame.midX, y: widget.frame.midY)
                     let newCenterX = oldCenter.x * scaleX
                     let newCenterY = oldCenter.y * scaleY
-                    
+
                     newX = newCenterX - (newWidth / 2)
                     newY = newCenterY - (newHeight / 2)
                 }
-                
+
                 let newFrame = CGRect(
                     x: newX,
                     y: newY,
@@ -486,6 +1129,13 @@ class WorkoutDetailViewController: UIViewController {
 
         if let routeMapView = routeMapView, routeMapView.frame.contains(location) {
             return // Let the route map handle the tap
+        }
+
+        // Check if tapped on any template group
+        for group in templateGroups {
+            if group.frame.contains(location) {
+                return // Let the group handle the tap
+            }
         }
 
         // Tapped on background, deselect all
@@ -832,6 +1482,7 @@ class WorkoutDetailViewController: UIViewController {
     }
 
     private func importTemplate() {
+        documentPickerPurpose = .templateImport
         let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [.json])
         documentPicker.delegate = self
         documentPicker.allowsMultipleSelection = false
@@ -1015,22 +1666,72 @@ class WorkoutDetailViewController: UIViewController {
         for type in SingleWidgetType.allCases {
             let isAdded = !canAddWidget(type)
             let title = isAdded ? "✓ \(type.rawValue)" : type.rawValue
-            
+
             let action = UIAlertAction(title: title, style: .default) { [weak self] _ in
                 self?.addSingleWidget(type, data: data)
             }
-            
+
             action.isEnabled = !isAdded
             actionSheet.addAction(action)
         }
 
+        // 2. Import other's workout record
+        let importAction = UIAlertAction(title: "타인 기록 가져오기", style: .default) { [weak self] _ in
+            self?.showImportWorkoutPicker()
+        }
+        importAction.setValue(UIImage(systemName: "square.and.arrow.down"), forKey: "image")
+        actionSheet.addAction(importAction)
+
         actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
 
         if let popover = actionSheet.popoverPresentationController {
-            popover.barButtonItem = navigationItem.rightBarButtonItems?[1]
+            popover.barButtonItem = navigationItem.rightBarButtonItems?[0]
         }
 
         present(actionSheet, animated: true)
+    }
+
+    // MARK: - Import Workout File Picker
+    private func showImportWorkoutPicker() {
+        documentPickerPurpose = .workoutImport
+
+        // Use custom UTType for .wplaza files, fallback to json/data for compatibility
+        var contentTypes: [UTType] = [.json, .data]
+        if let wplazaType = UTType("com.workoutplaza.workout") {
+            contentTypes.insert(wplazaType, at: 0)
+        }
+
+        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: contentTypes)
+        documentPicker.delegate = self
+        documentPicker.allowsMultipleSelection = false
+        documentPicker.shouldShowFileExtensions = true
+        present(documentPicker, animated: true)
+    }
+
+    private func handleImportedWorkoutFile(at url: URL) {
+        do {
+            let shareableWorkout = try ShareManager.shared.importWorkout(from: url)
+            showImportFieldSelectionSheet(for: shareableWorkout)
+        } catch {
+            let alert = UIAlertController(
+                title: "가져오기 실패",
+                message: error.localizedDescription,
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "확인", style: .default))
+            present(alert, animated: true)
+        }
+    }
+
+    private func showImportFieldSelectionSheet(for workout: ShareableWorkout) {
+        let importVC = ImportWorkoutViewController()
+        importVC.shareableWorkout = workout
+        importVC.importMode = .attachToExisting
+        importVC.attachToWorkout = workoutData
+        importVC.delegate = self
+
+        let navController = UINavigationController(rootViewController: importVC)
+        present(navController, animated: true)
     }
     
     private func addSingleWidget(_ type: SingleWidgetType, data: WorkoutData) {
@@ -1043,7 +1744,8 @@ class WorkoutDetailViewController: UIViewController {
             mapView.setRoute(data.route)
             routeMapView = mapView
             widget = mapView
-            size = CGSize(width: 350, height: 250)
+            // Calculate optimal size based on route aspect ratio
+            size = mapView.calculateOptimalSize(maxDimension: 250)
             
         case .distance:
             let w = DistanceWidget()
@@ -1293,8 +1995,8 @@ class WorkoutDetailViewController: UIViewController {
         contentView.addSubview(mapView)
         widgets.append(mapView)
 
-        // Frame 설정 (SnapKit 제약조건 대신)
-        let mapSize = CGSize(width: 350, height: 250)
+        // Calculate optimal size based on route aspect ratio
+        let mapSize = mapView.calculateOptimalSize(maxDimension: 280)
         let mapY: CGFloat = 70  // instructionLabel 아래 (16 + 약 34 높이 + 20)
         let mapX = (view.bounds.width - mapSize.width) / 2
         mapView.frame = CGRect(x: mapX, y: mapY, width: mapSize.width, height: mapSize.height)
@@ -1542,14 +2244,68 @@ extension WorkoutDetailViewController: BackgroundImageEditorDelegate {
 extension WorkoutDetailViewController: SelectionManagerDelegate {
     func selectionManager(_ manager: SelectionManager, didSelect item: Selectable) {
         updateToolbarItemsState()
+        if manager.isMultiSelectMode {
+            updateMultiSelectToolbarState()
+        }
     }
 
     func selectionManager(_ manager: SelectionManager, didDeselect item: Selectable) {
         updateToolbarItemsState()
+        if manager.isMultiSelectMode {
+            updateMultiSelectToolbarState()
+        }
     }
 
     func selectionManagerDidDeselectAll(_ manager: SelectionManager) {
         updateToolbarItemsState()
+    }
+
+    func selectionManager(_ manager: SelectionManager, didSelectMultiple items: [Selectable]) {
+        updateMultiSelectToolbarState()
+    }
+
+    func selectionManager(_ manager: SelectionManager, didEnterMultiSelectMode: Bool) {
+        if didEnterMultiSelectMode {
+            showMultiSelectToolbar()
+        } else {
+            hideMultiSelectToolbar()
+        }
+    }
+}
+
+// MARK: - TemplateGroupDelegate
+extension WorkoutDetailViewController: TemplateGroupDelegate {
+    func templateGroupDidConfirm(_ group: TemplateGroupView) {
+        // Group confirmed - deselect it
+        selectionManager.deselectItem(group)
+    }
+
+    func templateGroupDidRequestUngroup(_ group: TemplateGroupView) {
+        // Ungroup the items and add them back to contentView
+        let ungroupedItems = group.ungroupItems(to: contentView)
+
+        // Register each item with selection manager
+        for item in ungroupedItems {
+            if var selectable = item as? Selectable {
+                selectable.selectionDelegate = self
+                selectionManager.registerItem(selectable)
+            }
+            // Add to widgets array
+            widgets.append(item)
+        }
+
+        // Remove the group from templateGroups array
+        if let index = templateGroups.firstIndex(where: { $0 === group }) {
+            templateGroups.remove(at: index)
+        }
+
+        // Unregister and remove the group
+        selectionManager.unregisterItem(group)
+        group.removeFromSuperview()
+
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
     }
 }
 
@@ -1589,6 +2345,16 @@ extension WorkoutDetailViewController: UIDocumentPickerDelegate {
             }
         }
 
+        // Route based on why the picker was opened
+        switch documentPickerPurpose {
+        case .workoutImport:
+            handleImportedWorkoutFile(at: fileURL)
+        case .templateImport:
+            handleImportedTemplateFile(at: fileURL)
+        }
+    }
+
+    private func handleImportedTemplateFile(at fileURL: URL) {
         do {
             // Import template
             let template = try TemplateManager.shared.importTemplate(from: fileURL)
@@ -1620,6 +2386,18 @@ extension WorkoutDetailViewController: UIDocumentPickerDelegate {
 
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         controller.dismiss(animated: true)
+    }
+}
+
+// MARK: - ImportWorkoutViewControllerDelegate
+extension WorkoutDetailViewController: ImportWorkoutViewControllerDelegate {
+    func importWorkoutViewController(_ controller: ImportWorkoutViewController, didImport data: ImportedWorkoutData, mode: ImportMode, attachTo: WorkoutData?) {
+        // Add imported workout as a group
+        addImportedWorkoutGroup(data)
+    }
+
+    func importWorkoutViewControllerDidCancel(_ controller: ImportWorkoutViewController) {
+        // Nothing to do
     }
 }
 

@@ -66,6 +66,11 @@ struct WidgetItem: Codable {
     let positionRatio: PositionRatio?
     let sizeRatio: SizeRatio?
 
+    // Group information (version 2.1+)
+    let groupId: String?
+    let groupType: WidgetGroupType?
+    let ownerName: String?  // For imported records
+
     struct Position: Codable {
         let x: CGFloat
         let y: CGFloat
@@ -92,13 +97,19 @@ struct WidgetItem: Codable {
         positionRatio: PositionRatio,
         sizeRatio: SizeRatio,
         color: String? = nil,
-        font: String? = nil
+        font: String? = nil,
+        groupId: String? = nil,
+        groupType: WidgetGroupType? = nil,
+        ownerName: String? = nil
     ) {
         self.type = type
         self.positionRatio = positionRatio
         self.sizeRatio = sizeRatio
         self.color = color
         self.font = font
+        self.groupId = groupId
+        self.groupType = groupType
+        self.ownerName = ownerName
 
         // Legacy fields (will be calculated when needed)
         self.position = Position(x: 0, y: 0)
@@ -111,13 +122,19 @@ struct WidgetItem: Codable {
         position: Position,
         size: Size,
         color: String? = nil,
-        font: String? = nil
+        font: String? = nil,
+        groupId: String? = nil,
+        groupType: WidgetGroupType? = nil,
+        ownerName: String? = nil
     ) {
         self.type = type
         self.position = position
         self.size = size
         self.color = color
         self.font = font
+        self.groupId = groupId
+        self.groupType = groupType
+        self.ownerName = ownerName
 
         // Ratio fields are nil for legacy templates
         self.positionRatio = nil

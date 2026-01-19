@@ -10,18 +10,51 @@ import UIKit
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
+    private var pendingURL: URL?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
-        
+
         window = UIWindow(windowScene: windowScene)
-        
+
         let listVC = WorkoutListViewController()
         let navigationController = UINavigationController(rootViewController: listVC)
         navigationController.navigationBar.prefersLargeTitles = true
-        
+
         window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
+
+        // Handle URL if app was launched with one
+        if let urlContext = connectionOptions.urlContexts.first {
+            // Store URL to handle after view is ready
+            pendingURL = urlContext.url
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.handleIncomingURL(urlContext.url)
+            }
+        }
+    }
+
+    // Handle URLs when app is already running
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        guard let urlContext = URLContexts.first else { return }
+        handleIncomingURL(urlContext.url)
+    }
+
+    private func handleIncomingURL(_ url: URL) {
+        // Only handle .wplaza files
+        guard url.pathExtension.lowercased() == "wplaza" else {
+            print("⚠️ Unsupported file extension: \(url.pathExtension)")
+            return
+        }
+
+        print("📥 Received .wplaza file: \(url.lastPathComponent)")
+
+        // Post notification to handle the file
+        NotificationCenter.default.post(
+            name: .didReceiveSharedWorkout,
+            object: nil,
+            userInfo: ["url": url]
+        )
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

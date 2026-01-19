@@ -32,7 +32,8 @@ class BaseStatWidget: UIView, Selectable {
     // Font scaling properties
     var initialSize: CGSize = .zero
     var baseFontSizes: [String: CGFloat] = [:]  // labelName: baseSize
-    
+    var isGroupManaged: Bool = false  // Prevents auto font scaling when inside a group
+
     // Movement properties
     private var initialCenter: CGPoint = .zero
 
@@ -308,6 +309,26 @@ class BaseStatWidget: UIView, Selectable {
         return min(max(averageScale, 0.5), 3.0)
     }
 
+    /// Update fonts with a specific scale factor (used by group resize)
+    /// This method doesn't call autoResizeToFitContent to prevent resize feedback loops
+    func updateFontsWithScale(_ scale: CGFloat) {
+        if baseFontSizes.isEmpty {
+            baseFontSizes["title"] = 12
+            baseFontSizes["value"] = 24
+            baseFontSizes["unit"] = 14
+        }
+
+        let clampedScale = min(max(scale, 0.5), 3.0)
+
+        let titleSize = (baseFontSizes["title"] ?? 12) * clampedScale
+        let valueSize = (baseFontSizes["value"] ?? 24) * clampedScale
+        let unitSize = (baseFontSizes["unit"] ?? 14) * clampedScale
+
+        titleLabel.font = currentFontStyle.font(size: titleSize, weight: .medium)
+        valueLabel.font = currentFontStyle.font(size: valueSize, weight: .bold)
+        unitLabel.font = currentFontStyle.font(size: unitSize, weight: .regular)
+    }
+
     // MARK: - Hit Testing
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         // Check if touch is on a resize handle first
@@ -327,7 +348,8 @@ class BaseStatWidget: UIView, Selectable {
         super.layoutSubviews()
 
         // Update fonts when size changes (during resize)
-        if initialSize != .zero && bounds.size != initialSize {
+        // But not when managed by a group - group handles font scaling
+        if !isGroupManaged && initialSize != .zero && bounds.size != initialSize {
             updateFonts()
         }
 
@@ -518,6 +540,7 @@ class TextWidget: UIView, Selectable {
     // Font scaling properties
     var initialSize: CGSize = .zero
     var baseFontSize: CGFloat = 20
+    var isGroupManaged: Bool = false  // Prevents auto font scaling when inside a group
 
     // Movement properties
     private var initialCenter: CGPoint = .zero
@@ -719,9 +742,24 @@ class TextWidget: UIView, Selectable {
         return min(max(averageScale, 0.5), 3.0)
     }
 
+    /// Update fonts with a specific scale factor (used by group resize)
+    func updateFontsWithScale(_ scale: CGFloat) {
+        let clampedScale = min(max(scale, 0.5), 3.0)
+        let fontSize = baseFontSize * clampedScale
+        textLabel.font = currentFontStyle.font(size: fontSize, weight: .bold)
+    }
+
     // MARK: - Layout
     override func layoutSubviews() {
         super.layoutSubviews()
+
+        // Don't auto-update fonts when managed by a group - group handles font scaling
+        guard !isGroupManaged else {
+            if isSelected {
+                updateSelectionBorder()
+            }
+            return
+        }
 
         // Always update fonts when size changes
         if !transform.isIdentity {
@@ -734,8 +772,6 @@ class TextWidget: UIView, Selectable {
             let clampedSize = min(max(fontSize, baseFontSize * 0.5), baseFontSize * 3.0)
 
             textLabel.font = currentFontStyle.font(size: clampedSize, weight: .bold)
-
-            print("📏 TextWidget layoutSubviews: bounds=\(bounds.size), initial=\(initialSize), scale=\(scaleFactor), fontSize=\(clampedSize)")
         }
 
         // Update selection border if selected
@@ -781,6 +817,7 @@ class LocationWidget: UIView, Selectable {
     // Font scaling properties
     var initialSize: CGSize = .zero
     var baseFontSize: CGFloat = 18
+    var isGroupManaged: Bool = false  // Prevents auto font scaling when inside a group
 
     // Movement properties
     private var initialCenter: CGPoint = .zero
@@ -1057,9 +1094,30 @@ class LocationWidget: UIView, Selectable {
         return min(max(averageScale, 0.5), 3.0)
     }
 
+    /// Update fonts with a specific scale factor (used by group resize)
+    func updateFontsWithScale(_ scale: CGFloat) {
+        let clampedScale = min(max(scale, 0.5), 3.0)
+        let fontSize = baseFontSize * clampedScale
+        locationLabel.font = currentFontStyle.font(size: fontSize, weight: .medium)
+
+        // Scale icon proportionally
+        let iconSize = 20 * clampedScale
+        iconImageView.snp.updateConstraints { make in
+            make.width.height.equalTo(iconSize)
+        }
+    }
+
     // MARK: - Layout
     override func layoutSubviews() {
         super.layoutSubviews()
+
+        // Don't auto-update fonts when managed by a group - group handles font scaling
+        guard !isGroupManaged else {
+            if isSelected {
+                updateSelectionBorder()
+            }
+            return
+        }
 
         if !transform.isIdentity {
             updateFontsFromTransform()
