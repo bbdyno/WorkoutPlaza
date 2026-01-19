@@ -530,15 +530,31 @@ class WorkoutDetailViewController: UIViewController {
     private func updateMultiSelectToolbarState() {
         let selectedItems = selectionManager.getSelectedItems()
         let count = selectedItems.count
-        multiSelectCountLabel.text = "\(count)개 선택"
 
-        // Enable group button only if 2+ non-group items selected
-        let nonGroupItems = selectedItems.filter { !($0 is TemplateGroupView) }
-        groupButton.isEnabled = nonGroupItems.count >= 2
+        // Check if only a group is selected
+        let onlyGroupSelected = count == 1 && selectedItems.first is TemplateGroupView
 
-        // Enable ungroup button only if a group is selected
-        let hasGroup = selectedItems.contains { $0 is TemplateGroupView }
-        ungroupButton.isEnabled = hasGroup && selectedItems.count == 1
+        if onlyGroupSelected {
+            // Group-only mode: hide count label and group button
+            multiSelectCountLabel.isHidden = true
+            groupButton.isHidden = true
+            ungroupButton.isHidden = false
+            ungroupButton.isEnabled = true
+        } else {
+            // Normal multi-select mode
+            multiSelectCountLabel.isHidden = false
+            multiSelectCountLabel.text = "\(count)개 선택"
+            groupButton.isHidden = false
+            ungroupButton.isHidden = false
+
+            // Enable group button only if 2+ non-group items selected
+            let nonGroupItems = selectedItems.filter { !($0 is TemplateGroupView) }
+            groupButton.isEnabled = nonGroupItems.count >= 2
+
+            // Enable ungroup button only if a single group is selected
+            let hasGroup = selectedItems.contains { $0 is TemplateGroupView }
+            ungroupButton.isEnabled = hasGroup && count == 1
+        }
     }
 
     @objc private func groupSelectedWidgets() {
@@ -2469,11 +2485,33 @@ extension WorkoutDetailViewController: SelectionDelegate {
 // MARK: - UIColorPickerViewControllerDelegate
 extension WorkoutDetailViewController: UIColorPickerViewControllerDelegate {
     func colorPickerViewControllerDidFinish(_ viewController: UIColorPickerViewController) {
-        guard var selectedItem = selectionManager.currentlySelectedItem else { return }
-
         let selectedColor = viewController.selectedColor
-        selectedItem.applyColor(selectedColor)
-        ColorPreferences.shared.saveColor(selectedColor, for: selectedItem.itemIdentifier)
+
+        // Check if in multi-select mode (includes group selection)
+        let selectedItems = selectionManager.getSelectedItems()
+
+        if !selectedItems.isEmpty {
+            // Apply color to all selected items
+            for item in selectedItems {
+                if let group = item as? TemplateGroupView {
+                    // Apply color to all widgets inside the group
+                    for widget in group.groupedItems {
+                        if var selectable = widget as? Selectable {
+                            selectable.applyColor(selectedColor)
+                            ColorPreferences.shared.saveColor(selectedColor, for: selectable.itemIdentifier)
+                        }
+                    }
+                } else {
+                    var mutableItem = item
+                    mutableItem.applyColor(selectedColor)
+                    ColorPreferences.shared.saveColor(selectedColor, for: item.itemIdentifier)
+                }
+            }
+        } else if var selectedItem = selectionManager.currentlySelectedItem {
+            // Single selection mode (fallback)
+            selectedItem.applyColor(selectedColor)
+            ColorPreferences.shared.saveColor(selectedColor, for: selectedItem.itemIdentifier)
+        }
     }
 }
 
