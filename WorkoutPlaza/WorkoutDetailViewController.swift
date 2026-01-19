@@ -64,7 +64,6 @@ class WorkoutDetailViewController: UIViewController {
     // Document Picker Purpose Tracking
     private enum DocumentPickerPurpose {
         case templateImport
-        case workoutImport
     }
     private var documentPickerPurpose: DocumentPickerPurpose = .templateImport
 
@@ -161,6 +160,7 @@ class WorkoutDetailViewController: UIViewController {
         setupSelectionAndColorSystem()
         setupMultiSelectToolbar()
         setupLongPressGesture()
+        setupNotificationObservers()
 
         // Configure with workout data if available (from HealthKit)
         if workoutData != nil {
@@ -173,6 +173,45 @@ class WorkoutDetailViewController: UIViewController {
                 self?.addImportedWorkoutGroup(importedData)
             }
         }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleReceivedWorkoutInDetail(_:)),
+            name: .didReceiveSharedWorkoutInDetail,
+            object: nil
+        )
+    }
+
+    @objc private func handleReceivedWorkoutInDetail(_ notification: Notification) {
+        guard let workout = notification.userInfo?["workout"] as? ShareableWorkout else { return }
+
+        // Show options: import as my record or other's record
+        let creatorName = workout.creator?.name ?? "알 수 없음"
+        let workoutType = workout.workout.type
+
+        let alert = UIAlertController(
+            title: "운동 기록 가져오기",
+            message: "\(creatorName)님의 \(workoutType) 기록입니다.\n어떻게 가져올까요?",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "내 기록으로 가져오기", style: .default) { [weak self] _ in
+            self?.importAsMyRecord(workout)
+        })
+
+        alert.addAction(UIAlertAction(title: "타인 기록으로 가져오기", style: .default) { [weak self] _ in
+            self?.showImportFieldSelectionSheet(for: workout)
+        })
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        present(alert, animated: true)
     }
 
     override func viewDidLayoutSubviews() {
@@ -232,6 +271,16 @@ class WorkoutDetailViewController: UIViewController {
         )
 
         navigationItem.rightBarButtonItems = [addButton, layoutButton, shareButton, photoButton, templateButton]
+
+        // Custom back button with confirmation
+        navigationItem.hidesBackButton = true
+        let backButton = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.left"),
+            style: .plain,
+            target: self,
+            action: #selector(backButtonTapped)
+        )
+        navigationItem.leftBarButtonItem = backButton
 
         // Add instruction label
         view.addSubview(instructionLabel)
@@ -784,7 +833,9 @@ class WorkoutDetailViewController: UIViewController {
         let startX: CGFloat = margin
 
         // Find starting Y position - below existing content but within canvas
-        var startY: CGFloat = margin
+        // Start at a lower position so check button is visible (at least 80pt from top)
+        let minStartY: CGFloat = 80
+        var startY: CGFloat = minStartY
         for widget in widgets {
             startY = max(startY, widget.frame.maxY + spacing)
         }
@@ -799,7 +850,7 @@ class WorkoutDetailViewController: UIViewController {
         let minRoomNeeded: CGFloat = 200 * scaleFactor
         if startY + minRoomNeeded > canvasSize.height {
             // Not enough room below - start at a reasonable position
-            startY = max(margin, canvasSize.height * 0.4)
+            startY = max(minStartY, canvasSize.height * 0.4)
         }
 
         var currentY = startY
@@ -1277,6 +1328,22 @@ class WorkoutDetailViewController: UIViewController {
 
         // Tapped on background, deselect all
         selectionManager.deselectAll()
+    }
+
+    // MARK: - Back Navigation
+    @objc private func backButtonTapped() {
+        let alert = UIAlertController(
+            title: "나가시겠습니까?",
+            message: "현재 작업 중인 내용이 모두 사라집니다.",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: "확인", style: .destructive) { [weak self] _ in
+            self?.navigationController?.popViewController(animated: true)
+        })
+
+        present(alert, animated: true)
     }
 
     // MARK: - 이미지 공유
@@ -1812,13 +1879,6 @@ class WorkoutDetailViewController: UIViewController {
             actionSheet.addAction(action)
         }
 
-        // 2. Import other's workout record
-        let importAction = UIAlertAction(title: "타인 기록 가져오기", style: .default) { [weak self] _ in
-            self?.showImportWorkoutPicker()
-        }
-        importAction.setValue(UIImage(systemName: "square.and.arrow.down"), forKey: "image")
-        actionSheet.addAction(importAction)
-
         actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
 
         if let popover = actionSheet.popoverPresentationController {
@@ -1828,56 +1888,78 @@ class WorkoutDetailViewController: UIViewController {
         present(actionSheet, animated: true)
     }
 
-    // MARK: - Import Workout File Picker
-    private func showImportWorkoutPicker() {
-        documentPickerPurpose = .workoutImport
+    // MARK: - Import Workout Methods
 
-        // Use custom UTType for .wplaza files, fallback to json/data for compatibility
-        var contentTypes: [UTType] = [.json, .data]
-        if let wplazaType = UTType("com.workoutplaza.workout") {
-            contentTypes.insert(wplazaType, at: 0)
-        }
+    /// Import as my record - clears existing widgets if any
+    private func importAsMyRecord(_ workout: ShareableWorkout) {
+        let hasExistingContent = !widgets.isEmpty || !templateGroups.isEmpty || routeMapView != nil
 
-        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: contentTypes)
-        documentPicker.delegate = self
-        documentPicker.allowsMultipleSelection = false
-        documentPicker.shouldShowFileExtensions = true
-        present(documentPicker, animated: true)
-    }
-
-    private func handleImportedWorkoutFile(at url: URL) {
-        do {
-            let shareableWorkout = try ShareManager.shared.importWorkout(from: url)
-            // In WorkoutDetail screen, directly import without complex settings
-            importWorkoutDirectly(shareableWorkout)
-        } catch {
+        if hasExistingContent {
+            // Show warning
             let alert = UIAlertController(
-                title: "가져오기 실패",
-                message: error.localizedDescription,
+                title: "기존 내용 삭제",
+                message: "내 기록으로 가져오면 현재 작성 중인 내용이 모두 사라집니다. 계속하시겠습니까?",
                 preferredStyle: .alert
             )
-            alert.addAction(UIAlertAction(title: "확인", style: .default))
+
+            alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+            alert.addAction(UIAlertAction(title: "가져오기", style: .destructive) { [weak self] _ in
+                self?.clearAllWidgetsAndImport(workout)
+            })
+
             present(alert, animated: true)
+        } else {
+            // No existing content, import directly
+            importWorkoutAsMyRecord(workout)
         }
     }
 
-    /// Directly import workout data without going through ImportWorkoutViewController
-    /// Used when importing from WorkoutDetailViewController (already on the editing screen)
-    private func importWorkoutDirectly(_ workout: ShareableWorkout) {
-        let ownerName = workout.creator?.name ?? "알 수 없음"
+    /// Clear all widgets and import as my record
+    private func clearAllWidgetsAndImport(_ workout: ShareableWorkout) {
+        // Clear all existing content
+        for widget in widgets {
+            widget.removeFromSuperview()
+        }
+        widgets.removeAll()
 
-        // Create ImportedWorkoutData with all fields selected and default layout
+        for group in templateGroups {
+            group.removeFromSuperview()
+        }
+        templateGroups.removeAll()
+
+        routeMapView?.removeFromSuperview()
+        routeMapView = nil
+
+        selectionManager.unregisterAllItems()
+
+        // Import as my record
+        importWorkoutAsMyRecord(workout)
+    }
+
+    /// Import workout as my record (no owner name)
+    private func importWorkoutAsMyRecord(_ workout: ShareableWorkout) {
         let importedData = ImportedWorkoutData(
-            ownerName: ownerName,
+            ownerName: "",  // Empty = my record
             originalData: workout.workout,
-            selectedFields: Set(ImportField.allCases),  // Select all fields
-            useCurrentLayout: false  // Use default layout
+            selectedFields: Set(ImportField.allCases),
+            useCurrentLayout: false
         )
 
-        // Directly add imported workout group
         addImportedWorkoutGroup(importedData)
     }
-    
+
+    /// Show ImportWorkoutViewController for importing as other's record
+    private func showImportFieldSelectionSheet(for workout: ShareableWorkout) {
+        let importVC = ImportWorkoutViewController()
+        importVC.shareableWorkout = workout
+        importVC.importMode = .attachToExisting
+        importVC.attachToWorkout = workoutData
+        importVC.delegate = self
+
+        let navController = UINavigationController(rootViewController: importVC)
+        present(navController, animated: true)
+    }
+
     private func addSingleWidget(_ type: SingleWidgetType, data: WorkoutData) {
         var widget: UIView?
         var size = CGSize(width: 160, height: 80)
@@ -2529,8 +2611,6 @@ extension WorkoutDetailViewController: UIDocumentPickerDelegate {
 
         // Route based on why the picker was opened
         switch documentPickerPurpose {
-        case .workoutImport:
-            handleImportedWorkoutFile(at: fileURL)
         case .templateImport:
             handleImportedTemplateFile(at: fileURL)
         }

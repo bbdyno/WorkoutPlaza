@@ -234,4 +234,5 @@ class ShareManager {
 // MARK: - Notification Names
 extension Notification.Name {
     static let didReceiveSharedWorkout = Notification.Name("didReceiveSharedWorkout")
+    static let didReceiveSharedWorkoutInDetail = Notification.Name("didReceiveSharedWorkoutInDetail")
 }
