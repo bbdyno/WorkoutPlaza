@@ -88,6 +88,69 @@ class RouteMapView: UIView, Selectable {
         routeLocations = locations
         drawRoute()
     }
+
+    /// Calculate the optimal frame size for this route based on its aspect ratio
+    /// - Parameter maxDimension: The maximum width or height
+    /// - Returns: The recommended size maintaining the route's aspect ratio
+    func calculateOptimalSize(maxDimension: CGFloat = 250) -> CGSize {
+        guard routeLocations.count >= 2 else {
+            return CGSize(width: maxDimension, height: maxDimension)
+        }
+
+        // Calculate route's bounding box
+        var minLat = routeLocations[0].coordinate.latitude
+        var maxLat = minLat
+        var minLon = routeLocations[0].coordinate.longitude
+        var maxLon = minLon
+
+        for location in routeLocations {
+            minLat = min(minLat, location.coordinate.latitude)
+            maxLat = max(maxLat, location.coordinate.latitude)
+            minLon = min(minLon, location.coordinate.longitude)
+            maxLon = max(maxLon, location.coordinate.longitude)
+        }
+
+        let latRange = maxLat - minLat
+        let lonRange = maxLon - minLon
+
+        // Correct longitude range for latitude (earth curvature)
+        let centerLat = (minLat + maxLat) / 2
+        let lonRangeCorrected = lonRange * cos(centerLat * .pi / 180)
+
+        // Handle edge case where route is a straight line or very small
+        guard latRange > 0.00001 || lonRangeCorrected > 0.00001 else {
+            return CGSize(width: maxDimension, height: maxDimension)
+        }
+
+        // Calculate aspect ratio (width:height)
+        let aspectRatio: CGFloat
+        if lonRangeCorrected > 0.00001 {
+            aspectRatio = lonRangeCorrected / max(latRange, 0.00001)
+        } else {
+            aspectRatio = 0.5 // Vertical route
+        }
+
+        // Determine optimal size maintaining aspect ratio
+        let width: CGFloat
+        let height: CGFloat
+
+        if aspectRatio >= 1.0 {
+            // Wider than tall
+            width = maxDimension
+            height = maxDimension / aspectRatio
+        } else {
+            // Taller than wide
+            height = maxDimension
+            width = maxDimension * aspectRatio
+        }
+
+        // Ensure minimum dimensions
+        let minDimension: CGFloat = 100
+        return CGSize(
+            width: max(width, minDimension),
+            height: max(height, minDimension)
+        )
+    }
     
     private func drawRoute() {
         guard !routeLocations.isEmpty else { return }

@@ -11,6 +11,15 @@ protocol SelectionManagerDelegate: AnyObject {
     func selectionManager(_ manager: SelectionManager, didSelect item: Selectable)
     func selectionManager(_ manager: SelectionManager, didDeselect item: Selectable)
     func selectionManagerDidDeselectAll(_ manager: SelectionManager)
+    // Multi-select delegate methods
+    func selectionManager(_ manager: SelectionManager, didSelectMultiple items: [Selectable])
+    func selectionManager(_ manager: SelectionManager, didEnterMultiSelectMode: Bool)
+}
+
+// Default implementation for optional delegate methods
+extension SelectionManagerDelegate {
+    func selectionManager(_ manager: SelectionManager, didSelectMultiple items: [Selectable]) {}
+    func selectionManager(_ manager: SelectionManager, didEnterMultiSelectMode: Bool) {}
 }
 
 class SelectionManager {
@@ -19,6 +28,10 @@ class SelectionManager {
     weak var delegate: SelectionManagerDelegate?
     private(set) var currentlySelectedItem: Selectable?
     private var allSelectableItems: [Selectable] = []
+
+    // MARK: - Multi-Select Properties
+    private(set) var selectedItemIdentifiers: Set<String> = []
+    private(set) var isMultiSelectMode: Bool = false
 
     // MARK: - Initialization
     init() {}
@@ -32,19 +45,34 @@ class SelectionManager {
     }
 
     func unregisterItem(_ item: Selectable) {
+        // Hide selection state first to clean up resize handles
+        if item.isSelected || selectedItemIdentifiers.contains(item.itemIdentifier) {
+            item.hideSelectionState()
+        }
+
         allSelectableItems.removeAll { $0.itemIdentifier == item.itemIdentifier }
         if currentlySelectedItem?.itemIdentifier == item.itemIdentifier {
             currentlySelectedItem = nil
         }
+        // Remove from multi-select as well
+        selectedItemIdentifiers.remove(item.itemIdentifier)
     }
 
     func unregisterAllItems() {
         allSelectableItems.removeAll()
         currentlySelectedItem = nil
+        selectedItemIdentifiers.removeAll()
+        isMultiSelectMode = false
     }
 
-    // MARK: - Selection Management
+    // MARK: - Selection Management (Single Select)
     func selectItem(_ item: Selectable) {
+        // If in multi-select mode, use toggle instead
+        if isMultiSelectMode {
+            toggleSelection(item)
+            return
+        }
+
         // Deselect current item if different
         if let currentItem = currentlySelectedItem,
            currentItem.itemIdentifier != item.itemIdentifier {
@@ -70,21 +98,134 @@ class SelectionManager {
             currentlySelectedItem = nil
             delegate?.selectionManager(self, didDeselect: item)
         }
+
+        // Remove from multi-select as well
+        selectedItemIdentifiers.remove(item.itemIdentifier)
     }
 
     func deselectAll() {
+        // Deselect single selection
         if let selectedItem = currentlySelectedItem {
             deselectItem(selectedItem)
-            delegate?.selectionManagerDidDeselectAll(self)
         }
+
+        // Deselect all multi-selected items
+        for identifier in selectedItemIdentifiers {
+            if let item = allSelectableItems.first(where: { $0.itemIdentifier == identifier }) {
+                item.hideSelectionState()
+            }
+        }
+        selectedItemIdentifiers.removeAll()
+
+        // Exit multi-select mode
+        if isMultiSelectMode {
+            isMultiSelectMode = false
+            delegate?.selectionManager(self, didEnterMultiSelectMode: false)
+        }
+
+        delegate?.selectionManagerDidDeselectAll(self)
+    }
+
+    // MARK: - Multi-Select Management
+
+    /// Enter multi-select mode
+    func enterMultiSelectMode() {
+        guard !isMultiSelectMode else { return }
+
+        isMultiSelectMode = true
+
+        // If there's a current single selection, add it to multi-select
+        if let currentItem = currentlySelectedItem {
+            selectedItemIdentifiers.insert(currentItem.itemIdentifier)
+        }
+
+        delegate?.selectionManager(self, didEnterMultiSelectMode: true)
+    }
+
+    /// Exit multi-select mode
+    func exitMultiSelectMode() {
+        guard isMultiSelectMode else { return }
+
+        // Hide all multi-selected items' selection state
+        for identifier in selectedItemIdentifiers {
+            if let item = allSelectableItems.first(where: { $0.itemIdentifier == identifier }) {
+                item.hideSelectionState()
+            }
+        }
+
+        selectedItemIdentifiers.removeAll()
+        isMultiSelectMode = false
+        currentlySelectedItem = nil
+
+        delegate?.selectionManager(self, didEnterMultiSelectMode: false)
+        delegate?.selectionManagerDidDeselectAll(self)
+    }
+
+    /// Toggle selection of an item in multi-select mode
+    func toggleSelection(_ item: Selectable) {
+        if selectedItemIdentifiers.contains(item.itemIdentifier) {
+            // Deselect
+            selectedItemIdentifiers.remove(item.itemIdentifier)
+            item.hideSelectionState()
+            delegate?.selectionManager(self, didDeselect: item)
+        } else {
+            // Select
+            selectedItemIdentifiers.insert(item.itemIdentifier)
+            item.showSelectionState()
+            delegate?.selectionManager(self, didSelect: item)
+        }
+
+        // Notify about current selection
+        let selectedItems = getSelectedItems()
+        delegate?.selectionManager(self, didSelectMultiple: selectedItems)
+    }
+
+    /// Select multiple items at once
+    func selectMultiple(_ items: [Selectable]) {
+        // Enter multi-select mode if not already
+        if !isMultiSelectMode {
+            enterMultiSelectMode()
+        }
+
+        for item in items {
+            if !selectedItemIdentifiers.contains(item.itemIdentifier) {
+                selectedItemIdentifiers.insert(item.itemIdentifier)
+                item.showSelectionState()
+            }
+        }
+
+        delegate?.selectionManager(self, didSelectMultiple: getSelectedItems())
+    }
+
+    /// Get all currently selected items
+    func getSelectedItems() -> [Selectable] {
+        return allSelectableItems.filter { selectedItemIdentifiers.contains($0.itemIdentifier) }
+    }
+
+    /// Get all registered selectable items
+    func getAllItems() -> [Selectable] {
+        return allSelectableItems
     }
 
     // MARK: - Query
     var hasSelection: Bool {
+        if isMultiSelectMode {
+            return !selectedItemIdentifiers.isEmpty
+        }
         return currentlySelectedItem != nil
     }
 
+    var selectedCount: Int {
+        if isMultiSelectMode {
+            return selectedItemIdentifiers.count
+        }
+        return currentlySelectedItem != nil ? 1 : 0
+    }
+
     func isSelected(_ item: Selectable) -> Bool {
+        if isMultiSelectMode {
+            return selectedItemIdentifiers.contains(item.itemIdentifier)
+        }
         return currentlySelectedItem?.itemIdentifier == item.itemIdentifier
     }
 }

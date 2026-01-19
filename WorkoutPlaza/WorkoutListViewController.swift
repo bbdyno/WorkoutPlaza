@@ -58,6 +58,101 @@ class WorkoutListViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         requestHealthKitAuthorization()
+        setupNotificationObservers()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleReceivedWorkoutFile(_:)),
+            name: .didReceiveSharedWorkout,
+            object: nil
+        )
+    }
+
+    @objc private func handleReceivedWorkoutFile(_ notification: Notification) {
+        guard let url = notification.userInfo?["url"] as? URL else { return }
+
+        do {
+            let shareableWorkout = try ShareManager.shared.importWorkout(from: url)
+            showImportOptions(for: shareableWorkout, fileURL: url)
+        } catch {
+            showImportError(error)
+        }
+    }
+
+    private func showImportOptions(for workout: ShareableWorkout, fileURL: URL) {
+        let creatorName = workout.creator?.name ?? "알 수 없음"
+        let workoutType = workout.workout.type
+
+        let alert = UIAlertController(
+            title: "운동 기록 가져오기",
+            message: "\(creatorName)님의 \(workoutType) 기록을 가져왔습니다.\n어떻게 처리할까요?",
+            preferredStyle: .alert
+        )
+
+        // Option 1: Create new record
+        alert.addAction(UIAlertAction(title: "내 기록 작성", style: .default) { [weak self] _ in
+            self?.openImportWorkoutViewController(with: workout, mode: .createNew)
+        })
+
+        // Option 2: Attach to existing record
+        alert.addAction(UIAlertAction(title: "기존 기록에 첨부", style: .default) { [weak self] _ in
+            self?.showWorkoutSelectionForAttachment(workout: workout)
+        })
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        present(alert, animated: true)
+    }
+
+    private func openImportWorkoutViewController(with workout: ShareableWorkout, mode: ImportMode, attachTo: WorkoutData? = nil) {
+        let importVC = ImportWorkoutViewController()
+        importVC.shareableWorkout = workout
+        importVC.importMode = mode
+        importVC.attachToWorkout = attachTo
+        importVC.delegate = self
+
+        let navController = UINavigationController(rootViewController: importVC)
+        present(navController, animated: true)
+    }
+
+    private func showWorkoutSelectionForAttachment(workout: ShareableWorkout) {
+        let alert = UIAlertController(
+            title: "기록 선택",
+            message: "타인의 기록을 첨부할 내 운동 기록을 선택하세요",
+            preferredStyle: .actionSheet
+        )
+
+        // Show recent workouts
+        for (index, myWorkout) in allWorkouts.prefix(5).enumerated() {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "MM/dd HH:mm"
+            let dateString = dateFormatter.string(from: myWorkout.startDate)
+            let title = "\(myWorkout.workoutType) - \(dateString)"
+
+            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                self?.openImportWorkoutViewController(with: workout, mode: .attachToExisting, attachTo: myWorkout)
+            })
+        }
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        present(alert, animated: true)
+    }
+
+    private func showImportError(_ error: Error) {
+        let alert = UIAlertController(
+            title: "가져오기 실패",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
     }
     
     private func setupUI() {
@@ -184,19 +279,134 @@ extension WorkoutListViewController: UITableViewDelegate, UITableViewDataSource 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return filteredWorkouts.count
     }
-    
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "WorkoutCell", for: indexPath) as! WorkoutCell
         cell.configure(with: filteredWorkouts[indexPath.row])
         return cell
     }
-    
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        
+
         let detailVC = WorkoutDetailViewController()
         detailVC.workoutData = filteredWorkouts[indexPath.row]
         navigationController?.pushViewController(detailVC, animated: true)
+    }
+
+    // MARK: - Swipe Actions
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let workout = filteredWorkouts[indexPath.row]
+
+        // Share action
+        let shareAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completionHandler in
+            self?.showShareOptions(for: workout, at: indexPath)
+            completionHandler(true)
+        }
+        shareAction.image = UIImage(systemName: "square.and.arrow.up")
+        shareAction.backgroundColor = .systemBlue
+
+        return UISwipeActionsConfiguration(actions: [shareAction])
+    }
+
+    private func showShareOptions(for workout: WorkoutData, at indexPath: IndexPath) {
+        let alert = UIAlertController(title: "공유", message: "공유 방식을 선택하세요", preferredStyle: .actionSheet)
+
+        // Share as .wplaza file
+        alert.addAction(UIAlertAction(title: "운동 데이터 공유 (.wplaza)", style: .default) { [weak self] _ in
+            self?.shareWorkoutAsFile(workout)
+        })
+
+        // Share with creator name
+        alert.addAction(UIAlertAction(title: "이름과 함께 공유 (.wplaza)", style: .default) { [weak self] _ in
+            self?.showCreatorNameInput(for: workout)
+        })
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        // iPad support
+        if let popover = alert.popoverPresentationController,
+           let cell = tableView.cellForRow(at: indexPath) {
+            popover.sourceView = cell
+            popover.sourceRect = cell.bounds
+        }
+
+        present(alert, animated: true)
+    }
+
+    private func shareWorkoutAsFile(_ workout: WorkoutData, creatorName: String? = nil) {
+        do {
+            let fileURL = try ShareManager.shared.exportWorkout(workout, creatorName: creatorName)
+            ShareManager.shared.presentShareSheet(for: fileURL, from: self)
+        } catch {
+            showShareError(error)
+        }
+    }
+
+    private func showCreatorNameInput(for workout: WorkoutData) {
+        let alert = UIAlertController(
+            title: "이름 입력",
+            message: "공유할 때 표시될 이름을 입력하세요",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.placeholder = "이름"
+        }
+
+        alert.addAction(UIAlertAction(title: "공유", style: .default) { [weak self, weak alert] _ in
+            let name = alert?.textFields?.first?.text
+            self?.shareWorkoutAsFile(workout, creatorName: name)
+        })
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        present(alert, animated: true)
+    }
+
+    private func showShareError(_ error: Error) {
+        let alert = UIAlertController(
+            title: "공유 실패",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - ImportWorkoutViewControllerDelegate
+extension WorkoutListViewController: ImportWorkoutViewControllerDelegate {
+    func importWorkoutViewController(_ controller: ImportWorkoutViewController, didImport data: ImportedWorkoutData, mode: ImportMode, attachTo: WorkoutData?) {
+        switch mode {
+        case .createNew:
+            // Open WorkoutDetailViewController with imported data
+            // For now, show a success message
+            showImportSuccess(ownerName: data.ownerName)
+
+        case .attachToExisting:
+            if let workoutData = attachTo {
+                // Open WorkoutDetailViewController with the workout and imported data
+                let detailVC = WorkoutDetailViewController()
+                detailVC.workoutData = workoutData
+                detailVC.importedWorkoutData = data
+                navigationController?.pushViewController(detailVC, animated: true)
+            }
+        }
+    }
+
+    func importWorkoutViewControllerDidCancel(_ controller: ImportWorkoutViewController) {
+        // Nothing to do
+    }
+
+    private func showImportSuccess(ownerName: String) {
+        let alert = UIAlertController(
+            title: "가져오기 완료",
+            message: "\(ownerName)님의 기록을 성공적으로 가져왔습니다.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
     }
 }
 
