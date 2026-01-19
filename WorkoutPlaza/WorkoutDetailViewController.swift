@@ -161,11 +161,15 @@ class WorkoutDetailViewController: UIViewController {
         setupSelectionAndColorSystem()
         setupMultiSelectToolbar()
         setupLongPressGesture()
-        configureWithWorkoutData()
 
-        // Handle imported workout data if present
+        // Configure with workout data if available (from HealthKit)
+        if workoutData != nil {
+            configureWithWorkoutData()
+        }
+
+        // Handle imported workout data if present (independent of health data)
         if let importedData = importedWorkoutData {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                 self?.addImportedWorkoutGroup(importedData)
             }
         }
@@ -720,12 +724,16 @@ class WorkoutDetailViewController: UIViewController {
             height: maxY - minY + (padding * 2)
         )
 
-        // Create group with imported record type
+        // Determine group type: myRecord if no owner name (createNew mode), importedRecord otherwise
+        let groupType: WidgetGroupType = importedData.ownerName.isEmpty ? .myRecord : .importedRecord
+        let ownerName: String? = importedData.ownerName.isEmpty ? nil : importedData.ownerName
+
+        // Create group
         let group = TemplateGroupView(
             items: importedWidgets,
             frame: groupFrame,
-            groupType: .importedRecord,
-            ownerName: importedData.ownerName
+            groupType: groupType,
+            ownerName: ownerName
         )
         group.groupDelegate = self
         group.selectionDelegate = self
@@ -738,29 +746,62 @@ class WorkoutDetailViewController: UIViewController {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
 
-        print("✅ Added imported workout group for \(importedData.ownerName)")
+        print("✅ Added workout group (type: \(groupType), owner: \(ownerName ?? "self"))")
     }
 
     // MARK: - Create Imported Widgets with Default Layout
     private func createImportedWidgetsWithDefaultLayout(_ importedData: ImportedWorkoutData) -> [UIView] {
         var importedWidgets: [UIView] = []
-        let startX: CGFloat = 30
-        var currentY: CGFloat = 500  // Start below existing widgets
-        let widgetSize = CGSize(width: 160, height: 80)
-        let routeSize = CGSize(width: 200, height: 150)  // Smaller route widget size
+
+        // Get canvas size for boundary calculations
+        let canvasSize = contentView.bounds.size
+        let margin: CGFloat = 20
         let spacing: CGFloat = 10
 
-        // Add owner name label (TextWidget)
-        let ownerWidget = TextWidget()
-        ownerWidget.configure(text: "\(importedData.ownerName)의 기록")
-        ownerWidget.applyColor(.systemOrange)
-        ownerWidget.textDelegate = self
-        ownerWidget.frame = CGRect(x: startX, y: currentY, width: 200, height: 40)
-        ownerWidget.initialSize = CGSize(width: 200, height: 40)
-        contentView.addSubview(ownerWidget)
-        ownerWidget.selectionDelegate = self
-        importedWidgets.append(ownerWidget)
-        currentY += 50
+        // Calculate scale factor to fit within canvas
+        let availableWidth = canvasSize.width - (margin * 2)
+        let baseWidgetWidth: CGFloat = 160
+        let twoColumnWidth = (baseWidgetWidth * 2) + spacing
+        let scaleFactor = min(1.0, availableWidth / twoColumnWidth)
+
+        let widgetSize = CGSize(width: baseWidgetWidth * scaleFactor, height: 80 * scaleFactor)
+        let startX: CGFloat = margin
+
+        // Find starting Y position - below existing content but within canvas
+        var startY: CGFloat = margin
+        for widget in widgets {
+            startY = max(startY, widget.frame.maxY + spacing)
+        }
+        for group in templateGroups {
+            startY = max(startY, group.frame.maxY + spacing)
+        }
+        if let routeMap = routeMapView {
+            startY = max(startY, routeMap.frame.maxY + spacing)
+        }
+
+        // Ensure starting position is within canvas (with room for at least some widgets)
+        let minRoomNeeded: CGFloat = 200 * scaleFactor
+        if startY + minRoomNeeded > canvasSize.height {
+            // Not enough room below - start at a reasonable position
+            startY = max(margin, canvasSize.height * 0.4)
+        }
+
+        var currentY = startY
+
+        // Add owner name label (TextWidget) - only if owner name is provided (for imported records)
+        if !importedData.ownerName.isEmpty {
+            let ownerWidget = TextWidget()
+            ownerWidget.configure(text: "\(importedData.ownerName)의 기록")
+            ownerWidget.applyColor(.systemOrange)
+            ownerWidget.textDelegate = self
+            let ownerSize = CGSize(width: 200 * scaleFactor, height: 40 * scaleFactor)
+            ownerWidget.frame = CGRect(x: startX, y: currentY, width: ownerSize.width, height: ownerSize.height)
+            ownerWidget.initialSize = ownerSize
+            contentView.addSubview(ownerWidget)
+            ownerWidget.selectionDelegate = self
+            importedWidgets.append(ownerWidget)
+            currentY += ownerSize.height + spacing
+        }
 
         let originalData = importedData.originalData
 
@@ -768,8 +809,9 @@ class WorkoutDetailViewController: UIViewController {
         if importedData.selectedFields.contains(.route) && importedData.hasRoute {
             let routeMap = RouteMapView()
             routeMap.setRoute(importedData.routeLocations)
-            // Calculate optimal size based on route aspect ratio
-            let optimalSize = routeMap.calculateOptimalSize(maxDimension: 200)
+            // Calculate optimal size based on route aspect ratio, constrained by canvas
+            let maxRouteDimension = min(200 * scaleFactor, availableWidth * 0.6)
+            let optimalSize = routeMap.calculateOptimalSize(maxDimension: maxRouteDimension)
             routeMap.frame = CGRect(x: startX, y: currentY, width: optimalSize.width, height: optimalSize.height)
             routeMap.initialSize = optimalSize
             contentView.addSubview(routeMap)
@@ -856,17 +898,15 @@ class WorkoutDetailViewController: UIViewController {
         var importedWidgets: [UIView] = []
         let originalData = importedData.originalData
 
+        // Get canvas size for boundary calculations
+        let canvasSize = contentView.bounds.size
+        let margin: CGFloat = 20
+
         // Gather all widgets including those inside groups
         var allWidgets: [UIView] = widgets
         for group in templateGroups {
             allWidgets.append(contentsOf: group.groupedItems)
         }
-
-        // First, add owner name label at the top
-        let ownerWidget = TextWidget()
-        ownerWidget.configure(text: "\(importedData.ownerName)의 기록")
-        ownerWidget.applyColor(.systemOrange)
-        ownerWidget.textDelegate = self
 
         // Find position below existing widgets or at a reasonable offset
         var maxY: CGFloat = 0
@@ -879,13 +919,40 @@ class WorkoutDetailViewController: UIViewController {
         if let routeMap = routeMapView {
             maxY = max(maxY, routeMap.frame.maxY)
         }
-        let offsetY = maxY + 30
 
-        ownerWidget.frame = CGRect(x: 30, y: offsetY, width: 200, height: 40)
-        ownerWidget.initialSize = CGSize(width: 200, height: 40)
-        contentView.addSubview(ownerWidget)
-        ownerWidget.selectionDelegate = self
-        importedWidgets.append(ownerWidget)
+        // Calculate offset but ensure it stays within canvas
+        var offsetY = maxY + 30
+        // If offsetY would place content outside canvas, start at a reasonable position
+        if offsetY > canvasSize.height * 0.7 {
+            offsetY = max(margin, canvasSize.height * 0.4)
+        }
+
+        // Calculate scale factor if content would exceed canvas width
+        let availableWidth = canvasSize.width - (margin * 2)
+        var scaleFactor: CGFloat = 1.0
+
+        // Check max width of existing widgets to determine if scaling is needed
+        var maxWidgetWidth: CGFloat = 0
+        for widget in allWidgets {
+            maxWidgetWidth = max(maxWidgetWidth, widget.frame.maxX)
+        }
+        if maxWidgetWidth > availableWidth {
+            scaleFactor = availableWidth / maxWidgetWidth
+        }
+
+        // Add owner name label at the top - only if owner name is provided (for imported records)
+        if !importedData.ownerName.isEmpty {
+            let ownerWidget = TextWidget()
+            ownerWidget.configure(text: "\(importedData.ownerName)의 기록")
+            ownerWidget.applyColor(.systemOrange)
+            ownerWidget.textDelegate = self
+            let ownerSize = CGSize(width: 200 * scaleFactor, height: 40 * scaleFactor)
+            ownerWidget.frame = CGRect(x: margin, y: offsetY, width: ownerSize.width, height: ownerSize.height)
+            ownerWidget.initialSize = ownerSize
+            contentView.addSubview(ownerWidget)
+            ownerWidget.selectionDelegate = self
+            importedWidgets.append(ownerWidget)
+        }
 
         // Helper to convert widget frame to contentView coordinates
         func frameInContentView(_ widget: UIView) -> CGRect {
@@ -947,28 +1014,41 @@ class WorkoutDetailViewController: UIViewController {
             if shouldAdd, let newWidget = newWidget {
                 // Get original widget's frame in contentView coordinates
                 let originalFrame = frameInContentView(widget)
+                let ownerOffset: CGFloat = importedData.ownerName.isEmpty ? 0 : 50 * scaleFactor
 
                 // For RouteMapView, use its pre-calculated optimal size, only update position
                 if let routeMap = newWidget as? RouteMapView {
-                    // Center the route widget at the same position as original
-                    let centerX = originalFrame.midX
-                    let centerY = originalFrame.midY + offsetY + 50
-                    let newFrame = CGRect(
-                        x: centerX - routeMap.frame.width / 2,
-                        y: centerY - routeMap.frame.height / 2,
-                        width: routeMap.frame.width,
-                        height: routeMap.frame.height
+                    // Scale and center the route widget
+                    let scaledWidth = routeMap.frame.width * scaleFactor
+                    let scaledHeight = routeMap.frame.height * scaleFactor
+                    let centerX = originalFrame.midX * scaleFactor
+                    let centerY = (originalFrame.midY * scaleFactor) + offsetY + ownerOffset
+
+                    var newFrame = CGRect(
+                        x: centerX - scaledWidth / 2,
+                        y: centerY - scaledHeight / 2,
+                        width: scaledWidth,
+                        height: scaledHeight
                     )
+
+                    // Ensure within canvas bounds
+                    newFrame = constrainFrameToCanvas(newFrame, canvasSize: canvasSize, margin: margin)
+
                     routeMap.frame = newFrame
+                    routeMap.initialSize = newFrame.size
                     routeMap.selectionDelegate = self
                 } else {
-                    // Copy position and size from existing widget, offset by Y
-                    let newFrame = CGRect(
-                        x: originalFrame.origin.x,
-                        y: originalFrame.origin.y + offsetY + 50,  // Offset from owner label
-                        width: originalFrame.width,
-                        height: originalFrame.height
+                    // Copy position and size from existing widget, scaled and offset by Y
+                    var newFrame = CGRect(
+                        x: originalFrame.origin.x * scaleFactor,
+                        y: (originalFrame.origin.y * scaleFactor) + offsetY + ownerOffset,
+                        width: originalFrame.width * scaleFactor,
+                        height: originalFrame.height * scaleFactor
                     )
+
+                    // Ensure within canvas bounds
+                    newFrame = constrainFrameToCanvas(newFrame, canvasSize: canvasSize, margin: margin)
+
                     newWidget.frame = newFrame
 
                     if var selectable = newWidget as? Selectable {
@@ -989,20 +1069,26 @@ class WorkoutDetailViewController: UIViewController {
             if !hasRoute {
                 let routeMap = RouteMapView()
                 routeMap.setRoute(importedData.routeLocations)
-                // Calculate optimal size for the imported route
-                let maxDimension = max(existingRoute.frame.width, existingRoute.frame.height)
+                // Calculate optimal size for the imported route, scaled
+                let maxDimension = max(existingRoute.frame.width, existingRoute.frame.height) * scaleFactor
                 let optimalSize = routeMap.calculateOptimalSize(maxDimension: maxDimension)
-                // Center at the same position as original
-                let centerX = existingRoute.frame.midX
-                let centerY = existingRoute.frame.midY + offsetY + 50
-                let newFrame = CGRect(
+                let ownerOffset: CGFloat = importedData.ownerName.isEmpty ? 0 : 50 * scaleFactor
+                // Center at the same position as original, scaled
+                let centerX = existingRoute.frame.midX * scaleFactor
+                let centerY = (existingRoute.frame.midY * scaleFactor) + offsetY + ownerOffset
+
+                var newFrame = CGRect(
                     x: centerX - optimalSize.width / 2,
                     y: centerY - optimalSize.height / 2,
                     width: optimalSize.width,
                     height: optimalSize.height
                 )
+
+                // Ensure within canvas bounds
+                newFrame = constrainFrameToCanvas(newFrame, canvasSize: canvasSize, margin: margin)
+
                 routeMap.frame = newFrame
-                routeMap.initialSize = optimalSize
+                routeMap.initialSize = newFrame.size
                 routeMap.selectionDelegate = self
                 contentView.addSubview(routeMap)
                 importedWidgets.append(routeMap)
@@ -1010,6 +1096,41 @@ class WorkoutDetailViewController: UIViewController {
         }
 
         return importedWidgets
+    }
+
+    /// Constrain a frame to fit within canvas bounds with margin
+    private func constrainFrameToCanvas(_ frame: CGRect, canvasSize: CGSize, margin: CGFloat) -> CGRect {
+        var constrainedFrame = frame
+
+        // Ensure X is within bounds
+        if constrainedFrame.origin.x < margin {
+            constrainedFrame.origin.x = margin
+        }
+        if constrainedFrame.maxX > canvasSize.width - margin {
+            // First try to move it left
+            constrainedFrame.origin.x = canvasSize.width - margin - constrainedFrame.width
+            // If still out of bounds, scale down width
+            if constrainedFrame.origin.x < margin {
+                constrainedFrame.origin.x = margin
+                constrainedFrame.size.width = canvasSize.width - (margin * 2)
+            }
+        }
+
+        // Ensure Y is within bounds
+        if constrainedFrame.origin.y < margin {
+            constrainedFrame.origin.y = margin
+        }
+        if constrainedFrame.maxY > canvasSize.height - margin {
+            // First try to move it up
+            constrainedFrame.origin.y = canvasSize.height - margin - constrainedFrame.height
+            // If still out of bounds, scale down height
+            if constrainedFrame.origin.y < margin {
+                constrainedFrame.origin.y = margin
+                constrainedFrame.size.height = canvasSize.height - (margin * 2)
+            }
+        }
+
+        return constrainedFrame
     }
 
     // MARK: - Aspect Ratio Management
@@ -1711,7 +1832,8 @@ class WorkoutDetailViewController: UIViewController {
     private func handleImportedWorkoutFile(at url: URL) {
         do {
             let shareableWorkout = try ShareManager.shared.importWorkout(from: url)
-            showImportFieldSelectionSheet(for: shareableWorkout)
+            // In WorkoutDetail screen, directly import without complex settings
+            importWorkoutDirectly(shareableWorkout)
         } catch {
             let alert = UIAlertController(
                 title: "가져오기 실패",
@@ -1723,15 +1845,21 @@ class WorkoutDetailViewController: UIViewController {
         }
     }
 
-    private func showImportFieldSelectionSheet(for workout: ShareableWorkout) {
-        let importVC = ImportWorkoutViewController()
-        importVC.shareableWorkout = workout
-        importVC.importMode = .attachToExisting
-        importVC.attachToWorkout = workoutData
-        importVC.delegate = self
+    /// Directly import workout data without going through ImportWorkoutViewController
+    /// Used when importing from WorkoutDetailViewController (already on the editing screen)
+    private func importWorkoutDirectly(_ workout: ShareableWorkout) {
+        let ownerName = workout.creator?.name ?? "알 수 없음"
 
-        let navController = UINavigationController(rootViewController: importVC)
-        present(navController, animated: true)
+        // Create ImportedWorkoutData with all fields selected and default layout
+        let importedData = ImportedWorkoutData(
+            ownerName: ownerName,
+            originalData: workout.workout,
+            selectedFields: Set(ImportField.allCases),  // Select all fields
+            useCurrentLayout: false  // Use default layout
+        )
+
+        // Directly add imported workout group
+        addImportedWorkoutGroup(importedData)
     }
     
     private func addSingleWidget(_ type: SingleWidgetType, data: WorkoutData) {
@@ -2244,14 +2372,30 @@ extension WorkoutDetailViewController: BackgroundImageEditorDelegate {
 extension WorkoutDetailViewController: SelectionManagerDelegate {
     func selectionManager(_ manager: SelectionManager, didSelect item: Selectable) {
         updateToolbarItemsState()
-        if manager.isMultiSelectMode {
+
+        // If a group is selected, automatically enter multi-select mode and show toolbar
+        if item is TemplateGroupView {
+            // Enter multi-select mode to add the group to selectedItemIdentifiers
+            if !manager.isMultiSelectMode {
+                manager.enterMultiSelectMode()
+            }
+            showMultiSelectToolbar()
+            updateMultiSelectToolbarState()
+        } else if manager.isMultiSelectMode {
             updateMultiSelectToolbarState()
         }
     }
 
     func selectionManager(_ manager: SelectionManager, didDeselect item: Selectable) {
         updateToolbarItemsState()
-        if manager.isMultiSelectMode {
+
+        // Check current selection state
+        let selectedItems = manager.getSelectedItems()
+        let hasSelectedGroup = selectedItems.contains { $0 is TemplateGroupView }
+
+        if selectedItems.isEmpty && !manager.isMultiSelectMode {
+            hideMultiSelectToolbar()
+        } else if manager.isMultiSelectMode || hasSelectedGroup {
             updateMultiSelectToolbarState()
         }
     }
