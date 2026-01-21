@@ -84,8 +84,8 @@ class ResizeHandleView: UIView {
             var newFrame = initialParentFrame
             let snapStep: CGFloat = 5.0
 
-            // Check if aspect ratio should be locked (for RouteMapView and TemplateGroupView)
-            let shouldLockAspectRatio = parentView is RouteMapView || parentView is TemplateGroupView
+            // Check if aspect ratio should be locked (for RouteMapView, TemplateGroupView, and TextPathWidget)
+            let shouldLockAspectRatio = parentView is RouteMapView || parentView is TemplateGroupView || parentView is TextPathWidget
             let aspectRatio = initialParentFrame.width / initialParentFrame.height
 
             if shouldLockAspectRatio {

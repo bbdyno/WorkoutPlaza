@@ -2300,6 +2300,7 @@ class WorkoutDetailViewController: UIViewController {
         selectionManager.registerItem(widget)
         widgets.append(widget)
         contentView.addSubview(widget)
+        contentView.bringSubviewToFront(widget)
 
         // Select the new widget
         selectionManager.selectItem(widget)
@@ -2569,6 +2570,7 @@ class WorkoutDetailViewController: UIViewController {
     
     private func addWidget(_ widget: UIView, size: CGSize, position: CGPoint) {
         contentView.addSubview(widget)
+        contentView.bringSubviewToFront(widget)
         widgets.append(widget)
 
         widget.frame = CGRect(origin: position, size: size)
