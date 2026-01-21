@@ -207,6 +207,24 @@ class SelectionManager {
         return allSelectableItems
     }
 
+    /// Clear selection for group creation (no delegate calls, keeps multi-select mode)
+    func clearSelectionForGroupCreation() {
+        selectedItemIdentifiers.removeAll()
+        currentlySelectedItem = nil
+        // Stay in multi-select mode, don't call delegate
+        isMultiSelectMode = true
+    }
+
+    /// Add item to multi-select without toggling (for group creation)
+    func addToMultiSelect(_ item: Selectable) {
+        if !isMultiSelectMode {
+            isMultiSelectMode = true
+        }
+        selectedItemIdentifiers.insert(item.itemIdentifier)
+        // Don't call showSelectionState here - caller will do it
+        delegate?.selectionManager(self, didSelectMultiple: getSelectedItems())
+    }
+
     // MARK: - Query
     var hasSelection: Bool {
         if isMultiSelectMode {
