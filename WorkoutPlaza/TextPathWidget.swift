@@ -38,18 +38,25 @@ class TextPathWidget: UIView, Selectable {
     /// 텍스트 색상
     private var textColor: UIColor = .white
 
+    /// 기본 텍스트 폰트
+    private var baseFont: UIFont = .boldSystemFont(ofSize: 20)
+
     /// 기본 텍스트 폰트 사이즈
-    private let baseFontSize: CGFloat = 20
+    private var baseFontSize: CGFloat = 20
 
     /// 글자 간격
     private let letterSpacing: CGFloat = 2.0
 
     // MARK: - Initialization
 
-    init(text: String, pathPoints: [CGPoint], frame: CGRect) {
+    init(text: String, pathPoints: [CGPoint], frame: CGRect, color: UIColor = .white, font: UIFont = .boldSystemFont(ofSize: 20)) {
         self.textToRepeat = text
+        self.textColor = color
+        self.baseFont = font
+        self.baseFontSize = font.pointSize
         super.init(frame: frame)
         self.initialSize = frame.size
+        self.currentColor = color
 
         // 경로를 정규화 (0~1 범위로 변환)
         let simplified = Self.simplifyPath(pathPoints, minDistance: 8.0)
@@ -106,6 +113,11 @@ class TextPathWidget: UIView, Selectable {
         guard initialSize.width > 0 else { return baseFontSize }
         let scale = bounds.width / initialSize.width
         return baseFontSize * scale
+    }
+
+    /// 현재 스케일에 맞는 폰트 (스타일 유지)
+    private var currentFont: UIFont {
+        return baseFont.withSize(currentFontSize)
     }
 
     /// 현재 스케일에 맞는 글자 간격 계산
@@ -185,7 +197,7 @@ class TextPathWidget: UIView, Selectable {
     /// 경로를 따라 텍스트 그리기
     private func drawTextAlongPath(in context: CGContext) {
         let textAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.boldSystemFont(ofSize: currentFontSize),
+            .font: currentFont,
             .foregroundColor: textColor
         ]
 
@@ -300,48 +312,348 @@ class TextPathWidget: UIView, Selectable {
 
 class TextPathDrawingOverlay: UIView {
 
+    // MARK: - Drawing State
+    enum DrawingState {
+        case ready      // 드래그 대기 중
+        case drawing    // 드래그 중
+        case preview    // 미리보기 (확인 대기)
+    }
+
+    private(set) var currentState: DrawingState = .ready
+
     /// 사용자가 드래그한 경로의 좌표들
     private(set) var pathPoints: [CGPoint] = []
 
     /// 반복할 텍스트
     var textToRepeat: String = ""
 
-    /// 드래그 완료 콜백
-    var onDrawingComplete: (([CGPoint], CGRect) -> Void)?
+    /// 드래그 완료 콜백 (색상, 폰트 포함)
+    var onDrawingComplete: (([CGPoint], CGRect, UIColor, UIFont) -> Void)?
 
     /// 드래그 취소 콜백
     var onDrawingCancelled: (() -> Void)?
 
-    private let textAttributes: [NSAttributedString.Key: Any] = [
-        .font: UIFont.boldSystemFont(ofSize: 20),
-        .foregroundColor: UIColor.white
+    // MARK: - Style Properties
+    private var selectedColor: UIColor = .white
+    private var selectedFont: UIFont = .boldSystemFont(ofSize: 20)
+
+    private let availableColors: [UIColor] = [
+        .white,
+        .systemYellow,
+        .systemOrange,
+        .systemPink,
+        .systemRed,
+        .systemGreen,
+        .systemBlue,
+        .systemPurple
     ]
 
+    private let availableFonts: [(name: String, font: UIFont)] = [
+        ("기본", .boldSystemFont(ofSize: 20)),
+        ("얇게", .systemFont(ofSize: 20, weight: .light)),
+        ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
+        ("굵게", .systemFont(ofSize: 20, weight: .black))
+    ]
+
+    private var selectedColorIndex: Int = 0
+    private var selectedFontIndex: Int = 0
+
+    // MARK: - UI Components
+    private let guideLabel: UILabel = {
+        let label = UILabel()
+        label.text = "화면을 드래그하여\n텍스트 경로를 그려주세요"
+        label.textColor = .white
+        label.textAlignment = .center
+        label.numberOfLines = 2
+        label.font = .systemFont(ofSize: 18, weight: .medium)
+        return label
+    }()
+
+    private let bottomToolbar: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.7)
+        view.layer.cornerRadius = 16
+        return view
+    }()
+
+    private let colorStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 12
+        stack.alignment = .center
+        stack.distribution = .equalSpacing
+        return stack
+    }()
+
+    private let fontStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.alignment = .center
+        stack.distribution = .fillEqually
+        return stack
+    }()
+
+    private let confirmButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "checkmark.circle.fill"), for: .normal)
+        button.tintColor = .systemGreen
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        button.layer.cornerRadius = 25
+        button.isHidden = true
+        return button
+    }()
+
+    private let cancelButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        button.tintColor = .systemRed
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        button.layer.cornerRadius = 25
+        button.isHidden = true
+        return button
+    }()
+
+    private let redrawButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "arrow.counterclockwise"), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        button.layer.cornerRadius = 20
+        button.isHidden = true
+        return button
+    }()
+
+    private var colorButtons: [UIButton] = []
+    private var fontButtons: [UIButton] = []
+
+    private let letterSpacing: CGFloat = 2.0
+
+    // MARK: - Initialization
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
+        setupUI()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupView()
+        setupUI()
     }
 
+    // MARK: - Setup
     private func setupView() {
-        backgroundColor = UIColor.black.withAlphaComponent(0.3)
+        backgroundColor = UIColor.black.withAlphaComponent(0.5)
         isUserInteractionEnabled = true
 
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         addGestureRecognizer(panGesture)
 
-        // Cancel on tap outside drawing
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         addGestureRecognizer(tapGesture)
     }
 
-    @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
-        // Cancel drawing mode
+    private func setupUI() {
+        // Guide Label
+        addSubview(guideLabel)
+        guideLabel.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            guideLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            guideLabel.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+
+        // Bottom Toolbar
+        addSubview(bottomToolbar)
+        bottomToolbar.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            bottomToolbar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            bottomToolbar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            bottomToolbar.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            bottomToolbar.heightAnchor.constraint(equalToConstant: 120)
+        ])
+
+        // Color Stack
+        bottomToolbar.addSubview(colorStackView)
+        colorStackView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            colorStackView.topAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: 16),
+            colorStackView.centerXAnchor.constraint(equalTo: bottomToolbar.centerXAnchor),
+            colorStackView.heightAnchor.constraint(equalToConstant: 36)
+        ])
+
+        // Create color buttons
+        for (index, color) in availableColors.enumerated() {
+            let button = createColorButton(color: color, index: index)
+            colorButtons.append(button)
+            colorStackView.addArrangedSubview(button)
+        }
+        updateColorSelection()
+
+        // Font Stack
+        bottomToolbar.addSubview(fontStackView)
+        fontStackView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            fontStackView.topAnchor.constraint(equalTo: colorStackView.bottomAnchor, constant: 12),
+            fontStackView.leadingAnchor.constraint(equalTo: bottomToolbar.leadingAnchor, constant: 16),
+            fontStackView.trailingAnchor.constraint(equalTo: bottomToolbar.trailingAnchor, constant: -16),
+            fontStackView.heightAnchor.constraint(equalToConstant: 32)
+        ])
+
+        // Create font buttons
+        for (index, fontInfo) in availableFonts.enumerated() {
+            let button = createFontButton(name: fontInfo.name, index: index)
+            fontButtons.append(button)
+            fontStackView.addArrangedSubview(button)
+        }
+        updateFontSelection()
+
+        // Confirm Button
+        addSubview(confirmButton)
+        confirmButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            confirmButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            confirmButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -20),
+            confirmButton.widthAnchor.constraint(equalToConstant: 50),
+            confirmButton.heightAnchor.constraint(equalToConstant: 50)
+        ])
+        confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
+
+        // Cancel Button
+        addSubview(cancelButton)
+        cancelButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            cancelButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            cancelButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -20),
+            cancelButton.widthAnchor.constraint(equalToConstant: 50),
+            cancelButton.heightAnchor.constraint(equalToConstant: 50)
+        ])
+        cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
+
+        // Redraw Button
+        addSubview(redrawButton)
+        redrawButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            redrawButton.centerXAnchor.constraint(equalTo: centerXAnchor),
+            redrawButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -20),
+            redrawButton.widthAnchor.constraint(equalToConstant: 40),
+            redrawButton.heightAnchor.constraint(equalToConstant: 40)
+        ])
+        redrawButton.addTarget(self, action: #selector(redrawTapped), for: .touchUpInside)
+    }
+
+    private func createColorButton(color: UIColor, index: Int) -> UIButton {
+        let button = UIButton(type: .custom)
+        button.backgroundColor = color
+        button.layer.cornerRadius = 18
+        button.layer.borderWidth = 3
+        button.layer.borderColor = UIColor.clear.cgColor
+        button.tag = index
+        button.addTarget(self, action: #selector(colorButtonTapped(_:)), for: .touchUpInside)
+
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 36),
+            button.heightAnchor.constraint(equalToConstant: 36)
+        ])
+
+        return button
+    }
+
+    private func createFontButton(name: String, index: Int) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle(name, for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.1)
+        button.layer.cornerRadius = 8
+        button.tag = index
+        button.addTarget(self, action: #selector(fontButtonTapped(_:)), for: .touchUpInside)
+        return button
+    }
+
+    // MARK: - Selection Updates
+    private func updateColorSelection() {
+        for (index, button) in colorButtons.enumerated() {
+            button.layer.borderColor = index == selectedColorIndex ?
+                UIColor.white.cgColor : UIColor.clear.cgColor
+            button.transform = index == selectedColorIndex ?
+                CGAffineTransform(scaleX: 1.1, y: 1.1) : .identity
+        }
+        selectedColor = availableColors[selectedColorIndex]
+        setNeedsDisplay()
+    }
+
+    private func updateFontSelection() {
+        for (index, button) in fontButtons.enumerated() {
+            button.backgroundColor = index == selectedFontIndex ?
+                UIColor.white.withAlphaComponent(0.3) : UIColor.white.withAlphaComponent(0.1)
+        }
+        selectedFont = availableFonts[selectedFontIndex].font
+        setNeedsDisplay()
+    }
+
+    // MARK: - Button Actions
+    @objc private func colorButtonTapped(_ sender: UIButton) {
+        selectedColorIndex = sender.tag
+        UIView.animate(withDuration: 0.2) {
+            self.updateColorSelection()
+        }
+    }
+
+    @objc private func fontButtonTapped(_ sender: UIButton) {
+        selectedFontIndex = sender.tag
+        UIView.animate(withDuration: 0.2) {
+            self.updateFontSelection()
+        }
+    }
+
+    @objc private func confirmTapped() {
+        guard pathPoints.count >= 2 else { return }
+        let boundingRect = calculateBoundingRect()
+        onDrawingComplete?(pathPoints, boundingRect, selectedColor, selectedFont)
+    }
+
+    @objc private func cancelTapped() {
         onDrawingCancelled?()
+    }
+
+    @objc private func redrawTapped() {
+        pathPoints.removeAll()
+        currentState = .ready
+        updateUIForState()
+        setNeedsDisplay()
+    }
+
+    // MARK: - State Management
+    private func updateUIForState() {
+        switch currentState {
+        case .ready:
+            guideLabel.isHidden = false
+            confirmButton.isHidden = true
+            cancelButton.isHidden = true
+            redrawButton.isHidden = true
+
+        case .drawing:
+            guideLabel.isHidden = true
+            confirmButton.isHidden = true
+            cancelButton.isHidden = true
+            redrawButton.isHidden = true
+
+        case .preview:
+            guideLabel.isHidden = true
+            confirmButton.isHidden = false
+            cancelButton.isHidden = false
+            redrawButton.isHidden = false
+        }
+    }
+
+    // MARK: - Gesture Handlers
+    @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        // 미리보기 상태가 아닐 때만 취소
+        if currentState == .ready {
+            onDrawingCancelled?()
+        }
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
@@ -350,6 +662,8 @@ class TextPathDrawingOverlay: UIView {
         switch gesture.state {
         case .began:
             pathPoints = [location]
+            currentState = .drawing
+            updateUIForState()
 
         case .changed:
             pathPoints.append(location)
@@ -357,19 +671,34 @@ class TextPathDrawingOverlay: UIView {
 
         case .ended, .cancelled:
             pathPoints.append(location)
-            setNeedsDisplay()
-
-            // Calculate bounding rect
             if pathPoints.count >= 2 {
-                let boundingRect = calculateBoundingRect()
-                onDrawingComplete?(pathPoints, boundingRect)
+                currentState = .preview
             } else {
-                onDrawingCancelled?()
+                currentState = .ready
             }
+            updateUIForState()
+            setNeedsDisplay()
 
         default:
             break
         }
+    }
+
+    // MARK: - Drawing
+    override func draw(_ rect: CGRect) {
+        super.draw(rect)
+
+        guard let context = UIGraphicsGetCurrentContext(),
+              pathPoints.count >= 2 else { return }
+
+        drawTextAlongPath(in: context)
+    }
+
+    private var currentTextAttributes: [NSAttributedString.Key: Any] {
+        return [
+            .font: selectedFont,
+            .foregroundColor: selectedColor
+        ]
     }
 
     private func calculateBoundingRect() -> CGRect {
@@ -387,7 +716,6 @@ class TextPathDrawingOverlay: UIView {
             maxY = max(maxY, point.y)
         }
 
-        // Add padding for text height
         let padding: CGFloat = 30
         return CGRect(
             x: minX - padding,
@@ -397,19 +725,6 @@ class TextPathDrawingOverlay: UIView {
         )
     }
 
-    private let letterSpacing: CGFloat = 2.0
-
-    override func draw(_ rect: CGRect) {
-        super.draw(rect)
-
-        guard let context = UIGraphicsGetCurrentContext(),
-              pathPoints.count >= 2 else { return }
-
-        // Draw text along path only (no path line)
-        drawTextAlongPath(in: context)
-    }
-
-    /// 경로 단순화: 너무 가까운 점들을 제거
     private func simplifyPath(_ points: [CGPoint], minDistance: CGFloat) -> [CGPoint] {
         guard points.count > 2 else { return points }
 
@@ -437,11 +752,9 @@ class TextPathDrawingOverlay: UIView {
     private func drawTextAlongPath(in context: CGContext) {
         guard !textToRepeat.isEmpty else { return }
 
-        // 경로 단순화
         let simplifiedPath = simplifyPath(pathPoints, minDistance: 8.0)
         guard simplifiedPath.count >= 2 else { return }
 
-        // 각 세그먼트의 길이와 누적 거리 계산
         var segmentLengths: [CGFloat] = []
         var cumulativeDistances: [CGFloat] = [0.0]
 
@@ -456,17 +769,15 @@ class TextPathDrawingOverlay: UIView {
         let totalPathLength = cumulativeDistances.last ?? 0
         guard totalPathLength > 0 else { return }
 
-        // 각 글자의 크기 미리 계산
         let characters = Array(textToRepeat)
         var characterWidths: [CGFloat] = []
 
         for char in characters {
             let charString = String(char)
-            let size = charString.size(withAttributes: textAttributes)
+            let size = charString.size(withAttributes: currentTextAttributes)
             characterWidths.append(size.width)
         }
 
-        // 전체 경로를 따라 글자 배치
         var currentDistance: CGFloat = 0.0
         var charIndex = 0
 
@@ -474,16 +785,14 @@ class TextPathDrawingOverlay: UIView {
             let char = characters[charIndex % characters.count]
             let charString = String(char)
             let charWidth = characterWidths[charIndex % characters.count]
-            let charSize = charString.size(withAttributes: textAttributes)
+            let charSize = charString.size(withAttributes: currentTextAttributes)
 
-            // 글자 중심의 경로상 위치
             let charCenterDistance = currentDistance + charWidth / 2.0
 
             if charCenterDistance > totalPathLength {
                 break
             }
 
-            // 이 위치가 어느 세그먼트에 해당하는지 찾기
             var segmentIndex = 0
             for i in 0..<segmentLengths.count {
                 if charCenterDistance <= cumulativeDistances[i + 1] {
@@ -504,7 +813,6 @@ class TextPathDrawingOverlay: UIView {
             let dx = endPoint.x - startPoint.x
             let dy = endPoint.y - startPoint.y
 
-            // 세그먼트 내에서의 위치 계산
             let distanceWithinSegment = charCenterDistance - cumulativeDistances[segmentIndex]
 
             let normalizedDx = dx / segmentLength
@@ -513,10 +821,8 @@ class TextPathDrawingOverlay: UIView {
             let charX = startPoint.x + normalizedDx * distanceWithinSegment
             let charY = startPoint.y + normalizedDy * distanceWithinSegment
 
-            // 각도 계산 (세그먼트 방향 그대로 사용)
             let angle = atan2(dy, dx)
 
-            // 글자 그리기
             context.saveGState()
             context.translateBy(x: charX, y: charY)
             context.rotate(by: angle)
@@ -527,11 +833,10 @@ class TextPathDrawingOverlay: UIView {
                 width: charWidth,
                 height: charSize.height
             )
-            charString.draw(in: drawRect, withAttributes: textAttributes)
+            charString.draw(in: drawRect, withAttributes: currentTextAttributes)
 
             context.restoreGState()
 
-            // 다음 글자 위치로 이동
             currentDistance += charWidth + letterSpacing
             charIndex += 1
         }
@@ -539,6 +844,12 @@ class TextPathDrawingOverlay: UIView {
 
     func reset() {
         pathPoints.removeAll()
+        currentState = .ready
+        selectedColorIndex = 0
+        selectedFontIndex = 0
+        updateColorSelection()
+        updateFontSelection()
+        updateUIForState()
         setNeedsDisplay()
     }
 }

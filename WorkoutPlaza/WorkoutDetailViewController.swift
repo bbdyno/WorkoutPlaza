@@ -2256,8 +2256,13 @@ class WorkoutDetailViewController: UIViewController {
         let overlay = TextPathDrawingOverlay(frame: contentView.bounds)
         overlay.textToRepeat = pendingTextForPath
 
-        overlay.onDrawingComplete = { [weak self] pathPoints, boundingRect in
-            self?.createTextPathWidget(pathPoints: pathPoints, boundingRect: boundingRect)
+        overlay.onDrawingComplete = { [weak self] pathPoints, boundingRect, color, font in
+            self?.createTextPathWidget(
+                pathPoints: pathPoints,
+                boundingRect: boundingRect,
+                color: color,
+                font: font
+            )
             self?.exitTextPathDrawingMode()
         }
 
@@ -2267,9 +2272,6 @@ class WorkoutDetailViewController: UIViewController {
 
         contentView.addSubview(overlay)
         textPathDrawingOverlay = overlay
-
-        // Show instruction toast
-        showToast("드래그하여 텍스트 경로를 그리세요")
     }
 
     private func exitTextPathDrawingMode() {
@@ -2278,7 +2280,12 @@ class WorkoutDetailViewController: UIViewController {
         pendingTextForPath = ""
     }
 
-    private func createTextPathWidget(pathPoints: [CGPoint], boundingRect: CGRect) {
+    private func createTextPathWidget(
+        pathPoints: [CGPoint],
+        boundingRect: CGRect,
+        color: UIColor,
+        font: UIFont
+    ) {
         guard pathPoints.count >= 2 else { return }
 
         // Convert path points to widget's local coordinate system
@@ -2289,11 +2296,13 @@ class WorkoutDetailViewController: UIViewController {
             )
         }
 
-        // Create widget
+        // Create widget with color and font
         let widget = TextPathWidget(
             text: pendingTextForPath,
             pathPoints: localPathPoints,
-            frame: boundingRect
+            frame: boundingRect,
+            color: color,
+            font: font
         )
 
         widget.selectionDelegate = self
