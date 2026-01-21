@@ -238,6 +238,10 @@ class TemplateGroupView: UIView, Selectable {
 
     // MARK: - Actions
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        // If already selected, don't toggle - just keep selected
+        if isSelected {
+            return
+        }
         selectionDelegate?.itemWasSelected(self)
     }
 
@@ -463,6 +467,11 @@ class TemplateGroupView: UIView, Selectable {
 
         // Hide overlay when selected (selection border is more prominent)
         overlayLayer?.isHidden = true
+
+        // Show check button if not confirmed
+        if !isConfirmed {
+            showCheckButton()
+        }
     }
 
     func hideSelectionState() {
@@ -470,8 +479,14 @@ class TemplateGroupView: UIView, Selectable {
         removeSelectionBorder()
         removeResizeHandles()
 
-        // Show overlay when not selected
-        overlayLayer?.isHidden = false
+        // Hide overlay and border when deselected (confirmed groups stay clean)
+        if isConfirmed {
+            overlayLayer?.isHidden = true
+        } else {
+            // For unconfirmed groups, hide overlay but show check button
+            overlayLayer?.isHidden = true
+            showCheckButton()
+        }
     }
 
     func applyColor(_ color: UIColor) {

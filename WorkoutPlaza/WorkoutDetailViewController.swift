@@ -815,9 +815,22 @@ class WorkoutDetailViewController: UIViewController {
             }
         }
 
-        // Clear multi-select state (don't auto-select the group)
-        selectedItemIdentifiersClear()
-        hideMultiSelectToolbar()
+        // Clear selection state without hiding toolbar (manual control)
+        for identifier in selectionManager.selectedItemIdentifiers {
+            if let item = selectionManager.getAllItems().first(where: { $0.itemIdentifier == identifier }) {
+                item.hideSelectionState()
+            }
+        }
+
+        // Directly manipulate selection state for the new group
+        selectionManager.clearSelectionForGroupCreation()
+
+        // Add group to selection
+        selectionManager.addToMultiSelect(group)
+        group.showSelectionState()
+
+        // Update toolbar for group-only mode
+        updateMultiSelectToolbarState()
 
         // Haptic feedback
         let generator = UINotificationFeedbackGenerator()
