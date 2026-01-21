@@ -150,6 +150,11 @@ class WorkoutDetailViewController: UIViewController {
         action: #selector(changeTemplate)
     )
 
+    private lazy var textPathButton: UIButton = createToolbarButton(
+        systemName: "pencil.and.outline",
+        action: #selector(showTextPathInput)
+    )
+
     private lazy var aspectRatioButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("9:16", for: .normal)
@@ -430,6 +435,7 @@ class WorkoutDetailViewController: UIViewController {
         // Add buttons to stack view
         topRightToolbar.addArrangedSubview(aspectRatioButton)
         topRightToolbar.addArrangedSubview(addWidgetButton)
+        topRightToolbar.addArrangedSubview(textPathButton)
         topRightToolbar.addArrangedSubview(layoutTemplateButton)
         topRightToolbar.addArrangedSubview(shareImageButton)
         topRightToolbar.addArrangedSubview(selectPhotoButton)
@@ -2212,6 +2218,91 @@ class WorkoutDetailViewController: UIViewController {
                 selectionManager.selectItem(selectable)
             }
         }
+    }
+
+    // MARK: - Text Path Drawing
+
+    private var textPathDrawingOverlay: TextPathDrawingOverlay?
+    private var pendingTextForPath: String = ""
+
+    @objc private func showTextPathInput() {
+        let alert = UIAlertController(
+            title: "텍스트 패스",
+            message: "경로를 따라 반복할 텍스트를 입력하세요",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.placeholder = "반복할 텍스트 입력"
+            textField.autocapitalizationType = .none
+        }
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        alert.addAction(UIAlertAction(title: "그리기", style: .default) { [weak self, weak alert] _ in
+            guard let self = self,
+                  let text = alert?.textFields?.first?.text,
+                  !text.isEmpty else { return }
+
+            self.pendingTextForPath = text + " "
+            self.enterTextPathDrawingMode()
+        })
+
+        present(alert, animated: true)
+    }
+
+    private func enterTextPathDrawingMode() {
+        // Create overlay for drawing
+        let overlay = TextPathDrawingOverlay(frame: contentView.bounds)
+        overlay.textToRepeat = pendingTextForPath
+
+        overlay.onDrawingComplete = { [weak self] pathPoints, boundingRect in
+            self?.createTextPathWidget(pathPoints: pathPoints, boundingRect: boundingRect)
+            self?.exitTextPathDrawingMode()
+        }
+
+        overlay.onDrawingCancelled = { [weak self] in
+            self?.exitTextPathDrawingMode()
+        }
+
+        contentView.addSubview(overlay)
+        textPathDrawingOverlay = overlay
+
+        // Show instruction toast
+        showToast("드래그하여 텍스트 경로를 그리세요")
+    }
+
+    private func exitTextPathDrawingMode() {
+        textPathDrawingOverlay?.removeFromSuperview()
+        textPathDrawingOverlay = nil
+        pendingTextForPath = ""
+    }
+
+    private func createTextPathWidget(pathPoints: [CGPoint], boundingRect: CGRect) {
+        guard pathPoints.count >= 2 else { return }
+
+        // Convert path points to widget's local coordinate system
+        let localPathPoints = pathPoints.map { point in
+            CGPoint(
+                x: point.x - boundingRect.origin.x,
+                y: point.y - boundingRect.origin.y
+            )
+        }
+
+        // Create widget
+        let widget = TextPathWidget(
+            text: pendingTextForPath,
+            pathPoints: localPathPoints,
+            frame: boundingRect
+        )
+
+        widget.selectionDelegate = self
+        selectionManager.registerItem(widget)
+        widgets.append(widget)
+        contentView.addSubview(widget)
+
+        // Select the new widget
+        selectionManager.selectItem(widget)
     }
 
     // MARK: - 템플릿 변경
