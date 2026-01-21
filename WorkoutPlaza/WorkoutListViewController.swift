@@ -33,7 +33,7 @@ class WorkoutListViewController: UIViewController {
     private let emptyLabel: UILabel = {
         let label = UILabel()
         label.text = "GPS 기록이 있는 운동이 없습니다"
-        label.textColor = .secondaryLabel
+        label.textColor = .lightGray
         label.font = .systemFont(ofSize: 16)
         label.textAlignment = .center
         label.isHidden = true
@@ -42,12 +42,13 @@ class WorkoutListViewController: UIViewController {
     
     private let headerView: UIView = {
         let view = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 40))
+        view.backgroundColor = .clear
         let label = UILabel()
         label.text = "📍 GPS 정보가 있는 운동만 표시됩니다"
         label.font = .systemFont(ofSize: 13, weight: .medium)
-        label.textColor = .secondaryLabel
+        label.textColor = .gray
         label.textAlignment = .center
-        
+
         view.addSubview(label)
         label.snp.makeConstraints { make in
             make.center.equalToSuperview()
@@ -145,9 +146,20 @@ class WorkoutListViewController: UIViewController {
     
     private func setupUI() {
         title = "운동 기록"
-        view.backgroundColor = .systemGroupedBackground // Modern grouped background
+        view.backgroundColor = .black
+        navigationItem.largeTitleDisplayMode = .never
 
-        // Modern Navigation Bar
+        // Dark Navigation Bar Style
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .black
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.compactAppearance = appearance
+        navigationController?.navigationBar.tintColor = .white
         navigationController?.navigationBar.prefersLargeTitles = true
 
         // Import button (left)
@@ -164,7 +176,7 @@ class WorkoutListViewController: UIViewController {
         view.addSubview(emptyLabel)
 
         tableView.tableHeaderView = headerView
-        tableView.backgroundColor = .clear // Let system grouped color show
+        tableView.backgroundColor = .black
 
         tableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -425,50 +437,61 @@ extension WorkoutListViewController: ImportWorkoutViewControllerDelegate {
 
 // MARK: - Workout Cell
 class WorkoutCell: UITableViewCell {
-    
+
     private let typeLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 18, weight: .semibold)
+        label.textColor = .white
         return label
     }()
-    
+
     private let dateLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 14)
-        label.textColor = .secondaryLabel
+        label.textColor = .lightGray
         return label
     }()
-    
+
     private let distanceLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.textColor = .white
         return label
     }()
-    
+
     private let durationLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 14)
-        label.textColor = .secondaryLabel
+        label.textColor = .lightGray
         return label
     }()
-    
+
     private let iconImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = .systemBlue
         return imageView
     }()
-    
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     private func setupUI() {
+        // Dark theme cell background
+        backgroundColor = UIColor(white: 0.12, alpha: 1.0)
+        contentView.backgroundColor = UIColor(white: 0.12, alpha: 1.0)
+
+        // Selection style
+        let selectedView = UIView()
+        selectedView.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
+        selectedBackgroundView = selectedView
+
         contentView.addSubview(iconImageView)
         contentView.addSubview(typeLabel)
         contentView.addSubview(dateLabel)

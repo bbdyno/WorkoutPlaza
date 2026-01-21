@@ -116,6 +116,105 @@ class WorkoutDetailViewController: UIViewController {
         return label
     }()
 
+    // MARK: - Top Right Floating Toolbar (Instagram Style)
+    private lazy var topRightToolbar: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.alignment = .center
+        return stack
+    }()
+
+    private lazy var addWidgetButton: UIButton = createToolbarButton(
+        systemName: "plus",
+        action: #selector(showAddWidgetMenu)
+    )
+
+    private lazy var layoutTemplateButton: UIButton = createToolbarButton(
+        systemName: "square.grid.2x2",
+        action: #selector(showTemplateMenu)
+    )
+
+    private lazy var shareImageButton: UIButton = createToolbarButton(
+        systemName: "square.and.arrow.up",
+        action: #selector(shareImage)
+    )
+
+    private lazy var selectPhotoButton: UIButton = createToolbarButton(
+        systemName: "photo",
+        action: #selector(selectPhoto)
+    )
+
+    private lazy var backgroundTemplateButton: UIButton = createToolbarButton(
+        systemName: "paintbrush",
+        action: #selector(changeTemplate)
+    )
+
+    private lazy var aspectRatioButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("9:16", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 12, weight: .bold)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = UIColor(white: 0.3, alpha: 0.8)
+        button.layer.cornerRadius = 22
+        button.addTarget(self, action: #selector(cycleAspectRatio), for: .touchUpInside)
+        button.snp.makeConstraints { make in
+            make.size.equalTo(44)
+        }
+        return button
+    }()
+
+    // MARK: - Toast Label
+    private lazy var toastLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.textColor = .white
+        label.backgroundColor = UIColor(white: 0.2, alpha: 0.9)
+        label.textAlignment = .center
+        label.layer.cornerRadius = 20
+        label.clipsToBounds = true
+        label.alpha = 0
+        return label
+    }()
+
+    // MARK: - Bottom Floating Toolbar (Selection Tools)
+    private lazy var bottomFloatingToolbar: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(white: 0.2, alpha: 0.9)
+        view.layer.cornerRadius = 25
+        view.isHidden = true
+        return view
+    }()
+
+    private lazy var colorPickerButton: UIButton = createToolbarButton(
+        systemName: "paintpalette",
+        action: #selector(showColorPicker)
+    )
+
+    private lazy var fontPickerButton: UIButton = createToolbarButton(
+        systemName: "textformat",
+        action: #selector(showFontPicker)
+    )
+
+    private lazy var deleteItemButton: UIButton = createToolbarButton(
+        systemName: "trash",
+        action: #selector(deleteSelectedItem)
+    )
+
+    private func createToolbarButton(systemName: String, action: Selector) -> UIButton {
+        let button = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        button.setImage(UIImage(systemName: systemName, withConfiguration: config), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor(white: 0.3, alpha: 0.8)
+        button.layer.cornerRadius = 22
+        button.addTarget(self, action: action, for: .touchUpInside)
+        button.snp.makeConstraints { make in
+            make.size.equalTo(44)
+        }
+        return button
+    }
+
     // Background transform
     private var backgroundTransform: BackgroundTransform?
 
@@ -133,13 +232,6 @@ class WorkoutDetailViewController: UIViewController {
         label.textAlignment = .center
         label.numberOfLines = 0
         return label
-    }()
-
-    private let aspectRatioControl: UISegmentedControl = {
-        let items = AspectRatio.allCases.map { $0.displayName }
-        let control = UISegmentedControl(items: items)
-        control.selectedSegmentIndex = AspectRatio.allCases.firstIndex(of: .portrait9_16) ?? 0
-        return control
     }()
 
     private let canvasContainerView: UIView = {
@@ -173,6 +265,21 @@ class WorkoutDetailViewController: UIViewController {
                 self?.addImportedWorkoutGroup(importedData)
             }
         }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        // Set navigation bar to black background style
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .black
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.tintColor = .white
     }
 
     deinit {
@@ -217,60 +324,13 @@ class WorkoutDetailViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateCanvasSize()
+        bringToolbarsToFront()
     }
 
     private func setupUI() {
-        title = "운동 상세"
-        view.backgroundColor = .systemGroupedBackground
-        
-        // 사진 선택 버튼
-        let photoButton = UIBarButtonItem(
-            image: UIImage(systemName: "photo"),
-            style: .plain,
-            target: self,
-            action: #selector(selectPhoto)
-        )
-        
-        // 템플릿 변경 버튼
-        let templateButton = UIBarButtonItem(
-            image: UIImage(systemName: "paintpalette"),
-            style: .plain,
-            target: self,
-            action: #selector(changeTemplate)
-        )
-        
-        // 리셋 버튼
-        let resetButton = UIBarButtonItem(
-            image: UIImage(systemName: "arrow.counterclockwise"),
-            style: .plain,
-            target: self,
-            action: #selector(resetLayout)
-        )
-
-        // 템플릿 선택 버튼
-        let layoutButton = UIBarButtonItem(
-            image: UIImage(systemName: "square.grid.2x2"),
-            style: .plain,
-            target: self,
-            action: #selector(showTemplateMenu)
-        )
-
-        // 위젯 추가 버튼 (+)
-        let addButton = UIBarButtonItem(
-            barButtonSystemItem: .add,
-            target: self,
-            action: #selector(showAddWidgetMenu)
-        )
-
-        // 공유 버튼 (Export)
-        let shareButton = UIBarButtonItem(
-            image: UIImage(systemName: "square.and.arrow.up"),
-            style: .plain,
-            target: self,
-            action: #selector(shareImage)
-        )
-
-        navigationItem.rightBarButtonItems = [addButton, layoutButton, shareButton, photoButton, templateButton]
+        title = "러닝 기록 카드 생성"
+        navigationItem.largeTitleDisplayMode = .never
+        view.backgroundColor = .black
 
         // Custom back button with confirmation
         navigationItem.hidesBackButton = true
@@ -280,7 +340,11 @@ class WorkoutDetailViewController: UIViewController {
             target: self,
             action: #selector(backButtonTapped)
         )
+        backButton.tintColor = .white
         navigationItem.leftBarButtonItem = backButton
+
+        // Setup top right floating toolbar (Instagram style)
+        setupTopRightToolbar()
 
         // Add instruction label
         view.addSubview(instructionLabel)
@@ -289,18 +353,10 @@ class WorkoutDetailViewController: UIViewController {
             make.leading.trailing.equalToSuperview().inset(20)
         }
 
-        // Add aspect ratio control
-        aspectRatioControl.addTarget(self, action: #selector(aspectRatioChanged), for: .valueChanged)
-        view.addSubview(aspectRatioControl)
-        aspectRatioControl.snp.makeConstraints { make in
-            make.top.equalTo(instructionLabel.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(20)
-        }
-
         // Add canvas container
         view.addSubview(canvasContainerView)
         canvasContainerView.snp.makeConstraints { make in
-            make.top.equalTo(aspectRatioControl.snp.bottom).offset(16)
+            make.top.equalTo(instructionLabel.snp.bottom).offset(16)
             make.centerX.equalToSuperview()
             canvasWidthConstraint = make.width.equalTo(360).constraint
             canvasHeightConstraint = make.height.equalTo(640).constraint
@@ -362,51 +418,140 @@ class WorkoutDetailViewController: UIViewController {
     }
 
     private func setupToolbar() {
-        navigationController?.isToolbarHidden = false
+        // Hide default navigation toolbar
+        navigationController?.isToolbarHidden = true
 
-        let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        // Setup bottom floating toolbar for selection tools
+        setupBottomFloatingToolbar()
+    }
 
-        let colorButton = UIBarButtonItem(
-            image: UIImage(systemName: "paintpalette"),
-            style: .plain,
-            target: self,
-            action: #selector(showColorPicker)
-        )
-        colorButton.tintColor = .systemBlue
+    // MARK: - Top Right Floating Toolbar Setup
+    private func setupTopRightToolbar() {
+        // Add buttons to stack view
+        topRightToolbar.addArrangedSubview(aspectRatioButton)
+        topRightToolbar.addArrangedSubview(addWidgetButton)
+        topRightToolbar.addArrangedSubview(layoutTemplateButton)
+        topRightToolbar.addArrangedSubview(shareImageButton)
+        topRightToolbar.addArrangedSubview(selectPhotoButton)
+        topRightToolbar.addArrangedSubview(backgroundTemplateButton)
 
-        let fontButton = UIBarButtonItem(
-            image: UIImage(systemName: "textformat"),
-            style: .plain,
-            target: self,
-            action: #selector(showFontPicker)
-        )
-        fontButton.tintColor = .systemBlue
+        view.addSubview(topRightToolbar)
 
-        let deleteButton = UIBarButtonItem(
-            image: UIImage(systemName: "trash"),
-            style: .plain,
-            target: self,
-            action: #selector(deleteSelectedItem)
-        )
-        deleteButton.tintColor = .systemRed
+        topRightToolbar.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.trailing.equalToSuperview().inset(16)
+        }
 
-        toolbarItems = [flexibleSpace, colorButton, flexibleSpace, fontButton, flexibleSpace, deleteButton, flexibleSpace]
-        updateToolbarItemsState()
+        // Setup toast label
+        view.addSubview(toastLabel)
+        toastLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(60)
+            make.height.equalTo(40)
+            make.width.greaterThanOrEqualTo(100)
+        }
+
+        // Bring toolbar to front
+        view.bringSubviewToFront(topRightToolbar)
+    }
+
+    // MARK: - Aspect Ratio Cycling
+    @objc private func cycleAspectRatio() {
+        // Get next aspect ratio in cycle: 1:1 -> 4:5 -> 9:16 -> 1:1 -> ...
+        let allRatios = AspectRatio.allCases
+        guard let currentIndex = allRatios.firstIndex(of: currentAspectRatio) else { return }
+        let nextIndex = (currentIndex + 1) % allRatios.count
+        let newRatio = allRatios[nextIndex]
+
+        // Update current ratio
+        currentAspectRatio = newRatio
+
+        // Update button title
+        aspectRatioButton.setTitle(newRatio.displayName, for: .normal)
+
+        // Update canvas
+        updateCanvasSize()
+
+        // Show toast
+        showToast("화면 비율: \(newRatio.displayName)")
+    }
+
+    private func showToast(_ message: String) {
+        toastLabel.text = "  \(message)  "
+
+        // Fade in
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseIn) {
+            self.toastLabel.alpha = 1.0
+        } completion: { _ in
+            // Stay visible for 2 seconds, then fade out
+            UIView.animate(withDuration: 0.3, delay: 2.0, options: .curveEaseOut) {
+                self.toastLabel.alpha = 0
+            }
+        }
+    }
+
+    // MARK: - Bottom Floating Toolbar Setup
+    private func setupBottomFloatingToolbar() {
+        view.addSubview(bottomFloatingToolbar)
+
+        let stackView = UIStackView(arrangedSubviews: [
+            colorPickerButton,
+            fontPickerButton,
+            deleteItemButton
+        ])
+        stackView.axis = .horizontal
+        stackView.spacing = 20
+        stackView.alignment = .center
+
+        bottomFloatingToolbar.addSubview(stackView)
+
+        bottomFloatingToolbar.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
+            make.height.equalTo(60)
+        }
+
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 20, bottom: 8, right: 20))
+        }
+
+        // Initial state: hidden
+        bottomFloatingToolbar.isHidden = true
+
+        // Bring toolbar to front
+        view.bringSubviewToFront(bottomFloatingToolbar)
+    }
+
+    private func bringToolbarsToFront() {
+        view.bringSubviewToFront(topRightToolbar)
+        view.bringSubviewToFront(bottomFloatingToolbar)
+        view.bringSubviewToFront(multiSelectToolbar)
     }
 
     private func updateToolbarItemsState() {
-        guard let items = toolbarItems else { return }
         let hasSelection = selectionManager.hasSelection
         let selectedItem = selectionManager.currentlySelectedItem
 
-        // Color button (index 1)
-        items[1].isEnabled = hasSelection
+        // Show/hide bottom floating toolbar based on selection
+        let shouldShowToolbar = hasSelection
 
-        // Font button (index 3)
-        items[3].isEnabled = selectedItem is BaseStatWidget
+        if shouldShowToolbar != !bottomFloatingToolbar.isHidden {
+            UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut) {
+                self.bottomFloatingToolbar.isHidden = !shouldShowToolbar
+                self.bottomFloatingToolbar.alpha = shouldShowToolbar ? 1.0 : 0.0
+            }
+        }
 
-        // Delete button (index 5)
-        items[5].isEnabled = hasSelection && !(selectedItem is RouteMapView)
+        // Update button states
+        colorPickerButton.isEnabled = hasSelection
+        colorPickerButton.alpha = hasSelection ? 1.0 : 0.5
+
+        fontPickerButton.isEnabled = selectedItem is BaseStatWidget
+        fontPickerButton.alpha = (selectedItem is BaseStatWidget) ? 1.0 : 0.5
+
+        let canDelete = hasSelection && !(selectedItem is RouteMapView)
+        deleteItemButton.isEnabled = canDelete
+        deleteItemButton.alpha = canDelete ? 1.0 : 0.5
     }
 
     @objc private func showColorPicker() {
@@ -434,7 +579,8 @@ class WorkoutDetailViewController: UIViewController {
 
         // iPad support
         if let popover = actionSheet.popoverPresentationController {
-            popover.barButtonItem = toolbarItems?[3]
+            popover.sourceView = fontPickerButton
+            popover.sourceRect = fontPickerButton.bounds
         }
 
         present(actionSheet, animated: true)
@@ -1201,12 +1347,6 @@ class WorkoutDetailViewController: UIViewController {
     }
 
     // MARK: - Aspect Ratio Management
-    @objc private func aspectRatioChanged() {
-        guard let selectedRatio = AspectRatio.allCases[safe: aspectRatioControl.selectedSegmentIndex] else { return }
-        currentAspectRatio = selectedRatio
-        updateCanvasSize()
-    }
-
     private func updateCanvasSize() {
         // Skip if view is not laid out yet
         guard view.bounds.width > 0 && view.bounds.height > 0 else { return }
@@ -1351,7 +1491,6 @@ class WorkoutDetailViewController: UIViewController {
         // Hide UI elements that shouldn't be in the final image
         selectionManager.deselectAll()
         instructionLabel.isHidden = true
-        aspectRatioControl.isHidden = true
 
         // Capture after a short delay to ensure UI updates
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
@@ -1363,7 +1502,6 @@ class WorkoutDetailViewController: UIViewController {
 
             // Restore UI
             self.instructionLabel.isHidden = false
-            self.aspectRatioControl.isHidden = false
         }
     }
     
@@ -1387,8 +1525,8 @@ class WorkoutDetailViewController: UIViewController {
         }
         
         if let popover = activityViewController.popoverPresentationController {
-            // Anchor to the share button (index 2 in rightBarButtonItems)
-            popover.barButtonItem = navigationItem.rightBarButtonItems?[2]
+            popover.sourceView = shareImageButton
+            popover.sourceRect = shareImageButton.bounds
         }
         
         present(activityViewController, animated: true)
@@ -1439,12 +1577,13 @@ class WorkoutDetailViewController: UIViewController {
         
         // iPad 지원
         if let popover = actionSheet.popoverPresentationController {
-            popover.barButtonItem = navigationItem.rightBarButtonItems?[1]
+            popover.sourceView = selectPhotoButton
+            popover.sourceRect = selectPhotoButton.bounds
         }
-        
+
         present(actionSheet, animated: true)
     }
-    
+
     private func presentPhotoPicker() {
         var configuration = PHPickerConfiguration()
         configuration.filter = .images
@@ -1494,7 +1633,8 @@ class WorkoutDetailViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "취소", style: .cancel))
 
         if let popover = alert.popoverPresentationController {
-            popover.barButtonItem = navigationItem.rightBarButtonItems?[0]
+            popover.sourceView = layoutTemplateButton
+            popover.sourceRect = layoutTemplateButton.bounds
         }
 
         present(alert, animated: true)
@@ -1525,15 +1665,13 @@ class WorkoutDetailViewController: UIViewController {
         print("   Template canvas size: \(templateCanvasSize.width)x\(templateCanvasSize.height)")
         print("   Detected aspect ratio: \(detectedAspectRatio.displayName)")
 
-        // Update aspect ratio control and canvas size
-        if let index = AspectRatio.allCases.firstIndex(of: detectedAspectRatio) {
-            aspectRatioControl.selectedSegmentIndex = index
-            currentAspectRatio = detectedAspectRatio
-            updateCanvasSize()
+        // Update aspect ratio button and canvas size
+        currentAspectRatio = detectedAspectRatio
+        aspectRatioButton.setTitle(detectedAspectRatio.displayName, for: .normal)
+        updateCanvasSize()
 
-            // Force immediate layout update
-            view.layoutIfNeeded()
-        }
+        // Force immediate layout update
+        view.layoutIfNeeded()
 
         // STEP 2: Get updated canvas size after aspect ratio change
         let canvasSize = contentView.bounds.size
@@ -1815,7 +1953,8 @@ class WorkoutDetailViewController: UIViewController {
         let activityViewController = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
 
         if let popover = activityViewController.popoverPresentationController {
-            popover.barButtonItem = navigationItem.rightBarButtonItems?[0]
+            popover.sourceView = layoutTemplateButton
+            popover.sourceRect = layoutTemplateButton.bounds
         }
 
         present(activityViewController, animated: true)
@@ -1882,7 +2021,8 @@ class WorkoutDetailViewController: UIViewController {
         actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
 
         if let popover = actionSheet.popoverPresentationController {
-            popover.barButtonItem = navigationItem.rightBarButtonItems?[0]
+            popover.sourceView = addWidgetButton
+            popover.sourceRect = addWidgetButton.bounds
         }
 
         present(actionSheet, animated: true)
@@ -2101,7 +2241,8 @@ class WorkoutDetailViewController: UIViewController {
 
         // iPad support
         if let popover = actionSheet.popoverPresentationController {
-            popover.barButtonItem = navigationItem.rightBarButtonItems?[2]
+            popover.sourceView = backgroundTemplateButton
+            popover.sourceRect = backgroundTemplateButton.bounds
         }
 
         present(actionSheet, animated: true)
