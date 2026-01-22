@@ -134,80 +134,88 @@ class ClimbingDetailViewController: UIViewController {
     private func setupDefaultWidgets() {
         let padding: CGFloat = 20
         let widgetWidth = canvasSize.width - (padding * 2)
-        let widgetHeight: CGFloat = 80
+        let widgetHeight: CGFloat = 70
+        let halfWidth = (widgetWidth - 12) / 2
         var currentY: CGFloat = padding
 
-        // Gym Widget
+        // Row 1: Gym Widget (full width)
         let gymWidget = ClimbingGymWidget()
         gymWidget.frame = CGRect(x: padding, y: currentY, width: widgetWidth, height: widgetHeight)
         gymWidget.configure(gymName: climbingData.gymName)
         gymWidget.initialSize = gymWidget.frame.size
         addWidget(gymWidget)
-        currentY += widgetHeight + 16
+        currentY += widgetHeight + 12
 
-        // Discipline Widget
+        // Row 2: Discipline + Date (side by side)
         let disciplineWidget = ClimbingDisciplineWidget()
-        disciplineWidget.frame = CGRect(x: padding, y: currentY, width: widgetWidth / 2 - 8, height: widgetHeight)
+        disciplineWidget.frame = CGRect(x: padding, y: currentY, width: halfWidth, height: widgetHeight)
         disciplineWidget.configure(discipline: climbingData.discipline)
         disciplineWidget.initialSize = disciplineWidget.frame.size
         addWidget(disciplineWidget)
 
-        // Date Widget
         let dateWidget = DateWidget()
-        dateWidget.frame = CGRect(x: padding + widgetWidth / 2 + 8, y: currentY, width: widgetWidth / 2 - 8, height: widgetHeight)
+        dateWidget.frame = CGRect(x: padding + halfWidth + 12, y: currentY, width: halfWidth, height: widgetHeight)
         dateWidget.configure(startDate: climbingData.sessionDate)
         dateWidget.initialSize = dateWidget.frame.size
         addWidget(dateWidget)
-        currentY += widgetHeight + 16
+        currentY += widgetHeight + 12
 
-        // Session Summary Widget
+        // Row 3: Session Summary (full width)
         let sessionWidget = ClimbingSessionWidget()
         sessionWidget.frame = CGRect(x: padding, y: currentY, width: widgetWidth, height: widgetHeight)
         sessionWidget.configure(sent: climbingData.sentRoutes, total: climbingData.totalRoutes)
         sessionWidget.initialSize = sessionWidget.frame.size
         addWidget(sessionWidget)
-        currentY += widgetHeight + 16
+        currentY += widgetHeight + 12
 
-        // Add individual route widgets if there are routes
-        for (index, route) in climbingData.routes.prefix(3).enumerated() {
-            let gradeWidget = ClimbingGradeWidget()
-            let gradeWidth = (widgetWidth - 16) / 2
-            let xOffset = index % 2 == 0 ? padding : padding + gradeWidth + 16
+        // Row 4: Attempts/Takes + Highest Grade (side by side)
+        var hasLeftWidget = false
 
-            if index % 2 == 0 && index > 0 {
-                currentY += widgetHeight + 12
-            }
-
-            gradeWidget.frame = CGRect(x: xOffset, y: currentY, width: gradeWidth, height: widgetHeight * 0.8)
-            gradeWidget.configure(grade: route.grade)
-            gradeWidget.initialSize = gradeWidget.frame.size
-            addWidget(gradeWidget)
-        }
-
-        // Attempts/Takes Widget based on discipline
-        currentY += widgetHeight
-
-        if climbingData.discipline == .bouldering && climbingData.totalAttempts > 0 {
+        if climbingData.discipline == .bouldering {
             let attemptsWidget = ClimbingAttemptsWidget()
-            attemptsWidget.frame = CGRect(x: padding, y: currentY, width: widgetWidth / 2 - 8, height: widgetHeight)
+            attemptsWidget.frame = CGRect(x: padding, y: currentY, width: halfWidth, height: widgetHeight)
             attemptsWidget.configure(attempts: climbingData.totalAttempts)
             attemptsWidget.initialSize = attemptsWidget.frame.size
             addWidget(attemptsWidget)
-        } else if climbingData.discipline == .leadEndurance && climbingData.totalTakes > 0 {
+            hasLeftWidget = true
+        } else if climbingData.discipline == .leadEndurance {
             let takesWidget = ClimbingTakesWidget()
-            takesWidget.frame = CGRect(x: padding, y: currentY, width: widgetWidth / 2 - 8, height: widgetHeight)
+            takesWidget.frame = CGRect(x: padding, y: currentY, width: halfWidth, height: widgetHeight)
             takesWidget.configure(takes: climbingData.totalTakes)
             takesWidget.initialSize = takesWidget.frame.size
             addWidget(takesWidget)
+            hasLeftWidget = true
         }
 
-        // Highest Grade Widget
-        if let highestGrade = climbingData.highestGradeSent {
+        if let highestGrade = climbingData.highestGradeSent, !highestGrade.isEmpty {
             let highestWidget = ClimbingHighestGradeWidget()
-            highestWidget.frame = CGRect(x: padding + widgetWidth / 2 + 8, y: currentY, width: widgetWidth / 2 - 8, height: widgetHeight)
+            let xPos = hasLeftWidget ? padding + halfWidth + 12 : padding
+            let width = hasLeftWidget ? halfWidth : widgetWidth
+            highestWidget.frame = CGRect(x: xPos, y: currentY, width: width, height: widgetHeight)
             highestWidget.configure(highestGrade: highestGrade)
             highestWidget.initialSize = highestWidget.frame.size
             addWidget(highestWidget)
+        }
+
+        if hasLeftWidget || climbingData.highestGradeSent != nil {
+            currentY += widgetHeight + 12
+        }
+
+        // Row 5+: Individual route grades (up to 4, 2 per row)
+        let routesWithGrades = climbingData.routes.filter { !$0.grade.isEmpty }.prefix(4)
+        for (index, route) in routesWithGrades.enumerated() {
+            let isLeftColumn = index % 2 == 0
+            let xPos = isLeftColumn ? padding : padding + halfWidth + 12
+
+            if isLeftColumn && index > 0 {
+                currentY += widgetHeight + 8
+            }
+
+            let gradeWidget = ClimbingGradeWidget()
+            gradeWidget.frame = CGRect(x: xPos, y: currentY, width: halfWidth, height: widgetHeight)
+            gradeWidget.configure(grade: route.grade)
+            gradeWidget.initialSize = gradeWidget.frame.size
+            addWidget(gradeWidget)
         }
     }
 
@@ -223,7 +231,7 @@ class ClimbingDetailViewController: UIViewController {
 
     // MARK: - Actions
     @objc private func doneTapped() {
-        dismiss(animated: true)
+        navigationController?.popToRootViewController(animated: true)
     }
 
     @objc private func showAddWidgetMenu() {

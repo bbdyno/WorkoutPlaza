@@ -136,11 +136,6 @@ class ClimbingInputViewController: UIViewController {
 
     private func setupNavigationBar() {
         title = "클라이밍"
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .cancel,
-            target: self,
-            action: #selector(cancelTapped)
-        )
     }
 
     private func setupKeyboardDismissal() {
@@ -270,10 +265,6 @@ class ClimbingInputViewController: UIViewController {
 
     // MARK: - Actions
 
-    @objc private func cancelTapped() {
-        dismiss(animated: true)
-    }
-
     @objc private func addRouteTapped() {
         addRouteView()
     }
@@ -311,10 +302,8 @@ class ClimbingInputViewController: UIViewController {
             sessionDate: Date()
         )
 
-        // Dismiss first, then call delegate in completion to allow proper presentation
-        dismiss(animated: true) { [weak self] in
-            self?.delegate?.climbingInput(self!, didCreateSession: climbingData)
-        }
+        // Call delegate to navigate to detail screen
+        delegate?.climbingInput(self, didCreateSession: climbingData)
     }
 
     private func showAlert(title: String, message: String) {
