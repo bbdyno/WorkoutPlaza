@@ -236,11 +236,15 @@ class RouteMapView: UIView, Selectable {
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         guard let view = gesture.view, let superview = view.superview else { return }
-        
+
         switch gesture.state {
         case .began:
             initialCenter = view.center
-            
+            // Select this widget immediately when drag starts
+            if !isSelected {
+                selectionDelegate?.itemWasSelected(self)
+            }
+
         case .changed:
             let translation = gesture.translation(in: superview)
             

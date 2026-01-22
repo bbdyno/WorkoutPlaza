@@ -166,6 +166,10 @@ class TextPathWidget: UIView, Selectable {
         switch gesture.state {
         case .began:
             initialCenter = center
+            // Select this widget immediately when drag starts
+            if !isSelected {
+                selectionDelegate?.itemWasSelected(self)
+            }
 
         case .changed:
             let translation = gesture.translation(in: superview)
@@ -336,6 +340,7 @@ class TextPathDrawingOverlay: UIView {
     // MARK: - Style Properties
     private var selectedColor: UIColor = .white
     private var selectedFont: UIFont = .boldSystemFont(ofSize: 20)
+    private var selectedFontSize: CGFloat = 20
 
     private let availableColors: [UIColor] = [
         .white,
@@ -379,7 +384,7 @@ class TextPathDrawingOverlay: UIView {
     private let colorStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = 12
+        stack.spacing = 8
         stack.alignment = .center
         stack.distribution = .equalSpacing
         return stack
@@ -392,6 +397,25 @@ class TextPathDrawingOverlay: UIView {
         stack.alignment = .center
         stack.distribution = .fillEqually
         return stack
+    }()
+
+    private let fontSizeSlider: UISlider = {
+        let slider = UISlider()
+        slider.minimumValue = 12
+        slider.maximumValue = 40
+        slider.value = 20
+        slider.minimumTrackTintColor = .white
+        slider.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.3)
+        return slider
+    }()
+
+    private let fontSizeLabel: UILabel = {
+        let label = UILabel()
+        label.text = "20"
+        label.textColor = .white
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textAlignment = .center
+        return label
     }()
 
     private let confirmButton: UIButton = {
@@ -470,16 +494,16 @@ class TextPathDrawingOverlay: UIView {
             bottomToolbar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             bottomToolbar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             bottomToolbar.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            bottomToolbar.heightAnchor.constraint(equalToConstant: 120)
+            bottomToolbar.heightAnchor.constraint(equalToConstant: 160)
         ])
 
         // Color Stack
         bottomToolbar.addSubview(colorStackView)
         colorStackView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            colorStackView.topAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: 16),
+            colorStackView.topAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: 12),
             colorStackView.centerXAnchor.constraint(equalTo: bottomToolbar.centerXAnchor),
-            colorStackView.heightAnchor.constraint(equalToConstant: 36)
+            colorStackView.heightAnchor.constraint(equalToConstant: 28)
         ])
 
         // Create color buttons
@@ -494,11 +518,51 @@ class TextPathDrawingOverlay: UIView {
         bottomToolbar.addSubview(fontStackView)
         fontStackView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            fontStackView.topAnchor.constraint(equalTo: colorStackView.bottomAnchor, constant: 12),
+            fontStackView.topAnchor.constraint(equalTo: colorStackView.bottomAnchor, constant: 10),
             fontStackView.leadingAnchor.constraint(equalTo: bottomToolbar.leadingAnchor, constant: 16),
             fontStackView.trailingAnchor.constraint(equalTo: bottomToolbar.trailingAnchor, constant: -16),
             fontStackView.heightAnchor.constraint(equalToConstant: 32)
         ])
+
+        // Font Size Slider
+        let sliderContainer = UIView()
+        bottomToolbar.addSubview(sliderContainer)
+        sliderContainer.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            sliderContainer.topAnchor.constraint(equalTo: fontStackView.bottomAnchor, constant: 10),
+            sliderContainer.leadingAnchor.constraint(equalTo: bottomToolbar.leadingAnchor, constant: 16),
+            sliderContainer.trailingAnchor.constraint(equalTo: bottomToolbar.trailingAnchor, constant: -16),
+            sliderContainer.heightAnchor.constraint(equalToConstant: 30)
+        ])
+
+        let sizeIcon = UIImageView(image: UIImage(systemName: "textformat.size"))
+        sizeIcon.tintColor = .white
+        sizeIcon.contentMode = .scaleAspectFit
+        sliderContainer.addSubview(sizeIcon)
+        sizeIcon.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            sizeIcon.leadingAnchor.constraint(equalTo: sliderContainer.leadingAnchor),
+            sizeIcon.centerYAnchor.constraint(equalTo: sliderContainer.centerYAnchor),
+            sizeIcon.widthAnchor.constraint(equalToConstant: 20),
+            sizeIcon.heightAnchor.constraint(equalToConstant: 20)
+        ])
+
+        sliderContainer.addSubview(fontSizeLabel)
+        fontSizeLabel.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            fontSizeLabel.trailingAnchor.constraint(equalTo: sliderContainer.trailingAnchor),
+            fontSizeLabel.centerYAnchor.constraint(equalTo: sliderContainer.centerYAnchor),
+            fontSizeLabel.widthAnchor.constraint(equalToConstant: 30)
+        ])
+
+        sliderContainer.addSubview(fontSizeSlider)
+        fontSizeSlider.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            fontSizeSlider.leadingAnchor.constraint(equalTo: sizeIcon.trailingAnchor, constant: 8),
+            fontSizeSlider.trailingAnchor.constraint(equalTo: fontSizeLabel.leadingAnchor, constant: -8),
+            fontSizeSlider.centerYAnchor.constraint(equalTo: sliderContainer.centerYAnchor)
+        ])
+        fontSizeSlider.addTarget(self, action: #selector(fontSizeSliderChanged(_:)), for: .valueChanged)
 
         // Create font buttons
         for (index, fontInfo) in availableFonts.enumerated() {
@@ -545,16 +609,16 @@ class TextPathDrawingOverlay: UIView {
     private func createColorButton(color: UIColor, index: Int) -> UIButton {
         let button = UIButton(type: .custom)
         button.backgroundColor = color
-        button.layer.cornerRadius = 18
-        button.layer.borderWidth = 3
+        button.layer.cornerRadius = 14
+        button.layer.borderWidth = 2
         button.layer.borderColor = UIColor.clear.cgColor
         button.tag = index
         button.addTarget(self, action: #selector(colorButtonTapped(_:)), for: .touchUpInside)
 
         button.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: 36),
-            button.heightAnchor.constraint(equalToConstant: 36)
+            button.widthAnchor.constraint(equalToConstant: 28),
+            button.heightAnchor.constraint(equalToConstant: 28)
         ])
 
         return button
@@ -589,7 +653,9 @@ class TextPathDrawingOverlay: UIView {
             button.backgroundColor = index == selectedFontIndex ?
                 UIColor.white.withAlphaComponent(0.3) : UIColor.white.withAlphaComponent(0.1)
         }
-        selectedFont = availableFonts[selectedFontIndex].font
+        // Apply selected font style with selected size
+        let baseFont = availableFonts[selectedFontIndex].font
+        selectedFont = baseFont.withSize(selectedFontSize)
         setNeedsDisplay()
     }
 
@@ -606,6 +672,12 @@ class TextPathDrawingOverlay: UIView {
         UIView.animate(withDuration: 0.2) {
             self.updateFontSelection()
         }
+    }
+
+    @objc private func fontSizeSliderChanged(_ sender: UISlider) {
+        selectedFontSize = CGFloat(sender.value)
+        fontSizeLabel.text = "\(Int(selectedFontSize))"
+        updateFontSelection()
     }
 
     @objc private func confirmTapped() {
@@ -847,6 +919,9 @@ class TextPathDrawingOverlay: UIView {
         currentState = .ready
         selectedColorIndex = 0
         selectedFontIndex = 0
+        selectedFontSize = 20
+        fontSizeSlider.value = 20
+        fontSizeLabel.text = "20"
         updateColorSelection()
         updateFontSelection()
         updateUIForState()

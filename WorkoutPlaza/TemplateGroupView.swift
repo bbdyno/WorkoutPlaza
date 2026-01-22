@@ -300,6 +300,10 @@ class TemplateGroupView: UIView, Selectable {
         switch gesture.state {
         case .began:
             initialCenter = view.center
+            // Select this group immediately when drag starts
+            if !isSelected {
+                selectionDelegate?.itemWasSelected(self)
+            }
 
         case .changed:
             let translation = gesture.translation(in: superview)
@@ -490,12 +494,26 @@ class TemplateGroupView: UIView, Selectable {
     }
 
     func applyColor(_ color: UIColor) {
-        // Groups don't change color
+        currentColor = color
+        // Propagate color change to all grouped items
+        for item in groupedItems {
+            if var selectable = item as? Selectable {
+                selectable.applyColor(color)
+            }
+        }
     }
 
     func applyFont(_ fontStyle: FontStyle) {
         currentFontStyle = fontStyle
-        // Groups don't use fonts, so this is a no-op
+        // Propagate font change to all grouped items
+        for item in groupedItems {
+            if let statWidget = item as? BaseStatWidget {
+                statWidget.applyFont(fontStyle)
+            }
+            if let textWidget = item as? TextWidget {
+                textWidget.applyFont(fontStyle)
+            }
+        }
     }
 
     // MARK: - Dynamic Widget Management

@@ -561,23 +561,36 @@ class WorkoutDetailViewController: UIViewController {
     }
 
     @objc private func showColorPicker() {
-        guard var selectedItem = selectionManager.currentlySelectedItem else { return }
+        // Check both multi-select and single selection modes
+        let selectedItems = selectionManager.getSelectedItems()
+        let currentColor: UIColor
+
+        if let firstItem = selectedItems.first {
+            currentColor = firstItem.currentColor
+        } else if let selectedItem = selectionManager.currentlySelectedItem {
+            currentColor = selectedItem.currentColor
+        } else {
+            return
+        }
 
         let colorPicker = UIColorPickerViewController()
-        colorPicker.selectedColor = selectedItem.currentColor
+        colorPicker.selectedColor = currentColor
         colorPicker.delegate = self
         present(colorPicker, animated: true)
     }
 
     @objc private func showFontPicker() {
-        guard let selectedItem = selectionManager.currentlySelectedItem as? BaseStatWidget else { return }
+        // Check both multi-select and single selection modes
+        let selectedItems = selectionManager.getSelectedItems()
+        let hasValidSelection = !selectedItems.isEmpty || selectionManager.currentlySelectedItem != nil
+
+        guard hasValidSelection else { return }
 
         let actionSheet = UIAlertController(title: "폰트 스타일 선택", message: nil, preferredStyle: .actionSheet)
 
         for fontStyle in FontStyle.allCases {
             actionSheet.addAction(UIAlertAction(title: fontStyle.displayName, style: .default) { [weak self] _ in
-                selectedItem.applyFont(fontStyle)
-                FontPreferences.shared.saveFont(fontStyle, for: selectedItem.itemIdentifier)
+                self?.applyFontToSelection(fontStyle)
             })
         }
 
@@ -590,6 +603,46 @@ class WorkoutDetailViewController: UIViewController {
         }
 
         present(actionSheet, animated: true)
+    }
+
+    private func applyFontToSelection(_ fontStyle: FontStyle) {
+        let selectedItems = selectionManager.getSelectedItems()
+
+        if !selectedItems.isEmpty {
+            // Apply font to all selected items
+            for item in selectedItems {
+                if let group = item as? TemplateGroupView {
+                    // Apply font to all widgets inside the group
+                    for widget in group.groupedItems {
+                        if let statWidget = widget as? BaseStatWidget {
+                            statWidget.applyFont(fontStyle)
+                            FontPreferences.shared.saveFont(fontStyle, for: statWidget.itemIdentifier)
+                        }
+                        if let textWidget = widget as? TextWidget {
+                            textWidget.applyFont(fontStyle)
+                            FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
+                        }
+                    }
+                    // Also update the group's font style
+                    group.applyFont(fontStyle)
+                } else if let statWidget = item as? BaseStatWidget {
+                    statWidget.applyFont(fontStyle)
+                    FontPreferences.shared.saveFont(fontStyle, for: statWidget.itemIdentifier)
+                } else if let textWidget = item as? TextWidget {
+                    textWidget.applyFont(fontStyle)
+                    FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
+                }
+            }
+        } else if let selectedItem = selectionManager.currentlySelectedItem {
+            // Single selection mode (fallback)
+            if let statWidget = selectedItem as? BaseStatWidget {
+                statWidget.applyFont(fontStyle)
+                FontPreferences.shared.saveFont(fontStyle, for: statWidget.itemIdentifier)
+            } else if let textWidget = selectedItem as? TextWidget {
+                textWidget.applyFont(fontStyle)
+                FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
+            }
+        }
     }
 
     @objc private func deleteSelectedItem() {
@@ -875,10 +928,22 @@ class WorkoutDetailViewController: UIViewController {
     }
 
     @objc private func ungroupSelectedWidget() {
-        guard let selectedItem = selectionManager.currentlySelectedItem as? TemplateGroupView else { return }
+        // Check both multi-select and single selection modes
+        let selectedItems = selectionManager.getSelectedItems()
+        let selectedGroup: TemplateGroupView?
+
+        if let group = selectedItems.first(where: { $0 is TemplateGroupView }) as? TemplateGroupView {
+            selectedGroup = group
+        } else if let group = selectionManager.currentlySelectedItem as? TemplateGroupView {
+            selectedGroup = group
+        } else {
+            return
+        }
+
+        guard let groupToUngroup = selectedGroup else { return }
 
         // Ungroup items
-        let ungroupedItems = selectedItem.ungroupItems(to: contentView)
+        let ungroupedItems = groupToUngroup.ungroupItems(to: contentView)
 
         // Re-register widgets
         for item in ungroupedItems {
@@ -890,9 +955,9 @@ class WorkoutDetailViewController: UIViewController {
         }
 
         // Remove group
-        selectionManager.unregisterItem(selectedItem)
-        templateGroups.removeAll { $0 === selectedItem }
-        selectedItem.removeFromSuperview()
+        selectionManager.unregisterItem(groupToUngroup)
+        templateGroups.removeAll { $0 === groupToUngroup }
+        groupToUngroup.removeFromSuperview()
 
         // Exit multi-select mode
         selectionManager.exitMultiSelectMode()
