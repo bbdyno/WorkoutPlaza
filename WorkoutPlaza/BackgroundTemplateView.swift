@@ -108,11 +108,11 @@ class BackgroundTemplateView: UIView {
     }
     
     // 커스텀 그라데이션 적용
-    func applyCustomGradient(colors: [UIColor]) {
+    func applyCustomGradient(colors: [UIColor], direction: GradientDirection = .topLeftToBottomRight) {
         applyGradient(
             colors: colors,
-            startPoint: CGPoint(x: 0, y: 0),
-            endPoint: CGPoint(x: 1, y: 1)
+            startPoint: direction.startPoint,
+            endPoint: direction.endPoint
         )
     }
     
