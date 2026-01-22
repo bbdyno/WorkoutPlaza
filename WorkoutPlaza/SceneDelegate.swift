@@ -17,8 +17,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         window = UIWindow(windowScene: windowScene)
 
-        let listVC = WorkoutListViewController()
-        let navigationController = UINavigationController(rootViewController: listVC)
+        let homeVC = HomeDashboardViewController()
+        let navigationController = UINavigationController(rootViewController: homeVC)
         navigationController.navigationBar.prefersLargeTitles = true
 
         window?.rootViewController = navigationController
