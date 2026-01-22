@@ -1878,6 +1878,10 @@ class WorkoutDetailViewController: UIViewController {
 
             case .composite:
                 break
+
+            // Climbing widgets are not used in running workout detail view
+            case .climbingGym, .climbingDiscipline, .climbingGrade, .climbingAttempts, .climbingTakes, .climbingSession, .climbingHighestGrade:
+                break
             }
 
             if let w = widget {

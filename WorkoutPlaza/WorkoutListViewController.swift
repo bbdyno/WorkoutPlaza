@@ -10,10 +10,16 @@ import SnapKit
 import UniformTypeIdentifiers
 
 class WorkoutListViewController: UIViewController {
-    
-    private var allWorkouts: [WorkoutData] = []
-    private var filteredWorkouts: [WorkoutData] = []
+
+    // MARK: - Data Sources
+    private var healthKitWorkouts: [WorkoutData] = []
+    private var externalWorkouts: [ExternalWorkout] = []
+
+    // Unified list
+    private var allWorkouts: [UnifiedWorkoutItem] = []
+    private var filteredWorkouts: [UnifiedWorkoutItem] = []
     private var currentFilter: String? = nil // nil means "All"
+    private var sourceFilter: UnifiedWorkoutSource? = nil // nil means "All Sources"
     
     private lazy var tableView: UITableView = {
         let table = UITableView(frame: .zero, style: .insetGrouped)
@@ -40,6 +46,18 @@ class WorkoutListViewController: UIViewController {
         return label
     }()
     
+    private let segmentedControl: UISegmentedControl = {
+        let sc = UISegmentedControl(items: ["전체", "HealthKit", "외부 기록"])
+        sc.selectedSegmentIndex = 0
+        sc.backgroundColor = UIColor(white: 0.15, alpha: 1.0)
+        sc.selectedSegmentTintColor = .systemBlue
+        let normalAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.lightGray]
+        let selectedAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.white]
+        sc.setTitleTextAttributes(normalAttributes, for: .normal)
+        sc.setTitleTextAttributes(selectedAttributes, for: .selected)
+        return sc
+    }()
+
     private let headerView: UIView = {
         let view = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 40))
         view.backgroundColor = .clear
@@ -55,12 +73,44 @@ class WorkoutListViewController: UIViewController {
         }
         return view
     }()
+
+    private let importFloatingButton: UIButton = {
+        let button = UIButton(type: .system)
+
+        var config = UIButton.Configuration.filled()
+        config.baseBackgroundColor = .systemBlue
+        config.baseForegroundColor = .white
+        config.cornerStyle = .capsule
+        config.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20)
+
+        let imageConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        config.image = UIImage(systemName: "square.and.arrow.down", withConfiguration: imageConfig)
+        config.imagePadding = 8
+        config.title = "외부 기록 가져오기"
+
+        button.configuration = config
+
+        // Shadow
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOffset = CGSize(width: 0, height: 4)
+        button.layer.shadowOpacity = 0.3
+        button.layer.shadowRadius = 8
+
+        return button
+    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         requestHealthKitAuthorization()
         setupNotificationObservers()
+        loadExternalWorkouts()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Ensure navigation bar is visible (HomeDashboard hides it)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
     }
 
     deinit {
@@ -74,6 +124,18 @@ class WorkoutListViewController: UIViewController {
             name: .didReceiveSharedWorkout,
             object: nil
         )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleExternalWorkoutsChanged),
+            name: .externalWorkoutsDidChange,
+            object: nil
+        )
+    }
+
+    @objc private func handleExternalWorkoutsChanged() {
+        loadExternalWorkouts()
+        mergeAndSortWorkouts()
     }
 
     @objc private func handleReceivedWorkoutFile(_ notification: Notification) {
@@ -117,16 +179,24 @@ class WorkoutListViewController: UIViewController {
             preferredStyle: .actionSheet
         )
 
-        // Show recent workouts
-        for (index, myWorkout) in allWorkouts.prefix(5).enumerated() {
+        // Show recent HealthKit workouts only (can only attach to your own workouts)
+        let healthKitItems = allWorkouts.filter { $0.source == .healthKit }
+
+        for unifiedWorkout in healthKitItems.prefix(5) {
+            guard let healthKitWorkout = unifiedWorkout.healthKitWorkout else { continue }
+
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "MM/dd HH:mm"
-            let dateString = dateFormatter.string(from: myWorkout.startDate)
-            let title = "\(myWorkout.workoutType) - \(dateString)"
+            let dateString = dateFormatter.string(from: unifiedWorkout.startDate)
+            let title = "\(unifiedWorkout.workoutType) - \(dateString)"
 
             alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
-                self?.openImportWorkoutViewController(with: workout, mode: .attachToExisting, attachTo: myWorkout)
+                self?.openImportWorkoutViewController(with: workout, mode: .attachToExisting, attachTo: healthKitWorkout)
             })
+        }
+
+        if healthKitItems.isEmpty {
+            alert.message = "첨부할 수 있는 HealthKit 기록이 없습니다."
         }
 
         alert.addAction(UIAlertAction(title: "취소", style: .cancel))
@@ -145,7 +215,7 @@ class WorkoutListViewController: UIViewController {
     }
     
     private func setupUI() {
-        title = "운동 기록"
+        title = "러닝 기록"
         view.backgroundColor = .black
         navigationItem.largeTitleDisplayMode = .never
 
@@ -162,14 +232,15 @@ class WorkoutListViewController: UIViewController {
         navigationController?.navigationBar.tintColor = .white
         navigationController?.navigationBar.prefersLargeTitles = true
 
-        // Import button (left)
-        let importButton = UIBarButtonItem(
-            image: UIImage(systemName: "square.and.arrow.down"),
-            style: .plain,
-            target: self,
-            action: #selector(showImportRecordPicker)
-        )
-        navigationItem.leftBarButtonItem = importButton
+        // Segmented Control
+        view.addSubview(segmentedControl)
+        segmentedControl.addTarget(self, action: #selector(sourceFilterChanged), for: .valueChanged)
+
+        segmentedControl.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(32)
+        }
 
         view.addSubview(tableView)
         view.addSubview(loadingIndicator)
@@ -177,9 +248,11 @@ class WorkoutListViewController: UIViewController {
 
         tableView.tableHeaderView = headerView
         tableView.backgroundColor = .black
+        tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 80, right: 0)
 
         tableView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.top.equalTo(segmentedControl.snp.bottom).offset(8)
+            make.leading.trailing.bottom.equalToSuperview()
         }
 
         loadingIndicator.snp.makeConstraints { make in
@@ -190,6 +263,29 @@ class WorkoutListViewController: UIViewController {
             make.center.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(40)
         }
+
+        // Floating Import Button
+        view.addSubview(importFloatingButton)
+        importFloatingButton.addTarget(self, action: #selector(showImportRecordPicker), for: .touchUpInside)
+
+        importFloatingButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-16)
+        }
+    }
+
+    @objc private func sourceFilterChanged() {
+        switch segmentedControl.selectedSegmentIndex {
+        case 0:
+            sourceFilter = nil // All
+        case 1:
+            sourceFilter = .healthKit
+        case 2:
+            sourceFilter = .external
+        default:
+            sourceFilter = nil
+        }
+        applyFilter()
     }
 
     @objc private func showImportRecordPicker() {
@@ -224,56 +320,58 @@ class WorkoutListViewController: UIViewController {
         WorkoutManager.shared.fetchGPSWorkouts { [weak self] workouts in
             DispatchQueue.main.async {
                 self?.loadingIndicator.stopAnimating()
-                // Sort by date descending (newest first)
-                self?.allWorkouts = workouts.sorted(by: { $0.startDate > $1.startDate })
-                self?.applyFilter()
+                // Filter only running workouts
+                self?.healthKitWorkouts = workouts.filter { $0.workoutType == "러닝" }
+                self?.mergeAndSortWorkouts()
             }
         }
     }
+
+    private func loadExternalWorkouts() {
+        // Filter only running workouts from external sources
+        externalWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == "러닝" }
+    }
+
+    private func mergeAndSortWorkouts() {
+        var unified: [UnifiedWorkoutItem] = []
+
+        // Add HealthKit workouts
+        for workout in healthKitWorkouts {
+            unified.append(UnifiedWorkoutItem(from: workout))
+        }
+
+        // Add External workouts
+        for external in externalWorkouts {
+            unified.append(UnifiedWorkoutItem(from: external))
+        }
+
+        // Sort by start date descending (newest first)
+        allWorkouts = unified.sorted { $0.startDate > $1.startDate }
+        applyFilter()
+    }
     
     private func applyFilter() {
-        if let filter = currentFilter {
-            filteredWorkouts = allWorkouts.filter { $0.workoutType == filter }
-        } else {
-            filteredWorkouts = allWorkouts
+        var result = allWorkouts
+
+        // Apply source filter
+        if let source = sourceFilter {
+            result = result.filter { $0.source == source }
         }
-        
+
+        // Apply type filter
+        if let filter = currentFilter {
+            result = result.filter { $0.workoutType == filter }
+        }
+
+        filteredWorkouts = result
         tableView.reloadData()
         emptyLabel.isHidden = !filteredWorkouts.isEmpty
         updateFilterMenu()
     }
     
     private func updateFilterMenu() {
-        // Get unique workout types
-        let types = Set(allWorkouts.map { $0.workoutType }).sorted()
-        
-        var actions: [UIAction] = []
-        
-        // "All" action
-        let allAction = UIAction(title: "모두", state: currentFilter == nil ? .on : .off) { [weak self] _ in
-            self?.currentFilter = nil
-            self?.applyFilter()
-        }
-        actions.append(allAction)
-        
-        // Type actions
-        for type in types {
-            let action = UIAction(title: type, state: currentFilter == type ? .on : .off) { [weak self] _ in
-                self?.currentFilter = type
-                self?.applyFilter()
-            }
-            actions.append(action)
-        }
-        
-        let menu = UIMenu(title: "운동 종류 필터", children: actions)
-        
-        // Setup/Update filter button
-        if navigationItem.rightBarButtonItem == nil {
-            let filterButton = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease.circle"), menu: menu)
-            navigationItem.rightBarButtonItem = filterButton
-        } else {
-            navigationItem.rightBarButtonItem?.menu = menu
-        }
+        // No filter menu needed since we only show running workouts
+        // The source filter (HealthKit/External) is handled by segmented control
     }
     
     private func showAuthorizationError() {
@@ -312,24 +410,71 @@ extension WorkoutListViewController: UITableViewDelegate, UITableViewDataSource 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
+        let unifiedWorkout = filteredWorkouts[indexPath.row]
         let detailVC = WorkoutDetailViewController()
-        detailVC.workoutData = filteredWorkouts[indexPath.row]
+
+        // Set workout data based on source
+        if let healthKitWorkout = unifiedWorkout.healthKitWorkout {
+            detailVC.workoutData = healthKitWorkout
+        } else if let externalWorkout = unifiedWorkout.externalWorkout {
+            // For external workouts, we pass as imported data
+            let importedData = ImportedWorkoutData(
+                ownerName: externalWorkout.creatorName ?? "",
+                originalData: externalWorkout.workoutData,
+                selectedFields: Set(ImportField.allCases),
+                useCurrentLayout: false
+            )
+            detailVC.workoutData = nil
+            detailVC.importedWorkoutData = importedData
+        }
+
         navigationController?.pushViewController(detailVC, animated: true)
     }
 
     // MARK: - Swipe Actions
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let workout = filteredWorkouts[indexPath.row]
+        let unifiedWorkout = filteredWorkouts[indexPath.row]
 
-        // Share action
-        let shareAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completionHandler in
-            self?.showShareOptions(for: workout, at: indexPath)
-            completionHandler(true)
+        var actions: [UIContextualAction] = []
+
+        // Share action - only for HealthKit workouts
+        if let healthKitWorkout = unifiedWorkout.healthKitWorkout {
+            let shareAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completionHandler in
+                self?.showShareOptions(for: healthKitWorkout, at: indexPath)
+                completionHandler(true)
+            }
+            shareAction.image = UIImage(systemName: "square.and.arrow.up")
+            shareAction.backgroundColor = .systemBlue
+            actions.append(shareAction)
         }
-        shareAction.image = UIImage(systemName: "square.and.arrow.up")
-        shareAction.backgroundColor = .systemBlue
 
-        return UISwipeActionsConfiguration(actions: [shareAction])
+        // Delete action - only for external workouts
+        if let externalWorkout = unifiedWorkout.externalWorkout {
+            let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completionHandler in
+                self?.confirmDeleteExternalWorkout(externalWorkout, at: indexPath)
+                completionHandler(true)
+            }
+            deleteAction.image = UIImage(systemName: "trash")
+            actions.append(deleteAction)
+        }
+
+        return UISwipeActionsConfiguration(actions: actions)
+    }
+
+    private func confirmDeleteExternalWorkout(_ workout: ExternalWorkout, at indexPath: IndexPath) {
+        let alert = UIAlertController(
+            title: "기록 삭제",
+            message: "이 외부 기록을 삭제하시겠습니까?",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { _ in
+            ExternalWorkoutManager.shared.deleteWorkout(id: workout.id)
+        })
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        present(alert, animated: true)
     }
 
     private func showShareOptions(for workout: WorkoutData, at indexPath: IndexPath) {
@@ -403,11 +548,17 @@ extension WorkoutListViewController: ImportWorkoutViewControllerDelegate {
     func importWorkoutViewController(_ controller: ImportWorkoutViewController, didImport data: ImportedWorkoutData, mode: ImportMode, attachTo: WorkoutData?) {
         switch mode {
         case .createNew:
-            // Open WorkoutDetailViewController with imported data only (no health data required)
-            let detailVC = WorkoutDetailViewController()
-            detailVC.workoutData = nil  // No health data
-            detailVC.importedWorkoutData = data
-            navigationController?.pushViewController(detailVC, animated: true)
+            // Save to ExternalWorkoutManager for persistence
+            let externalWorkout = ExternalWorkout(
+                importedAt: Date(),
+                sourceFileName: nil,
+                creatorName: data.ownerName.isEmpty ? nil : data.ownerName,
+                workoutData: data.originalData
+            )
+            ExternalWorkoutManager.shared.saveWorkout(externalWorkout)
+
+            // Show success message (list will auto-update via notification)
+            showImportSuccess(workoutType: data.originalData.type)
 
         case .attachToExisting:
             if let workoutData = attachTo {
@@ -424,10 +575,10 @@ extension WorkoutListViewController: ImportWorkoutViewControllerDelegate {
         // Nothing to do
     }
 
-    private func showImportSuccess(ownerName: String) {
+    private func showImportSuccess(workoutType: String) {
         let alert = UIAlertController(
             title: "가져오기 완료",
-            message: "\(ownerName)님의 기록을 성공적으로 가져왔습니다.",
+            message: "\(workoutType) 기록을 성공적으로 가져왔습니다.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "확인", style: .default))
@@ -473,6 +624,17 @@ class WorkoutCell: UITableViewCell {
         return imageView
     }()
 
+    private let sourceBadge: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 10, weight: .semibold)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.layer.cornerRadius = 4
+        label.layer.masksToBounds = true
+        label.isHidden = true
+        return label
+    }()
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
@@ -494,50 +656,59 @@ class WorkoutCell: UITableViewCell {
 
         contentView.addSubview(iconImageView)
         contentView.addSubview(typeLabel)
+        contentView.addSubview(sourceBadge)
         contentView.addSubview(dateLabel)
         contentView.addSubview(distanceLabel)
         contentView.addSubview(durationLabel)
-        
+
         iconImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(16)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(40)
         }
-        
+
         typeLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(16)
             make.leading.equalTo(iconImageView.snp.trailing).offset(12)
         }
-        
+
+        sourceBadge.snp.makeConstraints { make in
+            make.leading.equalTo(typeLabel.snp.trailing).offset(8)
+            make.centerY.equalTo(typeLabel)
+            make.height.equalTo(18)
+            make.width.greaterThanOrEqualTo(40)
+        }
+
         dateLabel.snp.makeConstraints { make in
             make.top.equalTo(typeLabel.snp.bottom).offset(4)
             make.leading.equalTo(typeLabel)
         }
-        
+
         distanceLabel.snp.makeConstraints { make in
             make.trailing.equalToSuperview().inset(16)
             make.centerY.equalTo(typeLabel)
         }
-        
+
         durationLabel.snp.makeConstraints { make in
             make.trailing.equalToSuperview().inset(16)
             make.centerY.equalTo(dateLabel)
         }
     }
-    
-    func configure(with workout: WorkoutData) {
+
+    func configure(with workout: UnifiedWorkoutItem) {
         typeLabel.text = workout.workoutType
-        
+
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy.MM.dd HH:mm"
         dateLabel.text = formatter.string(from: workout.startDate)
-        
+
         distanceLabel.text = String(format: "%.2f km", workout.distance / 1000)
-        
+
         let minutes = Int(workout.duration) / 60
         let seconds = Int(workout.duration) % 60
         durationLabel.text = String(format: "%02d:%02d", minutes, seconds)
-        
+
+        // Set icon based on workout type
         switch workout.workoutType {
         case "러닝":
             iconImageView.image = UIImage(systemName: "figure.run")
@@ -550,6 +721,24 @@ class WorkoutCell: UITableViewCell {
         default:
             iconImageView.image = UIImage(systemName: "figure.mixed.cardio")
         }
+
+        // Show source badge for external workouts
+        switch workout.source {
+        case .healthKit:
+            sourceBadge.isHidden = true
+            iconImageView.tintColor = .systemBlue
+        case .external:
+            sourceBadge.isHidden = false
+            sourceBadge.text = " 외부 "
+            sourceBadge.backgroundColor = .systemOrange
+            iconImageView.tintColor = .systemOrange
+        }
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        sourceBadge.isHidden = true
+        iconImageView.tintColor = .systemBlue
     }
 }
 
