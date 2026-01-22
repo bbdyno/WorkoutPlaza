@@ -2411,11 +2411,6 @@ class WorkoutDetailViewController: UIViewController {
             self?.presentCustomGradientPicker()
         })
 
-        // Overlay control
-        actionSheet.addAction(UIAlertAction(title: "오버레이 설정...", style: .default) { [weak self] _ in
-            self?.showOverlayControl()
-        })
-
         actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
 
         // iPad support
@@ -2427,63 +2422,6 @@ class WorkoutDetailViewController: UIViewController {
         present(actionSheet, animated: true)
     }
 
-    private func showOverlayControl() {
-        let alert = UIAlertController(title: "배경 오버레이", message: "어두운 오버레이를 추가하여 위젯 가독성을 높일 수 있습니다.", preferredStyle: .alert)
-
-        // Add slider to control opacity
-        let sliderVC = UIViewController()
-        sliderVC.preferredContentSize = CGSize(width: 270, height: 80)
-
-        let slider = UISlider()
-        slider.minimumValue = 0
-        slider.maximumValue = 0.8
-        let currentAlpha = dimOverlay.isHidden ? 0 : dimOverlay.backgroundColor?.cgColor.alpha ?? 0.3
-        slider.value = Float(currentAlpha)
-        slider.addTarget(self, action: #selector(overlaySliderChanged(_:)), for: .valueChanged)
-
-        let label = UILabel()
-        label.text = "불투명도: \(Int(slider.value * 100))%"
-        label.font = .systemFont(ofSize: 14)
-        label.textAlignment = .center
-        label.tag = 999  // Tag for updating
-
-        sliderVC.view.addSubview(label)
-        sliderVC.view.addSubview(slider)
-
-        label.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(10)
-            make.leading.trailing.equalToSuperview().inset(20)
-        }
-
-        slider.snp.makeConstraints { make in
-            make.top.equalTo(label.snp.bottom).offset(10)
-            make.leading.trailing.equalToSuperview().inset(20)
-        }
-
-        alert.setValue(sliderVC, forKey: "contentViewController")
-
-        alert.addAction(UIAlertAction(title: "끄기", style: .destructive) { [weak self] _ in
-            self?.dimOverlay.isHidden = true
-        })
-
-        alert.addAction(UIAlertAction(title: "완료", style: .default))
-
-        present(alert, animated: true)
-    }
-
-    @objc private func overlaySliderChanged(_ slider: UISlider) {
-        let opacity = CGFloat(slider.value)
-        dimOverlay.backgroundColor = UIColor.black.withAlphaComponent(opacity)
-        dimOverlay.isHidden = opacity < 0.01
-
-        // Update label
-        if let alert = presentedViewController as? UIAlertController,
-           let contentVC = alert.value(forKey: "contentViewController") as? UIViewController,
-           let label = contentVC.view.viewWithTag(999) as? UILabel {
-            label.text = "불투명도: \(Int(slider.value * 100))%"
-        }
-    }
-    
     private func presentCustomGradientPicker() {
         let picker = CustomGradientPickerViewController()
         picker.delegate = self
@@ -3017,11 +2955,11 @@ extension WorkoutDetailViewController: TextWidgetDelegate {
 
 // MARK: - CustomGradientPickerDelegate
 extension WorkoutDetailViewController: CustomGradientPickerDelegate {
-    func customGradientPicker(_ picker: CustomGradientPickerViewController, didSelectColors colors: [UIColor]) {
+    func customGradientPicker(_ picker: CustomGradientPickerViewController, didSelectColors colors: [UIColor], direction: GradientDirection) {
         backgroundImageView.isHidden = true
         backgroundTemplateView.isHidden = false
         dimOverlay.isHidden = true
-        backgroundTemplateView.applyCustomGradient(colors: colors)
+        backgroundTemplateView.applyCustomGradient(colors: colors, direction: direction)
     }
 }
 
