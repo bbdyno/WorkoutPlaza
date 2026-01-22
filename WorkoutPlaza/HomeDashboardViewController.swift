@@ -239,13 +239,7 @@ class HomeDashboardViewController: UIViewController {
         case .climbing:
             let climbingInputVC = ClimbingInputViewController()
             climbingInputVC.delegate = self
-            let navController = UINavigationController(rootViewController: climbingInputVC)
-
-            if let sheet = navController.sheetPresentationController {
-                sheet.detents = [.large()]
-            }
-
-            present(navController, animated: true)
+            navigationController?.pushViewController(climbingInputVC, animated: true)
         }
     }
 }
@@ -255,8 +249,6 @@ class HomeDashboardViewController: UIViewController {
 extension HomeDashboardViewController: ClimbingInputDelegate {
     func climbingInput(_ controller: ClimbingInputViewController, didCreateSession session: ClimbingData) {
         let detailVC = ClimbingDetailViewController(climbingData: session)
-        let navController = UINavigationController(rootViewController: detailVC)
-        navController.modalPresentationStyle = .fullScreen
-        present(navController, animated: true)
+        navigationController?.pushViewController(detailVC, animated: true)
     }
 }

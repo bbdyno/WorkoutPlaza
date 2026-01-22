@@ -27,32 +27,34 @@ class BaseClimbingWidget: UIView, Selectable {
     // MARK: - UI Components
     let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .white.withAlphaComponent(0.7)
-        label.textAlignment = .center
-        return label
-    }()
-
-    let valueLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 32, weight: .bold)
-        label.textColor = .white
-        label.textAlignment = .center
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0.5
         return label
     }()
 
+    let valueLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 24, weight: .bold)
+        label.textColor = .white
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.1
+        return label
+    }()
+
     let unitLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .regular)
+        label.font = .systemFont(ofSize: 14, weight: .regular)
         label.textColor = .white.withAlphaComponent(0.7)
-        label.textAlignment = .center
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.5
         return label
     }()
 
     // MARK: - Properties
     var initialSize: CGSize = .zero
+    var baseFontSizes: [String: CGFloat] = [:]
     private var initialCenter: CGPoint = .zero
 
     // MARK: - Initialization
@@ -77,19 +79,19 @@ class BaseClimbingWidget: UIView, Selectable {
         addSubview(unitLabel)
 
         titleLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(8)
-            make.leading.trailing.equalToSuperview().inset(8)
+            make.top.equalToSuperview().offset(12)
+            make.leading.trailing.equalToSuperview().inset(12)
         }
 
         valueLabel.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.leading.trailing.equalToSuperview().inset(8)
+            make.leading.equalToSuperview().inset(12)
         }
 
         unitLabel.snp.makeConstraints { make in
-            make.top.equalTo(valueLabel.snp.bottom).offset(2)
-            make.leading.trailing.equalToSuperview().inset(8)
-            make.bottom.lessThanOrEqualToSuperview().offset(-8)
+            make.bottom.equalTo(valueLabel.snp.bottom).offset(-2)
+            make.leading.equalTo(valueLabel.snp.trailing).offset(4)
+            make.trailing.lessThanOrEqualToSuperview().inset(12)
         }
     }
 
@@ -217,18 +219,36 @@ class BaseClimbingWidget: UIView, Selectable {
     }
 
     func updateFonts() {
-        guard initialSize.width > 0 && initialSize.height > 0 else { return }
+        // Store base font sizes if not already stored
+        if baseFontSizes.isEmpty {
+            baseFontSizes["title"] = 12
+            baseFontSizes["value"] = 24
+            baseFontSizes["unit"] = 14
+        }
 
-        let scaleFactor = min(frame.width / initialSize.width, frame.height / initialSize.height)
-        let clampedScale = max(0.5, min(3.0, scaleFactor))
+        // Calculate scale factor based on current size
+        let scaleFactor = calculateScaleFactor()
 
-        let baseTitleSize: CGFloat = 14
-        let baseValueSize: CGFloat = 32
-        let baseUnitSize: CGFloat = 12
+        let titleSize = (baseFontSizes["title"] ?? 12) * scaleFactor
+        let valueSize = (baseFontSizes["value"] ?? 24) * scaleFactor
+        let unitSize = (baseFontSizes["unit"] ?? 14) * scaleFactor
 
-        titleLabel.font = currentFontStyle.font(size: baseTitleSize * clampedScale, weight: .medium)
-        valueLabel.font = currentFontStyle.font(size: baseValueSize * clampedScale, weight: .bold)
-        unitLabel.font = currentFontStyle.font(size: baseUnitSize * clampedScale, weight: .regular)
+        titleLabel.font = currentFontStyle.font(size: titleSize, weight: .medium)
+        valueLabel.font = currentFontStyle.font(size: valueSize, weight: .bold)
+        unitLabel.font = currentFontStyle.font(size: unitSize, weight: .regular)
+    }
+
+    func calculateScaleFactor() -> CGFloat {
+        guard initialSize != .zero else {
+            initialSize = bounds.size
+            return 1.0
+        }
+
+        let widthScale = bounds.width / initialSize.width
+        let heightScale = bounds.height / initialSize.height
+        let averageScale = (widthScale + heightScale) / 2.0
+
+        return min(max(averageScale, 0.5), 3.0)
     }
 
     // MARK: - Resize Handles
@@ -320,8 +340,6 @@ class ClimbingGymWidget: BaseClimbingWidget {
     func configure(gymName: String) {
         self.gymName = gymName
         valueLabel.text = gymName
-        initialSize = bounds.size
-        updateFonts()
     }
 }
 
@@ -353,9 +371,15 @@ class ClimbingDisciplineWidget: BaseClimbingWidget {
     private func setupIcon() {
         addSubview(iconImageView)
         iconImageView.snp.makeConstraints { make in
-            make.trailing.equalTo(valueLabel.snp.leading).offset(-8)
+            make.leading.equalToSuperview().offset(12)
             make.centerY.equalTo(valueLabel)
             make.width.height.equalTo(24)
+        }
+
+        // Move valueLabel to the right of icon
+        valueLabel.snp.remakeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.leading.equalTo(iconImageView.snp.trailing).offset(8)
         }
     }
 
@@ -363,8 +387,6 @@ class ClimbingDisciplineWidget: BaseClimbingWidget {
         self.discipline = discipline
         valueLabel.text = discipline.displayName
         iconImageView.image = UIImage(systemName: discipline.iconName)
-        initialSize = bounds.size
-        updateFonts()
     }
 
     override func updateColors() {
@@ -392,8 +414,6 @@ class ClimbingGradeWidget: BaseClimbingWidget {
     func configure(grade: String) {
         self.grade = grade
         valueLabel.text = grade
-        initialSize = bounds.size
-        updateFonts()
     }
 }
 
@@ -416,8 +436,6 @@ class ClimbingAttemptsWidget: BaseClimbingWidget {
     func configure(attempts: Int) {
         self.attempts = attempts
         valueLabel.text = "\(attempts)"
-        initialSize = bounds.size
-        updateFonts()
     }
 }
 
@@ -440,8 +458,6 @@ class ClimbingTakesWidget: BaseClimbingWidget {
     func configure(takes: Int) {
         self.takes = takes
         valueLabel.text = "\(takes)"
-        initialSize = bounds.size
-        updateFonts()
     }
 }
 
@@ -466,8 +482,6 @@ class ClimbingSessionWidget: BaseClimbingWidget {
         self.sentCount = sent
         self.totalCount = total
         valueLabel.text = "\(sent)/\(total)"
-        initialSize = bounds.size
-        updateFonts()
     }
 }
 
@@ -490,7 +504,5 @@ class ClimbingHighestGradeWidget: BaseClimbingWidget {
     func configure(highestGrade: String) {
         self.highestGrade = highestGrade
         valueLabel.text = highestGrade.isEmpty ? "-" : highestGrade
-        initialSize = bounds.size
-        updateFonts()
     }
 }
