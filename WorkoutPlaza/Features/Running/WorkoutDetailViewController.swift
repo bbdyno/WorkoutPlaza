@@ -231,9 +231,9 @@ class WorkoutDetailViewController: UIViewController {
 
     private let instructionLabel: UILabel = {
         let label = UILabel()
-        label.text = "💡 위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
+        label.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
         label.font = .systemFont(ofSize: 14)
-        label.textColor = .secondaryLabel
+        label.textColor = .white
         label.textAlignment = .center
         label.numberOfLines = 0
         return label
@@ -1895,8 +1895,7 @@ class WorkoutDetailViewController: UIViewController {
             }
         }
         
-        // Reset instruction label
-        instructionLabel.text = "💡 위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
+        instructionLabel.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
 
         print("✅ Applied template directly: \(template.name)")
     }

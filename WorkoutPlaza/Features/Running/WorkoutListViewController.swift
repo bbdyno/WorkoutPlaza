@@ -58,22 +58,6 @@ class WorkoutListViewController: UIViewController {
         return sc
     }()
 
-    private let headerView: UIView = {
-        let view = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 40))
-        view.backgroundColor = .clear
-        let label = UILabel()
-        label.text = "📍 GPS 정보가 있는 운동만 표시됩니다"
-        label.font = .systemFont(ofSize: 13, weight: .medium)
-        label.textColor = .gray
-        label.textAlignment = .center
-
-        view.addSubview(label)
-        label.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-        }
-        return view
-    }()
-
     private let importFloatingButton: UIButton = {
         let button = UIButton(type: .system)
 
@@ -246,7 +230,6 @@ class WorkoutListViewController: UIViewController {
         view.addSubview(loadingIndicator)
         view.addSubview(emptyLabel)
 
-        tableView.tableHeaderView = headerView
         tableView.backgroundColor = .black
         tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 80, right: 0)
 

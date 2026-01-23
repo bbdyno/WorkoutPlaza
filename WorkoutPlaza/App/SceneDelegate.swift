@@ -17,11 +17,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         window = UIWindow(windowScene: windowScene)
 
-        let homeVC = HomeDashboardViewController()
-        let navigationController = UINavigationController(rootViewController: homeVC)
-        navigationController.navigationBar.prefersLargeTitles = true
-
-        window?.rootViewController = navigationController
+        // Use Tab Bar Controller as root
+        let tabBarController = MainTabBarController()
+        window?.rootViewController = tabBarController
         window?.makeKeyAndVisible()
 
         // Handle URL if app was launched with one
