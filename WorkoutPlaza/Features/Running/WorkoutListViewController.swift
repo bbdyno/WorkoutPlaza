@@ -38,7 +38,7 @@ class WorkoutListViewController: UIViewController {
     
     private let emptyLabel: UILabel = {
         let label = UILabel()
-        label.text = "GPS 기록이 있는 운동이 없습니다"
+        label.text = "러닝 기록이 없습니다"
         label.textColor = .lightGray
         label.font = .systemFont(ofSize: 16)
         label.textAlignment = .center
@@ -95,10 +95,25 @@ class WorkoutListViewController: UIViewController {
         super.viewWillAppear(animated)
         // Ensure navigation bar is visible (HomeDashboard hides it)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+
+        // Refresh data when returning to this screen
+        refreshData()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - Data Refresh
+
+    private func refreshData() {
+        loadWorkouts()
+        loadExternalWorkouts()
+        mergeAndSortWorkouts()
+    }
+
+    @objc private func handleAppDidBecomeActive() {
+        refreshData()
     }
 
     private func setupNotificationObservers() {
@@ -113,6 +128,14 @@ class WorkoutListViewController: UIViewController {
             self,
             selector: #selector(handleExternalWorkoutsChanged),
             name: .externalWorkoutsDidChange,
+            object: nil
+        )
+
+        // Refresh data when app becomes active (returns from background)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
             object: nil
         )
     }
@@ -300,10 +323,10 @@ class WorkoutListViewController: UIViewController {
     }
     
     private func loadWorkouts() {
-        WorkoutManager.shared.fetchGPSWorkouts { [weak self] workouts in
+        WorkoutManager.shared.fetchWorkouts { [weak self] workouts in
             DispatchQueue.main.async {
                 self?.loadingIndicator.stopAnimating()
-                // Filter only running workouts
+                // Filter only running workouts (GPS 유무와 관계없이 모든 러닝 기록)
                 self?.healthKitWorkouts = workouts.filter { $0.workoutType == "러닝" }
                 self?.mergeAndSortWorkouts()
             }
