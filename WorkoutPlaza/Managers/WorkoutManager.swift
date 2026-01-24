@@ -32,41 +32,49 @@ class WorkoutManager {
         }
     }
     
-    // MARK: - GPS 기반 운동 가져오기
-    func fetchGPSWorkouts(completion: @escaping ([WorkoutData]) -> Void) {
+    // MARK: - 운동 가져오기 (GPS 유무와 관계없이 모든 운동)
+    func fetchWorkouts(completion: @escaping ([WorkoutData]) -> Void) {
         let workoutType = HKObjectType.workoutType()
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
-        
+
         let query = HKSampleQuery(sampleType: workoutType, predicate: nil, limit: 50, sortDescriptors: [sortDescriptor]) { [weak self] query, samples, error in
             guard let workouts = samples as? [HKWorkout], error == nil else {
                 completion([])
                 return
             }
-            
+
             let dispatchGroup = DispatchGroup()
             var workoutDataArray: [WorkoutData] = []
-            
+
             for workout in workouts {
                 dispatchGroup.enter()
-                
+
                 self?.fetchRoute(for: workout) { route in
-                    if !route.isEmpty {
-                        let workoutData = WorkoutData(
-                            workout: workout,
-                            route: route
-                        )
-                        workoutDataArray.append(workoutData)
-                    }
+                    // GPS 경로 유무와 관계없이 모든 운동을 포함
+                    let workoutData = WorkoutData(
+                        workout: workout,
+                        route: route
+                    )
+                    workoutDataArray.append(workoutData)
                     dispatchGroup.leave()
                 }
             }
-            
+
             dispatchGroup.notify(queue: .main) {
                 completion(workoutDataArray)
             }
         }
-        
+
         healthStore.execute(query)
+    }
+
+    // MARK: - GPS 기반 운동 가져오기 (하위 호환용)
+    func fetchGPSWorkouts(completion: @escaping ([WorkoutData]) -> Void) {
+        fetchWorkouts { workouts in
+            // GPS 경로가 있는 운동만 필터링
+            let gpsWorkouts = workouts.filter { $0.hasRoute }
+            completion(gpsWorkouts)
+        }
     }
     
     // MARK: - 경로 데이터 가져오기
@@ -102,7 +110,12 @@ class WorkoutManager {
 struct WorkoutData {
     let workout: HKWorkout
     let route: [CLLocation]
-    
+
+    /// GPS 경로 데이터 존재 여부
+    var hasRoute: Bool {
+        !route.isEmpty
+    }
+
     var distance: Double {
         workout.totalDistance?.doubleValue(for: .meter()) ?? 0
     }

@@ -115,6 +115,34 @@ class CalendarStatsViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         loadWorkoutDates()
+        setupNotificationObservers()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshData()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleAppDidBecomeActive() {
+        refreshData()
+    }
+
+    private func refreshData() {
+        workoutDates.removeAll()
+        loadWorkoutDates()
     }
 
     private func setupUI() {
@@ -145,8 +173,8 @@ class CalendarStatsViewController: UIViewController {
             workoutDates.insert(components)
         }
 
-        // Load running workout dates (asynchronous from HealthKit)
-        WorkoutManager.shared.fetchGPSWorkouts { [weak self] workouts in
+        // Load running workout dates (asynchronous from HealthKit, GPS 유무와 관계없이)
+        WorkoutManager.shared.fetchWorkouts { [weak self] workouts in
             guard let self = self else { return }
             for workout in workouts {
                 let components = Calendar.current.dateComponents([.year, .month, .day], from: workout.startDate)
@@ -197,6 +225,35 @@ class RunningStatsViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         loadStats()
+        setupNotificationObservers()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshData()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleAppDidBecomeActive() {
+        refreshData()
+    }
+
+    private func refreshData() {
+        // Clear existing stats
+        stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        loadStats()
     }
 
     private func setupUI() {
@@ -226,8 +283,8 @@ class RunningStatsViewController: UIViewController {
         stackView.addArrangedSubview(loading)
         loadingLabel = loading
 
-        // Fetch workouts from HealthKit (async)
-        WorkoutManager.shared.fetchGPSWorkouts { [weak self] workouts in
+        // Fetch workouts from HealthKit (async, GPS 유무와 관계없이)
+        WorkoutManager.shared.fetchWorkouts { [weak self] workouts in
             guard let self = self else { return }
 
             // Remove loading label
@@ -374,6 +431,35 @@ class ClimbingStatsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        loadStats()
+        setupNotificationObservers()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshData()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleAppDidBecomeActive() {
+        refreshData()
+    }
+
+    private func refreshData() {
+        // Clear existing stats
+        stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         loadStats()
     }
 

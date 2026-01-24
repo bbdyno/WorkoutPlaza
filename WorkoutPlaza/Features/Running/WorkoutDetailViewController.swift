@@ -2063,9 +2063,12 @@ class WorkoutDetailViewController: UIViewController {
     }
     
     private func canAddWidget(_ type: SingleWidgetType) -> Bool {
+        let hasRoute = workoutData?.hasRoute ?? false
+
         switch type {
         case .routeMap:
-            return routeMapView == nil
+            // GPS 경로 데이터가 없거나 이미 추가된 경우 비활성화
+            return routeMapView == nil && hasRoute
         case .distance:
             return !widgets.contains(where: { $0 is DistanceWidget })
         case .duration:
@@ -2083,7 +2086,8 @@ class WorkoutDetailViewController: UIViewController {
         case .text:
             return true  // Multiple text widgets allowed
         case .location:
-            return !widgets.contains(where: { $0 is LocationWidget })
+            // GPS 경로 데이터가 없거나 이미 추가된 경우 비활성화
+            return !widgets.contains(where: { $0 is LocationWidget }) && hasRoute
         }
     }
 
@@ -2091,11 +2095,23 @@ class WorkoutDetailViewController: UIViewController {
         guard let data = workoutData else { return }
 
         let actionSheet = UIAlertController(title: "위젯 추가", message: nil, preferredStyle: .actionSheet)
+        let hasRoute = data.hasRoute
 
         // 1. Single Widgets
         for type in SingleWidgetType.allCases {
             let isAdded = !canAddWidget(type)
-            let title = isAdded ? "✓ \(type.rawValue)" : type.rawValue
+            var title = type.rawValue
+
+            // GPS 관련 위젯에 상태 표시
+            if type == .routeMap || type == .location {
+                if !hasRoute {
+                    title = "\(type.rawValue) (GPS 없음)"
+                } else if isAdded {
+                    title = "✓ \(type.rawValue)"
+                }
+            } else if isAdded {
+                title = "✓ \(type.rawValue)"
+            }
 
             let action = UIAlertAction(title: title, style: .default) { [weak self] _ in
                 self?.addSingleWidget(type, data: data)
@@ -2193,6 +2209,18 @@ class WorkoutDetailViewController: UIViewController {
         
         switch type {
         case .routeMap:
+            // GPS 경로 데이터가 없으면 에러 표시
+            guard data.hasRoute else {
+                let alert = UIAlertController(
+                    title: "경로 정보 없음",
+                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                present(alert, animated: true)
+                return
+            }
+
             let mapView = RouteMapView()
             mapView.setRoute(data.route)
             routeMapView = mapView
@@ -2473,52 +2501,57 @@ class WorkoutDetailViewController: UIViewController {
     private func configureWithWorkoutData() {
         guard let data = workoutData else { return }
 
-        // 경로 맵 뷰 추가 (frame 기반으로 변경)
-        let mapView = RouteMapView()
-        mapView.setRoute(data.route)
-        routeMapView = mapView
+        // GPS 경로 데이터가 있을 때만 경로 맵 뷰 추가
+        if data.hasRoute {
+            let mapView = RouteMapView()
+            mapView.setRoute(data.route)
+            routeMapView = mapView
 
-        // addWidget으로 추가하여 다른 위젯과 동일하게 처리
-        contentView.addSubview(mapView)
-        widgets.append(mapView)
+            // addWidget으로 추가하여 다른 위젯과 동일하게 처리
+            contentView.addSubview(mapView)
+            widgets.append(mapView)
 
-        // Calculate optimal size based on route aspect ratio
-        let mapSize = mapView.calculateOptimalSize(maxDimension: 280)
-        let mapY: CGFloat = 70  // instructionLabel 아래 (16 + 약 34 높이 + 20)
-        let mapX = (view.bounds.width - mapSize.width) / 2
-        mapView.frame = CGRect(x: mapX, y: mapY, width: mapSize.width, height: mapSize.height)
+            // Calculate optimal size based on route aspect ratio
+            let mapSize = mapView.calculateOptimalSize(maxDimension: 280)
+            let mapY: CGFloat = 70  // instructionLabel 아래 (16 + 약 34 높이 + 20)
+            let mapX = (view.bounds.width - mapSize.width) / 2
+            mapView.frame = CGRect(x: mapX, y: mapY, width: mapSize.width, height: mapSize.height)
 
-        // Setup selection
-        mapView.selectionDelegate = self
-        selectionManager.registerItem(mapView)
-        mapView.initialSize = mapSize
+            // Setup selection
+            mapView.selectionDelegate = self
+            selectionManager.registerItem(mapView)
+            mapView.initialSize = mapSize
 
-        // Load saved color
-        if let savedColor = ColorPreferences.shared.loadColor(for: mapView.itemIdentifier) {
-            mapView.applyColor(savedColor)
+            // Load saved color
+            if let savedColor = ColorPreferences.shared.loadColor(for: mapView.itemIdentifier) {
+                mapView.applyColor(savedColor)
+            }
         }
 
         // 기본 위젯만 생성 (거리, 시간, 평균 페이스)
         createDefaultWidgets(for: data)
     }
-    
+
     private func createDefaultWidgets(for data: WorkoutData) {
         let widgetSize = CGSize(width: 160, height: 80)
+
+        // GPS 경로가 없으면 위젯을 더 위쪽에 배치
+        let startY: CGFloat = data.hasRoute ? 350 : 100
 
         // 1. 거리 위젯
         let distanceWidget = DistanceWidget()
         distanceWidget.configure(distance: data.distance)
-        addWidget(distanceWidget, size: widgetSize, position: CGPoint(x: 30, y: 350))
+        addWidget(distanceWidget, size: widgetSize, position: CGPoint(x: 30, y: startY))
 
         // 2. 시간 위젯
         let durationWidget = DurationWidget()
         durationWidget.configure(duration: data.duration)
-        addWidget(durationWidget, size: widgetSize, position: CGPoint(x: 210, y: 350))
+        addWidget(durationWidget, size: widgetSize, position: CGPoint(x: 210, y: startY))
 
         // 3. 페이스 위젯
         let paceWidget = PaceWidget()
         paceWidget.configure(pace: data.pace)
-        addWidget(paceWidget, size: widgetSize, position: CGPoint(x: 30, y: 470))
+        addWidget(paceWidget, size: widgetSize, position: CGPoint(x: 30, y: startY + 120))
     }
     
     private func createAdditionalWidgets(for data: WorkoutData) {
