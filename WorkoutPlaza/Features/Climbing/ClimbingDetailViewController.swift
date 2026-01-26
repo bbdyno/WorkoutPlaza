@@ -212,28 +212,49 @@ class ClimbingDetailViewController: UIViewController {
             action: #selector(doneTapped)
         )
 
-        // ScrollView
-        view.addSubview(scrollView)
+        // Add instruction label
+        let instructionLabel = UILabel()
+        instructionLabel.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
+        instructionLabel.font = .systemFont(ofSize: 14)
+        instructionLabel.textColor = .white
+        instructionLabel.textAlignment = .center
+        instructionLabel.numberOfLines = 0
+
+        view.addSubview(instructionLabel)
+        instructionLabel.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+
+        // Add canvas container
+        view.addSubview(canvasContainerView)
+        canvasContainerView.snp.makeConstraints { make in
+            make.top.equalTo(instructionLabel.snp.bottom).offset(16)
+            make.centerX.equalToSuperview()
+            make.width.equalTo(360)
+            make.height.equalTo(640)
+        }
+
+        // Add scrollView and contentView to canvas container
+        canvasContainerView.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+
+        // Disable scrolling and zooming
+        scrollView.isScrollEnabled = false
+        scrollView.clipsToBounds = true
+        scrollView.layer.cornerRadius = 12
+
         scrollView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
-        scrollView.delegate = self
-        scrollView.minimumZoomScale = 0.5
-        scrollView.maximumZoomScale = 2.0
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.showsHorizontalScrollIndicator = false
 
-        // Canvas Container
-        scrollView.addSubview(canvasContainerView)
-        canvasContainerView.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-        }
-
-        // Content View (Canvas)
-        canvasContainerView.addSubview(contentView)
         contentView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
+            make.width.height.equalToSuperview()
         }
+
+        // Ensure content is clipped to bounds for correct rendering
+        contentView.clipsToBounds = true
 
         // Background layers
         contentView.addSubview(backgroundTemplateView)
@@ -244,6 +265,7 @@ class ClimbingDetailViewController: UIViewController {
 
         contentView.addSubview(backgroundImageView)
         // backgroundImageView uses manual frame layout
+        backgroundImageView.contentMode = .scaleToFill
 
         contentView.addSubview(dimOverlay)
         dimOverlay.snp.makeConstraints { make in
@@ -337,17 +359,13 @@ class ClimbingDetailViewController: UIViewController {
 
     // MARK: - Canvas Size (Reused AspectRatio from Running module)
     private func updateCanvasSize() {
-        let screenWidth = UIScreen.main.bounds.width
-        let maxWidth = min(screenWidth - 40, 400)
-        let height = maxWidth * currentAspectRatio.ratio
+        let canvasWidth: CGFloat = 360
+        let height = canvasWidth * currentAspectRatio.ratio
 
-        canvasContainerView.snp.remakeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.equalTo(maxWidth)
+        canvasContainerView.snp.updateConstraints { make in
+            make.width.equalTo(canvasWidth)
             make.height.equalTo(height)
         }
-
-        scrollView.contentSize = CGSize(width: maxWidth, height: height)
 
         // Update aspect ratio button title
         aspectRatioButton.setTitle(currentAspectRatio.displayName, for: .normal)
@@ -358,9 +376,8 @@ class ClimbingDetailViewController: UIViewController {
         guard let data = climbingData else { return }
 
         let padding: CGFloat = 20
-        let screenWidth = UIScreen.main.bounds.width
-        let maxWidth = min(screenWidth - 40, 400)
-        let widgetWidth = maxWidth - (padding * 2)
+        let canvasWidth: CGFloat = 360  // 캔버스 고정 크기
+        let widgetWidth = canvasWidth - (padding * 2)
         let widgetHeight: CGFloat = 70
         let halfWidth = (widgetWidth - 12) / 2
         var currentY: CGFloat = padding + 40 // Below watermark
@@ -393,16 +410,6 @@ class ClimbingDetailViewController: UIViewController {
         sessionWidget.configure(sent: data.sentRoutes, total: data.totalRoutes)
         sessionWidget.initialSize = sessionWidget.frame.size
         addWidget(sessionWidget)
-        currentY += widgetHeight + 12
-
-        // Row 4: Highest Grade
-        if let highestGrade = data.highestGradeSent, !highestGrade.isEmpty {
-            let highestWidget = ClimbingHighestGradeWidget()
-            highestWidget.frame = CGRect(x: padding, y: currentY, width: widgetWidth, height: widgetHeight)
-            highestWidget.configure(highestGrade: highestGrade)
-            highestWidget.initialSize = highestWidget.frame.size
-            addWidget(highestWidget)
-        }
     }
 
     private func addWidget(_ widget: UIView) {
@@ -421,7 +428,8 @@ class ClimbingDetailViewController: UIViewController {
     // MARK: - Actions
 
     @objc private func doneTapped() {
-        navigationController?.popViewController(animated: true)
+        // 이미 ClimbingInputViewController에서 저장됨, 카드 편집 완료 후 닫기
+        dismiss(animated: true)
     }
 
     @objc private func handleBackgroundTap(_ gesture: UITapGestureRecognizer) {
@@ -467,11 +475,8 @@ class ClimbingDetailViewController: UIViewController {
         let climbingWidgets: [(String, WidgetType)] = [
             ("클라이밍짐", .climbingGym),
             ("종목", .climbingDiscipline),
-            ("난이도", .climbingGrade),
-            ("시도 횟수", .climbingAttempts),
-            ("테이크", .climbingTakes),
             ("세션 기록", .climbingSession),
-            ("최고 난이도", .climbingHighestGrade),
+            ("완등 현황", .climbingRoutesByColor),
             ("텍스트", .text),
             ("날짜", .date)
         ]
@@ -495,11 +500,11 @@ class ClimbingDetailViewController: UIViewController {
     private func addNewWidget(type: WidgetType) {
         guard let data = climbingData else { return }
 
-        let screenWidth = UIScreen.main.bounds.width
-        let maxWidth = min(screenWidth - 40, 400)
+        let canvasWidth: CGFloat = 360  // 캔버스 고정 크기
+        let canvasHeight = canvasWidth * currentAspectRatio.ratio
         let widgetSize = CGSize(width: 160, height: 80)
-        let centerX = (maxWidth - widgetSize.width) / 2
-        let centerY = (maxWidth * currentAspectRatio.ratio - widgetSize.height) / 2
+        let centerX = (canvasWidth - widgetSize.width) / 2
+        let centerY = (canvasHeight - widgetSize.height) / 2
 
         var widget: UIView?
 
@@ -518,27 +523,6 @@ class ClimbingDetailViewController: UIViewController {
             w.initialSize = widgetSize
             widget = w
 
-        case .climbingGrade:
-            let w = ClimbingGradeWidget()
-            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
-            w.configure(grade: data.routes.first?.grade ?? "V0")
-            w.initialSize = widgetSize
-            widget = w
-
-        case .climbingAttempts:
-            let w = ClimbingAttemptsWidget()
-            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
-            w.configure(attempts: data.totalAttempts)
-            w.initialSize = widgetSize
-            widget = w
-
-        case .climbingTakes:
-            let w = ClimbingTakesWidget()
-            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
-            w.configure(takes: data.totalTakes)
-            w.initialSize = widgetSize
-            widget = w
-
         case .climbingSession:
             let w = ClimbingSessionWidget()
             w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
@@ -546,11 +530,12 @@ class ClimbingDetailViewController: UIViewController {
             w.initialSize = widgetSize
             widget = w
 
-        case .climbingHighestGrade:
-            let w = ClimbingHighestGradeWidget()
-            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
-            w.configure(highestGrade: data.highestGradeSent ?? "-")
-            w.initialSize = widgetSize
+        case .climbingRoutesByColor:
+            let routesByColorSize = CGSize(width: 180, height: 120)
+            let w = ClimbingRoutesByColorWidget()
+            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: routesByColorSize)
+            w.configure(routes: data.routes)
+            w.initialSize = routesByColorSize
             widget = w
 
         case .text:
@@ -768,6 +753,18 @@ class ClimbingDetailViewController: UIViewController {
             contentView.drawHierarchy(in: contentView.bounds, afterScreenUpdates: true)
         }
 
+        // 카드 저장
+        if let data = climbingData {
+            let title = "\(data.discipline.displayName) - \(data.gymName)"
+            WorkoutCardManager.shared.createCard(
+                sportType: .climbing,
+                workoutId: data.id,
+                workoutTitle: title,
+                workoutDate: data.sessionDate,
+                image: image
+            )
+        }
+
         let activityVC = UIActivityViewController(activityItems: [image], applicationActivities: nil)
 
         if let popover = activityVC.popoverPresentationController {
@@ -828,7 +825,8 @@ class ClimbingDetailViewController: UIViewController {
 // MARK: - UIScrollViewDelegate
 extension ClimbingDetailViewController: UIScrollViewDelegate {
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-        return canvasContainerView
+        // 핀치줌 비활성화
+        return nil
     }
 }
 
@@ -863,9 +861,8 @@ extension ClimbingDetailViewController: PHPickerViewControllerDelegate {
             guard let self = self, let image = object as? UIImage else { return }
 
             DispatchQueue.main.async {
-                let screenWidth = UIScreen.main.bounds.width
-                let maxWidth = min(screenWidth - 40, 400)
-                let canvasSize = CGSize(width: maxWidth, height: maxWidth * self.currentAspectRatio.ratio)
+                let canvasWidth: CGFloat = 360
+                let canvasSize = CGSize(width: canvasWidth, height: canvasWidth * self.currentAspectRatio.ratio)
 
                 let editor = BackgroundImageEditorViewController(
                     image: image,
@@ -889,9 +886,8 @@ extension ClimbingDetailViewController: BackgroundImageEditorDelegate {
         backgroundImageView.isHidden = false
         backgroundTemplateView.isHidden = true
 
-        let screenWidth = UIScreen.main.bounds.width
-        let maxWidth = min(screenWidth - 40, 400)
-        let canvasSize = CGSize(width: maxWidth, height: maxWidth * currentAspectRatio.ratio)
+        let canvasWidth: CGFloat = 360
+        let canvasSize = CGSize(width: canvasWidth, height: canvasWidth * currentAspectRatio.ratio)
 
         let imageSize = image.size
         let widthRatio = canvasSize.width / imageSize.width

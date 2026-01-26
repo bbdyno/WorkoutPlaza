@@ -226,6 +226,14 @@ class WorkoutListViewController: UIViewController {
         view.backgroundColor = .black
         navigationItem.largeTitleDisplayMode = .never
 
+        // 닫기 버튼 추가
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            image: UIImage(systemName: "xmark"),
+            style: .plain,
+            target: self,
+            action: #selector(dismissSheet)
+        )
+
         // Dark Navigation Bar Style
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
@@ -278,6 +286,10 @@ class WorkoutListViewController: UIViewController {
             make.centerX.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-16)
         }
+    }
+
+    @objc private func dismissSheet() {
+        dismiss(animated: true)
     }
 
     @objc private func sourceFilterChanged() {

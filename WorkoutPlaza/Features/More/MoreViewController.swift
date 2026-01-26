@@ -45,6 +45,11 @@ class MoreViewController: UIViewController {
 
     private func setupData() {
         sections = [
+            Section(title: "카드", items: [
+                MenuItem(title: "저장된 카드", icon: "square.stack", action: { [weak self] in
+                    self?.showSavedCards()
+                })
+            ]),
             Section(title: "데이터", items: [
                 MenuItem(title: "데이터 내보내기", icon: "square.and.arrow.up", action: { [weak self] in
                     self?.exportData()
@@ -86,6 +91,11 @@ class MoreViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func showSavedCards() {
+        let savedCardsVC = SavedCardsViewController()
+        navigationController?.pushViewController(savedCardsVC, animated: true)
+    }
 
     private func exportData() {
         let alert = UIAlertController(

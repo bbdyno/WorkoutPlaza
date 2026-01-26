@@ -234,12 +234,16 @@ class HomeDashboardViewController: UIViewController {
         switch sport {
         case .running:
             let workoutListVC = WorkoutListViewController()
-            navigationController?.pushViewController(workoutListVC, animated: true)
+            let navController = UINavigationController(rootViewController: workoutListVC)
+            navController.modalPresentationStyle = .fullScreen
+            present(navController, animated: true)
 
         case .climbing:
             let climbingInputVC = ClimbingInputViewController()
             climbingInputVC.delegate = self
-            navigationController?.pushViewController(climbingInputVC, animated: true)
+            let navController = UINavigationController(rootViewController: climbingInputVC)
+            navController.modalPresentationStyle = .fullScreen
+            present(navController, animated: true)
         }
     }
 }
@@ -247,8 +251,12 @@ class HomeDashboardViewController: UIViewController {
 // MARK: - ClimbingInputDelegate
 
 extension HomeDashboardViewController: ClimbingInputDelegate {
-    func climbingInput(_ controller: ClimbingInputViewController, didCreateSession session: ClimbingData) {
+    func climbingInputDidSave(_ controller: ClimbingInputViewController) {
+        controller.dismiss(animated: true)
+    }
+
+    func climbingInput(_ controller: ClimbingInputViewController, didRequestCardFor session: ClimbingData) {
         let detailVC = ClimbingDetailViewController(climbingData: session)
-        navigationController?.pushViewController(detailVC, animated: true)
+        controller.navigationController?.pushViewController(detailVC, animated: true)
     }
 }

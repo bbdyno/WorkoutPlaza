@@ -7,6 +7,95 @@
 
 import Foundation
 
+// MARK: - Climbing Gym
+
+struct ClimbingGym: Codable, Identifiable, Equatable {
+    let id: String
+    var name: String
+    var logoImageName: String?  // xcassets에 저장된 이미지 이름 (예: "gym_logo_theclimb")
+
+    init(
+        id: String = UUID().uuidString,
+        name: String,
+        logoImageName: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.logoImageName = logoImageName
+    }
+
+    // 암장 이름으로 로고 이미지 이름을 추측하는 헬퍼
+    var suggestedLogoImageName: String {
+        // 암장 이름에서 특수문자, 공백 제거하고 소문자로 변환
+        let normalized = name
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "-", with: "_")
+            .components(separatedBy: CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_")).inverted)
+            .joined()
+        return "gym_logo_\(normalized)"
+    }
+}
+
+// MARK: - Climbing Gym Manager
+
+class ClimbingGymManager {
+    static let shared = ClimbingGymManager()
+    private let userDefaults = UserDefaults.standard
+    private let storageKey = "savedClimbingGyms"
+
+    private init() {}
+
+    // MARK: - CRUD Operations
+
+    func saveGyms(_ gyms: [ClimbingGym]) {
+        if let encoded = try? JSONEncoder().encode(gyms) {
+            userDefaults.set(encoded, forKey: storageKey)
+        }
+    }
+
+    func loadGyms() -> [ClimbingGym] {
+        guard let data = userDefaults.data(forKey: storageKey),
+              let gyms = try? JSONDecoder().decode([ClimbingGym].self, from: data) else {
+            return []
+        }
+        return gyms.sorted { $0.name < $1.name }
+    }
+
+    func addGym(_ gym: ClimbingGym) {
+        var gyms = loadGyms()
+        gyms.append(gym)
+        saveGyms(gyms)
+    }
+
+    func updateGym(_ gym: ClimbingGym) {
+        var gyms = loadGyms()
+        if let index = gyms.firstIndex(where: { $0.id == gym.id }) {
+            gyms[index] = gym
+            saveGyms(gyms)
+        }
+    }
+
+    func deleteGym(id: String) {
+        var gyms = loadGyms()
+        gyms.removeAll { $0.id == id }
+        saveGyms(gyms)
+    }
+
+    func findGym(byName name: String) -> ClimbingGym? {
+        return loadGyms().first { $0.name.lowercased() == name.lowercased() }
+    }
+
+    func findOrCreateGym(name: String) -> ClimbingGym {
+        if let existing = findGym(byName: name) {
+            return existing
+        }
+        let newGym = ClimbingGym(name: name)
+        addGym(newGym)
+        return newGym
+    }
+}
+
 // MARK: - Climbing Discipline
 
 enum ClimbingDiscipline: String, Codable, CaseIterable {

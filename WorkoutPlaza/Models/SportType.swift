@@ -39,7 +39,7 @@ enum SportType: String, Codable, CaseIterable {
         case .running:
             return [.routeMap, .distance, .duration, .pace, .speed, .calories, .date, .text, .location]
         case .climbing:
-            return [.climbingGym, .climbingDiscipline, .climbingGrade, .climbingAttempts, .climbingTakes, .climbingSession, .date, .text]
+            return [.climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .date, .text]
         }
     }
 }
