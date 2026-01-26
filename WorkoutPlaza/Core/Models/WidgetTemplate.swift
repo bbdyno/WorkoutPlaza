@@ -161,11 +161,8 @@ enum WidgetType: String, Codable, CaseIterable {
     // Climbing Widgets
     case climbingGym = "ClimbingGym"
     case climbingDiscipline = "ClimbingDiscipline"
-    case climbingGrade = "ClimbingGrade"
-    case climbingAttempts = "ClimbingAttempts"
-    case climbingTakes = "ClimbingTakes"
     case climbingSession = "ClimbingSession"
-    case climbingHighestGrade = "ClimbingHighestGrade"
+    case climbingRoutesByColor = "ClimbingRoutesByColor"
 
     var displayName: String {
         switch self {
@@ -181,11 +178,8 @@ enum WidgetType: String, Codable, CaseIterable {
         case .composite: return "복합"
         case .climbingGym: return "클라이밍짐"
         case .climbingDiscipline: return "종목"
-        case .climbingGrade: return "난이도"
-        case .climbingAttempts: return "시도 횟수"
-        case .climbingTakes: return "테이크"
         case .climbingSession: return "세션 기록"
-        case .climbingHighestGrade: return "최고 난이도"
+        case .climbingRoutesByColor: return "완등 현황"
         }
     }
 
@@ -203,11 +197,8 @@ enum WidgetType: String, Codable, CaseIterable {
         case .composite: return "square.grid.2x2"
         case .climbingGym: return "building.2"
         case .climbingDiscipline: return "figure.climbing"
-        case .climbingGrade: return "chart.bar"
-        case .climbingAttempts: return "arrow.counterclockwise"
-        case .climbingTakes: return "hand.raised"
         case .climbingSession: return "checkmark.circle"
-        case .climbingHighestGrade: return "trophy"
+        case .climbingRoutesByColor: return "list.bullet.circle"
         }
     }
 
@@ -215,7 +206,7 @@ enum WidgetType: String, Codable, CaseIterable {
         switch self {
         case .routeMap, .distance, .duration, .pace, .speed, .calories, .location:
             return [.running]
-        case .climbingGym, .climbingDiscipline, .climbingGrade, .climbingAttempts, .climbingTakes, .climbingSession, .climbingHighestGrade:
+        case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor:
             return [.climbing]
         case .date, .text, .composite:
             return SportType.allCases
@@ -390,7 +381,7 @@ extension WidgetTemplate {
 
     static let detailedClimbing = WidgetTemplate(
         name: "상세 클라이밍",
-        description: "짐 + 종목 + 세션 + 최고 난이도 + 시도/테이크",
+        description: "짐 + 종목 + 세션 + 완등 현황",
         version: "2.0",
         sportType: .climbing,
         items: [
@@ -418,21 +409,14 @@ extension WidgetTemplate {
             WidgetItem(
                 type: .climbingSession,
                 positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.33),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.411, height: 0.10),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.845, height: 0.10),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
-                type: .climbingHighestGrade,
-                positionRatio: WidgetItem.PositionRatio(x: 0.507, y: 0.33),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.411, height: 0.10),
-                color: nil,
-                font: "System"
-            ),
-            WidgetItem(
-                type: .climbingAttempts,
+                type: .climbingRoutesByColor,
                 positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.46),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.411, height: 0.10),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.845, height: 0.20),
                 color: nil,
                 font: "System"
             )

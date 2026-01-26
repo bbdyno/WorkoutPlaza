@@ -9,6 +9,7 @@ import UIKit
 import SnapKit
 import PhotosUI
 import UniformTypeIdentifiers
+import HealthKit
 
 class WorkoutDetailViewController: UIViewController {
 
@@ -250,6 +251,9 @@ class WorkoutDetailViewController: UIViewController {
         return view
     }()
     
+    // Aspect Ratio State
+    // currentAspectRatio is already defined above
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -269,6 +273,131 @@ class WorkoutDetailViewController: UIViewController {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                 self?.addImportedWorkoutGroup(importedData)
             }
+        }
+        
+        // Try to load saved design
+        loadSavedDesign()
+    }
+    
+    // MARK: - Persistence
+    
+    @objc private func doneButtonTapped() {
+        saveCurrentDesign { [weak self] success in
+            if success {
+                let alert = UIAlertController(title: "저장 완료", message: "카드 디자인이 저장되었습니다.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                self?.present(alert, animated: true)
+            } else {
+                let alert = UIAlertController(title: "저장 실패", message: "디자인을 저장하는 중 오류가 발생했습니다.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                self?.present(alert, animated: true)
+            }
+        }
+    }
+    
+    private func saveCurrentDesign(completion: ((Bool) -> Void)? = nil) {
+        let workoutId: String
+        if let data = workoutData {
+            workoutId = data.workout.uuid.uuidString
+        } else if let imported = importedWorkoutData {
+            // For imported data without a fixed ID, we might need a consistent way to identify it.
+            // Using a hash of properties or similar. For now, using a placeholder.
+            // In a real app, ImportedWorkoutData should probably have an ID or use date+distance hash.
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyyMMddHHmmss"
+            let dateStr = formatter.string(from: imported.originalData.startDate)
+            workoutId = "imported_\(dateStr)"
+        } else {
+            workoutId = "default"
+        }
+        
+        // Collect widget states
+        let savedWidgets = widgets.compactMap { widget -> SavedWidgetState? in
+            let frame = widget.frame
+            var type = "unknown"
+            var text: String?
+            var fontName: String?
+            var fontSize: CGFloat?
+            var textColor: String?
+            var backgroundColor: String?
+            
+            if let statWidget = widget as? BaseStatWidget {
+                type = "statWidget" // Simplified. Ideally store widget specific identifiers.
+            } else if let label = widget as? UILabel {
+                type = "text"
+                text = label.text
+                fontName = label.font.fontName
+                fontSize = label.font.pointSize
+                textColor = label.textColor.toHex()
+            }
+            
+            return SavedWidgetState(
+                type: type,
+                frame: frame,
+                text: text,
+                fontName: fontName,
+                fontSize: fontSize,
+                textColor: textColor,
+                backgroundColor: widget.backgroundColor?.toHex(),
+                rotation: 0,
+                zIndex: 0
+            )
+        }
+        
+        var bgType: BackgroundType = .solid
+        var bgData: Data? = nil
+        
+        if backgroundImageView.image != nil {
+            bgType = .image
+            bgData = backgroundImageView.image?.jpegData(compressionQuality: 0.8)
+        } else {
+             bgType = .gradient
+        }
+        
+        let design = SavedCardDesign(
+            backgroundType: bgType,
+            backgroundColor: nil,
+            backgroundImageData: bgData,
+            widgets: savedWidgets,
+            canvasSize: canvasContainerView.bounds.size,
+            aspectRatio: currentAspectRatio,
+            gradientColors: nil,
+            gradientStyle: nil
+        )
+        
+        do {
+            try CardPersistenceManager.shared.saveDesign(design, for: workoutId)
+            completion?(true)
+        } catch {
+            print("Error saving design: \(error)")
+            completion?(false)
+        }
+    }
+    
+    private func loadSavedDesign() {
+        let workoutId: String
+        if let data = workoutData {
+            workoutId = data.workout.uuid.uuidString
+        } else if let imported = importedWorkoutData {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyyMMddHHmmss"
+            let dateStr = formatter.string(from: imported.originalData.startDate)
+            workoutId = "imported_\(dateStr)"
+        } else {
+            return
+        }
+        
+        if let design = CardPersistenceManager.shared.loadDesign(for: workoutId) {
+            // Restore Aspect Ratio
+            currentAspectRatio = design.aspectRatio
+            updateCanvasSize()
+            
+            // Restore Background
+            if design.backgroundType == .image, let data = design.backgroundImageData {
+                backgroundImageView.image = UIImage(data: data)
+            }
+            
+            print("Design loaded for \(workoutId). Restoration logic partial.")
         }
     }
 
@@ -347,6 +476,16 @@ class WorkoutDetailViewController: UIViewController {
         )
         backButton.tintColor = .white
         navigationItem.leftBarButtonItem = backButton
+        
+        // Done button
+        let doneButton = UIBarButtonItem(
+            title: "완료",
+            style: .done,
+            target: self,
+            action: #selector(doneButtonTapped)
+        )
+        doneButton.tintColor = .systemBlue
+        navigationItem.rightBarButtonItem = doneButton
 
         // Setup top right floating toolbar (Instagram style)
         setupTopRightToolbar()
@@ -1556,18 +1695,24 @@ class WorkoutDetailViewController: UIViewController {
 
     // MARK: - Back Navigation
     @objc private func backButtonTapped() {
-        let alert = UIAlertController(
-            title: "나가시겠습니까?",
-            message: "현재 작업 중인 내용이 모두 사라집니다.",
-            preferredStyle: .alert
-        )
+        let hasContent = !widgets.isEmpty || !templateGroups.isEmpty || routeMapView != nil
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-        alert.addAction(UIAlertAction(title: "확인", style: .destructive) { [weak self] _ in
-            self?.navigationController?.popViewController(animated: true)
-        })
+        if hasContent {
+            let alert = UIAlertController(
+                title: "작업 취소",
+                message: "현재 작업 중인 내용이 모두 사라집니다. 나가시겠습니까?",
+                preferredStyle: .alert
+            )
 
-        present(alert, animated: true)
+            alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+            alert.addAction(UIAlertAction(title: "나가기", style: .destructive) { [weak self] _ in
+                self?.navigationController?.popViewController(animated: true)
+            })
+
+            present(alert, animated: true)
+        } else {
+            navigationController?.popViewController(animated: true)
+        }
     }
 
     // MARK: - 이미지 공유
@@ -1590,11 +1735,14 @@ class WorkoutDetailViewController: UIViewController {
     }
     
     private func presentShareSheet(image: UIImage) {
+        // 카드 저장
+        saveWorkoutCard(image: image)
+
         let activityViewController = UIActivityViewController(
             activityItems: [image],
             applicationActivities: nil
         )
-        
+
         activityViewController.completionWithItemsHandler = { [weak self] activityType, completed, returnedItems, error in
             if completed && activityType == .saveToCameraRoll {
                 // Image was saved to camera roll
@@ -1607,13 +1755,37 @@ class WorkoutDetailViewController: UIViewController {
                 self?.present(alert, animated: true)
             }
         }
-        
+
         if let popover = activityViewController.popoverPresentationController {
             popover.sourceView = shareImageButton
             popover.sourceRect = shareImageButton.bounds
         }
-        
+
         present(activityViewController, animated: true)
+    }
+
+    private func saveWorkoutCard(image: UIImage) {
+        if let data = workoutData {
+            let distanceKm = data.distance / 1000
+            let title = String(format: "러닝 - %.2fkm", distanceKm)
+            WorkoutCardManager.shared.createCard(
+                sportType: .running,
+                workoutId: data.workout.uuid.uuidString,
+                workoutTitle: title,
+                workoutDate: data.startDate,
+                image: image
+            )
+        } else if let imported = importedWorkoutData {
+            let distanceKm = imported.originalData.distance / 1000
+            let title = String(format: "러닝 - %.2fkm", distanceKm)
+            WorkoutCardManager.shared.createCard(
+                sportType: .running,
+                workoutId: UUID().uuidString,
+                workoutTitle: title,
+                workoutDate: imported.originalData.startDate,
+                image: image
+            )
+        }
     }
 
     private func captureContentView() -> UIImage? {
@@ -1880,7 +2052,7 @@ class WorkoutDetailViewController: UIViewController {
                 break
 
             // Climbing widgets are not used in running workout detail view
-            case .climbingGym, .climbingDiscipline, .climbingGrade, .climbingAttempts, .climbingTakes, .climbingSession, .climbingHighestGrade:
+            case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor:
                 break
             }
 
@@ -2996,54 +3168,6 @@ extension WorkoutDetailViewController: CustomGradientPickerDelegate {
         backgroundTemplateView.isHidden = false
         dimOverlay.isHidden = true
         backgroundTemplateView.applyCustomGradient(colors: colors, direction: direction)
-    }
-}
-
-// MARK: - Aspect Ratio
-enum AspectRatio: CaseIterable {
-    case square1_1      // 1:1 (Instagram Square)
-    case portrait4_5    // 4:5 (Instagram Portrait)
-    case portrait9_16   // 9:16 (Instagram Story)
-
-    var displayName: String {
-        switch self {
-        case .square1_1: return "1:1"
-        case .portrait4_5: return "4:5"
-        case .portrait9_16: return "9:16"
-        }
-    }
-
-    var ratio: CGFloat {
-        switch self {
-        case .square1_1: return 1.0
-        case .portrait4_5: return 5.0 / 4.0
-        case .portrait9_16: return 16.0 / 9.0
-        }
-    }
-
-    // Base size for export (width is fixed at 1080)
-    var exportSize: CGSize {
-        switch self {
-        case .square1_1: return CGSize(width: 1080, height: 1080)
-        case .portrait4_5: return CGSize(width: 1080, height: 1350)
-        case .portrait9_16: return CGSize(width: 1080, height: 1920)
-        }
-    }
-
-    // Detect aspect ratio from canvas size
-    static func detect(from size: CGSize) -> AspectRatio {
-        let calculatedRatio = size.height / size.width
-        let epsilon: CGFloat = 0.1  // Tolerance for ratio matching
-
-        // Find the closest matching aspect ratio
-        for aspectRatio in AspectRatio.allCases {
-            if abs(calculatedRatio - aspectRatio.ratio) < epsilon {
-                return aspectRatio
-            }
-        }
-
-        // Default to 9:16 if no match found
-        return .portrait9_16
     }
 }
 
