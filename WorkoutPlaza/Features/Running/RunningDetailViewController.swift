@@ -285,4 +285,97 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         instructionLabel.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
         print("✅ Applied template directly: \(template.name)")
     }
+
+    // MARK: - Widget Restoration
+
+    override func getWorkoutDate() -> Date? {
+        if let data = workoutData {
+            return data.startDate
+        } else if let imported = importedWorkoutData {
+            return imported.originalData.startDate
+        }
+        return nil
+    }
+
+    override func createWidgetFromSavedState(_ savedWidget: SavedWidgetState) -> UIView? {
+        // Try base implementation first
+        if let widget = super.createWidgetFromSavedState(savedWidget) {
+            return widget
+        }
+
+        // Handle Running-specific widgets
+        let widgetType = savedWidget.type
+
+        switch widgetType {
+        case "LocationWidget":
+            let widget = LocationWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            if let locationText = savedWidget.additionalText {
+                widget.configure(withText: locationText)
+            }
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        case "DistanceWidget":
+            guard let data = workoutData else { return nil }
+            let widget = DistanceWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(distance: data.distance)
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        case "DurationWidget":
+            guard let data = workoutData else { return nil }
+            let widget = DurationWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(duration: data.duration)
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        case "PaceWidget":
+            guard let data = workoutData else { return nil }
+            let widget = PaceWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(pace: data.pace)
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        case "SpeedWidget":
+            guard let data = workoutData else { return nil }
+            let widget = SpeedWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(speed: data.avgSpeed)
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        case "CaloriesWidget":
+            guard let data = workoutData else { return nil }
+            let widget = CaloriesWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(calories: data.calories)
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        default:
+            return nil
+        }
+    }
 }

@@ -44,6 +44,11 @@ class TextPathWidget: UIView, Selectable {
     /// 기본 텍스트 폰트 사이즈
     private var baseFontSize: CGFloat = 20
 
+    // MARK: - Public Accessors for Persistence
+    var text: String { textToRepeat }
+    var normalizedPoints: [CGPoint] { normalizedPathPoints }
+    var fontSize: CGFloat { baseFontSize }
+
     /// 글자 간격
     private let letterSpacing: CGFloat = 2.0
 

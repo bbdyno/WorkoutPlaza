@@ -41,6 +41,9 @@ class LocationWidget: UIView, Selectable {
     var baseFontSize: CGFloat = 18
     var isGroupManaged: Bool = false  // Prevents auto font scaling when inside a group
 
+    // Store location text for persistence
+    private(set) var locationText: String?
+
     // Movement properties
     private var initialCenter: CGPoint = .zero
 
@@ -148,11 +151,20 @@ class LocationWidget: UIView, Selectable {
 
             DispatchQueue.main.async {
                 self.locationLabel.text = cityName
+                self.locationText = cityName
                 self.initialSize = self.bounds.size
                 self.updateFonts()
                 completion(true)
             }
         }
+    }
+
+    // Configure with pre-stored text (for restoration from saved design)
+    func configure(withText text: String) {
+        locationLabel.text = text
+        locationText = text
+        initialSize = bounds.size
+        updateFonts()
     }
 
     // MARK: - Korean Address Formatting
