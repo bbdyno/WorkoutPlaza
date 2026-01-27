@@ -206,7 +206,7 @@ extension SportSelectorViewController {
         switch sport {
         case .running:
             // Navigate to running workout list (existing flow)
-            let workoutListVC = WorkoutListViewController()
+            let workoutListVC = RunningListViewController()
             let navController = UINavigationController(rootViewController: workoutListVC)
             navController.modalPresentationStyle = .fullScreen
             presenter.present(navController, animated: true)

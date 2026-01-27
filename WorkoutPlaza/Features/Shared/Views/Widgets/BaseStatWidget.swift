@@ -5,6 +5,13 @@
 //  Created by bbdyno on 1/27/26.
 //
 
+//
+//  BaseStatWidget.swift
+//  WorkoutPlaza
+//
+//  Created by bbdyno on 1/27/26.
+//
+
 import UIKit
 import SnapKit
 

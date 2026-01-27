@@ -42,6 +42,15 @@ class TemplateManager {
         return customTemplates
     }
 
+    func getTemplates(for sport: SportType) -> [WidgetTemplate] {
+        loadCustomTemplates()
+        // Get built-in for sport
+        let builtIn = try? WidgetTemplate.templates(for: sport)
+        // Get custom for sport
+        let custom = customTemplates.filter { $0.sportType == sport }
+        return (builtIn ?? []) + custom
+    }
+
     // MARK: - Save Custom Template
     func saveCustomTemplate(_ template: WidgetTemplate) throws {
         let fileURL = templatesDirectoryURL.appendingPathComponent("\(template.id).json")
