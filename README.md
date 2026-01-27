@@ -3,6 +3,108 @@ WorkoutPlaza
 
 ---
 
+## 🚀 Getting Started
+
+This project uses [Tuist](https://tuist.io) for project generation and dependency management.
+
+### Prerequisites
+- Xcode 16.0 or later
+- [Tuist](https://docs.tuist.io/guides/quick-start/install-tuist/) installed
+
+### Installation
+
+```bash
+# Install Tuist (if not already installed)
+curl -Ls https://install.tuist.io | bash
+
+# Generate project and install dependencies
+make install
+```
+
+This will run `tuist install` and `tuist generate` to set up the Xcode workspace.
+
+### Available Commands
+
+- `make install` - Install dependencies and generate Xcode project
+- `make clean` - Remove generated project files
+- `make help` - Show available commands
+
+### Opening in Xcode
+
+1. Open the workspace:
+   ```bash
+   open WorkoutPlaza.xcworkspace
+   ```
+
+2. **Important:** Select the correct scheme and destination
+   - **Scheme:** Choose `WorkoutPlaza` (NOT "Generate Project" or "WorkoutPlaza-Workspace")
+   - **Destination:** Select an iOS Simulator (e.g., iPhone 17)
+   - Avoid using "My Mac (Designed for iPad/iPhone)" as it may cause display issues
+
+3. Press `Cmd+R` to build and run
+
+### Localization
+
+The project supports multiple languages using Tuist-managed string catalogs:
+- Korean (ko)
+- English (en)
+
+#### Localization Files Structure
+
+```
+Resources/
+├── ko.lproj/
+│   └── Localizable.strings  # 한국어
+└── en.lproj/
+    └── Localizable.strings  # English
+```
+
+#### Using Localized Strings in Code
+
+Tuist automatically generates type-safe string accessors. After running `make install`, use them like this:
+
+```swift
+import UIKit
+
+// Common strings
+let okButton = WorkoutPlazaStrings.Common.ok         // "확인" / "OK"
+let cancelButton = WorkoutPlazaStrings.Common.cancel // "취소" / "Cancel"
+
+// Tab bar strings
+let homeTitle = WorkoutPlazaStrings.Tab.home         // "홈" / "Home"
+
+// Workout types
+let running = WorkoutPlazaStrings.Workout.running    // "러닝" / "Running"
+
+// Permission messages
+let healthPermission = WorkoutPlazaStrings.Permission.Health.share
+```
+
+#### Adding New Translations
+
+1. Add the key-value pair to `Resources/ko.lproj/Localizable.strings`:
+   ```
+   "new.key" = "한국어 값";
+   ```
+
+2. Add the same key to `Resources/en.lproj/Localizable.strings`:
+   ```
+   "new.key" = "English Value";
+   ```
+
+3. Run `make install` to regenerate the Swift accessors
+
+4. Use in your code:
+   ```swift
+   let text = WorkoutPlazaStrings.New.key
+   ```
+
+The generated accessor code is available at `Derived/Sources/TuistStrings+WorkoutPlaza.swift`
+
+See `LocalizationExample.swift` for more usage examples.
+
+---
+
 ## 💜 Support Me
 
 <div align="left">
