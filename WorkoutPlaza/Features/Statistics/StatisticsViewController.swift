@@ -8,6 +8,30 @@
 import UIKit
 import SnapKit
 
+// MARK: - Workout Type Definition
+
+enum WorkoutType: CaseIterable {
+    case running
+    case climbing
+    // 추후 운동 추가 시 여기에 케이스 추가
+    // case swimming
+    // case cycling
+
+    var color: UIColor {
+        switch self {
+        case .running: return .systemBlue
+        case .climbing: return .systemOrange
+        }
+    }
+
+    var displayOrder: Int {
+        switch self {
+        case .running: return 0
+        case .climbing: return 1
+        }
+    }
+}
+
 class StatisticsViewController: UIViewController {
 
     // MARK: - Properties
@@ -18,6 +42,9 @@ class StatisticsViewController: UIViewController {
     private var runningDates: Set<DateComponents> = []
     private var climbingDates: Set<DateComponents> = []
     private var selectedDate: DateComponents?
+
+    // 날짜별 운동 타입 저장 (확장 가능한 구조)
+    private var workoutsByDate: [DateComponents: Set<WorkoutType>] = [:]
 
     // MARK: - UI Components
 
@@ -252,7 +279,16 @@ class StatisticsViewController: UIViewController {
     }
 
     private func updateCalendarDecorations() {
-        var allDates = runningDates.union(climbingDates)
+        // workoutsByDate 업데이트
+        workoutsByDate.removeAll()
+        for date in runningDates {
+            workoutsByDate[date, default: []].insert(.running)
+        }
+        for date in climbingDates {
+            workoutsByDate[date, default: []].insert(.climbing)
+        }
+
+        let allDates = runningDates.union(climbingDates)
         calendarView.reloadDecorations(forDateComponents: Array(allDates), animated: true)
     }
 
@@ -357,10 +393,6 @@ class StatisticsViewController: UIViewController {
         // Climbing legend
         let climbingLegend = createLegendItem(color: .systemOrange, text: "클라이밍")
         container.addArrangedSubview(climbingLegend)
-
-        // Both legend
-        let bothLegend = createLegendItem(colors: [.systemBlue, .systemOrange], text: "둘 다")
-        container.addArrangedSubview(bothLegend)
 
         let wrapperView = UIView()
         wrapperView.addSubview(container)
@@ -521,95 +553,20 @@ class StatisticsViewController: UIViewController {
     // MARK: - Workout Cells
 
     private func createRunningWorkoutCell(workout: WorkoutData) -> UIView {
-        let cell = UIView()
-        cell.backgroundColor = .systemBlue.withAlphaComponent(0.1)
-        cell.layer.cornerRadius = 12
-
-        let iconView = UIImageView()
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        iconView.image = UIImage(systemName: "figure.run", withConfiguration: config)
-        iconView.tintColor = .systemBlue
-        iconView.contentMode = .scaleAspectFit
-
-        let titleLabel = UILabel()
-        titleLabel.text = workout.workoutType
-        titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
-        titleLabel.textColor = .label
-
-        let timeLabel = UILabel()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        timeLabel.text = formatter.string(from: workout.startDate)
-        timeLabel.font = .systemFont(ofSize: 13)
-        timeLabel.textColor = .secondaryLabel
-
-        let distanceLabel = UILabel()
-        distanceLabel.text = String(format: "%.2f km", workout.distance / 1000)
-        distanceLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        distanceLabel.textColor = .systemBlue
-
-        let durationLabel = UILabel()
-        let minutes = Int(workout.duration) / 60
-        durationLabel.text = "\(minutes)분"
-        durationLabel.font = .systemFont(ofSize: 13)
-        durationLabel.textColor = .secondaryLabel
-
-        let paceLabel = UILabel()
-        if workout.distance > 0 {
-            let pace = (workout.duration / 60) / (workout.distance / 1000)
-            let paceMin = Int(pace)
-            let paceSec = Int((pace - Double(paceMin)) * 60)
-            paceLabel.text = String(format: "%d'%02d\"/km", paceMin, paceSec)
-        } else {
-            paceLabel.text = "-"
+        let cell = RunningWorkoutCell()
+        cell.configure(with: workout)
+        cell.onTap = { [weak self] in
+            self?.openRunningDetail(workout: workout)
         }
-        paceLabel.font = .systemFont(ofSize: 12)
-        paceLabel.textColor = .tertiaryLabel
-
-        cell.addSubview(iconView)
-        cell.addSubview(titleLabel)
-        cell.addSubview(timeLabel)
-        cell.addSubview(distanceLabel)
-        cell.addSubview(durationLabel)
-        cell.addSubview(paceLabel)
-
-        iconView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(12)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(32)
-        }
-
-        titleLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(12)
-            make.leading.equalTo(iconView.snp.trailing).offset(12)
-        }
-
-        timeLabel.snp.makeConstraints { make in
-            make.centerY.equalTo(titleLabel)
-            make.leading.equalTo(titleLabel.snp.trailing).offset(8)
-        }
-
-        distanceLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(12)
-            make.trailing.equalToSuperview().offset(-12)
-        }
-
-        durationLabel.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.leading.equalTo(iconView.snp.trailing).offset(12)
-            make.bottom.equalToSuperview().offset(-12)
-        }
-
-        paceLabel.snp.makeConstraints { make in
-            make.centerY.equalTo(durationLabel)
-            make.trailing.equalToSuperview().offset(-12)
-        }
-
-        cell.snp.makeConstraints { make in
-            make.height.equalTo(70)
-        }
-
         return cell
+    }
+
+    private func openRunningDetail(workout: WorkoutData) {
+        let detailVC = WorkoutDetailViewController()
+        detailVC.workoutData = workout
+        let navVC = UINavigationController(rootViewController: detailVC)
+        navVC.modalPresentationStyle = .fullScreen
+        present(navVC, animated: true)
     }
 
     private func createExternalRunningWorkoutCell(workout: ExternalWorkout) -> UIView {
@@ -735,6 +692,147 @@ class StatisticsViewController: UIViewController {
         let navVC = UINavigationController(rootViewController: detailVC)
         navVC.modalPresentationStyle = .fullScreen
         present(navVC, animated: true)
+    }
+}
+
+// MARK: - RunningWorkoutCell
+
+private class RunningWorkoutCell: UIView {
+    var onTap: (() -> Void)?
+
+    private let iconView = UIImageView()
+    private let titleLabel = UILabel()
+    private let timeLabel = UILabel()
+    private let distanceLabel = UILabel()
+    private let durationLabel = UILabel()
+    private let paceLabel = UILabel()
+    private let chevronView = UIImageView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupUI()
+    }
+
+    private func setupUI() {
+        backgroundColor = .systemBlue.withAlphaComponent(0.1)
+        layer.cornerRadius = 12
+
+        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+        iconView.image = UIImage(systemName: "figure.run", withConfiguration: config)
+        iconView.tintColor = .systemBlue
+        iconView.contentMode = .scaleAspectFit
+
+        titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        titleLabel.textColor = .label
+
+        timeLabel.font = .systemFont(ofSize: 13)
+        timeLabel.textColor = .secondaryLabel
+
+        distanceLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        distanceLabel.textColor = .systemBlue
+
+        durationLabel.font = .systemFont(ofSize: 13)
+        durationLabel.textColor = .secondaryLabel
+
+        paceLabel.font = .systemFont(ofSize: 12)
+        paceLabel.textColor = .tertiaryLabel
+
+        chevronView.image = UIImage(systemName: "chevron.right")
+        chevronView.tintColor = .tertiaryLabel
+        chevronView.contentMode = .scaleAspectFit
+
+        addSubview(iconView)
+        addSubview(titleLabel)
+        addSubview(timeLabel)
+        addSubview(distanceLabel)
+        addSubview(durationLabel)
+        addSubview(paceLabel)
+        addSubview(chevronView)
+
+        iconView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(32)
+        }
+
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.equalTo(iconView.snp.trailing).offset(12)
+        }
+
+        timeLabel.snp.makeConstraints { make in
+            make.centerY.equalTo(titleLabel)
+            make.leading.equalTo(titleLabel.snp.trailing).offset(8)
+        }
+
+        chevronView.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-12)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(16)
+        }
+
+        distanceLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.trailing.equalTo(chevronView.snp.leading).offset(-8)
+        }
+
+        durationLabel.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.leading.equalTo(iconView.snp.trailing).offset(12)
+            make.bottom.equalToSuperview().offset(-12)
+        }
+
+        paceLabel.snp.makeConstraints { make in
+            make.centerY.equalTo(durationLabel)
+            make.trailing.equalTo(chevronView.snp.leading).offset(-8)
+        }
+
+        snp.makeConstraints { make in
+            make.height.equalTo(70)
+        }
+
+        // Tap gesture
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        addGestureRecognizer(tap)
+        isUserInteractionEnabled = true
+    }
+
+    func configure(with workout: WorkoutData) {
+        titleLabel.text = workout.workoutType
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        timeLabel.text = formatter.string(from: workout.startDate)
+
+        distanceLabel.text = String(format: "%.2f km", workout.distance / 1000)
+
+        let minutes = Int(workout.duration) / 60
+        durationLabel.text = "\(minutes)분"
+
+        if workout.distance > 0 {
+            let pace = (workout.duration / 60) / (workout.distance / 1000)
+            let paceMin = Int(pace)
+            let paceSec = Int((pace - Double(paceMin)) * 60)
+            paceLabel.text = String(format: "%d'%02d\"/km", paceMin, paceSec)
+        } else {
+            paceLabel.text = "-"
+        }
+    }
+
+    @objc private func handleTap() {
+        UIView.animate(withDuration: 0.1, animations: {
+            self.alpha = 0.7
+        }) { _ in
+            UIView.animate(withDuration: 0.1) {
+                self.alpha = 1.0
+            }
+        }
+        onTap?()
     }
 }
 
@@ -864,51 +962,61 @@ private class ClimbingSessionCell: UIView {
 
 extension StatisticsViewController: UICalendarViewDelegate {
     func calendarView(_ calendarView: UICalendarView, decorationFor dateComponents: DateComponents) -> UICalendarView.Decoration? {
-        // Normalize the date components to match how we store them (only year, month, day)
-        var queryComponents = DateComponents()
-        queryComponents.year = dateComponents.year
-        queryComponents.month = dateComponents.month
-        queryComponents.day = dateComponents.day
-        
-        let hasRunning = runningDates.contains(queryComponents)
-        let hasClimbing = climbingDates.contains(queryComponents)
+        // Calendar.current.dateComponents를 사용해서 저장된 것과 동일한 형식으로 생성
+        guard let date = Calendar.current.date(from: dateComponents) else {
+            return nil
+        }
+        let queryComponents = Calendar.current.dateComponents([.year, .month, .day], from: date)
 
-        if hasRunning && hasClimbing {
-            // 둘 다 있으면 커스텀 뷰 (반반 색상)
-            return .customView {
-                let container = UIView()
-
-                let leftDot = UIView()
-                leftDot.backgroundColor = .systemBlue
-                leftDot.layer.cornerRadius = 4
-
-                let rightDot = UIView()
-                rightDot.backgroundColor = .systemOrange
-                rightDot.layer.cornerRadius = 4
-
-                container.addSubview(leftDot)
-                container.addSubview(rightDot)
-
-                leftDot.snp.makeConstraints { make in
-                    make.leading.centerY.equalToSuperview()
-                    make.width.height.equalTo(8)
-                }
-
-                rightDot.snp.makeConstraints { make in
-                    make.leading.equalTo(leftDot.snp.trailing).offset(2)
-                    make.trailing.centerY.equalToSuperview()
-                    make.width.height.equalTo(8)
-                }
-
-                return container
-            }
-        } else if hasRunning {
-            return .default(color: .systemBlue, size: .medium)
-        } else if hasClimbing {
-            return .default(color: .systemOrange, size: .medium)
+        guard let workoutTypes = workoutsByDate[queryComponents], !workoutTypes.isEmpty else {
+            return nil
         }
 
-        return nil
+        // 운동 타입을 displayOrder로 정렬
+        let sortedTypes = workoutTypes.sorted { $0.displayOrder < $1.displayOrder }
+        let typeCount = sortedTypes.count
+
+        if typeCount == 1 {
+            // 1개 운동: 해당 색상 도트
+            return .default(color: sortedTypes[0].color, size: .medium)
+        } else {
+            // 2개 이상 운동: 커스텀 뷰
+            return .customView { [sortedTypes, typeCount] in
+                let stackView = UIStackView()
+                stackView.axis = .horizontal
+                stackView.spacing = 3
+                stackView.alignment = .center
+                stackView.distribution = .fill
+
+                // 최대 2개의 도트 표시
+                for i in 0..<min(typeCount, 2) {
+                    let dot = UIView()
+                    dot.backgroundColor = sortedTypes[i].color
+                    dot.layer.cornerRadius = 3.5
+                    
+                    dot.snp.makeConstraints { make in
+                        make.width.height.equalTo(7)
+                    }
+                    
+                    stackView.addArrangedSubview(dot)
+                }
+
+                if typeCount > 2 {
+                    // 3개 이상 운동: '+' 심볼 추가
+                    let plusLabel = UILabel()
+                    plusLabel.text = "+"
+                    plusLabel.font = .systemFont(ofSize: 10, weight: .bold)
+                    plusLabel.textColor = .secondaryLabel
+                    stackView.addArrangedSubview(plusLabel)
+                }
+
+                stackView.layoutIfNeeded()
+                let targetSize = stackView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+                stackView.frame = CGRect(origin: .zero, size: targetSize)
+                
+                return stackView
+            }
+        }
     }
 }
 

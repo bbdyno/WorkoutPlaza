@@ -9,17 +9,20 @@ import UIKit
 
 class BackgroundTemplateView: UIView {
     
-    enum TemplateStyle {
+    enum TemplateStyle: String, CaseIterable {
         case gradient1  // 블루 그라데이션
         case gradient2  // 퍼플 그라데이션
         case gradient3  // 오렌지 그라데이션
         case gradient4  // 그린 그라데이션
         case minimal    // 미니멀 화이트
         case dark       // 다크 모드
+        case custom     // 커스텀 그라데이션
     }
-    
+
     private let gradientLayer = CAGradientLayer()
-    private var currentStyle: TemplateStyle = .gradient1
+    private(set) var currentStyle: TemplateStyle = .gradient1
+    private(set) var customColors: [UIColor]?
+    private(set) var customDirection: GradientDirection?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -98,6 +101,18 @@ class BackgroundTemplateView: UIView {
                 startPoint: CGPoint(x: 0, y: 0),
                 endPoint: CGPoint(x: 1, y: 1)
             )
+
+        case .custom:
+            // custom은 applyCustomGradient를 통해 설정됨
+            // 저장된 customColors가 있으면 적용
+            if let colors = customColors {
+                let direction = customDirection ?? .topLeftToBottomRight
+                applyGradient(
+                    colors: colors,
+                    startPoint: direction.startPoint,
+                    endPoint: direction.endPoint
+                )
+            }
         }
     }
     
@@ -109,6 +124,9 @@ class BackgroundTemplateView: UIView {
     
     // 커스텀 그라데이션 적용
     func applyCustomGradient(colors: [UIColor], direction: GradientDirection = .topLeftToBottomRight) {
+        currentStyle = .custom
+        customColors = colors
+        customDirection = direction
         applyGradient(
             colors: colors,
             startPoint: direction.startPoint,

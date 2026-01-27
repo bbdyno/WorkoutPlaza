@@ -17,10 +17,11 @@ struct SavedCardDesign: Codable {
     let canvasSize: CGSize
     let aspectRatio: AspectRatio
     let gradientColors: [String]? // Hex codes for gradient
-    let gradientStyle: Int? // BackgroundTemplateStyle rawValue
+    let gradientStyle: String? // BackgroundTemplateStyle rawValue
 }
 
 struct SavedWidgetState: Codable {
+    let identifier: String // Widget unique identifier
     let type: String // Widget type identifier
     let frame: CGRect
     let text: String?
