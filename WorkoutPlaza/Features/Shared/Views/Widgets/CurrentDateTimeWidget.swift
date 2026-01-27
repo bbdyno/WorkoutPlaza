@@ -16,7 +16,11 @@ import UIKit
 
 // MARK: - Current Date Time Widget
 class CurrentDateTimeWidget: BaseStatWidget {
+    // Store configured date for persistence
+    private(set) var configuredDate: Date?
+
     func configure(date: Date) {
+        configuredDate = date
         // Set smaller base font size for long date string
         baseFontSizes["title"] = 12
         baseFontSizes["value"] = 16 // Much smaller than default 24

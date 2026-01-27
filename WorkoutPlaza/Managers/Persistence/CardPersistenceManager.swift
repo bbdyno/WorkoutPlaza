@@ -21,8 +21,8 @@ struct SavedCardDesign: Codable {
 }
 
 struct SavedWidgetState: Codable {
-    let identifier: String // Widget unique identifier
-    let type: String // Widget type identifier
+    let identifier: String // Widget unique identifier (className_index)
+    let type: String // Widget type identifier (className)
     let frame: CGRect
     let text: String?
     let fontName: String?
@@ -31,7 +31,12 @@ struct SavedWidgetState: Codable {
     let backgroundColor: String? // Hex code
     let rotation: CGFloat
     let zIndex: Int
-    // Add specific properties for different widget types if needed
+
+    // Additional data for specific widget types
+    let pathPoints: [[CGFloat]]? // For TextPathWidget: [[x, y], [x, y], ...]
+    let workoutDate: Date? // For DateWidget, CurrentDateTimeWidget
+    let numericValue: Double? // For stat widgets (distance, duration, pace, etc.)
+    let additionalText: String? // For LocationWidget, etc.
 }
 
 enum BackgroundType: String, Codable {

@@ -419,19 +419,31 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
     @objc dynamic func saveCurrentDesign(completion: ((Bool) -> Void)? = nil) {
         // Get workout ID - subclasses should override getWorkoutId() if needed
         let workoutId = getWorkoutId()
-        
+
         // 1. Deselect everything to hide selection UI
         selectionManager.deselectAll()
-        
-        // 2. Collect widget states
+
+        // 2. Collect widget states with unique identifiers (className + index)
+        var classCounters: [String: Int] = [:]
         let savedWidgets = widgets.compactMap { widget -> SavedWidgetState? in
             let frame = widget.frame
             let className = String(describing: type(of: widget))
+
+            // Generate unique identifier: className_index
+            let index = classCounters[className] ?? 0
+            classCounters[className] = index + 1
+            let uniqueIdentifier = "\(className)_\(index)"
+
             var text: String?
             var fontName: String?
             var fontSize: CGFloat?
             var textColor: String?
+            var pathPoints: [[CGFloat]]?
+            var workoutDate: Date?
+            var numericValue: Double?
+            var additionalText: String?
 
+            // Extract data based on widget type
             if let textWidget = widget as? TextWidget {
                 text = textWidget.textLabel.text
                 fontName = textWidget.textLabel.font.fontName
@@ -439,8 +451,36 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
                 textColor = textWidget.textLabel.textColor.toHex()
             }
 
+            if let textPathWidget = widget as? TextPathWidget {
+                text = textPathWidget.text
+                textColor = textPathWidget.currentColor.toHex()
+                fontSize = textPathWidget.fontSize
+                // Save normalized path points
+                pathPoints = textPathWidget.normalizedPoints.map { [$0.x, $0.y] }
+            }
+
+            if let dateWidget = widget as? DateWidget {
+                workoutDate = dateWidget.configuredDate
+                textColor = dateWidget.currentColor.toHex()
+            }
+
+            if let currentDateTimeWidget = widget as? CurrentDateTimeWidget {
+                workoutDate = currentDateTimeWidget.configuredDate
+                textColor = currentDateTimeWidget.currentColor.toHex()
+            }
+
+            if let locationWidget = widget as? LocationWidget {
+                additionalText = locationWidget.locationText
+                textColor = locationWidget.currentColor.toHex()
+            }
+
+            // Stat widgets - save color
+            if let statWidget = widget as? BaseStatWidget {
+                textColor = statWidget.currentColor.toHex()
+            }
+
             return SavedWidgetState(
-                identifier: className,
+                identifier: uniqueIdentifier,
                 type: className,
                 frame: frame,
                 text: text,
@@ -449,7 +489,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
                 textColor: textColor,
                 backgroundColor: widget.backgroundColor?.toHex(),
                 rotation: 0,
-                zIndex: 0
+                zIndex: 0,
+                pathPoints: pathPoints,
+                workoutDate: workoutDate,
+                numericValue: numericValue,
+                additionalText: additionalText
             )
         }
         
@@ -558,31 +602,154 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
             }
         }
 
-        // Restore Widget Positions
-        for savedWidget in design.widgets {
-            let savedClassName = savedWidget.identifier
+        // Restore Widget Positions using className + index matching
+        // Build a map of current widgets by className_index
+        var classCounters: [String: Int] = [:]
+        var widgetMap: [String: UIView] = [:]
 
-            for widget in widgets {
-                let widgetClassName = String(describing: type(of: widget))
-                if widgetClassName == savedClassName {
-                    widget.frame = savedWidget.frame
-                    
-                    // Update initialSize for stat widgets
-                    if let statWidget = widget as? BaseStatWidget {
-                        statWidget.initialSize = savedWidget.frame.size
-                        statWidget.updateFonts()
+        for widget in widgets {
+            let className = String(describing: type(of: widget))
+            let index = classCounters[className] ?? 0
+            classCounters[className] = index + 1
+            let uniqueIdentifier = "\(className)_\(index)"
+            widgetMap[uniqueIdentifier] = widget
+        }
+
+        // Restore positions and create missing widgets
+        for savedWidget in design.widgets {
+            if let widget = widgetMap[savedWidget.identifier] {
+                // Widget exists - restore position and properties
+                widget.frame = savedWidget.frame
+
+                // Update initialSize for stat widgets
+                if let statWidget = widget as? BaseStatWidget {
+                    statWidget.initialSize = savedWidget.frame.size
+                    statWidget.updateFonts()
+
+                    // Restore color
+                    if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                        statWidget.applyColor(color)
                     }
-                    break
+                }
+
+                // Update initialSize for route map
+                if let routeMap = widget as? RouteMapView {
+                    routeMap.initialSize = savedWidget.frame.size
+                }
+
+                // Restore TextWidget text
+                if let textWidget = widget as? TextWidget, let text = savedWidget.text {
+                    textWidget.updateText(text)
+                    if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                        textWidget.applyColor(color)
+                    }
+                }
+            } else {
+                // Widget doesn't exist - create it
+                if let newWidget = createWidgetFromSavedState(savedWidget) {
+                    contentView.addSubview(newWidget)
+                    widgets.append(newWidget)
+
+                    if var selectable = newWidget as? Selectable {
+                        selectable.selectionDelegate = self
+                        selectionManager.registerItem(selectable)
+                    }
                 }
             }
         }
 
         print("✅ Design loaded and restored for \(workoutId)")
-        
+
         // Reset unsaved changes flag since we just loaded the saved state
         hasUnsavedChanges = false
     }
-    
+
+    // Create widget from saved state - override in subclasses for specific widgets
+    func createWidgetFromSavedState(_ savedWidget: SavedWidgetState) -> UIView? {
+        let widgetType = savedWidget.type
+
+        // Common widgets that can be created in base class
+        switch widgetType {
+        case "TextWidget":
+            let widget = TextWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            if let text = savedWidget.text {
+                widget.configure(text: text)
+            }
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            widget.textDelegate = self as? TextWidgetDelegate
+            return widget
+
+        case "TextPathWidget":
+            guard let pathPointsArray = savedWidget.pathPoints,
+                  let text = savedWidget.text else {
+                return nil
+            }
+            let pathPoints = pathPointsArray.compactMap { arr -> CGPoint? in
+                guard arr.count >= 2 else { return nil }
+                return CGPoint(x: arr[0], y: arr[1])
+            }
+            // Convert normalized points back to frame coordinates
+            let framePoints = pathPoints.map { point in
+                CGPoint(
+                    x: point.x * savedWidget.frame.width,
+                    y: point.y * savedWidget.frame.height
+                )
+            }
+            let color = savedWidget.textColor.flatMap { UIColor(hex: $0) } ?? .white
+            let fontSize = savedWidget.fontSize ?? 20
+            let font = UIFont.boldSystemFont(ofSize: fontSize)
+            let widget = TextPathWidget(
+                text: text,
+                pathPoints: framePoints,
+                frame: savedWidget.frame,
+                color: color,
+                font: font
+            )
+            return widget
+
+        case "DateWidget":
+            let widget = DateWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            if let date = savedWidget.workoutDate {
+                widget.configure(startDate: date)
+            } else if let date = getWorkoutDate() {
+                widget.configure(startDate: date)
+            }
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        case "CurrentDateTimeWidget":
+            let widget = CurrentDateTimeWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            if let date = savedWidget.workoutDate {
+                widget.configure(date: date)
+            } else if let date = getWorkoutDate() {
+                widget.configure(date: date)
+            }
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        default:
+            // Subclasses should handle specific widget types
+            return nil
+        }
+    }
+
+    // Override in subclasses to provide workout date
+    @objc dynamic func getWorkoutDate() -> Date? {
+        return nil
+    }
+
     // Shared actions
     @objc func cycleAspectRatio() {
         let allRatios = AspectRatio.allCases

@@ -8,7 +8,7 @@
 import UIKit
 
 extension ClimbingDetailViewController {
-    
+
     override func getWorkoutId() -> String {
         if let data = climbingData {
             // Climbing data might not have a UUID, so create one from session date
@@ -19,7 +19,7 @@ extension ClimbingDetailViewController {
         }
         return "default"
     }
-    
+
     override func saveWorkoutCard(image: UIImage) {
         if let data = climbingData {
             let title = "\(data.gymName) - \(data.discipline)"

@@ -270,6 +270,66 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
               // ... create widgets based on item.type ...
          }
     }
-    
 
+    // MARK: - Widget Restoration
+
+    override func getWorkoutDate() -> Date? {
+        return climbingData?.sessionDate
+    }
+
+    override func createWidgetFromSavedState(_ savedWidget: SavedWidgetState) -> UIView? {
+        // Try base implementation first
+        if let widget = super.createWidgetFromSavedState(savedWidget) {
+            return widget
+        }
+
+        // Handle Climbing-specific widgets
+        guard let data = climbingData else { return nil }
+        let widgetType = savedWidget.type
+
+        switch widgetType {
+        case "ClimbingGymWidget":
+            let widget = ClimbingGymWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(gymName: data.gymName)
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        case "ClimbingSessionWidget":
+            let widget = ClimbingSessionWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(sent: data.sentRoutes, total: data.totalRoutes)
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        case "ClimbingDisciplineWidget":
+            let widget = ClimbingDisciplineWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(discipline: data.discipline)
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        case "ClimbingRoutesByColorWidget":
+            let widget = ClimbingRoutesByColorWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(routes: data.routes)
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        default:
+            return nil
+        }
+    }
 }
