@@ -117,6 +117,7 @@ class StatisticsViewController: UIViewController {
     
     private func setupUI() {
         view.backgroundColor = .systemBackground
+        navigationItem.largeTitleDisplayMode = .never
         title = "통계"
         
         // Scroll View

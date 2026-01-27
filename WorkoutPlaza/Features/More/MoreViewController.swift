@@ -79,6 +79,7 @@ class MoreViewController: UIViewController {
 
     private func setupUI() {
         view.backgroundColor = .systemBackground
+        navigationItem.largeTitleDisplayMode = .never
         title = "더보기"
 
         tableView.delegate = self
