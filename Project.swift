@@ -27,12 +27,18 @@ let project = Project(
             product: .app,
             bundleId: "com.bbdyno.WorkoutPlaza",
             infoPlist: .extendingDefault(with: [
+                "UILaunchScreen": [
+                    "UIImageRespectsSafeAreaInsets": true,
+                    "UIColorName": "systemBackground"
+                ],
                 "UIAppFonts": [
                     "Alata-Regular.ttf",
                     "BebasNeue-Regular.ttf",
                     "Explora-Regular.ttf",
                     "OoohBaby-Regular.ttf"
                 ],
+                "NSHealthShareUsageDescription": "운동 기록과 경로를 확인하기 위해 HealthKit 데이터 접근이 필요합니다.",
+                "NSHealthUpdateUsageDescription": "운동 기록을 업데이트하기 위해 HealthKit 데이터 접근이 필요합니다.",
                 "NSPhotoLibraryAddUsageDescription": "운동 기록 이미지를 앨범에 저장하기 위해 사진 라이브러리 접근 권한이 필요합니다.",
                 "NSPhotoLibraryUsageDescription": "배경 이미지를 선택하고 운동 기록 이미지를 저장하기 위해 사진 라이브러리 접근 권한이 필요합니다.",
                 "LSSupportsOpeningDocumentsInPlace": true,
@@ -71,8 +77,9 @@ let project = Project(
             ]),
             sources: ["WorkoutPlaza/**/*.swift"],
             resources: [
-                "WorkoutPlaza/**/*.{png,jpg,jpeg,pdf,xib,storyboard,xcassets}",
+                "WorkoutPlaza/Assets.xcassets",
                 "WorkoutPlaza/Base.lproj/**",
+                "WorkoutPlaza/Fonts/**",
                 "Resources/**/*.strings"
             ],
             entitlements: "WorkoutPlaza/WorkoutPlaza.entitlements",
@@ -82,10 +89,13 @@ let project = Project(
             settings: .settings(
                 base: [
                     "TARGETED_DEVICE_FAMILY": "1,2",
+                    "SUPPORTS_MACCATALYST": "NO",
+                    "SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD": "NO",
+                    "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
+                    "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
                     "INFOPLIST_KEY_NSHealthShareUsageDescription": "운동 기록과 경로를 확인하기 위해 HealthKit 데이터 접근이 필요합니다.",
                     "INFOPLIST_KEY_NSHealthUpdateUsageDescription": "운동 기록을 업데이트하기 위해 HealthKit 데이터 접근이 필요합니다.",
                     "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents": "YES",
-                    "INFOPLIST_KEY_UILaunchStoryboardName": "LaunchScreen",
                     "INFOPLIST_KEY_UIMainStoryboardFile": "Main",
                     "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad": "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight",
                     "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone": "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
