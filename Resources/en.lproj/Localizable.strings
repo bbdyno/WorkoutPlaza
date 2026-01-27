@@ -1,0 +1,29 @@
+/*
+  Localizable.strings
+  WorkoutPlaza - English
+
+  Created by Tuist on 2026-01-27.
+*/
+
+// Common
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.save" = "Save";
+"common.delete" = "Delete";
+"common.edit" = "Edit";
+"common.done" = "Done";
+
+// Tab Bar
+"tab.home" = "Home";
+"tab.statistics" = "Statistics";
+"tab.more" = "More";
+
+// Workout Types
+"workout.running" = "Running";
+"workout.climbing" = "Climbing";
+
+// Permissions
+"permission.health.share" = "We need access to HealthKit data to view your workout records and routes.";
+"permission.health.update" = "We need access to HealthKit data to update your workout records.";
+"permission.photo.library" = "We need access to your photo library to select background images and save workout record images.";
+"permission.photo.add" = "We need access to your photo library to save workout record images to your album.";
