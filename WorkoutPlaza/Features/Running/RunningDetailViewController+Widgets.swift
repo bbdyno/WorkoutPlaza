@@ -388,69 +388,6 @@ extension RunningDetailViewController {
         present(alert, animated: true)
     }
 
-    internal func enterTextPathDrawingMode() {
-        // Create overlay for drawing
-        let overlay = TextPathDrawingOverlay(frame: contentView.bounds)
-        overlay.textToRepeat = pendingTextForPath
-
-        overlay.onDrawingComplete = { [weak self] pathPoints, boundingRect, color, font in
-            self?.createTextPathWidget(
-                pathPoints: pathPoints,
-                boundingRect: boundingRect,
-                color: color,
-                font: font
-            )
-            self?.exitTextPathDrawingMode()
-        }
-
-        overlay.onDrawingCancelled = { [weak self] in
-            self?.exitTextPathDrawingMode()
-        }
-
-        contentView.addSubview(overlay)
-        textPathDrawingOverlay = overlay
-    }
-
-    internal func exitTextPathDrawingMode() {
-        textPathDrawingOverlay?.removeFromSuperview()
-        textPathDrawingOverlay = nil
-        pendingTextForPath = ""
-    }
-
-    internal func createTextPathWidget(
-        pathPoints: [CGPoint],
-        boundingRect: CGRect,
-        color: UIColor,
-        font: UIFont
-    ) {
-        guard pathPoints.count >= 2 else { return }
-
-        // Convert path points to widget's local coordinate system
-        let localPathPoints = pathPoints.map { point in
-            CGPoint(
-                x: point.x - boundingRect.origin.x,
-                y: point.y - boundingRect.origin.y
-            )
-        }
-
-        // Create widget with color and font
-        let widget = TextPathWidget(
-            text: pendingTextForPath,
-            pathPoints: localPathPoints,
-            frame: boundingRect,
-            color: color,
-            font: font
-        )
-
-        widget.selectionDelegate = self
-        selectionManager.registerItem(widget)
-        widgets.append(widget)
-        contentView.addSubview(widget)
-        contentView.bringSubviewToFront(widget)
-
-        // Select the new widget
-        selectionManager.selectItem(widget)
-    }
     
 
     
