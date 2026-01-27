@@ -1,5 +1,5 @@
 //
-//  WorkoutListViewController.swift
+//  RunningListViewController.swift
 //  WorkoutPlaza
 //
 //  Created by bbdyno on 1/13/26.
@@ -9,7 +9,7 @@ import UIKit
 import SnapKit
 import UniformTypeIdentifiers
 
-class WorkoutListViewController: UIViewController {
+class RunningListViewController: UIViewController {
 
     // MARK: - Data Sources
     private var healthKitWorkouts: [WorkoutData] = []
@@ -151,9 +151,9 @@ class WorkoutListViewController: UIViewController {
         do {
             let shareableWorkout = try ShareManager.shared.importWorkout(from: url)
 
-            // Check if current top view controller is WorkoutDetailViewController
-            if let topVC = navigationController?.topViewController, topVC is WorkoutDetailViewController {
-                // Forward to WorkoutDetailViewController
+            // Check if current top view controller is RunningDetailViewController
+            if let topVC = navigationController?.topViewController, topVC is RunningDetailViewController {
+                // Forward to RunningDetailViewController
                 NotificationCenter.default.post(
                     name: .didReceiveSharedWorkoutInDetail,
                     object: nil,
@@ -414,7 +414,7 @@ class WorkoutListViewController: UIViewController {
 }
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
-extension WorkoutListViewController: UITableViewDelegate, UITableViewDataSource {
+extension RunningListViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return filteredWorkouts.count
     }
@@ -429,7 +429,7 @@ extension WorkoutListViewController: UITableViewDelegate, UITableViewDataSource 
         tableView.deselectRow(at: indexPath, animated: true)
 
         let unifiedWorkout = filteredWorkouts[indexPath.row]
-        let detailVC = WorkoutDetailViewController()
+        let detailVC = RunningDetailViewController()
 
         // Set workout data based on source
         if let healthKitWorkout = unifiedWorkout.healthKitWorkout {
@@ -562,7 +562,7 @@ extension WorkoutListViewController: UITableViewDelegate, UITableViewDataSource 
 }
 
 // MARK: - ImportWorkoutViewControllerDelegate
-extension WorkoutListViewController: ImportWorkoutViewControllerDelegate {
+extension RunningListViewController: ImportWorkoutViewControllerDelegate {
     func importWorkoutViewController(_ controller: ImportWorkoutViewController, didImport data: ImportedWorkoutData, mode: ImportMode, attachTo: WorkoutData?) {
         switch mode {
         case .createNew:
@@ -580,8 +580,8 @@ extension WorkoutListViewController: ImportWorkoutViewControllerDelegate {
 
         case .attachToExisting:
             if let workoutData = attachTo {
-                // Open WorkoutDetailViewController with the workout and imported data
-                let detailVC = WorkoutDetailViewController()
+                // Open RunningDetailViewController with the workout and imported data
+                let detailVC = RunningDetailViewController()
                 detailVC.workoutData = workoutData
                 detailVC.importedWorkoutData = data
                 navigationController?.pushViewController(detailVC, animated: true)
@@ -761,7 +761,7 @@ class WorkoutCell: UITableViewCell {
 }
 
 // MARK: - UIDocumentPickerDelegate
-extension WorkoutListViewController: UIDocumentPickerDelegate {
+extension RunningListViewController: UIDocumentPickerDelegate {
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         guard let fileURL = urls.first else { return }
 

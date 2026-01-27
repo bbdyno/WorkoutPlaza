@@ -156,6 +156,7 @@ enum WidgetType: String, Codable, CaseIterable {
     case date = "Date"
     case text = "Text"
     case location = "Location"
+    case currentDateTime = "CurrentDateTime"
     case composite = "Composite"
 
     // Climbing Widgets
@@ -175,6 +176,7 @@ enum WidgetType: String, Codable, CaseIterable {
         case .date: return "날짜"
         case .text: return "텍스트"
         case .location: return "위치"
+        case .currentDateTime: return "현재 시각"
         case .composite: return "복합"
         case .climbingGym: return "클라이밍짐"
         case .climbingDiscipline: return "종목"
@@ -194,6 +196,7 @@ enum WidgetType: String, Codable, CaseIterable {
         case .date: return "calendar"
         case .text: return "textformat"
         case .location: return "location"
+        case .currentDateTime: return "clock"
         case .composite: return "square.grid.2x2"
         case .climbingGym: return "building.2"
         case .climbingDiscipline: return "figure.climbing"
@@ -208,7 +211,7 @@ enum WidgetType: String, Codable, CaseIterable {
             return [.running]
         case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor:
             return [.climbing]
-        case .date, .text, .composite:
+        case .date, .text, .composite, .currentDateTime:
             return SportType.allCases
         }
     }

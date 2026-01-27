@@ -233,7 +233,7 @@ class HomeDashboardViewController: UIViewController {
     private func navigateToSport(_ sport: SportType) {
         switch sport {
         case .running:
-            let workoutListVC = WorkoutListViewController()
+            let workoutListVC = RunningListViewController()
             let navController = UINavigationController(rootViewController: workoutListVC)
             navController.modalPresentationStyle = .fullScreen
             present(navController, animated: true)
@@ -256,7 +256,8 @@ extension HomeDashboardViewController: ClimbingInputDelegate {
     }
 
     func climbingInput(_ controller: ClimbingInputViewController, didRequestCardFor session: ClimbingData) {
-        let detailVC = ClimbingDetailViewController(climbingData: session)
+        let detailVC = ClimbingDetailViewController()
+        detailVC.climbingData = session
         controller.navigationController?.pushViewController(detailVC, animated: true)
     }
 }
