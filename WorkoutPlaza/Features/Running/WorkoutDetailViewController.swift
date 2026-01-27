@@ -55,6 +55,9 @@ class WorkoutDetailViewController: UIViewController {
     private var routeMapView: RouteMapView?
     private var widgets: [UIView] = []
 
+    // 저장 상태 추적
+    private var hasUnsavedChanges: Bool = false
+
     // Template Group
     private var templateGroups: [TemplateGroupView] = []
     private var isInGroupMode: Bool = false
@@ -266,17 +269,25 @@ class WorkoutDetailViewController: UIViewController {
         // Configure with workout data if available (from HealthKit)
         if workoutData != nil {
             configureWithWorkoutData()
+            // 위젯 생성 후 저장된 디자인 로드
+            loadSavedDesign()
+            hasUnsavedChanges = false
         }
 
         // Handle imported workout data if present (independent of health data)
         if let importedData = importedWorkoutData {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                 self?.addImportedWorkoutGroup(importedData)
+                // 위젯 생성 후 저장된 디자인 로드
+                self?.loadSavedDesign()
+                self?.hasUnsavedChanges = false
             }
         }
-        
-        // Try to load saved design
-        loadSavedDesign()
+
+        // workoutData도 importedWorkoutData도 없는 경우
+        if workoutData == nil && importedWorkoutData == nil {
+            hasUnsavedChanges = false
+        }
     }
     
     // MARK: - Persistence
@@ -284,6 +295,7 @@ class WorkoutDetailViewController: UIViewController {
     @objc private func doneButtonTapped() {
         saveCurrentDesign { [weak self] success in
             if success {
+                self?.hasUnsavedChanges = false
                 let alert = UIAlertController(title: "저장 완료", message: "카드 디자인이 저장되었습니다.", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "확인", style: .default))
                 self?.present(alert, animated: true)
@@ -311,28 +323,26 @@ class WorkoutDetailViewController: UIViewController {
             workoutId = "default"
         }
         
-        // Collect widget states
+        // Collect widget states - 클래스 이름을 identifier로 사용
         let savedWidgets = widgets.compactMap { widget -> SavedWidgetState? in
             let frame = widget.frame
-            var type = "unknown"
+            // 클래스 이름을 identifier로 사용 (위젯이 다시 생성되어도 동일)
+            let className = String(describing: type(of: widget))
             var text: String?
             var fontName: String?
             var fontSize: CGFloat?
             var textColor: String?
-            var backgroundColor: String?
-            
-            if let statWidget = widget as? BaseStatWidget {
-                type = "statWidget" // Simplified. Ideally store widget specific identifiers.
-            } else if let label = widget as? UILabel {
-                type = "text"
+
+            if let label = widget as? UILabel {
                 text = label.text
                 fontName = label.font.fontName
                 fontSize = label.font.pointSize
                 textColor = label.textColor.toHex()
             }
-            
+
             return SavedWidgetState(
-                type: type,
+                identifier: className,
+                type: className,
                 frame: frame,
                 text: text,
                 fontName: fontName,
@@ -346,14 +356,22 @@ class WorkoutDetailViewController: UIViewController {
         
         var bgType: BackgroundType = .solid
         var bgData: Data? = nil
-        
-        if backgroundImageView.image != nil {
+        var gradientStyleString: String? = nil
+        var gradientColorsHex: [String]? = nil
+
+        if !backgroundImageView.isHidden && backgroundImageView.image != nil {
             bgType = .image
             bgData = backgroundImageView.image?.jpegData(compressionQuality: 0.8)
-        } else {
-             bgType = .gradient
+        } else if !backgroundTemplateView.isHidden {
+            bgType = .gradient
+            gradientStyleString = backgroundTemplateView.currentStyle.rawValue
+            // 커스텀 그라데이션인 경우 색상도 저장
+            if backgroundTemplateView.currentStyle == .custom,
+               let customColors = backgroundTemplateView.customColors {
+                gradientColorsHex = customColors.compactMap { $0.toHex() }
+            }
         }
-        
+
         let design = SavedCardDesign(
             backgroundType: bgType,
             backgroundColor: nil,
@@ -361,8 +379,8 @@ class WorkoutDetailViewController: UIViewController {
             widgets: savedWidgets,
             canvasSize: canvasContainerView.bounds.size,
             aspectRatio: currentAspectRatio,
-            gradientColors: nil,
-            gradientStyle: nil
+            gradientColors: gradientColorsHex,
+            gradientStyle: gradientStyleString
         )
         
         do {
@@ -391,13 +409,50 @@ class WorkoutDetailViewController: UIViewController {
             // Restore Aspect Ratio
             currentAspectRatio = design.aspectRatio
             updateCanvasSize()
-            
+
             // Restore Background
             if design.backgroundType == .image, let data = design.backgroundImageData {
                 backgroundImageView.image = UIImage(data: data)
+                backgroundImageView.isHidden = false
+                backgroundTemplateView.isHidden = true
+            } else if design.backgroundType == .gradient, let styleString = design.gradientStyle {
+                backgroundImageView.isHidden = true
+                backgroundTemplateView.isHidden = false
+
+                if let style = BackgroundTemplateView.TemplateStyle(rawValue: styleString) {
+                    if style == .custom, let colorsHex = design.gradientColors {
+                        let colors = colorsHex.compactMap { UIColor(hex: $0) }
+                        if !colors.isEmpty {
+                            backgroundTemplateView.applyCustomGradient(colors: colors)
+                        }
+                    } else {
+                        backgroundTemplateView.applyTemplate(style)
+                    }
+                }
             }
-            
-            print("Design loaded for \(workoutId). Restoration logic partial.")
+
+            // Restore Widget Positions - 클래스 이름으로 매칭
+            for savedWidget in design.widgets {
+                let savedClassName = savedWidget.identifier
+
+                for widget in widgets {
+                    let widgetClassName = String(describing: type(of: widget))
+                    if widgetClassName == savedClassName {
+                        widget.frame = savedWidget.frame
+                        break
+                    }
+                }
+
+                // Also check routeMapView
+                if let mapView = routeMapView {
+                    let mapClassName = String(describing: type(of: mapView))
+                    if mapClassName == savedClassName {
+                        mapView.frame = savedWidget.frame
+                    }
+                }
+            }
+
+            print("Design loaded and restored for \(workoutId)")
         }
     }
 
@@ -427,6 +482,18 @@ class WorkoutDetailViewController: UIViewController {
             name: .didReceiveSharedWorkoutInDetail,
             object: nil
         )
+
+        // 위젯 이동 감지
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWidgetDidMove),
+            name: .widgetDidMove,
+            object: nil
+        )
+    }
+
+    @objc private func handleWidgetDidMove() {
+        hasUnsavedChanges = true
     }
 
     @objc private func handleReceivedWorkoutInDetail(_ notification: Notification) {
@@ -811,6 +878,7 @@ class WorkoutDetailViewController: UIViewController {
 
         // Remove from widgets array
         widgets.removeAll { $0 === selectedItem }
+        hasUnsavedChanges = true
 
         // Remove from view hierarchy
         UIView.animate(withDuration: 0.25, animations: {
@@ -1004,6 +1072,7 @@ class WorkoutDetailViewController: UIViewController {
 
         contentView.addSubview(group)
         templateGroups.append(group)
+        hasUnsavedChanges = true
 
         // Remove widgets from main widgets array (they're now in the group)
         for widget in widgetsToGroup {
@@ -1695,9 +1764,7 @@ class WorkoutDetailViewController: UIViewController {
 
     // MARK: - Back Navigation
     @objc private func backButtonTapped() {
-        let hasContent = !widgets.isEmpty || !templateGroups.isEmpty || routeMapView != nil
-
-        if hasContent {
+        if hasUnsavedChanges {
             let alert = UIAlertController(
                 title: "작업 취소",
                 message: "현재 작업 중인 내용이 모두 사라집니다. 나가시겠습니까?",
@@ -1706,12 +1773,20 @@ class WorkoutDetailViewController: UIViewController {
 
             alert.addAction(UIAlertAction(title: "취소", style: .cancel))
             alert.addAction(UIAlertAction(title: "나가기", style: .destructive) { [weak self] _ in
-                self?.navigationController?.popViewController(animated: true)
+                self?.dismissOrPop()
             })
 
             present(alert, animated: true)
         } else {
-            navigationController?.popViewController(animated: true)
+            dismissOrPop()
+        }
+    }
+
+    private func dismissOrPop() {
+        if let navController = navigationController, navController.viewControllers.count > 1 {
+            navController.popViewController(animated: true)
+        } else {
+            dismiss(animated: true)
         }
     }
 
@@ -2668,6 +2743,7 @@ class WorkoutDetailViewController: UIViewController {
         backgroundTemplateView.isHidden = false
         backgroundTemplateView.applyTemplate(style)
         dimOverlay.isHidden = true
+        hasUnsavedChanges = true
     }
     
     private func configureWithWorkoutData() {
@@ -2792,6 +2868,7 @@ class WorkoutDetailViewController: UIViewController {
         contentView.addSubview(widget)
         contentView.bringSubviewToFront(widget)
         widgets.append(widget)
+        hasUnsavedChanges = true
 
         widget.frame = CGRect(origin: position, size: size)
 
@@ -2893,6 +2970,7 @@ extension WorkoutDetailViewController: BackgroundImageEditorDelegate {
         backgroundImageView.isHidden = false
         backgroundTemplateView.isHidden = true
         backgroundTransform = transform
+        hasUnsavedChanges = true
 
         // Apply transform to background image
         applyBackgroundTransform(transform)

@@ -56,6 +56,9 @@ class ClimbingDetailViewController: UIViewController {
 
     private var widgets: [UIView] = []
 
+    // 저장 상태 추적
+    private var hasUnsavedChanges: Bool = false
+
     // Selection Manager (Reused from Running module)
     private let selectionManager = SelectionManager()
 
@@ -197,6 +200,31 @@ class ClimbingDetailViewController: UIViewController {
         setupTopRightToolbar()
         setupBottomFloatingToolbar()
         setupDefaultWidgets()
+        setupNotificationObservers()
+
+        // 저장된 디자인 로드
+        loadSavedDesign()
+
+        // 초기화 완료 후 변경사항 없음으로 설정
+        hasUnsavedChanges = false
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private func setupNotificationObservers() {
+        // 위젯 이동 감지
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWidgetDidMove),
+            name: .widgetDidMove,
+            object: nil
+        )
+    }
+
+    @objc private func handleWidgetDidMove() {
+        hasUnsavedChanges = true
     }
 
     // MARK: - Setup UI (Same structure as Running module)
@@ -204,7 +232,13 @@ class ClimbingDetailViewController: UIViewController {
         view.backgroundColor = .black
         title = "클라이밍 기록"
 
-        navigationItem.largeTitleDisplayMode = .never
+            navigationItem.largeTitleDisplayMode = .never
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.left"),
+            style: .plain,
+            target: self,
+            action: #selector(backButtonTapped)
+        )
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: "완료",
             style: .done,
@@ -415,6 +449,7 @@ class ClimbingDetailViewController: UIViewController {
     private func addWidget(_ widget: UIView) {
         contentView.addSubview(widget)
         widgets.append(widget)
+        hasUnsavedChanges = true
 
         if var selectable = widget as? Selectable {
             selectable.selectionDelegate = self
@@ -428,8 +463,142 @@ class ClimbingDetailViewController: UIViewController {
     // MARK: - Actions
 
     @objc private func doneTapped() {
-        // 이미 ClimbingInputViewController에서 저장됨, 카드 편집 완료 후 닫기
-        dismiss(animated: true)
+        saveCurrentDesign { [weak self] success in
+            if success {
+                self?.hasUnsavedChanges = false
+                let alert = UIAlertController(title: "저장 완료", message: "카드 디자인이 저장되었습니다.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                self?.present(alert, animated: true)
+            } else {
+                let alert = UIAlertController(title: "저장 실패", message: "디자인을 저장하는 중 오류가 발생했습니다.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                self?.present(alert, animated: true)
+            }
+        }
+    }
+
+    // MARK: - Persistence
+
+    private func saveCurrentDesign(completion: ((Bool) -> Void)? = nil) {
+        guard let data = climbingData else {
+            completion?(false)
+            return
+        }
+
+        let workoutId = "climbing_\(data.id)"
+
+        // Collect widget states - 클래스 이름을 identifier로 사용
+        let savedWidgets = widgets.compactMap { widget -> SavedWidgetState? in
+            let frame = widget.frame
+            // 클래스 이름을 identifier로 사용 (위젯이 다시 생성되어도 동일)
+            let className = String(describing: type(of: widget))
+            var text: String?
+            var fontName: String?
+            var fontSize: CGFloat?
+            var textColor: String?
+
+            if let label = widget as? UILabel {
+                text = label.text
+                fontName = label.font.fontName
+                fontSize = label.font.pointSize
+                textColor = label.textColor.toHex()
+            }
+
+            return SavedWidgetState(
+                identifier: className,
+                type: className,
+                frame: frame,
+                text: text,
+                fontName: fontName,
+                fontSize: fontSize,
+                textColor: textColor,
+                backgroundColor: widget.backgroundColor?.toHex(),
+                rotation: 0,
+                zIndex: 0
+            )
+        }
+
+        var bgType: BackgroundType = .solid
+        var bgData: Data? = nil
+
+        if backgroundImageView.image != nil && !backgroundImageView.isHidden {
+            bgType = .image
+            bgData = backgroundImageView.image?.jpegData(compressionQuality: 0.8)
+        } else {
+            bgType = .gradient
+        }
+
+        let design = SavedCardDesign(
+            backgroundType: bgType,
+            backgroundColor: nil,
+            backgroundImageData: bgData,
+            widgets: savedWidgets,
+            canvasSize: canvasContainerView.bounds.size,
+            aspectRatio: currentAspectRatio,
+            gradientColors: nil,
+            gradientStyle: nil
+        )
+
+        do {
+            try CardPersistenceManager.shared.saveDesign(design, for: workoutId)
+            completion?(true)
+        } catch {
+            print("Error saving climbing design: \(error)")
+            completion?(false)
+        }
+    }
+
+    private func loadSavedDesign() {
+        guard let data = climbingData else { return }
+
+        let workoutId = "climbing_\(data.id)"
+
+        if let design = CardPersistenceManager.shared.loadDesign(for: workoutId) {
+            // Restore Aspect Ratio
+            currentAspectRatio = design.aspectRatio
+            updateCanvasSize()
+
+            // Restore Background
+            if design.backgroundType == .image, let imageData = design.backgroundImageData {
+                backgroundImageView.image = UIImage(data: imageData)
+                backgroundImageView.isHidden = false
+                backgroundTemplateView.isHidden = true
+            }
+
+            // Restore Widget Positions - 클래스 이름으로 매칭
+            for savedWidget in design.widgets {
+                let savedClassName = savedWidget.identifier
+
+                for widget in widgets {
+                    let widgetClassName = String(describing: type(of: widget))
+                    if widgetClassName == savedClassName {
+                        widget.frame = savedWidget.frame
+                        break
+                    }
+                }
+            }
+
+            print("Climbing design loaded and restored for \(workoutId)")
+        }
+    }
+
+    @objc private func backButtonTapped() {
+        if hasUnsavedChanges {
+            let alert = UIAlertController(
+                title: "작업 취소",
+                message: "현재 작업 중인 내용이 모두 사라집니다. 나가시겠습니까?",
+                preferredStyle: .alert
+            )
+
+            alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+            alert.addAction(UIAlertAction(title: "나가기", style: .destructive) { [weak self] _ in
+                self?.dismiss(animated: true)
+            })
+
+            present(alert, animated: true)
+        } else {
+            dismiss(animated: true)
+        }
     }
 
     @objc private func handleBackgroundTap(_ gesture: UITapGestureRecognizer) {
@@ -695,6 +864,7 @@ class ClimbingDetailViewController: UIViewController {
         backgroundTemplateView.isHidden = false
         dimOverlay.isHidden = true
         backgroundTemplateView.applyTemplate(style)
+        hasUnsavedChanges = true
     }
 
     private func presentCustomGradientPicker() {
@@ -816,6 +986,7 @@ class ClimbingDetailViewController: UIViewController {
 
         if let index = widgets.firstIndex(where: { $0 === selected }) {
             widgets.remove(at: index)
+            hasUnsavedChanges = true
         }
 
         updateToolbarItemsState()
@@ -885,6 +1056,7 @@ extension ClimbingDetailViewController: BackgroundImageEditorDelegate {
         backgroundImageView.image = image
         backgroundImageView.isHidden = false
         backgroundTemplateView.isHidden = true
+        hasUnsavedChanges = true
 
         let canvasWidth: CGFloat = 360
         let canvasSize = CGSize(width: canvasWidth, height: canvasWidth * currentAspectRatio.ratio)
@@ -916,5 +1088,6 @@ extension ClimbingDetailViewController: CustomGradientPickerDelegate {
         backgroundTemplateView.isHidden = false
         dimOverlay.isHidden = true
         backgroundTemplateView.applyCustomGradient(colors: colors, direction: direction)
+        hasUnsavedChanges = true
     }
 }

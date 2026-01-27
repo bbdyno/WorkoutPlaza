@@ -9,6 +9,11 @@ import UIKit
 import SnapKit
 import CoreLocation
 
+// MARK: - Notification Names
+extension Notification.Name {
+    static let widgetDidMove = Notification.Name("widgetDidMove")
+}
+
 // MARK: - Base Stat Widget
 class BaseStatWidget: UIView, Selectable {
 
@@ -159,7 +164,11 @@ class BaseStatWidget: UIView, Selectable {
             if isSelected {
                 positionResizeHandles()
             }
-            
+
+        case .ended, .cancelled:
+            // 위젯 이동 완료 알림
+            NotificationCenter.default.post(name: .widgetDidMove, object: nil)
+
         default:
             break
         }
@@ -657,6 +666,9 @@ class TextWidget: UIView, Selectable {
                 positionResizeHandles()
             }
 
+        case .ended, .cancelled:
+            NotificationCenter.default.post(name: .widgetDidMove, object: nil)
+
         default:
             break
         }
@@ -1019,6 +1031,9 @@ class LocationWidget: UIView, Selectable {
             if isSelected {
                 positionResizeHandles()
             }
+
+        case .ended, .cancelled:
+            NotificationCenter.default.post(name: .widgetDidMove, object: nil)
 
         default:
             break
