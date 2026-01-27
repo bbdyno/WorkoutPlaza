@@ -7,6 +7,114 @@
 
 import UIKit
 import SnapKit
+
+// MARK: - Text Path Preview View
+class TextPathPreviewView: UIView {
+    var points: [CGPoint] = []
+    var textToRepeat: String = ""
+    var textFont: UIFont = .boldSystemFont(ofSize: 20)
+    var textColor: UIColor = .white
+    private let letterSpacing: CGFloat = 2.0
+
+    override func draw(_ rect: CGRect) {
+        super.draw(rect)
+
+        guard let context = UIGraphicsGetCurrentContext(),
+              points.count >= 2,
+              !textToRepeat.isEmpty else { return }
+
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: textFont,
+            .foregroundColor: textColor
+        ]
+
+        var segmentLengths: [CGFloat] = []
+        var cumulativeDistances: [CGFloat] = [0.0]
+
+        for i in 0..<(points.count - 1) {
+            let dx = points[i + 1].x - points[i].x
+            let dy = points[i + 1].y - points[i].y
+            let length = sqrt(dx * dx + dy * dy)
+            segmentLengths.append(length)
+            cumulativeDistances.append(cumulativeDistances.last! + length)
+        }
+
+        let totalPathLength = cumulativeDistances.last ?? 0
+        guard totalPathLength > 0 else { return }
+
+        let characters = Array(textToRepeat)
+        var characterWidths: [CGFloat] = []
+
+        for char in characters {
+            let charString = String(char)
+            let size = charString.size(withAttributes: textAttributes)
+            characterWidths.append(size.width)
+        }
+
+        var currentDistance: CGFloat = 0.0
+        var charIndex = 0
+
+        while currentDistance < totalPathLength && charIndex < characters.count * 100 {
+            let char = characters[charIndex % characters.count]
+            let charString = String(char)
+            let charWidth = characterWidths[charIndex % characters.count]
+            let charSize = charString.size(withAttributes: textAttributes)
+
+            let charCenterDistance = currentDistance + charWidth / 2.0
+
+            if charCenterDistance > totalPathLength {
+                break
+            }
+
+            var segmentIndex = 0
+            for i in 0..<segmentLengths.count {
+                if charCenterDistance <= cumulativeDistances[i + 1] {
+                    segmentIndex = i
+                    break
+                }
+            }
+
+            let startPoint = points[segmentIndex]
+            let endPoint = points[segmentIndex + 1]
+            let segmentLength = segmentLengths[segmentIndex]
+
+            guard segmentLength > 0 else {
+                charIndex += 1
+                continue
+            }
+
+            let dx = endPoint.x - startPoint.x
+            let dy = endPoint.y - startPoint.y
+
+            let distanceWithinSegment = charCenterDistance - cumulativeDistances[segmentIndex]
+
+            let normalizedDx = dx / segmentLength
+            let normalizedDy = dy / segmentLength
+
+            let charX = startPoint.x + normalizedDx * distanceWithinSegment
+            let charY = startPoint.y + normalizedDy * distanceWithinSegment
+
+            let angle = atan2(dy, dx)
+
+            context.saveGState()
+            context.translateBy(x: charX, y: charY)
+            context.rotate(by: angle)
+
+            let drawRect = CGRect(
+                x: -charWidth / 2.0,
+                y: -charSize.height / 2.0,
+                width: charWidth,
+                height: charSize.height
+            )
+            charString.draw(in: drawRect, withAttributes: textAttributes)
+
+            context.restoreGState()
+
+            currentDistance += charWidth + letterSpacing
+            charIndex += 1
+        }
+    }
+}
 import PhotosUI
 
 class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
@@ -40,7 +148,15 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
     
     // Text Path State
     var pendingTextForPath: String = ""
-    weak var textPathDrawingOverlay: TextPathDrawingOverlay?
+    var isTextPathDrawingMode: Bool = false
+    var textPathPoints: [CGPoint] = []
+
+    // Text Path Style
+    var textPathSelectedColor: UIColor = .white
+    var textPathSelectedFont: UIFont = .boldSystemFont(ofSize: 20)
+    var textPathSelectedFontSize: CGFloat = 20
+    var textPathSelectedColorIndex: Int = 0
+    var textPathSelectedFontIndex: Int = 0
 
     // MARK: - UI Components
     
@@ -194,6 +310,46 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         return label
     }()
 
+    // Text Path Drawing Overlay
+    lazy var textPathDrawingOverlayView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        view.isHidden = true
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+
+    // Text Path Drawing Toolbar
+    lazy var textPathDrawingToolbar: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.95)
+        view.isHidden = true
+        return view
+    }()
+
+    lazy var textPathConfirmButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "checkmark.circle.fill"), for: .normal)
+        button.tintColor = .systemGreen
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        button.layer.cornerRadius = 25
+        button.isHidden = true
+        return button
+    }()
+
+    lazy var textPathRedrawButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "arrow.counterclockwise"), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        button.layer.cornerRadius = 20
+        button.isHidden = true
+        return button
+    }()
+
+    var textPathColorButtons: [UIButton] = []
+    var textPathFontButtons: [UIButton] = []
+
     // MARK: - Lifecycle
     
     override func viewDidLoad() {
@@ -257,14 +413,19 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         contentView.addSubview(backgroundImageView)
         contentView.addSubview(dimOverlay)
         contentView.addSubview(watermarkLabel)
-        
+        contentView.addSubview(textPathDrawingOverlayView)
+
         view.addSubview(topRightToolbar)
         view.addSubview(bottomFloatingToolbar)
         view.addSubview(multiSelectToolbar)
+        view.addSubview(textPathDrawingToolbar)
+        view.addSubview(textPathConfirmButton)
+        view.addSubview(textPathRedrawButton)
         view.addSubview(toastLabel)
-        
+
         setupTopRightToolbar()
         setupBottomFloatingToolbar()
+        setupTextPathDrawingToolbar()
         
         // Background tap gesture
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTap))
@@ -311,7 +472,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
             make.bottom.equalToSuperview().inset(16)
             make.trailing.equalToSuperview().inset(16)
         }
-        
+
+        textPathDrawingOverlayView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
         topRightToolbar.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
             make.trailing.equalToSuperview().inset(16)
@@ -335,6 +500,24 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
             make.width.greaterThanOrEqualTo(100)
             make.height.equalTo(40)
         }
+
+        textPathDrawingToolbar.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview()
+            make.height.equalTo(180)
+        }
+
+        textPathConfirmButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(20)
+            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(-20)
+            make.size.equalTo(50)
+        }
+
+        textPathRedrawButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(-20)
+            make.size.equalTo(40)
+        }
     }
     
     @objc dynamic func setupTopRightToolbar() {
@@ -352,11 +535,123 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         stack.axis = .horizontal
         stack.spacing = 20
         stack.alignment = .center
-        
+
         bottomFloatingToolbar.addSubview(stack)
         stack.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 20, bottom: 8, right: 20))
         }
+    }
+
+    func setupTextPathDrawingToolbar() {
+        let availableColors: [UIColor] = [
+            .white, .systemYellow, .systemOrange, .systemPink,
+            .systemRed, .systemGreen, .systemBlue, .systemPurple
+        ]
+
+        let availableFonts: [(name: String, font: UIFont)] = [
+            ("기본", .boldSystemFont(ofSize: 20)),
+            ("얇게", .systemFont(ofSize: 20, weight: .light)),
+            ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
+            ("굵게", .systemFont(ofSize: 20, weight: .black))
+        ]
+
+        // Color Stack
+        let colorStackView = UIStackView()
+        colorStackView.axis = .horizontal
+        colorStackView.spacing = 8
+        colorStackView.alignment = .center
+        colorStackView.distribution = .equalSpacing
+
+        for (index, color) in availableColors.enumerated() {
+            let button = UIButton(type: .custom)
+            button.backgroundColor = color
+            button.layer.cornerRadius = 14
+            button.layer.borderWidth = 2
+            button.layer.borderColor = UIColor.clear.cgColor
+            button.tag = index
+            button.addTarget(self, action: #selector(textPathColorButtonTapped(_:)), for: .touchUpInside)
+
+            button.snp.makeConstraints { make in
+                make.size.equalTo(28)
+            }
+
+            textPathColorButtons.append(button)
+            colorStackView.addArrangedSubview(button)
+        }
+
+        // Font Stack
+        let fontStackView = UIStackView()
+        fontStackView.axis = .horizontal
+        fontStackView.spacing = 8
+        fontStackView.alignment = .center
+        fontStackView.distribution = .fillEqually
+
+        for (index, fontInfo) in availableFonts.enumerated() {
+            let button = UIButton(type: .system)
+            button.setTitle(fontInfo.name, for: .normal)
+            button.setTitleColor(.white, for: .normal)
+            button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+            button.backgroundColor = UIColor.white.withAlphaComponent(0.1)
+            button.layer.cornerRadius = 8
+            button.tag = index
+            button.addTarget(self, action: #selector(textPathFontButtonTapped(_:)), for: .touchUpInside)
+
+            textPathFontButtons.append(button)
+            fontStackView.addArrangedSubview(button)
+        }
+
+        // Font Size Slider
+        let fontSizeSlider = UISlider()
+        fontSizeSlider.minimumValue = 12
+        fontSizeSlider.maximumValue = 40
+        fontSizeSlider.value = 20
+        fontSizeSlider.minimumTrackTintColor = .white
+        fontSizeSlider.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.3)
+        fontSizeSlider.addTarget(self, action: #selector(textPathFontSizeChanged(_:)), for: .valueChanged)
+
+        let fontSizeLabel = UILabel()
+        fontSizeLabel.text = "20"
+        fontSizeLabel.textColor = .white
+        fontSizeLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        fontSizeLabel.textAlignment = .center
+        fontSizeLabel.tag = 999 // For reference
+
+        let sizeIcon = UIImageView(image: UIImage(systemName: "textformat.size"))
+        sizeIcon.tintColor = .white
+        sizeIcon.contentMode = .scaleAspectFit
+
+        let sliderStack = UIStackView(arrangedSubviews: [sizeIcon, fontSizeSlider, fontSizeLabel])
+        sliderStack.axis = .horizontal
+        sliderStack.spacing = 8
+        sliderStack.alignment = .center
+
+        sizeIcon.snp.makeConstraints { make in
+            make.size.equalTo(20)
+        }
+        fontSizeLabel.snp.makeConstraints { make in
+            make.width.equalTo(30)
+        }
+
+        // Main Stack
+        let mainStack = UIStackView(arrangedSubviews: [colorStackView, fontStackView, sliderStack])
+        mainStack.axis = .vertical
+        mainStack.spacing = 12
+        mainStack.alignment = .fill
+
+        textPathDrawingToolbar.addSubview(mainStack)
+        mainStack.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-16)
+        }
+
+        // Setup button actions
+        textPathConfirmButton.addTarget(self, action: #selector(textPathConfirmTapped), for: .touchUpInside)
+        textPathRedrawButton.addTarget(self, action: #selector(textPathRedrawTapped), for: .touchUpInside)
+
+        // Initial selection
+        updateTextPathColorSelection()
+        updateTextPathFontSelection()
     }
 
     func setupMultiSelectToolbarConfig() {
@@ -921,58 +1216,339 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         present(alert, animated: true)
     }
 
-    private func enterTextPathDrawingMode() {
-        // Create overlay for drawing
-        let overlay = TextPathDrawingOverlay(frame: contentView.bounds)
-        overlay.textToRepeat = pendingTextForPath
+    internal func enterTextPathDrawingMode() {
+        isTextPathDrawingMode = true
+        textPathPoints = []
 
-        overlay.onDrawingComplete = { [weak self] pathPoints, boundingRect, color, font in
-            self?.createTextPathWidget(
-                pathPoints: pathPoints,
-                boundingRect: boundingRect,
-                color: color,
-                font: font
-            )
-            self?.exitTextPathDrawingMode()
+        // Disable all widgets interaction
+        for widget in widgets {
+            (widget as? UIView)?.isUserInteractionEnabled = false
         }
 
-        overlay.onDrawingCancelled = { [weak self] in
-            self?.exitTextPathDrawingMode()
-        }
+        // Deselect any selected items
+        selectionManager.deselectAll()
 
-        contentView.addSubview(overlay)
-        textPathDrawingOverlay = overlay
+        // Show overlay
+        textPathDrawingOverlayView.isHidden = false
+        contentView.bringSubviewToFront(textPathDrawingOverlayView)
+
+        // Hide normal UI elements
+        topRightToolbar.isHidden = true
+        bottomFloatingToolbar.isHidden = true
+        multiSelectToolbar.isHidden = true
+        instructionLabel.text = "👆 드래그하여 텍스트 경로를 그려주세요"
+
+        // Change navigation buttons
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            title: "취소",
+            style: .plain,
+            target: self,
+            action: #selector(exitTextPathDrawingMode)
+        )
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "텍스트 편집",
+            style: .plain,
+            target: self,
+            action: #selector(editTextPathText)
+        )
+
+        // Show text path drawing toolbar
+        textPathDrawingToolbar.isHidden = false
+
+        // Add pan gesture for drawing on overlay
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleTextPathPan(_:)))
+        textPathDrawingOverlayView.addGestureRecognizer(panGesture)
+        textPathDrawingOverlayView.isUserInteractionEnabled = true
+
+        // Disable scrolling
+        scrollView.isScrollEnabled = false
     }
 
-    private func exitTextPathDrawingMode() {
-        textPathDrawingOverlay?.removeFromSuperview()
-        textPathDrawingOverlay = nil
+    @objc func exitTextPathDrawingMode() {
+        isTextPathDrawingMode = false
+        textPathPoints = []
+
+        // Clear drawing view
+        textPathDrawingOverlayView.subviews.forEach { $0.removeFromSuperview() }
+
+        // Hide overlay
+        textPathDrawingOverlayView.isHidden = true
+
+        // Re-enable all widgets interaction
+        for widget in widgets {
+            (widget as? UIView)?.isUserInteractionEnabled = true
+        }
+
+        // Show normal UI elements
+        topRightToolbar.isHidden = false
+        instructionLabel.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
+
+        // Restore navigation buttons
+        setupNavigationButtons()
+
+        // Hide text path toolbar and buttons
+        textPathDrawingToolbar.isHidden = true
+        textPathConfirmButton.isHidden = true
+        textPathRedrawButton.isHidden = true
+
+        // Remove pan gesture from overlay
+        textPathDrawingOverlayView.gestureRecognizers?.forEach { gesture in
+            textPathDrawingOverlayView.removeGestureRecognizer(gesture)
+        }
+        textPathDrawingOverlayView.isUserInteractionEnabled = false
+
+        // Enable scrolling
+        scrollView.isScrollEnabled = false // Keep disabled for normal mode
+
         pendingTextForPath = ""
     }
 
-    private func createTextPathWidget(
-        pathPoints: [CGPoint],
-        boundingRect: CGRect,
-        color: UIColor,
-        font: UIFont
-    ) {
-        guard pathPoints.count >= 2 else { return }
+    @objc func editTextPathText() {
+        let alert = UIAlertController(
+            title: "텍스트 편집",
+            message: "경로를 따라 반복할 텍스트를 입력하세요",
+            preferredStyle: .alert
+        )
 
-        // Convert path points to widget's local coordinate system
-        let localPathPoints = pathPoints.map { point in
+        alert.addTextField { textField in
+            textField.text = self.pendingTextForPath.trimmingCharacters(in: .whitespaces)
+            textField.placeholder = "반복할 텍스트 입력"
+            textField.autocapitalizationType = .none
+        }
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        alert.addAction(UIAlertAction(title: "확인", style: .default) { [weak self, weak alert] _ in
+            guard let self = self,
+                  let text = alert?.textFields?.first?.text,
+                  !text.isEmpty else { return }
+
+            self.pendingTextForPath = text + " "
+            self.instructionLabel.text = "반복 텍스트: \(self.pendingTextForPath)"
+
+            // Redraw with new text
+            self.updateTextPathDrawing()
+        })
+
+        present(alert, animated: true)
+    }
+
+    @objc func handleTextPathPan(_ gesture: UIPanGestureRecognizer) {
+        let location = gesture.location(in: contentView)
+
+        switch gesture.state {
+        case .began:
+            textPathPoints = [location]
+            textPathConfirmButton.isHidden = true
+            textPathRedrawButton.isHidden = true
+            instructionLabel.isHidden = true
+
+        case .changed:
+            textPathPoints.append(location)
+            updateTextPathDrawing()
+
+        case .ended, .cancelled:
+            textPathPoints.append(location)
+            if textPathPoints.count >= 2 {
+                textPathConfirmButton.isHidden = false
+                textPathRedrawButton.isHidden = false
+            }
+            updateTextPathDrawing()
+
+        default:
+            break
+        }
+    }
+
+    @objc func textPathColorButtonTapped(_ sender: UIButton) {
+        textPathSelectedColorIndex = sender.tag
+        let availableColors: [UIColor] = [
+            .white, .systemYellow, .systemOrange, .systemPink,
+            .systemRed, .systemGreen, .systemBlue, .systemPurple
+        ]
+        textPathSelectedColor = availableColors[sender.tag]
+        UIView.animate(withDuration: 0.2) {
+            self.updateTextPathColorSelection()
+            self.updateTextPathDrawing()
+        }
+    }
+
+    @objc func textPathFontButtonTapped(_ sender: UIButton) {
+        textPathSelectedFontIndex = sender.tag
+        let availableFonts: [(name: String, font: UIFont)] = [
+            ("기본", .boldSystemFont(ofSize: 20)),
+            ("얇게", .systemFont(ofSize: 20, weight: .light)),
+            ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
+            ("굵게", .systemFont(ofSize: 20, weight: .black))
+        ]
+        let baseFont = availableFonts[sender.tag].font
+        textPathSelectedFont = baseFont.withSize(textPathSelectedFontSize)
+        UIView.animate(withDuration: 0.2) {
+            self.updateTextPathFontSelection()
+            self.updateTextPathDrawing()
+        }
+    }
+
+    @objc func textPathFontSizeChanged(_ sender: UISlider) {
+        textPathSelectedFontSize = CGFloat(sender.value)
+        // Update label
+        if let label = textPathDrawingToolbar.viewWithTag(999) as? UILabel {
+            label.text = "\(Int(textPathSelectedFontSize))"
+        }
+        let availableFonts: [(name: String, font: UIFont)] = [
+            ("기본", .boldSystemFont(ofSize: 20)),
+            ("얇게", .systemFont(ofSize: 20, weight: .light)),
+            ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
+            ("굵게", .systemFont(ofSize: 20, weight: .black))
+        ]
+        let baseFont = availableFonts[textPathSelectedFontIndex].font
+        textPathSelectedFont = baseFont.withSize(textPathSelectedFontSize)
+        updateTextPathDrawing()
+    }
+
+    @objc func textPathConfirmTapped() {
+        guard textPathPoints.count >= 2 else { return }
+
+        // Apply the same simplification used in preview
+        let simplifiedPoints = simplifyTextPath(textPathPoints, minDistance: 8.0)
+        guard simplifiedPoints.count >= 2 else { return }
+
+        // Calculate bounding rect from simplified points
+        let boundingRect = calculateTextPathBoundingRect(from: simplifiedPoints)
+
+        // Convert simplified points to local coordinates
+        let localPoints = simplifiedPoints.map { point in
             CGPoint(
                 x: point.x - boundingRect.origin.x,
                 y: point.y - boundingRect.origin.y
             )
         }
 
+        createTextPathWidget(
+            pathPoints: localPoints,
+            boundingRect: boundingRect,
+            canvasSize: contentView.bounds.size,
+            color: textPathSelectedColor,
+            font: textPathSelectedFont
+        )
+        exitTextPathDrawingMode()
+    }
+
+    @objc func textPathRedrawTapped() {
+        textPathPoints = []
+        textPathDrawingOverlayView.subviews.forEach { $0.removeFromSuperview() }
+        textPathConfirmButton.isHidden = true
+        textPathRedrawButton.isHidden = true
+        instructionLabel.isHidden = false
+    }
+
+    private func updateTextPathColorSelection() {
+        for (index, button) in textPathColorButtons.enumerated() {
+            button.layer.borderColor = index == textPathSelectedColorIndex ?
+                UIColor.white.cgColor : UIColor.clear.cgColor
+            button.transform = index == textPathSelectedColorIndex ?
+                CGAffineTransform(scaleX: 1.1, y: 1.1) : .identity
+        }
+    }
+
+    private func updateTextPathFontSelection() {
+        for (index, button) in textPathFontButtons.enumerated() {
+            button.backgroundColor = index == textPathSelectedFontIndex ?
+                UIColor.white.withAlphaComponent(0.3) : UIColor.white.withAlphaComponent(0.1)
+        }
+    }
+
+    private func updateTextPathDrawing() {
+        // Remove old preview view
+        textPathDrawingOverlayView.subviews.forEach { $0.removeFromSuperview() }
+
+        guard textPathPoints.count >= 2, !pendingTextForPath.isEmpty else { return }
+
+        let simplifiedPath = simplifyTextPath(textPathPoints, minDistance: 8.0)
+        guard simplifiedPath.count >= 2 else { return }
+
+        // Create preview view
+        let previewView = TextPathPreviewView(frame: textPathDrawingOverlayView.bounds)
+        previewView.backgroundColor = .clear
+        previewView.isUserInteractionEnabled = false
+        previewView.points = simplifiedPath
+        previewView.textToRepeat = pendingTextForPath
+        previewView.textFont = textPathSelectedFont
+        previewView.textColor = textPathSelectedColor
+
+        textPathDrawingOverlayView.addSubview(previewView)
+        previewView.setNeedsDisplay()
+    }
+
+    private func simplifyTextPath(_ points: [CGPoint], minDistance: CGFloat) -> [CGPoint] {
+        guard points.count > 2 else { return points }
+
+        var simplified: [CGPoint] = [points[0]]
+
+        for i in 1..<points.count {
+            let lastPoint = simplified.last!
+            let currentPoint = points[i]
+            let dx = currentPoint.x - lastPoint.x
+            let dy = currentPoint.y - lastPoint.y
+            let distance = sqrt(dx * dx + dy * dy)
+
+            if distance >= minDistance {
+                simplified.append(currentPoint)
+            }
+        }
+
+        if let last = points.last, simplified.last != last {
+            simplified.append(last)
+        }
+
+        return simplified.count >= 2 ? simplified : points
+    }
+
+    private func calculateTextPathBoundingRect(from points: [CGPoint]? = nil) -> CGRect {
+        let pathPoints = points ?? textPathPoints
+        guard !pathPoints.isEmpty else { return .zero }
+
+        var minX = CGFloat.greatestFiniteMagnitude
+        var minY = CGFloat.greatestFiniteMagnitude
+        var maxX = CGFloat.leastNormalMagnitude
+        var maxY = CGFloat.leastNormalMagnitude
+
+        for point in pathPoints {
+            minX = min(minX, point.x)
+            minY = min(minY, point.y)
+            maxX = max(maxX, point.x)
+            maxY = max(maxY, point.y)
+        }
+
+        let padding: CGFloat = 30
+        return CGRect(
+            x: minX - padding,
+            y: minY - padding,
+            width: maxX - minX + padding * 2,
+            height: maxY - minY + padding * 2
+        )
+    }
+
+    private func createTextPathWidget(
+        pathPoints: [CGPoint],
+        boundingRect: CGRect,
+        canvasSize: CGSize,
+        color: UIColor,
+        font: UIFont
+    ) {
+        guard pathPoints.count >= 2 else { return }
+
+        // pathPoints are already in local coordinate system (relative to boundingRect)
+        // and already simplified
+
         // Create widget with color and font
         let widget = TextPathWidget(
             text: pendingTextForPath,
-            pathPoints: localPathPoints,
+            pathPoints: pathPoints,
             frame: boundingRect,
             color: color,
-            font: font
+            font: font,
+            alreadySimplified: true
         )
 
         widget.selectionDelegate = self
@@ -984,6 +1560,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         // Select the new widget
         selectionManager.selectItem(widget)
         hasUnsavedChanges = true
+        pendingTextForPath = ""
     }
 
     @objc dynamic func changeTemplate() {
@@ -2042,3 +2619,4 @@ extension BaseWorkoutDetailViewController: CustomGradientPickerDelegate {
         hasUnsavedChanges = true
     }
 }
+

@@ -54,7 +54,7 @@ class TextPathWidget: UIView, Selectable {
 
     // MARK: - Initialization
 
-    init(text: String, pathPoints: [CGPoint], frame: CGRect, color: UIColor = .white, font: UIFont = .boldSystemFont(ofSize: 20)) {
+    init(text: String, pathPoints: [CGPoint], frame: CGRect, color: UIColor = .white, font: UIFont = .boldSystemFont(ofSize: 20), alreadySimplified: Bool = false) {
         self.textToRepeat = text
         self.textColor = color
         self.baseFont = font
@@ -64,7 +64,7 @@ class TextPathWidget: UIView, Selectable {
         self.currentColor = color
 
         // 경로를 정규화 (0~1 범위로 변환)
-        let simplified = Self.simplifyPath(pathPoints, minDistance: 8.0)
+        let simplified = alreadySimplified ? pathPoints : Self.simplifyPath(pathPoints, minDistance: 8.0)
         self.normalizedPathPoints = simplified.map { point in
             CGPoint(
                 x: point.x / frame.width,
@@ -336,6 +336,13 @@ class TextPathDrawingOverlay: UIView {
     /// 반복할 텍스트
     var textToRepeat: String = ""
 
+    /// 드로잉 가능한 캔버스 영역
+    var canvasFrame: CGRect = .zero {
+        didSet {
+            updateGuideLabelPosition()
+        }
+    }
+
     /// 드래그 완료 콜백 (색상, 폰트 포함)
     var onDrawingComplete: (([CGPoint], CGRect, UIColor, UIFont) -> Void)?
 
@@ -381,8 +388,8 @@ class TextPathDrawingOverlay: UIView {
 
     private let bottomToolbar: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.7)
-        view.layer.cornerRadius = 16
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.9)
+        view.layer.cornerRadius = 0
         return view
     }()
 
@@ -486,27 +493,25 @@ class TextPathDrawingOverlay: UIView {
     private func setupUI() {
         // Guide Label
         addSubview(guideLabel)
-        guideLabel.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            guideLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-            guideLabel.centerYAnchor.constraint(equalTo: centerYAnchor)
-        ])
+        guideLabel.translatesAutoresizingMaskIntoConstraints = true
+        guideLabel.sizeToFit()
+        guideLabel.center = CGPoint(x: bounds.midX, y: bounds.midY)
 
         // Bottom Toolbar
         addSubview(bottomToolbar)
         bottomToolbar.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            bottomToolbar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            bottomToolbar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            bottomToolbar.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            bottomToolbar.heightAnchor.constraint(equalToConstant: 160)
+            bottomToolbar.leadingAnchor.constraint(equalTo: leadingAnchor),
+            bottomToolbar.trailingAnchor.constraint(equalTo: trailingAnchor),
+            bottomToolbar.bottomAnchor.constraint(equalTo: bottomAnchor),
+            bottomToolbar.topAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -140)
         ])
 
         // Color Stack
         bottomToolbar.addSubview(colorStackView)
         colorStackView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            colorStackView.topAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: 12),
+            colorStackView.topAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: 8),
             colorStackView.centerXAnchor.constraint(equalTo: bottomToolbar.centerXAnchor),
             colorStackView.heightAnchor.constraint(equalToConstant: 28)
         ])
@@ -523,7 +528,7 @@ class TextPathDrawingOverlay: UIView {
         bottomToolbar.addSubview(fontStackView)
         fontStackView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            fontStackView.topAnchor.constraint(equalTo: colorStackView.bottomAnchor, constant: 10),
+            fontStackView.topAnchor.constraint(equalTo: colorStackView.bottomAnchor, constant: 8),
             fontStackView.leadingAnchor.constraint(equalTo: bottomToolbar.leadingAnchor, constant: 16),
             fontStackView.trailingAnchor.constraint(equalTo: bottomToolbar.trailingAnchor, constant: -16),
             fontStackView.heightAnchor.constraint(equalToConstant: 32)
@@ -534,10 +539,10 @@ class TextPathDrawingOverlay: UIView {
         bottomToolbar.addSubview(sliderContainer)
         sliderContainer.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            sliderContainer.topAnchor.constraint(equalTo: fontStackView.bottomAnchor, constant: 10),
+            sliderContainer.topAnchor.constraint(equalTo: fontStackView.bottomAnchor, constant: 8),
             sliderContainer.leadingAnchor.constraint(equalTo: bottomToolbar.leadingAnchor, constant: 16),
             sliderContainer.trailingAnchor.constraint(equalTo: bottomToolbar.trailingAnchor, constant: -16),
-            sliderContainer.heightAnchor.constraint(equalToConstant: 30)
+            sliderContainer.heightAnchor.constraint(equalToConstant: 28)
         ])
 
         let sizeIcon = UIImageView(image: UIImage(systemName: "textformat.size"))
@@ -582,7 +587,7 @@ class TextPathDrawingOverlay: UIView {
         confirmButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             confirmButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            confirmButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -20),
+            confirmButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -12),
             confirmButton.widthAnchor.constraint(equalToConstant: 50),
             confirmButton.heightAnchor.constraint(equalToConstant: 50)
         ])
@@ -593,7 +598,7 @@ class TextPathDrawingOverlay: UIView {
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             cancelButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            cancelButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -20),
+            cancelButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -12),
             cancelButton.widthAnchor.constraint(equalToConstant: 50),
             cancelButton.heightAnchor.constraint(equalToConstant: 50)
         ])
@@ -604,7 +609,7 @@ class TextPathDrawingOverlay: UIView {
         redrawButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             redrawButton.centerXAnchor.constraint(equalTo: centerXAnchor),
-            redrawButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -20),
+            redrawButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -12),
             redrawButton.widthAnchor.constraint(equalToConstant: 40),
             redrawButton.heightAnchor.constraint(equalToConstant: 40)
         ])
@@ -725,6 +730,14 @@ class TextPathDrawingOverlay: UIView {
         }
     }
 
+    private func updateGuideLabelPosition() {
+        guard !canvasFrame.isEmpty else { return }
+        guideLabel.center = CGPoint(
+            x: canvasFrame.midX,
+            y: canvasFrame.midY
+        )
+    }
+
     // MARK: - Gesture Handlers
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
         // 미리보기 상태가 아닐 때만 취소
@@ -736,8 +749,14 @@ class TextPathDrawingOverlay: UIView {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         let location = gesture.location(in: self)
 
+        // Only allow drawing within canvas frame
+        guard canvasFrame.contains(location) || currentState == .drawing else {
+            return
+        }
+
         switch gesture.state {
         case .began:
+            guard canvasFrame.contains(location) else { return }
             pathPoints = [location]
             currentState = .drawing
             updateUIForState()
