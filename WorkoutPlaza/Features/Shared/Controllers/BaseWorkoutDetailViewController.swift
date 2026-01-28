@@ -117,7 +117,7 @@ class TextPathPreviewView: UIView {
 }
 import PhotosUI
 
-class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
+class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, UIGestureRecognizerDelegate {
 
     // MARK: - Properties
     
@@ -342,13 +342,43 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         button.setImage(UIImage(systemName: "arrow.counterclockwise"), for: .normal)
         button.tintColor = .white
         button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
-        button.layer.cornerRadius = 20
+        button.layer.cornerRadius = 25
         button.isHidden = true
         return button
     }()
 
     var textPathColorButtons: [UIButton] = []
     var textPathFontButtons: [UIButton] = []
+    // textPathPanelJustOpened flag removed as requested
+    var textPathOverlayTapGesture: UITapGestureRecognizer?
+
+    // Floating Panels
+    lazy var textPathColorPanel: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.9)
+        view.layer.cornerRadius = 12
+        view.isHidden = true
+        view.tag = 8000
+        return view
+    }()
+
+    lazy var textPathFontPanel: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.9)
+        view.layer.cornerRadius = 12
+        view.isHidden = true
+        view.tag = 8001
+        return view
+    }()
+
+    lazy var textPathSizePanel: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.9)
+        view.layer.cornerRadius = 12
+        view.isHidden = true
+        view.tag = 8002
+        return view
+    }()
 
     // MARK: - Lifecycle
     
@@ -422,10 +452,14 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         view.addSubview(textPathConfirmButton)
         view.addSubview(textPathRedrawButton)
         view.addSubview(toastLabel)
+        view.addSubview(textPathColorPanel)
+        view.addSubview(textPathFontPanel)
+        view.addSubview(textPathSizePanel)
 
         setupTopRightToolbar()
         setupBottomFloatingToolbar()
         setupTextPathDrawingToolbar()
+        setupTextPathFloatingPanels()
         
         // Background tap gesture
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTap))
@@ -508,15 +542,15 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         }
 
         textPathConfirmButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(-20)
+            make.trailing.equalToSuperview().inset(24)
+            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(-12)
             make.size.equalTo(50)
         }
 
         textPathRedrawButton.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(-20)
-            make.size.equalTo(40)
+            make.leading.equalToSuperview().inset(24)
+            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(-12)
+            make.size.equalTo(50)
         }
     }
     
@@ -555,42 +589,231 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
             ("굵게", .systemFont(ofSize: 20, weight: .black))
         ]
 
-        // Color Stack
+        // MARK: - Main Control Buttons
+        // Color Button (Circle)
+        let colorButtonContainer = UIView()
+        let colorLabel = UILabel()
+        colorLabel.text = "색상"
+        colorLabel.textColor = .white
+        colorLabel.font = .systemFont(ofSize: 11, weight: .medium)
+        colorLabel.textAlignment = .center
+
+        let textPathColorMainButton = UIButton(type: .custom)
+        textPathColorMainButton.backgroundColor = .white
+        textPathColorMainButton.layer.cornerRadius = 16
+        textPathColorMainButton.layer.borderWidth = 2
+        textPathColorMainButton.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        textPathColorMainButton.tag = 9000
+        textPathColorMainButton.addTarget(self, action: #selector(textPathColorMainButtonTapped(_:)), for: .touchUpInside)
+
+        colorButtonContainer.addSubview(textPathColorMainButton)
+        colorButtonContainer.addSubview(colorLabel)
+
+        colorButtonContainer.snp.makeConstraints { make in
+            make.width.equalTo(60)
+        }
+        textPathColorMainButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.top.equalToSuperview()
+            make.size.equalTo(32)
+        }
+        colorLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+            make.top.equalTo(textPathColorMainButton.snp.bottom).offset(4)
+            make.bottom.equalToSuperview()
+        }
+
+        // Font Button
+        let fontButtonContainer = UIView()
+        let fontLabel = UILabel()
+        fontLabel.text = "폰트"
+        fontLabel.textColor = .white
+        fontLabel.font = .systemFont(ofSize: 11, weight: .medium)
+        fontLabel.textAlignment = .center
+
+        let textPathFontMainButton = UIButton(type: .system)
+        textPathFontMainButton.setTitle("기본", for: .normal)
+        textPathFontMainButton.setTitleColor(.white, for: .normal)
+        textPathFontMainButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        textPathFontMainButton.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        textPathFontMainButton.layer.cornerRadius = 8
+        textPathFontMainButton.layer.borderWidth = 2
+        textPathFontMainButton.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        textPathFontMainButton.tag = 9001
+        textPathFontMainButton.addTarget(self, action: #selector(textPathFontMainButtonTapped(_:)), for: .touchUpInside)
+
+        fontButtonContainer.addSubview(textPathFontMainButton)
+        fontButtonContainer.addSubview(fontLabel)
+
+        fontButtonContainer.snp.makeConstraints { make in
+            make.width.equalTo(60)
+        }
+        textPathFontMainButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.top.equalToSuperview()
+            make.width.equalTo(55)
+            make.height.equalTo(32)
+        }
+        fontLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+            make.top.equalTo(textPathFontMainButton.snp.bottom).offset(4)
+            make.bottom.equalToSuperview()
+        }
+
+        // Size Button
+        let sizeButtonContainer = UIView()
+        let sizeLabel = UILabel()
+        sizeLabel.text = "크기"
+        sizeLabel.textColor = .white
+        sizeLabel.font = .systemFont(ofSize: 11, weight: .medium)
+        sizeLabel.textAlignment = .center
+
+        let textPathSizeMainButton = UIButton(type: .system)
+        textPathSizeMainButton.setTitle("20", for: .normal)
+        textPathSizeMainButton.setTitleColor(.white, for: .normal)
+        textPathSizeMainButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        textPathSizeMainButton.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        textPathSizeMainButton.layer.cornerRadius = 8
+        textPathSizeMainButton.layer.borderWidth = 2
+        textPathSizeMainButton.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        textPathSizeMainButton.tag = 9002
+        textPathSizeMainButton.addTarget(self, action: #selector(textPathSizeMainButtonTapped(_:)), for: .touchUpInside)
+
+        sizeButtonContainer.addSubview(textPathSizeMainButton)
+        sizeButtonContainer.addSubview(sizeLabel)
+
+        sizeButtonContainer.snp.makeConstraints { make in
+            make.width.equalTo(50)
+        }
+        textPathSizeMainButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.top.equalToSuperview()
+            make.width.equalTo(45)
+            make.height.equalTo(32)
+        }
+        sizeLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+            make.top.equalTo(textPathSizeMainButton.snp.bottom).offset(4)
+            make.bottom.equalToSuperview()
+        }
+
+        let buttonStack = UIStackView(arrangedSubviews: [colorButtonContainer, fontButtonContainer, sizeButtonContainer])
+        buttonStack.axis = .horizontal
+        buttonStack.spacing = 32
+        buttonStack.alignment = .top
+        buttonStack.distribution = .fill
+
+        textPathDrawingToolbar.addSubview(buttonStack)
+        buttonStack.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalToSuperview()
+            make.height.lessThanOrEqualToSuperview().offset(-20)
+        }
+
+        // Setup button actions
+        textPathConfirmButton.addTarget(self, action: #selector(textPathConfirmTapped), for: .touchUpInside)
+        textPathRedrawButton.addTarget(self, action: #selector(textPathRedrawTapped), for: .touchUpInside)
+    }
+
+    func setupTextPathFloatingPanels() {
+        let availableColors: [UIColor] = [
+            .white, .systemYellow, .systemOrange, .systemPink,
+            .systemRed, .systemGreen, .systemBlue, .systemPurple
+        ]
+
+        let availableFonts: [(name: String, font: UIFont)] = [
+            ("기본", .boldSystemFont(ofSize: 20)),
+            ("얇게", .systemFont(ofSize: 20, weight: .light)),
+            ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
+            ("굵게", .systemFont(ofSize: 20, weight: .black))
+        ]
+
+        // Color Panel Content
+
+        let colorScrollView = UIScrollView()
+        colorScrollView.showsHorizontalScrollIndicator = false
+        colorScrollView.alwaysBounceHorizontal = true
+        
         let colorStackView = UIStackView()
         colorStackView.axis = .horizontal
-        colorStackView.spacing = 8
+        colorStackView.spacing = 16
         colorStackView.alignment = .center
-        colorStackView.distribution = .equalSpacing
+        
+        textPathColorButtons.removeAll()
 
         for (index, color) in availableColors.enumerated() {
             let button = UIButton(type: .custom)
             button.backgroundColor = color
-            button.layer.cornerRadius = 14
-            button.layer.borderWidth = 2
+            button.layer.cornerRadius = 16
+            button.layer.borderWidth = 3
             button.layer.borderColor = UIColor.clear.cgColor
             button.tag = index
             button.addTarget(self, action: #selector(textPathColorButtonTapped(_:)), for: .touchUpInside)
 
             button.snp.makeConstraints { make in
-                make.size.equalTo(28)
+                make.size.equalTo(32)
             }
 
             textPathColorButtons.append(button)
             colorStackView.addArrangedSubview(button)
         }
 
-        // Font Stack
+        // Add indicators
+        let leftIndicator = UIImageView(image: UIImage(systemName: "chevron.left"))
+        leftIndicator.tintColor = UIColor.white.withAlphaComponent(0.5)
+        leftIndicator.contentMode = .scaleAspectFit
+        
+        let rightIndicator = UIImageView(image: UIImage(systemName: "chevron.right"))
+        rightIndicator.tintColor = UIColor.white.withAlphaComponent(0.5)
+        rightIndicator.contentMode = .scaleAspectFit
+        
+        textPathColorPanel.addSubview(leftIndicator)
+        textPathColorPanel.addSubview(rightIndicator)
+        textPathColorPanel.addSubview(colorScrollView)
+        
+        colorScrollView.addSubview(colorStackView)
+        
+        leftIndicator.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(6)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(12)
+        }
+        
+        rightIndicator.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-6)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(12)
+        }
+        
+        colorScrollView.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.equalTo(leftIndicator.snp.trailing).offset(4)
+            make.trailing.equalTo(rightIndicator.snp.leading).offset(-4)
+        }
+        
+        colorStackView.snp.makeConstraints { make in
+            make.edges.equalTo(colorScrollView.contentLayoutGuide)
+            make.height.equalTo(colorScrollView.frameLayoutGuide)
+            make.leading.trailing.equalToSuperview().inset(4) // Padding inside scroll view
+        }
+
+        // Font Panel Content
         let fontStackView = UIStackView()
         fontStackView.axis = .horizontal
         fontStackView.spacing = 8
         fontStackView.alignment = .center
         fontStackView.distribution = .fillEqually
+        
+        textPathFontButtons.removeAll()
 
         for (index, fontInfo) in availableFonts.enumerated() {
             let button = UIButton(type: .system)
             button.setTitle(fontInfo.name, for: .normal)
             button.setTitleColor(.white, for: .normal)
-            button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+            button.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
             button.backgroundColor = UIColor.white.withAlphaComponent(0.1)
             button.layer.cornerRadius = 8
             button.tag = index
@@ -600,59 +823,64 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
             fontStackView.addArrangedSubview(button)
         }
 
-        // Font Size Slider
+        textPathFontPanel.addSubview(fontStackView)
+        fontStackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(16)
+        }
+        
+        // Size Panel Content
+        let sliderContainer = UIView()
         let fontSizeSlider = UISlider()
         fontSizeSlider.minimumValue = 12
         fontSizeSlider.maximumValue = 40
-        fontSizeSlider.value = 20
+        fontSizeSlider.value = Float(textPathSelectedFontSize)
         fontSizeSlider.minimumTrackTintColor = .white
         fontSizeSlider.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.3)
         fontSizeSlider.addTarget(self, action: #selector(textPathFontSizeChanged(_:)), for: .valueChanged)
-
+        
         let fontSizeLabel = UILabel()
-        fontSizeLabel.text = "20"
+        fontSizeLabel.text = "\(Int(textPathSelectedFontSize))"
         fontSizeLabel.textColor = .white
-        fontSizeLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        fontSizeLabel.font = .systemFont(ofSize: 14, weight: .medium)
         fontSizeLabel.textAlignment = .center
-        fontSizeLabel.tag = 999 // For reference
+        fontSizeLabel.tag = 999
 
         let sizeIcon = UIImageView(image: UIImage(systemName: "textformat.size"))
         sizeIcon.tintColor = .white
         sizeIcon.contentMode = .scaleAspectFit
-
-        let sliderStack = UIStackView(arrangedSubviews: [sizeIcon, fontSizeSlider, fontSizeLabel])
-        sliderStack.axis = .horizontal
-        sliderStack.spacing = 8
-        sliderStack.alignment = .center
-
+        
+        sliderContainer.addSubview(sizeIcon)
+        sliderContainer.addSubview(fontSizeSlider)
+        sliderContainer.addSubview(fontSizeLabel)
+        
         sizeIcon.snp.makeConstraints { make in
-            make.size.equalTo(20)
+            make.leading.equalToSuperview()
+            make.centerY.equalToSuperview()
+            make.size.equalTo(24)
         }
         fontSizeLabel.snp.makeConstraints { make in
+            make.trailing.equalToSuperview()
+            make.centerY.equalToSuperview()
             make.width.equalTo(30)
         }
-
-        // Main Stack
-        let mainStack = UIStackView(arrangedSubviews: [colorStackView, fontStackView, sliderStack])
-        mainStack.axis = .vertical
-        mainStack.spacing = 12
-        mainStack.alignment = .fill
-
-        textPathDrawingToolbar.addSubview(mainStack)
-        mainStack.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(16)
-            make.leading.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-16)
+        fontSizeSlider.snp.makeConstraints { make in
+            make.leading.equalTo(sizeIcon.snp.trailing).offset(12)
+            make.trailing.equalTo(fontSizeLabel.snp.leading).offset(-12)
+            make.centerY.equalToSuperview()
         }
-
-        // Setup button actions
-        textPathConfirmButton.addTarget(self, action: #selector(textPathConfirmTapped), for: .touchUpInside)
-        textPathRedrawButton.addTarget(self, action: #selector(textPathRedrawTapped), for: .touchUpInside)
+        
+        textPathSizePanel.addSubview(sliderContainer)
+        sliderContainer.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(16)
+            make.height.equalTo(40)
+            make.width.equalTo(200)
+        }
 
         // Initial selection
         updateTextPathColorSelection()
         updateTextPathFontSelection()
     }
+
 
     func setupMultiSelectToolbarConfig() {
         let stack = UIStackView(arrangedSubviews: [groupButton, ungroupButton])
@@ -1258,6 +1486,16 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         // Add pan gesture for drawing on overlay
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleTextPathPan(_:)))
         textPathDrawingOverlayView.addGestureRecognizer(panGesture)
+
+        // Add tap gesture to close panel when tapping outside (initially disabled)
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTextPathOverlayTap(_:)))
+        tapGesture.require(toFail: panGesture)
+        tapGesture.delegate = self
+        tapGesture.cancelsTouchesInView = false
+        tapGesture.isEnabled = true // Always enabled to handle outside taps
+        textPathDrawingOverlayView.addGestureRecognizer(tapGesture)
+        textPathOverlayTapGesture = tapGesture
+
         textPathDrawingOverlayView.isUserInteractionEnabled = true
 
         // Disable scrolling
@@ -1278,6 +1516,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         for widget in widgets {
             (widget as? UIView)?.isUserInteractionEnabled = true
         }
+
+        // Hide any floating panels
+        hideAllTextPathPanels()
 
         // Show normal UI elements
         topRightToolbar.isHidden = false
@@ -1333,6 +1574,30 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         present(alert, animated: true)
     }
 
+
+    @objc func handleTextPathOverlayTap(_ gesture: UITapGestureRecognizer) {
+        let location = gesture.location(in: view)
+
+        // Check if tap is inside toolbar
+        if !textPathDrawingToolbar.isHidden && textPathDrawingToolbar.frame.contains(location) {
+            return
+        }
+
+        // Check if tap is inside any visible independent floating panel
+        if !textPathColorPanel.isHidden && textPathColorPanel.frame.contains(location) {
+            return
+        }
+        if !textPathFontPanel.isHidden && textPathFontPanel.frame.contains(location) {
+            return
+        }
+        if !textPathSizePanel.isHidden && textPathSizePanel.frame.contains(location) {
+            return
+        }
+
+        // Otherwise close panels
+        hideAllTextPathPanels()
+    }
+
     @objc func handleTextPathPan(_ gesture: UIPanGestureRecognizer) {
         let location = gesture.location(in: contentView)
 
@@ -1342,6 +1607,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
             textPathConfirmButton.isHidden = true
             textPathRedrawButton.isHidden = true
             instructionLabel.isHidden = true
+            // Close any open panels when drawing starts
+            hideAllTextPathPanels()
 
         case .changed:
             textPathPoints.append(location)
@@ -1360,6 +1627,99 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         }
     }
 
+    @objc func textPathColorMainButtonTapped(_ sender: UIButton) {
+        let shouldShow = textPathColorPanel.isHidden
+        if shouldShow {
+            hideAllTextPathPanels(except: textPathColorPanel)
+            showTextPathPanel(textPathColorPanel, sourceButton: sender)
+        } else {
+            hideAllTextPathPanels()
+        }
+    }
+
+    @objc func textPathFontMainButtonTapped(_ sender: UIButton) {
+        let shouldShow = textPathFontPanel.isHidden
+        if shouldShow {
+            hideAllTextPathPanels(except: textPathFontPanel)
+            showTextPathPanel(textPathFontPanel, sourceButton: sender)
+        } else {
+            hideAllTextPathPanels()
+        }
+    }
+
+    @objc func textPathSizeMainButtonTapped(_ sender: UIButton) {
+        let shouldShow = textPathSizePanel.isHidden
+        if shouldShow {
+            hideAllTextPathPanels(except: textPathSizePanel)
+            showTextPathPanel(textPathSizePanel, sourceButton: sender)
+        } else {
+            hideAllTextPathPanels()
+        }
+    }
+
+    func hideAllTextPathPanels(except viewToKeep: UIView? = nil) {
+        let panels = [textPathColorPanel, textPathFontPanel, textPathSizePanel]
+        
+        // Reset button states if all panels are being hidden (or update for the kept one)
+        if viewToKeep == nil {
+            resetTextPathMainButtonsState()
+        }
+        
+        panels.forEach { panel in
+            if panel == viewToKeep { return }
+            
+            // Only animate if it's currently visible or we want to ensure it's hidden
+            if !panel.isHidden {
+                UIView.animate(withDuration: 0.2) {
+                    panel.alpha = 0
+                    panel.transform = CGAffineTransform(translationX: 0, y: 10)
+                } completion: { _ in
+                    panel.isHidden = true
+                }
+            } else {
+                panel.isHidden = true
+            }
+        }
+    }
+    
+    func resetTextPathMainButtonsState() {
+        let mainButtonTags = [9000, 9001, 9002]
+        mainButtonTags.forEach { tag in
+            if let button = textPathDrawingToolbar.viewWithTag(tag) as? UIButton {
+                button.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+                // Keep the color button (9000) background color as selected color
+                // Keep the font/size button background as transparent white
+            }
+        }
+    }
+
+    func showTextPathPanel(_ panel: UIView, sourceButton: UIButton) {
+        panel.isHidden = false
+        panel.alpha = 0
+        panel.transform = CGAffineTransform(translationX: 0, y: 10)
+        
+        // Highlight source button
+        resetTextPathMainButtonsState()
+        sourceButton.layer.borderColor = UIColor.systemYellow.cgColor
+        
+        // Remake constraints: Center horizontally with padding, bottom to button top
+        panel.snp.remakeConstraints { make in
+            make.bottom.equalTo(sourceButton.snp.top).offset(-12)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.height.greaterThanOrEqualTo(50)
+        }
+        
+        view.layoutIfNeeded()
+        
+        UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0, options: .curveEaseOut) {
+            panel.alpha = 1
+            panel.transform = .identity
+            self.view.layoutIfNeeded()
+        } completion: { _ in
+            // No strict need to re-enable gestures here as we successfully separated the views
+        }
+    }
+
     @objc func textPathColorButtonTapped(_ sender: UIButton) {
         textPathSelectedColorIndex = sender.tag
         let availableColors: [UIColor] = [
@@ -1370,6 +1730,14 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         UIView.animate(withDuration: 0.2) {
             self.updateTextPathColorSelection()
             self.updateTextPathDrawing()
+        } completion: { _ in
+            // Auto-hide panel and update main button
+            if let mainButton = self.textPathDrawingToolbar.viewWithTag(9000) as? UIButton {
+                mainButton.backgroundColor = self.textPathSelectedColor
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.hideAllTextPathPanels()
+            }
         }
     }
 
@@ -1386,14 +1754,26 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         UIView.animate(withDuration: 0.2) {
             self.updateTextPathFontSelection()
             self.updateTextPathDrawing()
+        } completion: { _ in
+            // Auto-hide panel and update main button
+            if let mainButton = self.textPathDrawingToolbar.viewWithTag(9001) as? UIButton {
+                mainButton.setTitle(availableFonts[sender.tag].name, for: .normal)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.hideAllTextPathPanels()
+            }
         }
     }
 
     @objc func textPathFontSizeChanged(_ sender: UISlider) {
         textPathSelectedFontSize = CGFloat(sender.value)
-        // Update label
-        if let label = textPathDrawingToolbar.viewWithTag(999) as? UILabel {
+        // Update label (in panel)
+        if let label = textPathSizePanel.viewWithTag(999) as? UILabel {
             label.text = "\(Int(textPathSelectedFontSize))"
+        }
+        // Update main button
+        if let mainButton = textPathDrawingToolbar.viewWithTag(9002) as? UIButton {
+            mainButton.setTitle("\(Int(textPathSelectedFontSize))", for: .normal)
         }
         let availableFonts: [(name: String, font: UIFont)] = [
             ("기본", .boldSystemFont(ofSize: 20)),
@@ -1447,7 +1827,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
             button.layer.borderColor = index == textPathSelectedColorIndex ?
                 UIColor.white.cgColor : UIColor.clear.cgColor
             button.transform = index == textPathSelectedColorIndex ?
-                CGAffineTransform(scaleX: 1.1, y: 1.1) : .identity
+                CGAffineTransform(scaleX: 1.15, y: 1.15) : .identity
+        }
+        // Update main button
+        if let mainButton = textPathDrawingToolbar.viewWithTag(9000) as? UIButton {
+            mainButton.backgroundColor = textPathSelectedColor
         }
     }
 
@@ -1455,6 +1839,16 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate {
         for (index, button) in textPathFontButtons.enumerated() {
             button.backgroundColor = index == textPathSelectedFontIndex ?
                 UIColor.white.withAlphaComponent(0.3) : UIColor.white.withAlphaComponent(0.1)
+        }
+        // Update main button
+        if let mainButton = textPathDrawingToolbar.viewWithTag(9001) as? UIButton {
+            let availableFonts: [(name: String, font: UIFont)] = [
+                ("기본", .boldSystemFont(ofSize: 20)),
+                ("얇게", .systemFont(ofSize: 20, weight: .light)),
+                ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
+                ("굵게", .systemFont(ofSize: 20, weight: .black))
+            ]
+            mainButton.setTitle(availableFonts[textPathSelectedFontIndex].name, for: .normal)
         }
     }
 
@@ -2617,6 +3011,24 @@ extension BaseWorkoutDetailViewController: CustomGradientPickerDelegate {
         dimOverlay.isHidden = true
         backgroundTemplateView.applyCustomGradient(colors: colors, direction: direction)
         hasUnsavedChanges = true
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate for Text Path
+extension BaseWorkoutDetailViewController {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        // Don't handle tap gesture if touching a button in the toolbar
+        if touch.view is UIButton {
+            return false
+        }
+
+        // Check if touching inside toolbar
+        let location = touch.location(in: textPathDrawingToolbar)
+        if textPathDrawingToolbar.bounds.contains(location) {
+            return false
+        }
+
+        return true
     }
 }
 

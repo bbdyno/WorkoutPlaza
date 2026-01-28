@@ -393,10 +393,53 @@ class TextPathDrawingOverlay: UIView {
         return view
     }()
 
+    // MARK: - Main Control Buttons
+    private let colorButton: UIButton = {
+        let button = UIButton(type: .custom)
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 20
+        button.layer.borderWidth = 2
+        button.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        return button
+    }()
+
+    private let fontButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("기본", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        button.layer.cornerRadius = 20
+        button.layer.borderWidth = 2
+        button.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        return button
+    }()
+
+    private let sizeButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("20", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        button.layer.cornerRadius = 20
+        button.layer.borderWidth = 2
+        button.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        return button
+    }()
+
+    // MARK: - Expanded Panels
+    private let expandedPanelContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.9)
+        view.layer.cornerRadius = 12
+        view.isHidden = true
+        return view
+    }()
+
     private let colorStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = 8
+        stack.spacing = 12
         stack.alignment = .center
         stack.distribution = .equalSpacing
         return stack
@@ -425,10 +468,18 @@ class TextPathDrawingOverlay: UIView {
         let label = UILabel()
         label.text = "20"
         label.textColor = .white
-        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.font = .systemFont(ofSize: 14, weight: .medium)
         label.textAlignment = .center
         return label
     }()
+
+    private enum ExpandedPanel {
+        case color
+        case font
+        case size
+    }
+
+    private var currentExpandedPanel: ExpandedPanel?
 
     private let confirmButton: UIButton = {
         let button = UIButton(type: .system)
@@ -504,16 +555,55 @@ class TextPathDrawingOverlay: UIView {
             bottomToolbar.leadingAnchor.constraint(equalTo: leadingAnchor),
             bottomToolbar.trailingAnchor.constraint(equalTo: trailingAnchor),
             bottomToolbar.bottomAnchor.constraint(equalTo: bottomAnchor),
-            bottomToolbar.topAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -140)
+            bottomToolbar.heightAnchor.constraint(equalToConstant: 80)
         ])
 
-        // Color Stack
-        bottomToolbar.addSubview(colorStackView)
+        // Main control buttons in toolbar
+        let buttonStack = UIStackView(arrangedSubviews: [colorButton, fontButton, sizeButton])
+        buttonStack.axis = .horizontal
+        buttonStack.spacing = 16
+        buttonStack.alignment = .center
+        buttonStack.distribution = .fillEqually
+
+        bottomToolbar.addSubview(buttonStack)
+        buttonStack.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            buttonStack.centerXAnchor.constraint(equalTo: bottomToolbar.centerXAnchor),
+            buttonStack.centerYAnchor.constraint(equalTo: bottomToolbar.centerYAnchor),
+            buttonStack.heightAnchor.constraint(equalToConstant: 40),
+            buttonStack.widthAnchor.constraint(equalToConstant: 200)
+        ])
+
+        // Set button constraints
+        [colorButton, fontButton, sizeButton].forEach { button in
+            button.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                button.widthAnchor.constraint(equalToConstant: 60),
+                button.heightAnchor.constraint(equalToConstant: 40)
+            ])
+        }
+
+        colorButton.addTarget(self, action: #selector(colorButtonMainTapped), for: .touchUpInside)
+        fontButton.addTarget(self, action: #selector(fontButtonMainTapped), for: .touchUpInside)
+        sizeButton.addTarget(self, action: #selector(sizeButtonMainTapped), for: .touchUpInside)
+
+        // Expanded Panel Container
+        addSubview(expandedPanelContainer)
+        expandedPanelContainer.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            expandedPanelContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            expandedPanelContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            expandedPanelContainer.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -16),
+            expandedPanelContainer.heightAnchor.constraint(equalToConstant: 120)
+        ])
+
+        // Setup color panel
+        expandedPanelContainer.addSubview(colorStackView)
         colorStackView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            colorStackView.topAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: 8),
-            colorStackView.centerXAnchor.constraint(equalTo: bottomToolbar.centerXAnchor),
-            colorStackView.heightAnchor.constraint(equalToConstant: 28)
+            colorStackView.centerXAnchor.constraint(equalTo: expandedPanelContainer.centerXAnchor),
+            colorStackView.centerYAnchor.constraint(equalTo: expandedPanelContainer.centerYAnchor),
+            colorStackView.heightAnchor.constraint(equalToConstant: 40)
         ])
 
         // Create color buttons
@@ -522,57 +612,16 @@ class TextPathDrawingOverlay: UIView {
             colorButtons.append(button)
             colorStackView.addArrangedSubview(button)
         }
-        updateColorSelection()
 
-        // Font Stack
-        bottomToolbar.addSubview(fontStackView)
+        // Setup font panel
+        expandedPanelContainer.addSubview(fontStackView)
         fontStackView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            fontStackView.topAnchor.constraint(equalTo: colorStackView.bottomAnchor, constant: 8),
-            fontStackView.leadingAnchor.constraint(equalTo: bottomToolbar.leadingAnchor, constant: 16),
-            fontStackView.trailingAnchor.constraint(equalTo: bottomToolbar.trailingAnchor, constant: -16),
-            fontStackView.heightAnchor.constraint(equalToConstant: 32)
+            fontStackView.leadingAnchor.constraint(equalTo: expandedPanelContainer.leadingAnchor, constant: 16),
+            fontStackView.trailingAnchor.constraint(equalTo: expandedPanelContainer.trailingAnchor, constant: -16),
+            fontStackView.centerYAnchor.constraint(equalTo: expandedPanelContainer.centerYAnchor),
+            fontStackView.heightAnchor.constraint(equalToConstant: 40)
         ])
-
-        // Font Size Slider
-        let sliderContainer = UIView()
-        bottomToolbar.addSubview(sliderContainer)
-        sliderContainer.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            sliderContainer.topAnchor.constraint(equalTo: fontStackView.bottomAnchor, constant: 8),
-            sliderContainer.leadingAnchor.constraint(equalTo: bottomToolbar.leadingAnchor, constant: 16),
-            sliderContainer.trailingAnchor.constraint(equalTo: bottomToolbar.trailingAnchor, constant: -16),
-            sliderContainer.heightAnchor.constraint(equalToConstant: 28)
-        ])
-
-        let sizeIcon = UIImageView(image: UIImage(systemName: "textformat.size"))
-        sizeIcon.tintColor = .white
-        sizeIcon.contentMode = .scaleAspectFit
-        sliderContainer.addSubview(sizeIcon)
-        sizeIcon.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            sizeIcon.leadingAnchor.constraint(equalTo: sliderContainer.leadingAnchor),
-            sizeIcon.centerYAnchor.constraint(equalTo: sliderContainer.centerYAnchor),
-            sizeIcon.widthAnchor.constraint(equalToConstant: 20),
-            sizeIcon.heightAnchor.constraint(equalToConstant: 20)
-        ])
-
-        sliderContainer.addSubview(fontSizeLabel)
-        fontSizeLabel.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            fontSizeLabel.trailingAnchor.constraint(equalTo: sliderContainer.trailingAnchor),
-            fontSizeLabel.centerYAnchor.constraint(equalTo: sliderContainer.centerYAnchor),
-            fontSizeLabel.widthAnchor.constraint(equalToConstant: 30)
-        ])
-
-        sliderContainer.addSubview(fontSizeSlider)
-        fontSizeSlider.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            fontSizeSlider.leadingAnchor.constraint(equalTo: sizeIcon.trailingAnchor, constant: 8),
-            fontSizeSlider.trailingAnchor.constraint(equalTo: fontSizeLabel.leadingAnchor, constant: -8),
-            fontSizeSlider.centerYAnchor.constraint(equalTo: sliderContainer.centerYAnchor)
-        ])
-        fontSizeSlider.addTarget(self, action: #selector(fontSizeSliderChanged(_:)), for: .valueChanged)
 
         // Create font buttons
         for (index, fontInfo) in availableFonts.enumerated() {
@@ -580,7 +629,50 @@ class TextPathDrawingOverlay: UIView {
             fontButtons.append(button)
             fontStackView.addArrangedSubview(button)
         }
+
+        // Setup size panel
+        let sizeContainer = UIView()
+        expandedPanelContainer.addSubview(sizeContainer)
+        sizeContainer.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            sizeContainer.leadingAnchor.constraint(equalTo: expandedPanelContainer.leadingAnchor, constant: 24),
+            sizeContainer.trailingAnchor.constraint(equalTo: expandedPanelContainer.trailingAnchor, constant: -24),
+            sizeContainer.centerYAnchor.constraint(equalTo: expandedPanelContainer.centerYAnchor),
+            sizeContainer.heightAnchor.constraint(equalToConstant: 40)
+        ])
+
+        let sizeIcon = UIImageView(image: UIImage(systemName: "textformat.size"))
+        sizeIcon.tintColor = .white
+        sizeIcon.contentMode = .scaleAspectFit
+        sizeContainer.addSubview(sizeIcon)
+        sizeIcon.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            sizeIcon.leadingAnchor.constraint(equalTo: sizeContainer.leadingAnchor),
+            sizeIcon.centerYAnchor.constraint(equalTo: sizeContainer.centerYAnchor),
+            sizeIcon.widthAnchor.constraint(equalToConstant: 24),
+            sizeIcon.heightAnchor.constraint(equalToConstant: 24)
+        ])
+
+        sizeContainer.addSubview(fontSizeLabel)
+        fontSizeLabel.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            fontSizeLabel.trailingAnchor.constraint(equalTo: sizeContainer.trailingAnchor),
+            fontSizeLabel.centerYAnchor.constraint(equalTo: sizeContainer.centerYAnchor),
+            fontSizeLabel.widthAnchor.constraint(equalToConstant: 30)
+        ])
+
+        sizeContainer.addSubview(fontSizeSlider)
+        fontSizeSlider.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            fontSizeSlider.leadingAnchor.constraint(equalTo: sizeIcon.trailingAnchor, constant: 12),
+            fontSizeSlider.trailingAnchor.constraint(equalTo: fontSizeLabel.leadingAnchor, constant: -12),
+            fontSizeSlider.centerYAnchor.constraint(equalTo: sizeContainer.centerYAnchor)
+        ])
+        fontSizeSlider.addTarget(self, action: #selector(fontSizeSliderChanged(_:)), for: .valueChanged)
+
+        updateColorSelection()
         updateFontSelection()
+        hidePanelContent()
 
         // Confirm Button
         addSubview(confirmButton)
@@ -619,16 +711,16 @@ class TextPathDrawingOverlay: UIView {
     private func createColorButton(color: UIColor, index: Int) -> UIButton {
         let button = UIButton(type: .custom)
         button.backgroundColor = color
-        button.layer.cornerRadius = 14
-        button.layer.borderWidth = 2
+        button.layer.cornerRadius = 18
+        button.layer.borderWidth = 3
         button.layer.borderColor = UIColor.clear.cgColor
         button.tag = index
         button.addTarget(self, action: #selector(colorButtonTapped(_:)), for: .touchUpInside)
 
         button.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: 28),
-            button.heightAnchor.constraint(equalToConstant: 28)
+            button.widthAnchor.constraint(equalToConstant: 36),
+            button.heightAnchor.constraint(equalToConstant: 36)
         ])
 
         return button
@@ -638,12 +730,70 @@ class TextPathDrawingOverlay: UIView {
         let button = UIButton(type: .system)
         button.setTitle(name, for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
         button.backgroundColor = UIColor.white.withAlphaComponent(0.1)
         button.layer.cornerRadius = 8
         button.tag = index
         button.addTarget(self, action: #selector(fontButtonTapped(_:)), for: .touchUpInside)
         return button
+    }
+
+    // MARK: - Panel Management
+    private func hidePanelContent() {
+        colorStackView.isHidden = true
+        fontStackView.isHidden = true
+        fontSizeSlider.superview?.isHidden = true
+    }
+
+    private func showPanel(_ panel: ExpandedPanel) {
+        if currentExpandedPanel == panel {
+            hidePanel()
+            return
+        }
+
+        currentExpandedPanel = panel
+        expandedPanelContainer.isHidden = false
+        hidePanelContent()
+
+        switch panel {
+        case .color:
+            colorStackView.isHidden = false
+        case .font:
+            fontStackView.isHidden = false
+        case .size:
+            fontSizeSlider.superview?.isHidden = false
+        }
+
+        // Animate panel appearance
+        expandedPanelContainer.alpha = 0
+        expandedPanelContainer.transform = CGAffineTransform(translationX: 0, y: 20)
+        UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0, options: .curveEaseOut) {
+            self.expandedPanelContainer.alpha = 1
+            self.expandedPanelContainer.transform = .identity
+        }
+    }
+
+    private func hidePanel() {
+        UIView.animate(withDuration: 0.2) {
+            self.expandedPanelContainer.alpha = 0
+            self.expandedPanelContainer.transform = CGAffineTransform(translationX: 0, y: 20)
+        } completion: { _ in
+            self.expandedPanelContainer.isHidden = true
+            self.currentExpandedPanel = nil
+        }
+    }
+
+    // MARK: - Main Button Actions
+    @objc private func colorButtonMainTapped() {
+        showPanel(.color)
+    }
+
+    @objc private func fontButtonMainTapped() {
+        showPanel(.font)
+    }
+
+    @objc private func sizeButtonMainTapped() {
+        showPanel(.size)
     }
 
     // MARK: - Selection Updates
@@ -652,9 +802,13 @@ class TextPathDrawingOverlay: UIView {
             button.layer.borderColor = index == selectedColorIndex ?
                 UIColor.white.cgColor : UIColor.clear.cgColor
             button.transform = index == selectedColorIndex ?
-                CGAffineTransform(scaleX: 1.1, y: 1.1) : .identity
+                CGAffineTransform(scaleX: 1.15, y: 1.15) : .identity
         }
         selectedColor = availableColors[selectedColorIndex]
+
+        // Update main color button
+        colorButton.backgroundColor = selectedColor
+
         setNeedsDisplay()
     }
 
@@ -666,6 +820,10 @@ class TextPathDrawingOverlay: UIView {
         // Apply selected font style with selected size
         let baseFont = availableFonts[selectedFontIndex].font
         selectedFont = baseFont.withSize(selectedFontSize)
+
+        // Update main font button
+        fontButton.setTitle(availableFonts[selectedFontIndex].name, for: .normal)
+
         setNeedsDisplay()
     }
 
@@ -674,6 +832,11 @@ class TextPathDrawingOverlay: UIView {
         selectedColorIndex = sender.tag
         UIView.animate(withDuration: 0.2) {
             self.updateColorSelection()
+        } completion: { _ in
+            // Auto-hide panel after selection
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.hidePanel()
+            }
         }
     }
 
@@ -681,12 +844,18 @@ class TextPathDrawingOverlay: UIView {
         selectedFontIndex = sender.tag
         UIView.animate(withDuration: 0.2) {
             self.updateFontSelection()
+        } completion: { _ in
+            // Auto-hide panel after selection
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.hidePanel()
+            }
         }
     }
 
     @objc private func fontSizeSliderChanged(_ sender: UISlider) {
         selectedFontSize = CGFloat(sender.value)
         fontSizeLabel.text = "\(Int(selectedFontSize))"
+        sizeButton.setTitle("\(Int(selectedFontSize))", for: .normal)
         updateFontSelection()
     }
 
@@ -740,6 +909,23 @@ class TextPathDrawingOverlay: UIView {
 
     // MARK: - Gesture Handlers
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        let location = gesture.location(in: self)
+
+        // Check if tap is inside expanded panel or toolbar
+        if !expandedPanelContainer.isHidden && expandedPanelContainer.frame.contains(location) {
+            return
+        }
+
+        if bottomToolbar.frame.contains(location) {
+            return
+        }
+
+        // Hide panel if it's open
+        if !expandedPanelContainer.isHidden {
+            hidePanel()
+            return
+        }
+
         // 미리보기 상태가 아닐 때만 취소
         if currentState == .ready {
             onDrawingCancelled?()
@@ -946,6 +1132,8 @@ class TextPathDrawingOverlay: UIView {
         selectedFontSize = 20
         fontSizeSlider.value = 20
         fontSizeLabel.text = "20"
+        sizeButton.setTitle("20", for: .normal)
+        hidePanel()
         updateColorSelection()
         updateFontSelection()
         updateUIForState()
