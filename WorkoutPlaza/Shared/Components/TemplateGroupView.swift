@@ -24,9 +24,11 @@ enum WidgetGroupType: String, Codable {
     var overlayColor: UIColor {
         switch self {
         case .myRecord:
-            return UIColor.systemBlue.withAlphaComponent(0.05)
+//            return UIColor.systemBlue.withAlphaComponent(0.05)
+            return .clear
         case .importedRecord:
-            return UIColor.systemOrange.withAlphaComponent(0.05)
+//            return UIColor.systemOrange.withAlphaComponent(0.05)
+            return .clear
         }
     }
 }
