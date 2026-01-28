@@ -12,7 +12,7 @@ protocol Selectable: UIView {
     var isSelected: Bool { get set }
     var currentColor: UIColor { get set }
     var currentFontStyle: FontStyle { get set }
-    var itemIdentifier: String { get }
+    var itemIdentifier: String { get set }
     var resizeHandles: [ResizeHandleView] { get set }
     var selectionBorderLayer: CAShapeLayer? { get set }
     var selectionDelegate: SelectionDelegate? { get set }
