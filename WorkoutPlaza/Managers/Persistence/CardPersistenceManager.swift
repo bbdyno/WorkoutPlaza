@@ -18,6 +18,15 @@ struct SavedCardDesign: Codable {
     let aspectRatio: AspectRatio
     let gradientColors: [String]? // Hex codes for gradient
     let gradientStyle: String? // BackgroundTemplateStyle rawValue
+    let groups: [SavedGroupState]? // Saved widget groups
+}
+
+struct SavedGroupState: Codable {
+    let identifier: String
+    let type: String // WidgetGroupType rawValue
+    let frame: CGRect
+    let ownerName: String?
+    let widgetIdentifiers: [String] // IDs of widgets in this group
 }
 
 struct SavedWidgetState: Codable {

@@ -294,8 +294,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     lazy var fontPickerButton: UIButton = createToolbarButton(systemName: "textformat", action: #selector(showFontPicker))
     lazy var deleteItemButton: UIButton = createToolbarButton(systemName: "trash", action: #selector(deleteSelectedItem))
     
-    lazy var groupButton: UIButton = createToolbarButton(systemName: "rectangle.3.group", action: #selector(groupSelectedWidgets))
-    lazy var ungroupButton: UIButton = createToolbarButton(systemName: "rectangle.grid.1x2", action: #selector(ungroupSelectedWidget))
+    lazy var groupButton: UIButton = createToolbarButton(systemName: "rectangle.stack.badge.plus", action: #selector(groupSelectedWidgets))
+    lazy var ungroupButton: UIButton = createToolbarButton(systemName: "rectangle.stack.badge.minus", action: #selector(ungroupSelectedWidget))
     lazy var cancelMultiSelectButton: UIButton = createToolbarButton(systemName: "xmark", action: #selector(exitMultiSelectMode))
 
     lazy var toastLabel: UILabel = {
@@ -526,6 +526,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             make.centerX.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-80)
             make.height.equalTo(50)
+            make.width.equalTo(320)
         }
         
         toastLabel.snp.makeConstraints { make in
@@ -946,16 +947,24 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // 1. Deselect everything to hide selection UI
         selectionManager.deselectAll()
 
-        // 2. Collect widget states with unique identifiers (className + index)
-        var classCounters: [String: Int] = [:]
-        let savedWidgets = widgets.compactMap { widget -> SavedWidgetState? in
+        // 2. Collect ALL widgets (both top-level and inside groups)
+        var allWidgets: [UIView] = widgets
+        for group in templateGroups {
+            allWidgets.append(contentsOf: group.groupedItems)
+        }
+
+        // 3. Create SavedWidgetState objects
+        let savedWidgets = allWidgets.compactMap { widget -> SavedWidgetState? in
             let frame = widget.frame
             let className = String(describing: type(of: widget))
-
-            // Generate unique identifier: className_index
-            let index = classCounters[className] ?? 0
-            classCounters[className] = index + 1
-            let uniqueIdentifier = "\(className)_\(index)"
+            
+            // Use stable identifier from Selectable if available
+            let identifier: String
+            if let selectable = widget as? Selectable {
+                identifier = selectable.itemIdentifier
+            } else {
+                identifier = UUID().uuidString // Fallback (shouldn't happen for valid widgets)
+            }
 
             var text: String?
             var fontName: String?
@@ -1003,7 +1012,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             }
 
             return SavedWidgetState(
-                identifier: uniqueIdentifier,
+                identifier: identifier,
                 type: className,
                 frame: frame,
                 text: text,
@@ -1020,7 +1029,19 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             )
         }
         
-        // 3. Determine background type and data
+        // 4. Create SavedGroupState objects
+        let savedGroups = templateGroups.compactMap { group -> SavedGroupState? in
+            let widgetIds = group.groupedItems.compactMap { ($0 as? Selectable)?.itemIdentifier }
+            return SavedGroupState(
+                identifier: group.groupId,
+                type: group.groupType.rawValue,
+                frame: group.frame,
+                ownerName: group.ownerName,
+                widgetIdentifiers: widgetIds
+            )
+        }
+        
+        // 5. Determine background type and data
         var bgType: BackgroundType = .solid
         var bgData: Data? = nil
         var gradientStyleString: String? = nil
@@ -1038,7 +1059,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             }
         }
 
-        // 4. Create design object
+        // 6. Create design object
         let design = SavedCardDesign(
             backgroundType: bgType,
             backgroundColor: nil,
@@ -1047,7 +1068,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             canvasSize: contentView.bounds.size,
             aspectRatio: currentAspectRatio,
             gradientColors: gradientColorsHex,
-            gradientStyle: gradientStyleString
+            gradientStyle: gradientStyleString,
+            groups: savedGroups
         )
         
         // 5. Save design
@@ -1125,58 +1147,130 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             }
         }
 
-        // Restore Widget Positions using className + index matching
-        // Build a map of current widgets by className_index
-        var classCounters: [String: Int] = [:]
-        var widgetMap: [String: UIView] = [:]
-
+        // 1. Build a map of EXISTING widgets by itemIdentifier (if available) or className_index fallback
+        // Since we are using stable identifiers now, we should try to match by that first
+        var existingWidgetMap: [String: UIView] = [:]
+        
+        // Check widgets in self.widgets
         for widget in widgets {
-            let className = String(describing: type(of: widget))
-            let index = classCounters[className] ?? 0
-            classCounters[className] = index + 1
-            let uniqueIdentifier = "\(className)_\(index)"
-            widgetMap[uniqueIdentifier] = widget
+            if let selectable = widget as? Selectable {
+                existingWidgetMap[selectable.itemIdentifier] = widget
+            }
+        }
+        // Check widgets in groups (in case we are reloading over existing state)
+        for group in templateGroups {
+            for widget in group.groupedItems {
+                if let selectable = widget as? Selectable {
+                    existingWidgetMap[selectable.itemIdentifier] = widget
+                }
+            }
         }
 
-        // Restore positions and create missing widgets
+        // 2. Create or Update ALL widgets from save state
+        var restoredWidgetsMap: [String: UIView] = [:]
+        
         for savedWidget in design.widgets {
-            if let widget = widgetMap[savedWidget.identifier] {
-                // Widget exists - restore position and properties
-                widget.frame = savedWidget.frame
-
-                // Update initialSize for stat widgets
-                if let statWidget = widget as? BaseStatWidget {
-                    statWidget.initialSize = savedWidget.frame.size
-                    statWidget.updateFonts()
-
-                    // Restore color
-                    if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                        statWidget.applyColor(color)
-                    }
-                }
-
-                // Update initialSize for route map
-                if let routeMap = widget as? RouteMapView {
-                    routeMap.initialSize = savedWidget.frame.size
-                }
-
-                // Restore TextWidget text
-                if let textWidget = widget as? TextWidget, let text = savedWidget.text {
-                    textWidget.updateText(text)
-                    if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                        textWidget.applyColor(color)
-                    }
-                }
+            let widget: UIView
+            
+            // Try to find existing widget
+            if let existing = existingWidgetMap[savedWidget.identifier] {
+                widget = existing
             } else {
-                // Widget doesn't exist - create it
-                if let newWidget = createWidgetFromSavedState(savedWidget) {
-                    contentView.addSubview(newWidget)
-                    widgets.append(newWidget)
-
-                    if var selectable = newWidget as? Selectable {
-                        selectable.selectionDelegate = self
-                        selectionManager.registerItem(selectable)
+                // Create new
+                guard let newWidget = createWidgetFromSavedState(savedWidget) else { continue }
+                widget = newWidget
+                // Ensure identifier matches saved one
+                if var selectable = widget as? Selectable {
+                    selectable.itemIdentifier = savedWidget.identifier
+                }
+            }
+            
+            // Restore properties
+            widget.frame = savedWidget.frame
+            
+            // Restore common properties
+            if let statWidget = widget as? BaseStatWidget {
+                statWidget.initialSize = savedWidget.frame.size
+                statWidget.updateFonts()
+                if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                    statWidget.applyColor(color)
+                }
+            }
+            
+            if let routeMap = widget as? RouteMapView {
+                routeMap.initialSize = savedWidget.frame.size
+            }
+            
+            if let textWidget = widget as? TextWidget, let text = savedWidget.text {
+                textWidget.updateText(text)
+                if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                    textWidget.applyColor(color)
+                }
+            }
+            
+            // Add to map
+            restoredWidgetsMap[savedWidget.identifier] = widget
+        }
+        
+        // 3. Clear current state
+        // Remove all widgets from view hierarchy first
+        widgets.forEach { $0.removeFromSuperview() }
+        templateGroups.forEach { $0.removeFromSuperview() } // Groups remove their children too usually, but clean up is safer
+        widgets.removeAll()
+        templateGroups.removeAll()
+        selectionManager.unregisterAllItems()
+        
+        // 4. Restore GROUPS
+        var groupedWidgetIds: Set<String> = []
+        
+        if let savedGroups = design.groups {
+            for savedGroup in savedGroups {
+                let groupType = WidgetGroupType(rawValue: savedGroup.type) ?? .myRecord
+                
+                // Collect widgets for this group
+                var groupWidgets: [UIView] = []
+                for widgetId in savedGroup.widgetIdentifiers {
+                    if let widget = restoredWidgetsMap[widgetId] {
+                        groupWidgets.append(widget)
+                        groupedWidgetIds.insert(widgetId)
                     }
+                }
+                
+                if !groupWidgets.isEmpty {
+                    // Fix: TemplateGroupView assumes items are in GLOBAL coordinates (relative to contentView)
+                    // and converts them to local. But saved widgets are already in LOCAL coordinates relative to the group.
+                    // So we must convert them back to global by adding the group's origin.
+                    for widget in groupWidgets {
+                        widget.frame.origin.x += savedGroup.frame.origin.x
+                        widget.frame.origin.y += savedGroup.frame.origin.y
+                    }
+
+                    let group = TemplateGroupView(
+                        items: groupWidgets,
+                        frame: savedGroup.frame,
+                        groupType: groupType,
+                        ownerName: savedGroup.ownerName
+                    )
+                    
+                    group.groupDelegate = self
+                    group.selectionDelegate = self
+                    selectionManager.registerItem(group)
+                    
+                    contentView.addSubview(group)
+                    templateGroups.append(group)
+                }
+            }
+        }
+        
+        // 5. Restore UNGROUPED widgets
+        for (id, widget) in restoredWidgetsMap {
+            if !groupedWidgetIds.contains(id) {
+                contentView.addSubview(widget)
+                widgets.append(widget)
+                
+                if var selectable = widget as? Selectable {
+                    selectable.selectionDelegate = self
+                    selectionManager.registerItem(selectable)
                 }
             }
         }
@@ -2428,22 +2522,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             }
         }
 
-        // Clear selection state without hiding toolbar (manual control)
-        for identifier in selectionManager.selectedItemIdentifiers {
-            if let item = selectionManager.getAllItems().first(where: { $0.itemIdentifier == identifier }) {
-                item.hideSelectionState()
-            }
-        }
-
-        // Directly manipulate selection state for the new group
-        selectionManager.clearSelectionForGroupCreation()
-
-        // Add group to selection
-        selectionManager.addToMultiSelect(group)
-        group.showSelectionState()
-
-        // Update toolbar for group-only mode
-        updateMultiSelectToolbarState()
+        // Exit multi-select mode and select the new group
+        selectionManager.exitMultiSelectMode()
+        
+        // Select the new group (will trigger delegate to show toolbar)
+        selectionManager.selectItem(group)
 
         // Haptic feedback
         let generator = UINotificationFeedbackGenerator()
@@ -2770,7 +2853,14 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
     
     func updateMultiSelectToolbarState() {
-        let selectedItems = selectionManager.getSelectedItems()
+        // Check both multi-select list and single selection
+        var selectedItems = selectionManager.getSelectedItems()
+        
+        // If empty but there is a single selection, treat it as a list of 1
+        if selectedItems.isEmpty, let singleItem = selectionManager.currentlySelectedItem {
+            selectedItems = [singleItem]
+        }
+        
         multiSelectCountLabel.text = "\(selectedItems.count)개 선택"
         
         // Group logic: can group if > 1 and not already grouped (simplified)
@@ -2812,16 +2902,16 @@ extension BaseWorkoutDetailViewController: SelectionManagerDelegate {
     func selectionManager(_ manager: SelectionManager, didSelect item: Selectable) {
         updateToolbarItemsState()
         
-        // If a group is selected, automatically enter multi-select mode and show toolbar
+        // If a group is selected, show toolbar but DO NOT auto-enter multi-select mode
+        // This allows user to switch selection by tapping another widget
         if item is TemplateGroupView {
-            // Enter multi-select mode to add the group to selectedItemIdentifiers
-            if !manager.isMultiSelectMode {
-                manager.enterMultiSelectMode()
-            }
             showMultiSelectToolbar()
             updateMultiSelectToolbarState()
         } else if manager.isMultiSelectMode {
             updateMultiSelectToolbarState()
+        } else {
+            // Normal widget selected in single mode - hide multi-select toolbar
+            hideMultiSelectToolbar()
         }
     }
     
@@ -2831,10 +2921,11 @@ extension BaseWorkoutDetailViewController: SelectionManagerDelegate {
         // Check current selection state
         let selectedItems = manager.getSelectedItems()
         let hasSelectedGroup = selectedItems.contains { $0 is TemplateGroupView }
+        let currentIsGroup = manager.currentlySelectedItem is TemplateGroupView
         
-        if selectedItems.isEmpty && !manager.isMultiSelectMode {
+        if selectedItems.isEmpty && !manager.isMultiSelectMode && !currentIsGroup {
             hideMultiSelectToolbar()
-        } else if manager.isMultiSelectMode || hasSelectedGroup {
+        } else if manager.isMultiSelectMode || hasSelectedGroup || currentIsGroup {
             updateMultiSelectToolbarState()
         }
     }

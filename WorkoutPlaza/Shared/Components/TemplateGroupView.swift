@@ -53,7 +53,7 @@ class TemplateGroupView: UIView, Selectable {
     private(set) var groupLabel: String = ""
     private(set) var ownerName: String?
     private(set) var groupId: String = UUID().uuidString
-    private(set) var isConfirmed: Bool = false  // Track if group is confirmed (check button pressed)
+
 
     private var overlayLayer: CAShapeLayer?
 
@@ -69,18 +69,7 @@ class TemplateGroupView: UIView, Selectable {
         return label
     }()
 
-    private let checkButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "checkmark.circle.fill"), for: .normal)
-        button.tintColor = .systemGreen
-        button.backgroundColor = .white
-        button.layer.cornerRadius = 20
-        button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOffset = CGSize(width: 0, height: 2)
-        button.layer.shadowOpacity = 0.3
-        button.layer.shadowRadius = 4
-        return button
-    }()
+
 
     weak var groupDelegate: TemplateGroupDelegate?
 
@@ -100,7 +89,7 @@ class TemplateGroupView: UIView, Selectable {
 
         setupView()
         addItemsToGroup()
-        setupCheckButton()
+
         setupOwnerLabel()
         setupGestures()
     }
@@ -123,10 +112,7 @@ class TemplateGroupView: UIView, Selectable {
             ownerLabel.isHidden = true
         }
 
-        // Update check button visibility based on group type
-        if groupType == .importedRecord {
-            checkButton.isHidden = true
-        }
+
 
         updateOverlayStyle()
     }
@@ -158,10 +144,9 @@ class TemplateGroupView: UIView, Selectable {
         let overlay = CAShapeLayer()
         overlay.fillColor = groupType.overlayColor.cgColor
 
-        // Show dashed border for unconfirmed groups (both myRecord and importedRecord)
-        overlay.strokeColor = groupType.borderColor.withAlphaComponent(0.5).cgColor
-        overlay.lineWidth = 2
-        overlay.lineDashPattern = [8, 4]
+        // No border by default
+        overlay.strokeColor = UIColor.clear.cgColor
+        overlay.lineWidth = 0
 
         layer.insertSublayer(overlay, at: 0)
         self.overlayLayer = overlay
@@ -210,12 +195,7 @@ class TemplateGroupView: UIView, Selectable {
         }
     }
 
-    private func setupCheckButton() {
-        addSubview(checkButton)
-        checkButton.frame = CGRect(x: bounds.width - 50, y: -50, width: 40, height: 40)
-        checkButton.addTarget(self, action: #selector(checkButtonTapped), for: .touchUpInside)
-        // Check button is visible for all group types until confirmed
-    }
+
 
     private func setupGestures() {
         // Tap gesture for selection
@@ -238,10 +218,6 @@ class TemplateGroupView: UIView, Selectable {
 
     // MARK: - Actions
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
-        // If already selected, don't toggle - just keep selected
-        if isSelected {
-            return
-        }
         selectionDelegate?.itemWasSelected(self)
     }
 
@@ -343,53 +319,7 @@ class TemplateGroupView: UIView, Selectable {
             break
         }
     }
-    @objc private func checkButtonTapped() {
-        // For imported groups, ungroup when check button is pressed
-        if groupType == .importedRecord {
-            // Hide check button with animation
-            UIView.animate(withDuration: 0.2) {
-                self.checkButton.alpha = 0
-            } completion: { _ in
-                self.checkButton.isHidden = true
-                self.checkButton.alpha = 1
-                // Request ungroup after animation
-                self.groupDelegate?.templateGroupDidRequestUngroup(self)
-            }
-            return
-        }
 
-        // For my record groups, just confirm (keep grouped)
-        isConfirmed = true
-
-        // Hide dashed border
-        overlayLayer?.strokeColor = UIColor.clear.cgColor
-        overlayLayer?.lineWidth = 0
-
-        // Hide check button after confirmation
-        UIView.animate(withDuration: 0.2) {
-            self.checkButton.alpha = 0
-        } completion: { _ in
-            self.checkButton.isHidden = true
-            self.checkButton.alpha = 1
-        }
-
-        groupDelegate?.templateGroupDidConfirm(self)
-    }
-
-    /// Hide the check button (call when group is confirmed externally)
-    func hideCheckButton() {
-        checkButton.isHidden = true
-        isConfirmed = true
-        // Hide dashed border
-        overlayLayer?.strokeColor = UIColor.clear.cgColor
-        overlayLayer?.lineWidth = 0
-    }
-
-    /// Show the check button (call when group needs confirmation)
-    func showCheckButton() {
-        guard groupType != .importedRecord else { return }  // Never show for imported groups
-        checkButton.isHidden = false
-    }
 
     // MARK: - Group Resize
     override var frame: CGRect {
@@ -398,8 +328,7 @@ class TemplateGroupView: UIView, Selectable {
                 updateItemPositionsAndSizes()
             }
 
-            // Update check button position
-            checkButton.frame.origin = CGPoint(x: bounds.width - 50, y: -50)
+            // Check button removed
         }
     }
 
@@ -472,10 +401,7 @@ class TemplateGroupView: UIView, Selectable {
         // Hide overlay when selected (selection border is more prominent)
         overlayLayer?.isHidden = true
 
-        // Show check button if not confirmed
-        if !isConfirmed {
-            showCheckButton()
-        }
+
     }
 
     func hideSelectionState() {
@@ -483,14 +409,8 @@ class TemplateGroupView: UIView, Selectable {
         removeSelectionBorder()
         removeResizeHandles()
 
-        // Hide overlay and border when deselected (confirmed groups stay clean)
-        if isConfirmed {
-            overlayLayer?.isHidden = true
-        } else {
-            // For unconfirmed groups, hide overlay but show check button
-            overlayLayer?.isHidden = true
-            showCheckButton()
-        }
+        // Hide overlay and border when deselected
+        overlayLayer?.isHidden = true
     }
 
     func applyColor(_ color: UIColor) {
@@ -648,13 +568,7 @@ class TemplateGroupView: UIView, Selectable {
 
     // MARK: - Hit Testing
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        // Check check button first
-        if !checkButton.isHidden {
-            let buttonPoint = convert(point, to: checkButton)
-            if checkButton.point(inside: buttonPoint, with: event) {
-                return checkButton
-            }
-        }
+
 
         // Check resize handles
         for handle in resizeHandles {
@@ -688,10 +602,7 @@ class TemplateGroupView: UIView, Selectable {
 // MARK: - UIGestureRecognizerDelegate
 extension TemplateGroupView: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        // Allow touch if it's not on the check button or resize handles
-        if touch.view == checkButton {
-            return false
-        }
+        // Allow touch if it's not on resize handles
 
         for handle in resizeHandles {
             if touch.view == handle {
