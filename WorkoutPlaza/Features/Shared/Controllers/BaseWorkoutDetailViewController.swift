@@ -119,6 +119,57 @@ import PhotosUI
 
 class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, UIGestureRecognizerDelegate {
 
+    // MARK: - Constants
+    private enum Constants {
+        static let canvasBackgroundColor = UIColor(white: 0.1, alpha: 1.0)
+        static let canvasBorderColor = UIColor(white: 0.2, alpha: 1.0).cgColor
+        
+        static let toolbarBackgroundColor = UIColor(white: 0.2, alpha: 0.9)
+        static let multiSelectToolbarBackgroundColor = UIColor(white: 0.2, alpha: 0.95)
+        static let multiSelectBorderColor = UIColor.systemBlue.withAlphaComponent(0.5).cgColor
+        
+        static let toastBackgroundColor = UIColor(white: 0.2, alpha: 0.9)
+        
+        static let watermarkTextColor = UIColor.white.withAlphaComponent(0.5)
+        
+        static let textPathDrawingToolbarBackgroundColor = UIColor.black.withAlphaComponent(0.95)
+        static let textPathDrawingOverlayColor = UIColor.black.withAlphaComponent(0.4)
+        
+        static let dimOverlayColor = UIColor.black.withAlphaComponent(0.4)
+        
+        static let defaultBackgroundColor = UIColor.black
+        
+        struct Layout {
+            static let instructionTopOffset: CGFloat = 10
+            static let horizontalPadding: CGFloat = 20
+            static let headerPadding: CGFloat = 16
+            
+            static let canvasTopOffset: CGFloat = 20
+            static let canvasInitialWidth: CGFloat = 300
+            static let canvasInitialHeight: CGFloat = 400
+            
+            static let watermarkInset: CGFloat = 16
+            
+            static let topToolbarTopOffset: CGFloat = 8
+            static let topToolbarTrailingMargin: CGFloat = 16
+            
+            static let bottomToolbarBottomOffset: CGFloat = -20
+            static let bottomToolbarHeight: CGFloat = 60
+            static let bottomToolbarPadding = UIEdgeInsets(top: 8, left: 20, bottom: 8, right: 20)
+            
+            static let multiSelectToolbarBottomOffset: CGFloat = -80
+            static let multiSelectToolbarHeight: CGFloat = 50
+            static let multiSelectToolbarWidth: CGFloat = 320
+            
+            static let toastTopOffset: CGFloat = 60
+            static let toastHeight: CGFloat = 40
+            
+            static let textPathToolbarHeight: CGFloat = 180
+            static let textPathButtonBottomOffset: CGFloat = -12
+            static let standardButtonSize: CGFloat = 50
+        }
+    }
+    
     // MARK: - Properties
     
     // State
@@ -180,10 +231,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     // Canvas Container
     lazy var canvasContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(white: 0.1, alpha: 1.0)
+        view.backgroundColor = Constants.canvasBackgroundColor
         view.layer.cornerRadius = 12
         view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor(white: 0.2, alpha: 1.0).cgColor
+        view.layer.borderColor = Constants.canvasBorderColor
         view.clipsToBounds = true
         return view
     }()
@@ -211,7 +262,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     lazy var dimOverlay: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        view.backgroundColor = Constants.dimOverlayColor
         view.isHidden = true
         view.isUserInteractionEnabled = false
         return view
@@ -231,7 +282,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         let label = UILabel()
         label.text = "WorkoutPlaza"
         label.font = UIFont.systemFont(ofSize: 12, weight: .bold)
-        label.textColor = UIColor.white.withAlphaComponent(0.5)
+        label.textColor = Constants.watermarkTextColor
         label.textAlignment = .right
         return label
     }()
@@ -249,7 +300,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     lazy var bottomFloatingToolbar: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(white: 0.2, alpha: 0.9)
+        view.backgroundColor = Constants.toolbarBackgroundColor
         view.layer.cornerRadius = 30
         view.layer.shadowColor = UIColor.black.cgColor
         view.layer.shadowOpacity = 0.3
@@ -261,10 +312,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     lazy var multiSelectToolbar: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(white: 0.2, alpha: 0.95)
+        view.backgroundColor = Constants.multiSelectToolbarBackgroundColor
         view.layer.cornerRadius = 25
         view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.systemBlue.withAlphaComponent(0.5).cgColor
+        view.layer.borderColor = Constants.multiSelectBorderColor
         view.layer.shadowColor = UIColor.black.cgColor
         view.layer.shadowOpacity = 0.3
         view.layer.shadowOffset = CGSize(width: 0, height: 4)
@@ -300,7 +351,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     lazy var toastLabel: UILabel = {
         let label = UILabel()
-        label.backgroundColor = UIColor(white: 0.2, alpha: 0.9)
+        label.backgroundColor = Constants.toastBackgroundColor
         label.textColor = .white
         label.font = .systemFont(ofSize: 16, weight: .semibold)
         label.textAlignment = .center
@@ -313,7 +364,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     // Text Path Drawing Overlay
     lazy var textPathDrawingOverlayView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        view.backgroundColor = Constants.textPathDrawingOverlayColor
         view.isHidden = true
         view.isUserInteractionEnabled = false
         return view
@@ -322,7 +373,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     // Text Path Drawing Toolbar
     lazy var textPathDrawingToolbar: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.95)
+        view.backgroundColor = Constants.textPathDrawingToolbarBackgroundColor
         view.isHidden = true
         return view
     }()
@@ -409,7 +460,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     // MARK: - Setup UI
     
     func setupUI() {
-        view.backgroundColor = .black
+        view.backgroundColor = Constants.defaultBackgroundColor
         navigationItem.largeTitleDisplayMode = .never
         
         setupNavigationButtons()
@@ -471,16 +522,16 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     func setupConstraints() {
         instructionLabel.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(10)
-            make.leading.trailing.equalToSuperview().inset(20)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(Constants.Layout.instructionTopOffset)
+            make.leading.trailing.equalToSuperview().inset(Constants.Layout.horizontalPadding)
         }
         
         canvasContainerView.snp.makeConstraints { make in
-            make.top.equalTo(instructionLabel.snp.bottom).offset(20)
+            make.top.equalTo(instructionLabel.snp.bottom).offset(Constants.Layout.canvasTopOffset)
             make.centerX.equalToSuperview()
             // Initial constraints, will be updated by updateCanvasSize
-            canvasWidthConstraint = make.width.equalTo(300).constraint
-            canvasHeightConstraint = make.height.equalTo(400).constraint
+            canvasWidthConstraint = make.width.equalTo(Constants.Layout.canvasInitialWidth).constraint
+            canvasHeightConstraint = make.height.equalTo(Constants.Layout.canvasInitialHeight).constraint
         }
         
         scrollView.snp.makeConstraints { make in
@@ -503,8 +554,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         }
         
         watermarkLabel.snp.makeConstraints { make in
-            make.bottom.equalToSuperview().inset(16)
-            make.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().inset(Constants.Layout.watermarkInset)
+            make.trailing.equalToSuperview().inset(Constants.Layout.watermarkInset)
         }
 
         textPathDrawingOverlayView.snp.makeConstraints { make in
@@ -512,46 +563,46 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         }
 
         topRightToolbar.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            make.trailing.equalToSuperview().inset(16)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(Constants.Layout.topToolbarTopOffset)
+            make.trailing.equalToSuperview().inset(Constants.Layout.topToolbarTrailingMargin)
         }
         
         bottomFloatingToolbar.snp.makeConstraints { make in
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(Constants.Layout.bottomToolbarBottomOffset)
             make.centerX.equalToSuperview()
-            make.height.equalTo(60)
+            make.height.equalTo(Constants.Layout.bottomToolbarHeight)
         }
         
         multiSelectToolbar.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-80)
-            make.height.equalTo(50)
-            make.width.equalTo(320)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(Constants.Layout.multiSelectToolbarBottomOffset)
+            make.height.equalTo(Constants.Layout.multiSelectToolbarHeight)
+            make.width.equalTo(Constants.Layout.multiSelectToolbarWidth)
         }
         
         toastLabel.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(60)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(Constants.Layout.toastTopOffset)
             make.width.greaterThanOrEqualTo(100)
-            make.height.equalTo(40)
+            make.height.equalTo(Constants.Layout.toastHeight)
         }
 
         textPathDrawingToolbar.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
             make.bottom.equalToSuperview()
-            make.height.equalTo(180)
+            make.height.equalTo(Constants.Layout.textPathToolbarHeight)
         }
 
         textPathConfirmButton.snp.makeConstraints { make in
             make.trailing.equalToSuperview().inset(24)
-            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(-12)
-            make.size.equalTo(50)
+            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(Constants.Layout.textPathButtonBottomOffset)
+            make.size.equalTo(Constants.Layout.standardButtonSize)
         }
 
         textPathRedrawButton.snp.makeConstraints { make in
             make.leading.equalToSuperview().inset(24)
-            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(-12)
-            make.size.equalTo(50)
+            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(Constants.Layout.textPathButtonBottomOffset)
+            make.size.equalTo(Constants.Layout.standardButtonSize)
         }
     }
     
@@ -573,7 +624,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         bottomFloatingToolbar.addSubview(stack)
         stack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 20, bottom: 8, right: 20))
+            make.edges.equalToSuperview().inset(Constants.Layout.bottomToolbarPadding)
         }
     }
 
