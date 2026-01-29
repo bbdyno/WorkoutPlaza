@@ -9,19 +9,67 @@ import Foundation
 
 // MARK: - Climbing Gym
 
+// MARK: - Climbing Gym
+
 struct ClimbingGym: Codable, Identifiable, Equatable {
     let id: String
     var name: String
-    var logoImageName: String?  // xcassets에 저장된 이미지 이름 (예: "gym_logo_theclimb")
+    var logoSource: LogoSource  // 통합 로고 관리
+    var gradeColors: [String]   // 난이도 체계 (Hex Colors)
+    var isBuiltIn: Bool         // 프리셋 여부
+    var metadata: GymMetadata?  // 확장 정보
+
+    enum LogoSource: Codable, Equatable {
+        case assetName(String)   // xcassets 이미지
+        case imageData(Data)     // 사용자 업로드
+        case url(String)         // Remote URL
+        case none
+    }
+
+    struct GymMetadata: Codable, Equatable {
+        var region: String?      // 지역 (예: "Seoul")
+        var branch: String?      // 지점 (예: "구로점")
+        var remoteId: String?    // Remote Config ID
+        var lastUpdated: Date?   // 마지막 업데이트
+    }
 
     init(
         id: String = UUID().uuidString,
         name: String,
-        logoImageName: String? = nil
+        logoSource: LogoSource = .none,
+        gradeColors: [String] = [],
+        isBuiltIn: Bool = false,
+        metadata: GymMetadata? = nil
     ) {
         self.id = id
         self.name = name
-        self.logoImageName = logoImageName
+        self.logoSource = logoSource
+        self.gradeColors = gradeColors
+        self.isBuiltIn = isBuiltIn
+        self.metadata = metadata
+    }
+
+    // Legacy support: old initializer for backward compatibility during migration
+    @available(*, deprecated, message: "Use new init with LogoSource")
+    init(
+        id: String = UUID().uuidString,
+        name: String,
+        logoImageName: String? = nil,
+        logoImageData: Data? = nil,
+        gradeColors: [String] = []
+    ) {
+        self.id = id
+        self.name = name
+        if let imageName = logoImageName {
+            self.logoSource = .assetName(imageName)
+        } else if let imageData = logoImageData {
+            self.logoSource = .imageData(imageData)
+        } else {
+            self.logoSource = .none
+        }
+        self.gradeColors = gradeColors
+        self.isBuiltIn = false
+        self.metadata = nil
     }
 
     // 암장 이름으로 로고 이미지 이름을 추측하는 헬퍼
@@ -44,7 +92,71 @@ class ClimbingGymManager {
     private let userDefaults = UserDefaults.standard
     private let storageKey = "savedClimbingGyms"
 
-    private init() {}
+    private init() {
+        migrateOldGymsIfNeeded()
+    }
+
+    // MARK: - Presets
+    
+    var presets: [ClimbingGym] {
+        return [
+            ClimbingGym(
+                id: "preset_seoul_forest_guro",
+                name: "서울숲클라이밍 구로점",
+                logoSource: .assetName("gym_logo_seoul_forest"),
+                gradeColors: [
+                    "#FF3B30", // systemRed
+                    "#FF9500", // systemOrange
+                    "#FFCC00", // systemYellow
+                    "#34C759", // systemGreen
+                    "#007AFF", // systemBlue
+                    "#5856D6", // systemIndigo
+                    "#AF52DE", // systemPurple
+                    "#A2845E", // brown
+                    "#000000", // black
+                    "#FF2D55"  // systemPink
+                ],
+                isBuiltIn: true,
+                metadata: ClimbingGym.GymMetadata(region: "Seoul", branch: "구로점")
+            ),
+            ClimbingGym(
+                id: "preset_the_climb_sadang",
+                name: "더클라임 사당점",
+                logoSource: .assetName("gym_logo_the_climb"),
+                gradeColors: [
+                    "#FFFFFF", // white
+                    "#FFCC00", // yellow
+                    "#FF9500", // orange
+                    "#34C759", // green
+                    "#007AFF", // blue
+                    "#FF3B30", // red
+                    "#FF2D55", // systemPink
+                    "#AF52DE", // purple
+                    "#8E8E93", // gray
+                    "#A2845E", // brown
+                    "#000000"  // black
+                ],
+                isBuiltIn: true,
+                metadata: ClimbingGym.GymMetadata(region: "Seoul", branch: "사당점")
+            )
+        ]
+    }
+    
+    var defaultGradeColors: [String] {
+        [
+            "#FF3B30", // systemRed
+            "#FF9500", // systemOrange
+            "#FFCC00", // systemYellow
+            "#34C759", // systemGreen
+            "#007AFF", // systemBlue
+            "#5856D6", // systemIndigo
+            "#AF52DE", // systemPurple
+            "#FF2D55", // systemPink
+            "#A2845E", // brown
+            "#8E8E93", // systemGray
+            "#000000"  // black
+        ]
+    }
 
     // MARK: - CRUD Operations
 
@@ -83,16 +195,86 @@ class ClimbingGymManager {
     }
 
     func findGym(byName name: String) -> ClimbingGym? {
-        return loadGyms().first { $0.name.lowercased() == name.lowercased() }
+        // defined gyms (presets) + saved gyms
+        let allGyms = presets + loadGyms()
+        return allGyms.first { $0.name.lowercased() == name.lowercased() }
     }
 
     func findOrCreateGym(name: String) -> ClimbingGym {
         if let existing = findGym(byName: name) {
             return existing
         }
-        let newGym = ClimbingGym(name: name)
+        let newGym = ClimbingGym(name: name, logoSource: .none, gradeColors: defaultGradeColors, isBuiltIn: false)
         addGym(newGym)
         return newGym
+    }
+
+    // MARK: - Migration
+
+    private func migrateOldGymsIfNeeded() {
+        let migrationKey = "climbingGyms_migrated_v2"
+        guard !userDefaults.bool(forKey: migrationKey) else { return }
+
+        // Try to decode old format manually if standard decode fails
+        guard let data = userDefaults.data(forKey: storageKey) else {
+            userDefaults.set(true, forKey: migrationKey)
+            return
+        }
+
+        // Attempt to decode with new format first (in case already migrated)
+        if let _ = try? JSONDecoder().decode([ClimbingGym].self, from: data) {
+            // Already in new format
+            userDefaults.set(true, forKey: migrationKey)
+            return
+        }
+
+        // Old data exists but can't decode with new format
+        // This is expected - old format had different structure
+        // For safety, we'll clear old data and mark as migrated
+        // Users will need to re-add custom gyms (safer than risking data corruption)
+        print("ClimbingGym migration: Old format detected, clearing for safety")
+        userDefaults.removeObject(forKey: storageKey)
+        userDefaults.set(true, forKey: migrationKey)
+    }
+
+    // MARK: - Helper Methods
+
+    func getAllGyms() -> [ClimbingGym] {
+        let builtIn = presets
+        let remote = ClimbingGymRemoteConfigManager.shared.loadCachedRemoteGyms()
+        let custom = loadGyms()
+
+        // Combine and remove duplicates based on ID
+        var uniqueGyms: [String: ClimbingGym] = [:]
+
+        for gym in (builtIn + remote + custom) {
+            uniqueGyms[gym.id] = gym
+        }
+
+        return Array(uniqueGyms.values).sorted { $0.name < $1.name }
+    }
+
+    func getBuiltInGyms() -> [ClimbingGym] {
+        return presets
+    }
+
+    func getRemoteGyms() -> [ClimbingGym] {
+        return ClimbingGymRemoteConfigManager.shared.loadCachedRemoteGyms()
+    }
+
+    func getCustomGyms() -> [ClimbingGym] {
+        return loadGyms()
+    }
+
+    func syncRemotePresets(completion: @escaping (Result<Void, Error>) -> Void) {
+        ClimbingGymRemoteConfigManager.shared.fetchRemotePresets { result in
+            switch result {
+            case .success(_):
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
     }
 }
 

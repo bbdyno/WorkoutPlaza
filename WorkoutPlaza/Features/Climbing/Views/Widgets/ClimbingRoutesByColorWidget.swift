@@ -139,7 +139,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
         // Color circle - 크기도 스케일에 맞게 조정
         let circleSize: CGFloat = 12 * scaleFactor
         let colorCircle = UIView()
-        colorCircle.backgroundColor = UIColor(hexString: colorHex) ?? .white
+        colorCircle.backgroundColor = UIColor(hex: colorHex) ?? .white
         colorCircle.layer.cornerRadius = circleSize / 2
         colorCircle.layer.borderWidth = 1
         colorCircle.layer.borderColor = UIColor.white.withAlphaComponent(0.3).cgColor
