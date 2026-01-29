@@ -82,6 +82,9 @@ Derived/
 .tuist-version
 **/Generate Project.xcscheme
 
+# Provisioning Profiles (keep out of git for security)
+*.mobileprovision
+
 # Backup files
 *.backup
 

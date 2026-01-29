@@ -14,6 +14,7 @@ import PackageDescription
 let package = Package(
     name: "WorkoutPlaza",
     dependencies: [
-        .package(url: "https://github.com/SnapKit/SnapKit.git", from: "5.7.1")
+        .package(url: "https://github.com/SnapKit/SnapKit.git", from: "5.7.1"),
+        .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "11.0.0")
     ]
 )

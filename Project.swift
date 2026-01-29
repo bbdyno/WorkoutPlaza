@@ -25,7 +25,7 @@ let project = Project(
             name: "WorkoutPlaza",
             destinations: .iOS,
             product: .app,
-            bundleId: "com.bbdyno.WorkoutPlaza",
+            bundleId: "com.bbdyno.app.WorkoutPlaza",
             infoPlist: .extendingDefault(with: [
                 "UILaunchScreen": [
                     "UIImageRespectsSafeAreaInsets": true,
@@ -84,7 +84,8 @@ let project = Project(
             ],
             entitlements: "WorkoutPlaza/WorkoutPlaza.entitlements",
             dependencies: [
-                .external(name: "SnapKit")
+                .external(name: "SnapKit"),
+                .external(name: "FirebaseRemoteConfig")
             ],
             settings: .settings(
                 base: [
@@ -99,6 +100,20 @@ let project = Project(
                     "INFOPLIST_KEY_UIMainStoryboardFile": "Main",
                     "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad": "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight",
                     "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone": "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+                ],
+                configurations: [
+                    .debug(name: "Debug", settings: [
+                        "CODE_SIGN_STYLE": "Manual",
+                        "CODE_SIGN_IDENTITY": "iPhone Developer",
+                        "PROVISIONING_PROFILE_SPECIFIER": "WorkoutPlaza App Provisioning",
+                        "DEVELOPMENT_TEAM": "M79H9K226Y"
+                    ]),
+                    .release(name: "Release", settings: [
+                        "CODE_SIGN_STYLE": "Manual",
+                        "CODE_SIGN_IDENTITY": "Apple Distribution",
+                        "PROVISIONING_PROFILE_SPECIFIER": "WorkoutPlaza App Distribution Provisioning",
+                        "DEVELOPMENT_TEAM": "M79H9K226Y"
+                    ])
                 ]
             )
         ),
@@ -106,7 +121,7 @@ let project = Project(
             name: "WorkoutPlazaTests",
             destinations: .iOS,
             product: .unitTests,
-            bundleId: "com.bbdyno.WorkoutPlazaTests",
+            bundleId: "com.bbdyno.app.WorkoutPlazaTests",
             infoPlist: .default,
             sources: ["WorkoutPlazaTests/**/*.swift"],
             dependencies: [
@@ -117,7 +132,7 @@ let project = Project(
             name: "WorkoutPlazaUITests",
             destinations: .iOS,
             product: .uiTests,
-            bundleId: "com.bbdyno.WorkoutPlazaUITests",
+            bundleId: "com.bbdyno.app.WorkoutPlazaUITests",
             infoPlist: .default,
             sources: ["WorkoutPlazaUITests/**/*.swift"],
             dependencies: [
