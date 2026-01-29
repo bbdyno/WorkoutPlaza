@@ -37,6 +37,7 @@ class MoreViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .dark // Force Dark Mode
         setupData()
         setupUI()
     }
@@ -46,7 +47,7 @@ class MoreViewController: UIViewController {
     private func setupData() {
         sections = [
             Section(title: "카드", items: [
-                MenuItem(title: "저장된 카드", icon: "square.stack", action: { [weak self] in
+                MenuItem(title: "저장된 카드", icon: "square.stack.3d.forward.dottedline", action: { [weak self] in
                     self?.showSavedCards()
                 })
             ]),
@@ -79,12 +80,15 @@ class MoreViewController: UIViewController {
 
     private func setupUI() {
         view.backgroundColor = .systemBackground
-        navigationItem.largeTitleDisplayMode = .never
+        navigationItem.largeTitleDisplayMode = .automatic // Modern large title
         title = "더보기"
+        navigationController?.navigationBar.prefersLargeTitles = true
 
         tableView.delegate = self
         tableView.dataSource = self
-
+        tableView.backgroundColor = .systemGroupedBackground // Dark gray in dark mode
+        tableView.separatorColor = .separator
+        
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -207,12 +211,23 @@ extension MoreViewController: UITableViewDataSource {
 
         var config = cell.defaultContentConfiguration()
         config.text = item.title
+        config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
+        config.textProperties.color = .label
+        
         config.image = UIImage(systemName: item.icon)
-        config.imageProperties.tintColor = .systemOrange
-
+        
+        // Icon coloring based on section or item could be nice
+        if item.title.contains("삭제") || item.title.contains("초기화") {
+            config.imageProperties.tintColor = .systemRed
+            config.textProperties.color = .systemRed
+        } else {
+            config.imageProperties.tintColor = .systemBlue // Or app theme color
+        }
+        
         cell.contentConfiguration = config
         cell.accessoryType = .disclosureIndicator
-
+        cell.backgroundColor = .secondarySystemGroupedBackground // Dark card look
+        
         return cell
     }
 }
@@ -244,6 +259,7 @@ class LicensesViewController: UIViewController {
         super.viewDidLoad()
         title = "오픈소스 라이선스"
         view.backgroundColor = .systemBackground
+        overrideUserInterfaceStyle = .dark // Force dark mode for consistency
 
         view.addSubview(textView)
         textView.snp.makeConstraints { make in

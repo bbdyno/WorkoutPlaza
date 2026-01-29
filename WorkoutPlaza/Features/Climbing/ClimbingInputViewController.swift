@@ -12,7 +12,9 @@ protocol ClimbingInputDelegate: AnyObject {
     func climbingInput(_ controller: ClimbingInputViewController, didRequestCardFor session: ClimbingData)
 }
 
-class ClimbingInputViewController: UITableViewController {
+class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+
+    private let tableView = UITableView(frame: .zero, style: .insetGrouped)
 
     weak var delegate: ClimbingInputDelegate?
 
@@ -40,7 +42,8 @@ class ClimbingInputViewController: UITableViewController {
 
         static let presetColors: [UIColor] = [
             .systemRed, .systemOrange, .systemYellow, .systemGreen,
-            .systemBlue, .systemPurple, .systemPink, .white, .black, .systemGray
+            .systemBlue, .systemIndigo, .systemPurple, .systemPink,
+            .brown, .systemGray, .black
         ]
     }
 
@@ -48,6 +51,7 @@ class ClimbingInputViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .dark // Force Dark Mode
         setupTableView()
         setupNavigationBar()
     }
@@ -65,11 +69,22 @@ class ClimbingInputViewController: UITableViewController {
     }
 
     private func setupTableView() {
-        tableView.backgroundColor = .systemBackground
+        view.addSubview(tableView)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.backgroundColor = .systemGroupedBackground
         tableView.separatorStyle = .none
         tableView.keyboardDismissMode = .onDrag
-        tableView.register(TextFieldCell.self, forCellReuseIdentifier: "TextFieldCell")
-        tableView.register(SegmentCell.self, forCellReuseIdentifier: "SegmentCell")
+        tableView.register(ClimbingHeaderCell.self, forCellReuseIdentifier: "ClimbingHeaderCell") // New Gym Name Cell
+        tableView.register(DisciplineSelectionCell.self, forCellReuseIdentifier: "DisciplineSelectionCell") // New Discipline Cell
         tableView.register(RouteCell.self, forCellReuseIdentifier: "RouteCell")
         tableView.register(ButtonCell.self, forCellReuseIdentifier: "ButtonCell")
     }
@@ -80,11 +95,11 @@ class ClimbingInputViewController: UITableViewController {
 
     // MARK: - TableView DataSource
 
-    override func numberOfSections(in tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         return 4 // Gym, Discipline, Routes, Buttons
     }
 
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
         case 0: return 1 // Gym name
         case 1: return 1 // Discipline
@@ -94,31 +109,41 @@ class ClimbingInputViewController: UITableViewController {
         }
     }
 
-    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
-        case 0: return "클라이밍짐"
+        case 0: return nil // Header inside cell for modern look
         case 1: return "종목"
         case 2: return "루트 기록"
         default: return nil
         }
     }
 
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        // Hide header for first section to look like a title
+        if section == 0 { return nil }
+        return nil // Default behavior for others
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        if section == 0 { return 10 } // Small spacer
+        return UITableView.automaticDimension
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         switch indexPath.section {
         case 0:
-            let cell = tableView.dequeueReusableCell(withIdentifier: "TextFieldCell", for: indexPath) as! TextFieldCell
-            cell.configure(placeholder: "짐 이름을 입력하세요", text: gymName) { [weak self] text in
+            let cell = tableView.dequeueReusableCell(withIdentifier: "ClimbingHeaderCell", for: indexPath) as! ClimbingHeaderCell
+            cell.configure(placeholder: "클라이밍짐 이름", text: gymName) { [weak self] text in
                 self?.gymName = text
             }
             return cell
 
         case 1:
-            let cell = tableView.dequeueReusableCell(withIdentifier: "SegmentCell", for: indexPath) as! SegmentCell
+            let cell = tableView.dequeueReusableCell(withIdentifier: "DisciplineSelectionCell", for: indexPath) as! DisciplineSelectionCell
             cell.configure(
-                items: ClimbingDiscipline.allCases.map { $0.displayName },
-                selectedIndex: ClimbingDiscipline.allCases.firstIndex(of: selectedDiscipline) ?? 0
-            ) { [weak self] index in
-                self?.selectedDiscipline = ClimbingDiscipline.allCases[index]
+                selectedDiscipline: selectedDiscipline
+            ) { [weak self] discipline in
+                self?.selectedDiscipline = discipline
                 self?.tableView.reloadSections(IndexSet(integer: 2), with: .automatic)
             }
             return cell
@@ -262,9 +287,9 @@ extension ClimbingInputViewController: UIColorPickerViewControllerDelegate {
     }
 }
 
-// MARK: - TextFieldCell
+// MARK: - ClimbingHeaderCell
 
-private class TextFieldCell: UITableViewCell {
+class ClimbingHeaderCell: UITableViewCell {
     private let textField = UITextField()
     private var onTextChange: ((String) -> Void)?
 
@@ -272,27 +297,22 @@ private class TextFieldCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         backgroundColor = .clear
-
-        textField.font = .systemFont(ofSize: 17)
-        textField.backgroundColor = .secondarySystemBackground
-        textField.layer.cornerRadius = 12
-        textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0))
-        textField.leftViewMode = .always
+        
+        textField.font = .systemFont(ofSize: 34, weight: .bold) // Large Title style
+        textField.placeholder = "Gym Name"
+        textField.borderStyle = .none
         textField.returnKeyType = .done
-        textField.autocorrectionType = .no
-        textField.autocapitalizationType = .none
-        textField.spellCheckingType = .no
         textField.addTarget(self, action: #selector(textChanged), for: .editingChanged)
         textField.delegate = self
-
+        
         contentView.addSubview(textField)
         textField.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            textField.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            textField.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
             textField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             textField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            textField.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
-            textField.heightAnchor.constraint(equalToConstant: 50)
+            textField.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
+            textField.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
         ])
     }
 
@@ -309,50 +329,128 @@ private class TextFieldCell: UITableViewCell {
     }
 }
 
-extension TextFieldCell: UITextFieldDelegate {
+extension ClimbingHeaderCell: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
     }
 }
 
-// MARK: - SegmentCell
+// MARK: - DisciplineSelectionCell
 
-private class SegmentCell: UITableViewCell {
-    private let segmentControl = UISegmentedControl()
-    private var onSelectionChange: ((Int) -> Void)?
+class DisciplineSelectionCell: UITableViewCell {
+    private var onSelectionChange: ((ClimbingDiscipline) -> Void)?
+    private var currentDiscipline: ClimbingDiscipline = .bouldering
+    private let stackView = UIStackView()
+    private var buttons: [UIButton] = []
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
-        backgroundColor = .clear
-
-        segmentControl.addTarget(self, action: #selector(selectionChanged), for: .valueChanged)
-
-        contentView.addSubview(segmentControl)
-        segmentControl.translatesAutoresizingMaskIntoConstraints = false
+        backgroundColor = .clear // Transparent in grouped table
+        contentView.backgroundColor = .clear
+        
+        // Card container
+        let container = UIView()
+        container.backgroundColor = .secondarySystemGroupedBackground
+        container.layer.cornerRadius = 10
+        container.clipsToBounds = true
+        
+        contentView.addSubview(container)
+        container.translatesAutoresizingMaskIntoConstraints = false
+        
+        stackView.axis = .horizontal
+        stackView.distribution = .fillEqually
+        stackView.spacing = 2
+        stackView.backgroundColor = .systemGray5 // Separator color
+        
+        container.addSubview(stackView)
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        
         NSLayoutConstraint.activate([
-            segmentControl.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            segmentControl.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            segmentControl.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            segmentControl.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
-            segmentControl.heightAnchor.constraint(equalToConstant: 44)
+            container.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 5),
+            container.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0), // Edge to edge in cell content
+            container.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
+            container.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -5),
+            
+            stackView.topAnchor.constraint(equalTo: container.topAnchor),
+            stackView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            stackView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            stackView.heightAnchor.constraint(equalToConstant: 44)
         ])
+        
+        setupButtons()
     }
-
+    
     required init?(coder: NSCoder) { fatalError() }
-
-    func configure(items: [String], selectedIndex: Int, onChange: @escaping (Int) -> Void) {
-        segmentControl.removeAllSegments()
-        for (i, item) in items.enumerated() {
-            segmentControl.insertSegment(withTitle: item, at: i, animated: false)
+    
+    private func setupButtons() {
+        stackView.spacing = 8
+        stackView.distribution = .fillEqually
+        stackView.backgroundColor = .clear // No separator line
+        
+        for (index, discipline) in ClimbingDiscipline.allCases.enumerated() {
+            let btn = UIButton(type: .system)
+            btn.setTitle(discipline.displayName, for: .normal)
+            btn.setTitleColor(.secondaryLabel, for: .normal)
+            btn.setTitleColor(.white, for: .selected)
+            btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+            
+            // Initial state
+            btn.backgroundColor = .tertiarySystemGroupedBackground
+            
+            // Fix shape: rounded rect
+            btn.layer.cornerRadius = 8
+            btn.layer.masksToBounds = true
+            
+            btn.addTarget(self, action: #selector(buttonTapped(_:)), for: .touchUpInside)
+            btn.tag = discipline.hashValue
+            buttons.append(btn)
+            stackView.addArrangedSubview(btn)
         }
-        segmentControl.selectedSegmentIndex = selectedIndex
-        onSelectionChange = onChange
     }
-
-    @objc private func selectionChanged() {
-        onSelectionChange?(segmentControl.selectedSegmentIndex)
+    
+    func configure(selectedDiscipline: ClimbingDiscipline, onChange: @escaping (ClimbingDiscipline) -> Void) {
+        self.currentDiscipline = selectedDiscipline
+        self.onSelectionChange = onChange
+        updateSelection()
+    }
+    
+    private func updateSelection() {
+        for (index, discipline) in ClimbingDiscipline.allCases.enumerated() {
+            guard index < buttons.count else { continue }
+            let btn = buttons[index]
+            let isSelected = discipline == currentDiscipline
+            btn.isSelected = isSelected
+            
+            // Visual update
+            UIView.animate(withDuration: 0.2) {
+                if isSelected {
+                    btn.backgroundColor = .systemBlue
+                    btn.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+                    btn.layer.shadowColor = UIColor.systemBlue.cgColor
+                    btn.layer.shadowOffset = CGSize(width: 0, height: 2)
+                    btn.layer.shadowOpacity = 0.3
+                    btn.layer.shadowRadius = 4
+                    btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .bold)
+                } else {
+                    btn.backgroundColor = .tertiarySystemGroupedBackground
+                    btn.transform = .identity
+                    btn.layer.shadowOpacity = 0
+                    btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+                }
+            }
+        }
+    }
+    
+    @objc private func buttonTapped(_ sender: UIButton) {
+        // Find discipline by index
+        guard let index = buttons.firstIndex(of: sender) else { return }
+        let discipline = ClimbingDiscipline.allCases[index]
+        currentDiscipline = discipline
+        onSelectionChange?(discipline)
+        updateSelection()
     }
 }
 
@@ -421,30 +519,37 @@ class RouteCell: UITableViewCell {
     private var route = ClimbingInputViewController.RouteData()
     private var discipline: ClimbingDiscipline = .bouldering
 
+    // Container for card look
     private let containerView = UIView()
+    
+    // Header
+    private let headerStack = UIStackView()
     private let headerLabel = UILabel()
     private let deleteButton = UIButton(type: .system)
 
-    // Bouldering only: Color section
+    // Bouldering Color Section
     private let colorSectionView = UIView()
-    private let colorLabel = UILabel()
     private let colorScrollView = UIScrollView()
     private let colorStack = UIStackView()
     private var colorButtons: [UIButton] = []
     private var customColorButton: UIButton!
-
-    // Common fields
+    
+    // Grade & Attempts
+    private let gradeStack = UIStackView()
     private let gradeLabel = UILabel()
     private let gradeField = UITextField()
-    private let metricLabel = UILabel()
-    private let metricValueLabel = UILabel()
-    private let stepper = UIStepper()
-    private let sentLabel = UILabel()
-    private let sentSwitch = UISwitch()
+    
+    private let attemptsStack = UIStackView()
+    private let attemptsLabel = UILabel()
+    private let attemptsValueLabel = UILabel()
+    private let attemptsStepper = UIStepper()
 
-    // Constraints for dynamic layout
-    private var gradeTopToHeaderConstraint: NSLayoutConstraint!
-    private var gradeTopToColorConstraint: NSLayoutConstraint!
+    // Sent Status
+    private let sentSwitch = UISwitch()
+    private let sentLabel = UILabel()
+    
+    // Constraints
+    private var colorSectionHeightConstraint: NSLayoutConstraint!
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -456,206 +561,191 @@ class RouteCell: UITableViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupUI() {
-        containerView.backgroundColor = .secondarySystemBackground
-        containerView.layer.cornerRadius = 12
+        // Card Container
         contentView.addSubview(containerView)
-
+        containerView.backgroundColor = .secondarySystemGroupedBackground
+        containerView.layer.cornerRadius = 12
+        containerView.layer.cornerCurve = .continuous
+        // containerView.layer.shadowColor = UIColor.black.cgColor
+        // containerView.layer.shadowOpacity = 0.05
+        // containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        // containerView.layer.shadowRadius = 4
+        
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
+            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0), // Grouped style handles inset usually, but if we want card in card... let's stick to 0 if native inset used
+            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
+            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6)
+        ])
+        
         // Header
-        headerLabel.font = .systemFont(ofSize: 14, weight: .semibold)
-        headerLabel.textColor = .systemOrange
-        containerView.addSubview(headerLabel)
-
-        deleteButton.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
-        deleteButton.tintColor = .systemGray3
+        headerStack.axis = .horizontal
+        headerStack.spacing = 8
+        headerStack.alignment = .center
+        
+        headerLabel.font = .systemFont(ofSize: 17, weight: .bold)
+        headerLabel.textColor = .label
+        
+        deleteButton.setImage(UIImage(systemName: "trash"), for: .normal)
+        deleteButton.tintColor = .systemRed
         deleteButton.addTarget(self, action: #selector(deleteTapped), for: .touchUpInside)
-        containerView.addSubview(deleteButton)
-
-        // Color section (Bouldering only)
-        containerView.addSubview(colorSectionView)
-
-        colorLabel.text = "홀드 색상"
-        colorLabel.font = .systemFont(ofSize: 13)
-        colorLabel.textColor = .secondaryLabel
-        colorSectionView.addSubview(colorLabel)
-
+        
+        headerStack.addArrangedSubview(headerLabel)
+        headerStack.addArrangedSubview(UIView()) // Spacer
+        headerStack.addArrangedSubview(deleteButton)
+        
+        containerView.addSubview(headerStack)
+        headerStack.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Color Section
         colorScrollView.showsHorizontalScrollIndicator = false
-        colorSectionView.addSubview(colorScrollView)
-
         colorStack.axis = .horizontal
-        colorStack.spacing = 8
+        colorStack.spacing = 10
         colorScrollView.addSubview(colorStack)
-
-        // Create color buttons
+        colorStack.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            colorStack.topAnchor.constraint(equalTo: colorScrollView.topAnchor),
+            colorStack.leadingAnchor.constraint(equalTo: colorScrollView.leadingAnchor, constant: 16),
+            colorStack.trailingAnchor.constraint(equalTo: colorScrollView.trailingAnchor, constant: -16),
+            colorStack.bottomAnchor.constraint(equalTo: colorScrollView.bottomAnchor),
+            colorStack.heightAnchor.constraint(equalTo: colorScrollView.heightAnchor)
+        ])
+        
         for i in 0..<ClimbingInputViewController.RouteData.presetColors.count {
             let btn = createColorButton(color: ClimbingInputViewController.RouteData.presetColors[i], tag: i)
             colorButtons.append(btn)
             colorStack.addArrangedSubview(btn)
         }
-
+        
         customColorButton = UIButton(type: .system)
-        customColorButton.setImage(UIImage(systemName: "plus"), for: .normal)
-        customColorButton.tintColor = .systemGray
-        customColorButton.layer.cornerRadius = 15
-        customColorButton.layer.borderWidth = 2
-        customColorButton.layer.borderColor = UIColor.systemGray4.cgColor
+        customColorButton.setImage(UIImage(systemName: "pencil.circle.fill"), for: .normal)
+        customColorButton.tintColor = .label
         customColorButton.addTarget(self, action: #selector(customColorTapped), for: .touchUpInside)
         colorStack.addArrangedSubview(customColorButton)
-
+        
+        containerView.addSubview(colorScrollView)
+        colorScrollView.translatesAutoresizingMaskIntoConstraints = false
+        
         // Grade
-        gradeLabel.font = .systemFont(ofSize: 13)
+        gradeLabel.text = "GRADE"
+        gradeLabel.font = .systemFont(ofSize: 11, weight: .semibold)
         gradeLabel.textColor = .secondaryLabel
-        containerView.addSubview(gradeLabel)
-
-        gradeField.font = .systemFont(ofSize: 15)
-        gradeField.backgroundColor = .tertiarySystemBackground
-        gradeField.layer.cornerRadius = 8
-        gradeField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 0))
-        gradeField.leftViewMode = .always
+        
+        gradeField.font = .monospacedSystemFont(ofSize: 16, weight: .medium)
+        gradeField.backgroundColor = .tertiarySystemGroupedBackground
+        gradeField.layer.cornerRadius = 6
+        gradeField.textAlignment = .center
         gradeField.returnKeyType = .done
-        gradeField.autocorrectionType = .no
-        gradeField.autocapitalizationType = .none
-        gradeField.spellCheckingType = .no
         gradeField.delegate = self
         gradeField.addTarget(self, action: #selector(gradeChanged), for: .editingChanged)
-        containerView.addSubview(gradeField)
-
-        // Metric
-        metricLabel.font = .systemFont(ofSize: 13)
-        metricLabel.textColor = .secondaryLabel
-        containerView.addSubview(metricLabel)
-
-        metricValueLabel.font = .systemFont(ofSize: 17, weight: .semibold)
-        metricValueLabel.textColor = .label
-        metricValueLabel.textAlignment = .center
-        containerView.addSubview(metricValueLabel)
-
-        stepper.minimumValue = 0
-        stepper.maximumValue = 99
-        stepper.value = 1
-        stepper.addTarget(self, action: #selector(stepperChanged), for: .valueChanged)
-        containerView.addSubview(stepper)
-
-        // Sent
+        
+        gradeStack.axis = .vertical
+        gradeStack.spacing = 4
+        gradeStack.addArrangedSubview(gradeLabel)
+        gradeStack.addArrangedSubview(gradeField)
+        
+        // Attempts
+        attemptsLabel.text = "ATTEMPTS"
+        attemptsLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+        attemptsLabel.textColor = .secondaryLabel
+        
+        attemptsValueLabel.font = .monospacedDigitSystemFont(ofSize: 18, weight: .medium)
+        attemptsValueLabel.textAlignment = .center
+        
+        attemptsStepper.addTarget(self, action: #selector(stepperChanged), for: .valueChanged)
+        attemptsStepper.minimumValue = 1
+        
+        attemptsStack.axis = .vertical
+        attemptsStack.spacing = 4
+        attemptsStack.alignment = .center
+        attemptsStack.addArrangedSubview(attemptsLabel)
+        
+        let attemptsControlStack = UIStackView(arrangedSubviews: [attemptsValueLabel, attemptsStepper])
+        attemptsControlStack.spacing = 8
+        attemptsControlStack.alignment = .center
+        attemptsStack.addArrangedSubview(attemptsControlStack)
+        
+        // Sent Switch
         sentLabel.text = "완등"
-        sentLabel.font = .systemFont(ofSize: 15)
+        sentLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         sentLabel.textColor = .label
-        containerView.addSubview(sentLabel)
-
+        
         sentSwitch.onTintColor = .systemGreen
         sentSwitch.addTarget(self, action: #selector(sentChanged), for: .valueChanged)
-        containerView.addSubview(sentSwitch)
-
-        setupConstraints()
-    }
-
-    private func setupConstraints() {
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        headerLabel.translatesAutoresizingMaskIntoConstraints = false
-        deleteButton.translatesAutoresizingMaskIntoConstraints = false
-        colorSectionView.translatesAutoresizingMaskIntoConstraints = false
-        colorLabel.translatesAutoresizingMaskIntoConstraints = false
-        colorScrollView.translatesAutoresizingMaskIntoConstraints = false
-        colorStack.translatesAutoresizingMaskIntoConstraints = false
-        gradeLabel.translatesAutoresizingMaskIntoConstraints = false
-        gradeField.translatesAutoresizingMaskIntoConstraints = false
-        metricLabel.translatesAutoresizingMaskIntoConstraints = false
-        metricValueLabel.translatesAutoresizingMaskIntoConstraints = false
-        stepper.translatesAutoresizingMaskIntoConstraints = false
-        sentLabel.translatesAutoresizingMaskIntoConstraints = false
-        sentSwitch.translatesAutoresizingMaskIntoConstraints = false
-        customColorButton.translatesAutoresizingMaskIntoConstraints = false
-
-        // Dynamic constraints
-        gradeTopToHeaderConstraint = gradeLabel.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 12)
-        gradeTopToColorConstraint = gradeLabel.topAnchor.constraint(equalTo: colorSectionView.bottomAnchor, constant: 12)
-
+        
+        let sentStack = UIStackView(arrangedSubviews: [sentLabel, sentSwitch])
+        sentStack.axis = .vertical
+        sentStack.alignment = .center
+        sentStack.spacing = 8
+        
+        // Layout Main Content
+        containerView.addSubview(gradeStack)
+        containerView.addSubview(attemptsStack)
+        containerView.addSubview(sentStack)
+        
+        gradeStack.translatesAutoresizingMaskIntoConstraints = false
+        attemptsStack.translatesAutoresizingMaskIntoConstraints = false
+        sentStack.translatesAutoresizingMaskIntoConstraints = false
+        
+        colorSectionHeightConstraint = colorScrollView.heightAnchor.constraint(equalToConstant: 44)
+        
         NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
-            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6),
-
-            headerLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-            headerLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-
-            deleteButton.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
-            deleteButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            deleteButton.widthAnchor.constraint(equalToConstant: 24),
-            deleteButton.heightAnchor.constraint(equalToConstant: 24),
-
-            // Color section
-            colorSectionView.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 12),
-            colorSectionView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            colorSectionView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-
-            colorLabel.topAnchor.constraint(equalTo: colorSectionView.topAnchor),
-            colorLabel.leadingAnchor.constraint(equalTo: colorSectionView.leadingAnchor, constant: 16),
-
-            colorScrollView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor, constant: 8),
-            colorScrollView.leadingAnchor.constraint(equalTo: colorSectionView.leadingAnchor),
-            colorScrollView.trailingAnchor.constraint(equalTo: colorSectionView.trailingAnchor),
-            colorScrollView.heightAnchor.constraint(equalToConstant: 36),
-            colorScrollView.bottomAnchor.constraint(equalTo: colorSectionView.bottomAnchor),
-
-            colorStack.topAnchor.constraint(equalTo: colorScrollView.topAnchor),
-            colorStack.leadingAnchor.constraint(equalTo: colorScrollView.leadingAnchor, constant: 16),
-            colorStack.trailingAnchor.constraint(equalTo: colorScrollView.trailingAnchor, constant: -16),
-            colorStack.bottomAnchor.constraint(equalTo: colorScrollView.bottomAnchor),
-            colorStack.heightAnchor.constraint(equalTo: colorScrollView.heightAnchor),
-
-            customColorButton.widthAnchor.constraint(equalToConstant: 32),
-            customColorButton.heightAnchor.constraint(equalToConstant: 32),
-
+            // Header
+            headerStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
+            headerStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            headerStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            
+            // Color Scroll
+            colorScrollView.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 12),
+            colorScrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            colorScrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            colorSectionHeightConstraint,
+            
             // Grade
-            gradeLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-
-            gradeField.topAnchor.constraint(equalTo: gradeLabel.bottomAnchor, constant: 4),
-            gradeField.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            gradeField.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            gradeField.heightAnchor.constraint(equalToConstant: 40),
-
-            metricLabel.topAnchor.constraint(equalTo: gradeField.bottomAnchor, constant: 12),
-            metricLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-
-            stepper.centerYAnchor.constraint(equalTo: metricLabel.centerYAnchor),
-            stepper.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-
-            metricValueLabel.centerYAnchor.constraint(equalTo: metricLabel.centerYAnchor),
-            metricValueLabel.trailingAnchor.constraint(equalTo: stepper.leadingAnchor, constant: -12),
-            metricValueLabel.widthAnchor.constraint(equalToConstant: 30),
-
-            sentLabel.topAnchor.constraint(equalTo: metricLabel.bottomAnchor, constant: 16),
-            sentLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            sentLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16),
-
-            sentSwitch.centerYAnchor.constraint(equalTo: sentLabel.centerYAnchor),
-            sentSwitch.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16)
+            gradeStack.topAnchor.constraint(equalTo: colorScrollView.bottomAnchor, constant: 16),
+            gradeStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            gradeStack.widthAnchor.constraint(equalToConstant: 80),
+            
+            gradeField.heightAnchor.constraint(equalToConstant: 36),
+            
+            // Sent Switch (Replacing Button)
+            sentStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            sentStack.centerYAnchor.constraint(equalTo: gradeStack.centerYAnchor),
+            // sentStack.heightAnchor.constraint(equalToConstant: 36),
+            
+            // Attempts (Between Grade and Send)
+            attemptsStack.centerYAnchor.constraint(equalTo: gradeStack.centerYAnchor),
+            attemptsStack.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            
+            // Bottom constraint
+            gradeStack.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
         ])
-
-        for btn in colorButtons {
-            btn.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                btn.widthAnchor.constraint(equalToConstant: 32),
-                btn.heightAnchor.constraint(equalToConstant: 32)
-            ])
-        }
     }
-
+    
+    // ... helpers and configure ...
+    
     private func createColorButton(color: UIColor, tag: Int) -> UIButton {
         let btn = UIButton(type: .custom)
         btn.backgroundColor = color
-        btn.layer.cornerRadius = 16
-        btn.layer.borderWidth = 2
-        btn.layer.borderColor = UIColor.systemGray4.cgColor
+        btn.layer.cornerRadius = 14
+        btn.layer.borderWidth = 0
+        // btn.layer.borderColor = UIColor.systemGray4.cgColor
         btn.tag = tag
         btn.addTarget(self, action: #selector(colorTapped(_:)), for: .touchUpInside)
-
+        
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        btn.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        
         if color == .white || color == .systemYellow {
             btn.layer.shadowColor = UIColor.black.cgColor
             btn.layer.shadowOffset = CGSize(width: 0, height: 1)
-            btn.layer.shadowOpacity = 0.2
+            btn.layer.shadowOpacity = 0.1
             btn.layer.shadowRadius = 2
         }
+        
         return btn
     }
 
@@ -663,50 +753,57 @@ class RouteCell: UITableViewCell {
         self.route = route
         self.discipline = discipline
 
-        headerLabel.text = "루트 \(routeNumber)"
+        headerLabel.text = "Route #\(routeNumber)"
         deleteButton.isHidden = !canDelete
 
         gradeField.text = route.grade
-        stepper.value = Double(route.attempts)
-        metricValueLabel.text = "\(route.attempts)"
+        attemptsStepper.value = Double(route.attempts)
+        attemptsValueLabel.text = "\(route.attempts)"
+        
+        // Init switch state
         sentSwitch.isOn = route.isSent
+        
+        updateColorSelection()
 
-        // Update UI based on discipline
+        // Hide/Show color section based on discipline
         let isBouldering = discipline == .bouldering
-        colorSectionView.isHidden = !isBouldering
-
-        gradeTopToHeaderConstraint.isActive = !isBouldering
-        gradeTopToColorConstraint.isActive = isBouldering
-
-        if isBouldering {
-            gradeLabel.text = "난이도 (선택)"
-            gradeField.placeholder = "예: V3, V5"
-            metricLabel.text = "시도 횟수"
-            updateColorSelection()
-        } else {
-            gradeLabel.text = "난이도"
-            gradeField.placeholder = "예: 5.11a, 5.12b"
-            metricLabel.text = "테이크 횟수"
-        }
+        colorScrollView.isHidden = !isBouldering
+        colorSectionHeightConstraint.constant = isBouldering ? 44 : 0
+        
+        // Update labels
+        attemptsLabel.text = isBouldering ? "ATTEMPTS" : "TAKES"
+    }
+    
+    // Removed updateSentButton() as we are observing switch
+    
+    // ... updateColorSelection ...
+    
+    // MARK: - Actions
+    
+    @objc private func sentChanged() {
+        route.isSent = sentSwitch.isOn
+        delegate?.routeCellDidUpdate(self, route: route)
     }
 
     private func updateColorSelection() {
+        // ... (Similar specific logic for highlight selected)
         for (i, btn) in colorButtons.enumerated() {
-            let isSelected = route.customColor == nil && route.selectedColorIndex == i
-            btn.layer.borderColor = isSelected ? UIColor.systemBlue.cgColor : UIColor.systemGray4.cgColor
-            btn.layer.borderWidth = isSelected ? 3 : 2
+             let isSelected = route.customColor == nil && route.selectedColorIndex == i
+             if isSelected {
+                 btn.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
+                 btn.layer.borderWidth = 2
+                 btn.layer.borderColor = UIColor.label.cgColor
+             } else {
+                 btn.transform = .identity
+                 btn.layer.borderWidth = 0
+             }
         }
-
+        
         if let custom = route.customColor {
-            customColorButton.backgroundColor = custom
-            customColorButton.setImage(nil, for: .normal)
-            customColorButton.layer.borderColor = UIColor.systemBlue.cgColor
-            customColorButton.layer.borderWidth = 3
+             customColorButton.tintColor = custom
+             // Highlight custom button logic...
         } else {
-            customColorButton.backgroundColor = .clear
-            customColorButton.setImage(UIImage(systemName: "plus"), for: .normal)
-            customColorButton.layer.borderColor = UIColor.systemGray4.cgColor
-            customColorButton.layer.borderWidth = 2
+             customColorButton.tintColor = .label
         }
     }
 
@@ -733,15 +830,12 @@ class RouteCell: UITableViewCell {
     }
 
     @objc private func stepperChanged() {
-        route.attempts = Int(stepper.value)
-        metricValueLabel.text = "\(route.attempts)"
+        route.attempts = Int(attemptsStepper.value)
+        attemptsValueLabel.text = "\(route.attempts)"
         delegate?.routeCellDidUpdate(self, route: route)
     }
 
-    @objc private func sentChanged() {
-        route.isSent = sentSwitch.isOn
-        delegate?.routeCellDidUpdate(self, route: route)
-    }
+    // Removed sentTapped action
 }
 
 // MARK: - RouteCell UITextFieldDelegate
