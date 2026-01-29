@@ -15,91 +15,33 @@ class StatisticsViewController: UIViewController {
     private var runningWorkouts: [WorkoutData] = []
     private var externalRunningWorkouts: [ExternalWorkout] = []
     private var climbingSessions: [ClimbingData] = []
+    
+    // Calendar Data
     private var runningDates: Set<DateComponents> = []
     private var climbingDates: Set<DateComponents> = []
-    private var selectedDate: DateComponents?
-    
-    // 날짜별 운동 타입 저장 (확장 가능한 구조)
     private var workoutsByDate: [DateComponents: Set<WorkoutType>] = [:]
+    private var selectedDate: DateComponents?
     
     // MARK: - UI Components
     
-    private let scrollView: UIScrollView = {
-        let sv = UIScrollView()
-        sv.showsVerticalScrollIndicator = true
-        sv.alwaysBounceVertical = true
-        return sv
-    }()
-    
-    private let contentStackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 20
-        stack.alignment = .fill
-        return stack
-    }()
-    
-    // 통계 요약 섹션
-    private let statsSummaryContainer: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .horizontal
-        stack.spacing = 12
-        stack.distribution = .fillEqually
-        return stack
-    }()
-    
-    private lazy var runningStatsCard = StatsSummaryCard(
-        title: "러닝",
-        icon: "figure.run",
-        color: .systemBlue
-    )
-    
-    private lazy var climbingStatsCard = StatsSummaryCard(
-        title: "클라이밍",
-        icon: "figure.climbing",
-        color: .systemOrange
-    )
-    
-    // 달력
-    private let calendarView = UICalendarView()
-    
-    // 선택된 날짜의 운동 목록
-    private let workoutListContainer: UIView = {
-        let view = UIView()
-        view.backgroundColor = .secondarySystemBackground
-        view.layer.cornerRadius = 16
-        return view
-    }()
-    
-    private let workoutListHeaderLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .semibold)
-        label.textColor = .label
-        return label
-    }()
-    
-    private let workoutListStackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 8
-        stack.alignment = .fill
-        return stack
-    }()
-    
-    private let emptyWorkoutLabel: UILabel = {
-        let label = UILabel()
-        label.text = "이 날짜에 운동 기록이 없습니다"
-        label.font = .systemFont(ofSize: 14)
-        label.textColor = .secondaryLabel
-        label.textAlignment = .center
-        label.isHidden = true
-        return label
+    private lazy var collectionView: UICollectionView = {
+        let layout = createCompositionalLayout()
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.backgroundColor = .systemBackground
+        cv.delegate = self
+        cv.dataSource = self
+        cv.register(StatsSummaryCell.self, forCellWithReuseIdentifier: StatsSummaryCell.identifier)
+        cv.register(CalendarCell.self, forCellWithReuseIdentifier: CalendarCell.identifier)
+        cv.register(RecentSessionCell.self, forCellWithReuseIdentifier: RecentSessionCell.identifier)
+        cv.register(SectionHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: SectionHeaderView.identifier)
+        return cv
     }()
     
     // MARK: - Lifecycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .dark // Force Dark Mode
         setupUI()
         setupNotificationObservers()
     }
@@ -117,80 +59,59 @@ class StatisticsViewController: UIViewController {
     
     private func setupUI() {
         view.backgroundColor = .systemBackground
-        navigationItem.largeTitleDisplayMode = .never
-        title = "통계"
+        navigationController?.navigationBar.prefersLargeTitles = true
+        title = "Statistics"
         
-        // Scroll View
-        view.addSubview(scrollView)
-        scrollView.snp.makeConstraints { make in
-            make.edges.equalTo(view.safeAreaLayoutGuide)
+        view.addSubview(collectionView)
+        collectionView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
         }
-        
-        scrollView.addSubview(contentStackView)
-        contentStackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(16)
-            make.width.equalToSuperview().offset(-32)
-        }
-        
-        // 통계 요약 카드
-        statsSummaryContainer.addArrangedSubview(runningStatsCard)
-        statsSummaryContainer.addArrangedSubview(climbingStatsCard)
-        contentStackView.addArrangedSubview(statsSummaryContainer)
-        statsSummaryContainer.snp.makeConstraints { make in
-            make.height.equalTo(100)
-        }
-        
-        // 범례
-        let legendContainer = WorkoutLegendView()
-        contentStackView.addArrangedSubview(legendContainer)
-        
-        // 달력
-        setupCalendarView()
-        contentStackView.addArrangedSubview(calendarView)
-        
-        // 운동 목록 컨테이너
-        setupWorkoutListContainer()
-        contentStackView.addArrangedSubview(workoutListContainer)
     }
     
-    private func setupCalendarView() {
-        calendarView.calendar = Calendar.current
-        calendarView.locale = Locale(identifier: "ko_KR")
-        calendarView.fontDesign = .rounded
-        calendarView.delegate = self
-        calendarView.tintColor = .systemOrange
-        calendarView.backgroundColor = .secondarySystemBackground
-        calendarView.layer.cornerRadius = 16
-        
-        let selection = UICalendarSelectionSingleDate(delegate: self)
-        calendarView.selectionBehavior = selection
-    }
-    
-    private func setupWorkoutListContainer() {
-        workoutListContainer.addSubview(workoutListHeaderLabel)
-        workoutListContainer.addSubview(workoutListStackView)
-        workoutListContainer.addSubview(emptyWorkoutLabel)
-        
-        workoutListHeaderLabel.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(16)
+    private func createCompositionalLayout() -> UICollectionViewLayout {
+        return UICollectionViewCompositionalLayout { (sectionIndex, layoutEnvironment) -> NSCollectionLayoutSection? in
+            if sectionIndex == 0 {
+                // Summary Section: 2 columns
+                let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .absolute(120))
+                let item = NSCollectionLayoutItem(layoutSize: itemSize)
+                item.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+                
+                let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(120))
+                let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+                
+                let section = NSCollectionLayoutSection(group: group)
+                section.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 16, bottom: 24, trailing: 16)
+                return section
+            } else if sectionIndex == 1 {
+                // Calendar Section
+                let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(400))
+                let item = NSCollectionLayoutItem(layoutSize: itemSize)
+                
+                let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(400))
+                let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+                
+                let section = NSCollectionLayoutSection(group: group)
+                section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 24, trailing: 16)
+                return section
+            } else {
+                // Recent Sessions Section: List
+                let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(80))
+                let item = NSCollectionLayoutItem(layoutSize: itemSize)
+                
+                let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(80))
+                let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+                
+                let section = NSCollectionLayoutSection(group: group)
+                section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 16, trailing: 16)
+                section.interGroupSpacing = 12
+                
+                let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
+                let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+                section.boundarySupplementaryItems = [header]
+                
+                return section
+            }
         }
-        
-        workoutListStackView.snp.makeConstraints { make in
-            make.top.equalTo(workoutListHeaderLabel.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(12)
-            make.bottom.equalToSuperview().offset(-16)
-        }
-        
-        emptyWorkoutLabel.snp.makeConstraints { make in
-            make.top.equalTo(workoutListHeaderLabel.snp.bottom).offset(20)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().offset(-20)
-        }
-        
-        // 초기 상태: 오늘 날짜 선택
-        let today = Calendar.current.dateComponents([.year, .month, .day], from: Date())
-        selectedDate = today
-        updateWorkoutListHeader()
     }
     
     private func setupNotificationObservers() {
@@ -209,288 +130,789 @@ class StatisticsViewController: UIViewController {
     // MARK: - Data Loading
     
     private func refreshData() {
+        // Reset Date Data
         runningDates.removeAll()
         climbingDates.removeAll()
+        workoutsByDate.removeAll()
         
-        loadClimbingData()
-        loadRunningData()
-    }
-    
-    private func loadClimbingData() {
-        climbingSessions = ClimbingDataManager.shared.loadSessions()
+        // Load Data
+        let sessions = ClimbingDataManager.shared.loadSessions()
+        climbingSessions = sessions.sorted(by: { $0.sessionDate > $1.sessionDate })
         
         for session in climbingSessions {
             let components = Calendar.current.dateComponents([.year, .month, .day], from: session.sessionDate)
             climbingDates.insert(components)
+            workoutsByDate[components, default: []].insert(.climbing)
         }
         
-        updateClimbingStatsCard()
-        updateCalendarDecorations()
-        updateWorkoutListForSelectedDate()
-    }
-    
-    private func loadRunningData() {
-        // 외부 임포트 러닝 기록 로드
-        externalRunningWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == "러닝" }
+        let dispatchGroup = DispatchGroup()
         
-        for workout in externalRunningWorkouts {
-            let components = Calendar.current.dateComponents([.year, .month, .day], from: workout.workoutData.startDate)
-            runningDates.insert(components)
-        }
-        
-        // HealthKit 러닝 기록 로드
+        dispatchGroup.enter()
         WorkoutManager.shared.fetchWorkouts { [weak self] workouts in
             guard let self = self else { return }
-            
             self.runningWorkouts = workouts.filter { $0.workoutType == "러닝" }
             
             for workout in self.runningWorkouts {
                 let components = Calendar.current.dateComponents([.year, .month, .day], from: workout.startDate)
                 self.runningDates.insert(components)
+                self.workoutsByDate[components, default: []].insert(.running)
             }
-            
-            self.updateRunningStatsCard()
-            self.updateCalendarDecorations()
-            self.updateWorkoutListForSelectedDate()
-        }
-    }
-    
-    private func updateCalendarDecorations() {
-        // workoutsByDate 업데이트
-        workoutsByDate.removeAll()
-        for date in runningDates {
-            workoutsByDate[date, default: []].insert(.running)
-        }
-        for date in climbingDates {
-            workoutsByDate[date, default: []].insert(.climbing)
+            dispatchGroup.leave()
         }
         
-        let allDates = runningDates.union(climbingDates)
-        calendarView.reloadDecorations(forDateComponents: Array(allDates), animated: true)
-    }
-    
-    // MARK: - UI Updates
-    
-    private func updateRunningStatsCard() {
-        let healthKitCount = runningWorkouts.count
-        let externalCount = externalRunningWorkouts.count
-        let totalCount = healthKitCount + externalCount
-        
-        let healthKitDistance = runningWorkouts.reduce(0) { $0 + $1.distance }
-        let externalDistance = externalRunningWorkouts.reduce(0) { $0 + $1.workoutData.distance }
-        let totalDistance = healthKitDistance + externalDistance
-        
-        runningStatsCard.update(
-            count: "\(totalCount)회",
-            subtitle: String(format: "%.1fkm", totalDistance / 1000)
-        )
-    }
-    
-    private func updateClimbingStatsCard() {
-        let count = climbingSessions.count
-        let totalRoutes = climbingSessions.reduce(0) { $0 + $1.totalRoutes }
-        
-        climbingStatsCard.update(
-            count: "\(count)회",
-            subtitle: "\(totalRoutes)루트"
-        )
-    }
-    
-    // MARK: - Workout List
-    
-    private func updateWorkoutListHeader() {
-        guard let date = selectedDate,
-              let year = date.year,
-              let month = date.month,
-              let day = date.day else {
-            workoutListHeaderLabel.text = "운동 기록"
-            return
-        }
-        
-        workoutListHeaderLabel.text = "\(month)월 \(day)일 운동 기록"
-    }
-    
-    private func updateWorkoutListForSelectedDate() {
-        // Clear existing cells
-        workoutListStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        
-        guard let selectedDate = self.selectedDate,
-              let year = selectedDate.year,
-              let month = selectedDate.month,
-              let day = selectedDate.day else {
-            showEmptyState()
-            return
-        }
-        
-        // Create normalized components for comparison
-        var targetComponents = DateComponents()
-        targetComponents.year = year
-        targetComponents.month = month
-        targetComponents.day = day
-        
-        var workoutsForDate: [(type: SportType, view: UIView)] = []
-        
-        // Get HealthKit running workouts for selected date
-        for workout in runningWorkouts {
-            let workoutDate = Calendar.current.dateComponents([.year, .month, .day], from: workout.startDate)
-            if workoutDate.year == year && workoutDate.month == month && workoutDate.day == day {
-                let cell = createRunningWorkoutCell(workout: workout)
-                workoutsForDate.append((.running, cell))
-            }
-        }
-        
-        // Get external running workouts for selected date
+        dispatchGroup.enter()
+        // Mock async for external if needed, but currently synchronous
+        externalRunningWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == "러닝" }
         for workout in externalRunningWorkouts {
-            let workoutDate = Calendar.current.dateComponents([.year, .month, .day], from: workout.workoutData.startDate)
-            if workoutDate.year == year && workoutDate.month == month && workoutDate.day == day {
-                let cell = createExternalRunningWorkoutCell(workout: workout)
-                workoutsForDate.append((.running, cell))
-            }
+            let components = Calendar.current.dateComponents([.year, .month, .day], from: workout.workoutData.startDate)
+            runningDates.insert(components)
+            workoutsByDate[components, default: []].insert(.running)
         }
+        dispatchGroup.leave()
         
-        // Get climbing sessions for selected date
-        for session in climbingSessions {
-            let sessionDate = Calendar.current.dateComponents([.year, .month, .day], from: session.sessionDate)
-            if sessionDate.year == year && sessionDate.month == month && sessionDate.day == day {
-                let cell = createClimbingWorkoutCell(session: session)
-                workoutsForDate.append((.climbing, cell))
+        dispatchGroup.notify(queue: .main) { [weak self] in
+            // Default selected date to today if not set
+            if self?.selectedDate == nil {
+                self?.selectedDate = Calendar.current.dateComponents([.year, .month, .day], from: Date())
             }
+            self?.collectionView.reloadData()
         }
+    }
+    
+    // Computed property to get filtered workouts for selected date
+    private var filteredItems: [(type: SportType, data: Any, date: Date)] {
+        guard let dateComponents = selectedDate,
+              let date = Calendar.current.date(from: dateComponents) else { return [] }
         
-        if workoutsForDate.isEmpty {
-            showEmptyState()
-        } else {
-            hideEmptyState()
-            for (_, cellView) in workoutsForDate {
-                workoutListStackView.addArrangedSubview(cellView)
-            }
-        }
-    }
-    
-    private func showEmptyState() {
-        emptyWorkoutLabel.isHidden = false
-        workoutListStackView.isHidden = true
-    }
-    
-    private func hideEmptyState() {
-        emptyWorkoutLabel.isHidden = true
-        workoutListStackView.isHidden = false
-    }
-    
-    // MARK: - Workout Cells Helpers
-    
-    private func createRunningWorkoutCell(workout: WorkoutData) -> UIView {
-        let cell = RunningWorkoutCell()
-        cell.configure(with: workout)
-        cell.onTap = { [weak self] in
-            self?.openRunningDetail(workout: workout)
-        }
-        return cell
-    }
-    
-    private func openRunningDetail(workout: WorkoutData) {
-        let detailVC = RunningDetailViewController()
-        detailVC.workoutData = workout
-        let navVC = UINavigationController(rootViewController: detailVC)
-        navVC.modalPresentationStyle = .fullScreen
-        present(navVC, animated: true)
-    }
-    
-    private func createExternalRunningWorkoutCell(workout: ExternalWorkout) -> UIView {
-        let cell = ExternalRunningWorkoutCell()
-        cell.configure(with: workout)
-        return cell
-    }
-    
-    private func createClimbingWorkoutCell(session: ClimbingData) -> UIView {
-        let cell = ClimbingSessionCell()
-        cell.configure(with: session)
-        cell.onTap = { [weak self] in
-            self?.openClimbingDetail(session: session)
-        }
-        return cell
-    }
-    
-    private func openClimbingDetail(session: ClimbingData) {
-        let detailVC = ClimbingDetailViewController()
-        detailVC.climbingData = session
-        let navVC = UINavigationController(rootViewController: detailVC)
-        navVC.modalPresentationStyle = .fullScreen
-        present(navVC, animated: true)
-    }
-}
-
-// MARK: - UICalendarViewDelegate
-
-extension StatisticsViewController: UICalendarViewDelegate {
-    func calendarView(_ calendarView: UICalendarView, decorationFor dateComponents: DateComponents) -> UICalendarView.Decoration? {
-        // Calendar.current.dateComponents를 사용해서 저장된 것과 동일한 형식으로 생성
-        guard let date = Calendar.current.date(from: dateComponents) else {
-            return nil
-        }
         let queryComponents = Calendar.current.dateComponents([.year, .month, .day], from: date)
         
-        guard let workoutTypes = workoutsByDate[queryComponents], !workoutTypes.isEmpty else {
-            return nil
+        var items: [(SportType, Any, Date)] = []
+        
+        // Filter Climbing
+        for session in climbingSessions {
+             let sessionDate = Calendar.current.dateComponents([.year, .month, .day], from: session.sessionDate)
+             if sessionDate == queryComponents {
+                 items.append((.climbing, session, session.sessionDate))
+             }
         }
         
-        // 운동 타입을 displayOrder로 정렬
-        let sortedTypes = workoutTypes.sorted { $0.displayOrder < $1.displayOrder }
-        let typeCount = sortedTypes.count
+        // Filter Running
+        for workout in runningWorkouts {
+            let workoutDate = Calendar.current.dateComponents([.year, .month, .day], from: workout.startDate)
+            if workoutDate == queryComponents {
+                items.append((.running, workout, workout.startDate))
+            }
+        }
         
-        if typeCount == 1 {
-            // 1개 운동: 해당 색상 도트
-            return .default(color: sortedTypes[0].color, size: .medium)
+        for workout in externalRunningWorkouts {
+            let workoutDate = Calendar.current.dateComponents([.year, .month, .day], from: workout.workoutData.startDate)
+            if workoutDate == queryComponents {
+                items.append((.running, workout, workout.workoutData.startDate))
+            }
+        }
+        
+        return items.sorted(by: { $0.2 > $1.2 })
+    }
+}
+
+// MARK: - UICollectionViewDataSource
+
+extension StatisticsViewController: UICollectionViewDataSource {
+    
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return 3 // Summary, Calendar, Recent(Filtered)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if section == 0 {
+            return 2 // Running, Climbing
+        } else if section == 1 {
+            return 1 // Calendar View
         } else {
-            // 2개 이상 운동: 커스텀 뷰
-            let label = UILabel()
-            label.textAlignment = .center
+            return max(1, filteredItems.count) // Show empty state if needed, but simplified for now
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        if indexPath.section == 0 {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StatsSummaryCell.identifier, for: indexPath) as! StatsSummaryCell
+            if indexPath.item == 0 {
+                let totalDistance = (runningWorkouts.reduce(0) { $0 + $1.distance } + externalRunningWorkouts.reduce(0) { $0 + $1.workoutData.distance }) / 1000.0
+                cell.configure(title: "Running", value: String(format: "%.1f km", totalDistance), icon: "figure.run", color: .systemBlue)
+            } else {
+                let totalRoutes = climbingSessions.reduce(0) { $0 + $1.totalRoutes }
+                cell.configure(title: "Climbing", value: "\(totalRoutes) Routes", icon: "figure.climbing", color: .systemOrange)
+            }
+            return cell
+        } else if indexPath.section == 1 {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CalendarCell.identifier, for: indexPath) as! CalendarCell
+            cell.configure(delegate: self, selectedDate: selectedDate)
+            return cell
+        } else {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecentSessionCell.identifier, for: indexPath) as! RecentSessionCell
             
-            let combinedString = NSMutableAttributedString()
-            
-            // 최대 2개의 도트 표시
-            for i in 0..<min(typeCount, 2) {
-                // Add spacing if not first
-                if i > 0 {
-                    combinedString.append(NSAttributedString(string: " "))
+            if filteredItems.isEmpty {
+                 // Empty state placeholder reuse logic or simple check
+                 cell.configure(icon: "calendar", title: "No Workouts", subtitle: "Select a date with activity", date: Date(), color: .secondaryLabel)
+            } else {
+                let item = filteredItems[indexPath.item]
+                switch item.type {
+                case .climbing:
+                    if let session = item.data as? ClimbingData {
+                        cell.configure(
+                            icon: "figure.climbing",
+                            title: session.gymName.isEmpty ? "Climbing" : session.gymName,
+                            subtitle: "\(session.totalRoutes) Routes",
+                            date: session.sessionDate,
+                            color: .systemOrange
+                        )
+                    }
+                case .running:
+                    if let workout = item.data as? WorkoutData {
+                        cell.configure(
+                            icon: "figure.run",
+                            title: "Running",
+                            subtitle: String(format: "%.1fkm", workout.distance/1000),
+                            date: workout.startDate,
+                            color: .systemBlue
+                        )
+                    } else if let workout = item.data as? ExternalWorkout {
+                        cell.configure(
+                            icon: "figure.run",
+                            title: "Running (Ext)",
+                            subtitle: String(format: "%.1fkm", workout.workoutData.distance/1000),
+                            date: workout.workoutData.startDate,
+                            color: .systemBlue
+                        )
+                    }
+                default: break
                 }
-                
-                let dotString = NSAttributedString(
-                    string: "●",
-                    attributes: [
-                        .foregroundColor: sortedTypes[i].color,
-                        .font: UIFont.systemFont(ofSize: 10)
-                    ]
-                )
-                combinedString.append(dotString)
+            }
+            return cell
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        let header = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: SectionHeaderView.identifier, for: indexPath) as! SectionHeaderView
+        if indexPath.section == 2 {
+            if let date = selectedDate, let month = date.month, let day = date.day {
+                header.titleLabel.text = "\(month)월 \(day)일"
+            } else {
+                header.titleLabel.text = "선택된 날짜"
+            }
+        } else {
+            header.titleLabel.text = ""
+        }
+        return header
+    }
+}
+
+extension StatisticsViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        // Only handle taps in Recent Sessions section (Section 2)
+        guard indexPath.section == 2 else { return }
+        
+        let items = filteredItems
+        guard indexPath.item < items.count else { return }
+        
+        let item = items[indexPath.item]
+        
+        switch item.type {
+        case .climbing:
+            if let session = item.data as? ClimbingData {
+                let detailVC = ClimbingDetailViewController()
+                detailVC.climbingData = session
+                let nav = UINavigationController(rootViewController: detailVC)
+                present(nav, animated: true)
             }
             
-            if typeCount > 2 {
-                // 3개 이상 운동: '+' 심볼 추가
-                combinedString.append(NSAttributedString(string: " "))
-                let plusString = NSAttributedString(
-                    string: "+",
-                    attributes: [
-                        .foregroundColor: UIColor.secondaryLabel,
-                        .font: UIFont.systemFont(ofSize: 10, weight: .bold)
-                    ]
-                )
-                combinedString.append(plusString)
-            }
+        case .running:
+             // Running Detail
+             if let workout = item.data as? WorkoutData {
+                 let detailVC = RunningDetailViewController()
+                 detailVC.workoutData = workout
+                 let nav = UINavigationController(rootViewController: detailVC)
+                 present(nav, animated: true)
+             } else if let externalWorkout = item.data as? ExternalWorkout {
+                 // For now, minimal support or ignore external
+                 // Or map ExternalWorkout to WorkoutData if compatible
+             }
             
-            label.attributedText = combinedString
-            return .customView { label }
+        default: break
+        }
+    }
+}
+
+// MARK: - Calendar Delegates
+
+extension StatisticsViewController: CustomCalendarViewDelegate {
+    
+    func calendarView(_ view: CustomCalendarView, didChangeMonth monthDate: Date) {
+        // Optional: Could load data for new month if pagination needed
+    }
+    
+    func calendarView(_ view: CustomCalendarView, decorationFor dateComponents: DateComponents) -> [UIColor]? {
+        guard let date = Calendar.current.date(from: dateComponents) else { return nil }
+        let queryComponents = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        
+        guard let types = workoutsByDate[queryComponents], !types.isEmpty else { return nil }
+        
+        var colors: [UIColor] = []
+        if types.contains(.running) { colors.append(.systemBlue) }
+        if types.contains(.climbing) { colors.append(.systemOrange) }
+        // Add other types if any
+        
+        return colors
+    }
+    
+    func calendarView(_ view: CustomCalendarView, didSelectDate dateComponents: DateComponents) {
+        self.selectedDate = dateComponents
+        
+        // Since we are using Compositional Layout, reloadData is fine but reloadSections is better for anims
+        UIView.performWithoutAnimation {
+            self.collectionView.reloadSections(IndexSet(integer: 2))
         }
     }
 }
 
 
-// MARK: - UICalendarSelectionSingleDateDelegate
+// MARK: - Cells
 
-extension StatisticsViewController: UICalendarSelectionSingleDateDelegate {
-    func dateSelection(_ selection: UICalendarSelectionSingleDate, didSelectDate dateComponents: DateComponents?) {
+class CalendarCell: UICollectionViewCell {
+    static let identifier = "CalendarCell"
+    
+    private let calendarView = CustomCalendarView()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.backgroundColor = .secondarySystemGroupedBackground
+        contentView.layer.cornerRadius = 16
+        contentView.layer.cornerCurve = .continuous
+        
+        contentView.addSubview(calendarView)
+        calendarView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+    }
+    
+    required init?(coder: NSCoder) { fatalError() }
+    
+    func configure(delegate: CustomCalendarViewDelegate, selectedDate: DateComponents?) {
+        calendarView.delegate = delegate
+        if let selectedDate = selectedDate {
+            calendarView.selectDate(selectedDate)
+        }
+        calendarView.reloadDecorations() // ensure dots update
+    }
+}
+
+class StatsSummaryCell: UICollectionViewCell {
+    static let identifier = "StatsSummaryCell"
+    
+    private let iconContainer = UIView()
+    private let iconImageView = UIImageView()
+    private let valueLabel = UILabel()
+    private let titleLabel = UILabel()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.backgroundColor = .secondarySystemGroupedBackground
+        contentView.layer.cornerRadius = 16
+        contentView.layer.cornerCurve = .continuous
+        
+        iconContainer.layer.cornerRadius = 10
+        iconContainer.addSubview(iconImageView)
+        
+        iconImageView.contentMode = .scaleAspectFit
+        iconImageView.tintColor = .white
+        
+        valueLabel.font = .systemFont(ofSize: 24, weight: .bold)
+        valueLabel.textColor = .label
+        
+        titleLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        titleLabel.textColor = .secondaryLabel
+        
+        let stack = UIStackView(arrangedSubviews: [iconContainer, valueLabel, titleLabel])
+        stack.axis = .vertical
+        stack.alignment = .leading
+        stack.spacing = 8
+        stack.setCustomSpacing(12, after: iconContainer)
+        
+        contentView.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(16)
+        }
+        
+        iconContainer.snp.makeConstraints { make in
+            make.width.height.equalTo(32)
+        }
+        
+        iconImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.equalTo(20)
+        }
+    }
+    
+    required init?(coder: NSCoder) { fatalError() }
+    
+    func configure(title: String, value: String, icon: String, color: UIColor) {
+        titleLabel.text = title
+        valueLabel.text = value
+        iconImageView.image = UIImage(systemName: icon)
+        iconContainer.backgroundColor = color
+    }
+}
+
+class RecentSessionCell: UICollectionViewCell {
+    static let identifier = "RecentSessionCell"
+    
+    private let iconContainer = UIView()
+    private let iconImageView = UIImageView()
+    private let titleLabel = UILabel()
+    private let subtitleLabel = UILabel()
+    private let dateLabel = UILabel()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.backgroundColor = .secondarySystemGroupedBackground
+        contentView.layer.cornerRadius = 16
+        contentView.layer.cornerCurve = .continuous
+        
+        iconContainer.layer.cornerRadius = 20
+        iconContainer.addSubview(iconImageView)
+        iconImageView.contentMode = .scaleAspectFit
+        iconImageView.tintColor = .white
+        
+        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        titleLabel.textColor = .label
+        
+        subtitleLabel.font = .systemFont(ofSize: 14)
+        subtitleLabel.textColor = .secondaryLabel
+        
+        dateLabel.font = .systemFont(ofSize: 12)
+        dateLabel.textColor = .tertiaryLabel
+        
+        let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        textStack.axis = .vertical
+        textStack.spacing = 2
+        
+        contentView.addSubview(iconContainer)
+        contentView.addSubview(textStack)
+        contentView.addSubview(dateLabel)
+        
+        iconContainer.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(40)
+        }
+        
+        iconImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.equalTo(24)
+        }
+        
+        textStack.snp.makeConstraints { make in
+            make.leading.equalTo(iconContainer.snp.trailing).offset(12)
+            make.centerY.equalToSuperview()
+        }
+        
+        dateLabel.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-16)
+            make.centerY.equalToSuperview()
+        }
+    }
+    
+    required init?(coder: NSCoder) { fatalError() }
+    
+    func configure(icon: String, title: String, subtitle: String, date: Date, color: UIColor) {
+        iconImageView.image = UIImage(systemName: icon)
+        iconContainer.backgroundColor = color
+        titleLabel.text = title
+        subtitleLabel.text = subtitle
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        dateLabel.text = formatter.string(from: date)
+    }
+}
+
+class SectionHeaderView: UICollectionReusableView {
+    static let identifier = "SectionHeaderView"
+    let titleLabel = UILabel()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        titleLabel.textColor = .label
+        addSubview(titleLabel)
+        titleLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(4) // Align with cell content inset if needed
+            make.centerY.equalToSuperview()
+        }
+    }
+    
+    required init?(coder: NSCoder) { fatalError() }
+}
+
+
+// MARK: - Custom Calendar Implementation (Embedded to ensure build)
+
+protocol CustomCalendarViewDelegate: AnyObject {
+    func calendarView(_ view: CustomCalendarView, didSelectDate dateComponents: DateComponents)
+    func calendarView(_ view: CustomCalendarView, didChangeMonth monthDate: Date)
+    func calendarView(_ view: CustomCalendarView, decorationFor dateComponents: DateComponents) -> [UIColor]?
+}
+
+class CustomCalendarView: UIView {
+    
+    // MARK: - Properties
+    
+    weak var delegate: CustomCalendarViewDelegate?
+    
+    private var baseDate: Date = Date() {
+        didSet {
+            updateHeader()
+            collectionView.reloadData()
+            delegate?.calendarView(self, didChangeMonth: baseDate)
+        }
+    }
+    
+    private var selectedDate: DateComponents?
+    
+    private let calendar = Calendar.current
+    private let weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    
+    private var daysInMonth: [Date?] = []
+    
+    // MARK: - UI Components
+    
+    private let headerStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.distribution = .fill
+        return stack
+    }()
+    
+    private let monthLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.textColor = .label
+        return label
+    }()
+    
+    private let prevOpenButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        btn.tintColor = .label
+        return btn
+    }()
+    
+    private let nextOpenButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setImage(UIImage(systemName: "chevron.right"), for: .normal)
+        btn.tintColor = .label
+        return btn
+    }()
+    
+    private let weekDayStack: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        return stack
+    }()
+    
+    private lazy var collectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.minimumInteritemSpacing = 0
+        layout.minimumLineSpacing = 0
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.backgroundColor = .clear
+        cv.delegate = self
+        cv.dataSource = self
+        cv.register(CustomCalendarDayCell.self, forCellWithReuseIdentifier: CustomCalendarDayCell.identifier)
+        return cv
+    }()
+    
+    // MARK: - Init
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+        generateMonthData()
+        updateHeader()
+    }
+    
+    required init?(coder: NSCoder) { fatalError() }
+    
+    // MARK: - Setup
+    
+    private func setupUI() {
+        // Header
+        prevOpenButton.addTarget(self, action: #selector(prevMonth), for: .touchUpInside)
+        nextOpenButton.addTarget(self, action: #selector(nextMonth), for: .touchUpInside)
+        
+        headerStack.addArrangedSubview(monthLabel)
+        headerStack.addArrangedSubview(UIView()) // Flexible spacer
+        headerStack.addArrangedSubview(prevOpenButton)
+        headerStack.addArrangedSubview(nextOpenButton)
+        headerStack.setCustomSpacing(20, after: prevOpenButton)
+        
+        addSubview(headerStack)
+        headerStack.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(44)
+        }
+        
+        // Weekdays
+        for day in weekDays {
+            let label = UILabel()
+            label.text = day
+            label.font = .systemFont(ofSize: 13, weight: .semibold)
+            label.textColor = .secondaryLabel
+            label.textAlignment = .center
+            weekDayStack.addArrangedSubview(label)
+        }
+        
+        addSubview(weekDayStack)
+        weekDayStack.snp.makeConstraints { make in
+            make.top.equalTo(headerStack.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(20)
+        }
+        
+        // CollectionView
+        addSubview(collectionView)
+        collectionView.snp.makeConstraints { make in
+            make.top.equalTo(weekDayStack.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-8)
+        }
+    }
+    
+    // MARK: - Logic
+    
+    private func generateMonthData() {
+        daysInMonth.removeAll()
+        
+        guard let range = calendar.range(of: .day, in: .month, for: baseDate),
+              let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: baseDate)) else { return }
+        
+        let firstWeekday = calendar.component(.weekday, from: firstDayOfMonth) // 1 = Sun, 2 = Mon...
+        
+        // Add empty days for padding
+        for _ in 1..<firstWeekday {
+            daysInMonth.append(nil)
+        }
+        
+        // Add actual days
+        for day in 1...range.count {
+            if let date = calendar.date(byAdding: .day, value: day - 1, to: firstDayOfMonth) {
+                daysInMonth.append(date)
+            }
+        }
+    }
+    
+    private func updateHeader() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        monthLabel.text = formatter.string(from: baseDate)
+    }
+    
+    @objc private func prevMonth() {
+        if let newDate = calendar.date(byAdding: .month, value: -1, to: baseDate) {
+            baseDate = newDate
+            generateMonthData()
+        }
+    }
+    
+    @objc private func nextMonth() {
+        if let newDate = calendar.date(byAdding: .month, value: 1, to: baseDate) {
+            baseDate = newDate
+            generateMonthData()
+        }
+    }
+    
+    // MARK: - Configuration
+    
+    func selectDate(_ dateComponents: DateComponents) {
         selectedDate = dateComponents
-        updateWorkoutListHeader()
-        updateWorkoutListForSelectedDate()
+        guard let date = calendar.date(from: dateComponents) else { return }
+        
+        // If selected date is not in current month, switch month
+        let currentComponents = calendar.dateComponents([.year, .month], from: baseDate)
+        if currentComponents.year != dateComponents.year || currentComponents.month != dateComponents.month {
+            baseDate = date
+            generateMonthData()
+        } else {
+            collectionView.reloadData()
+        }
+    }
+    
+    func reloadDecorations() {
+        collectionView.reloadData()
+    }
+}
+
+// MARK: - UICollectionViewDelegateFlowLayout & DataSource
+
+extension CustomCalendarView: UICollectionViewDelegateFlowLayout, UICollectionViewDataSource {
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return daysInMonth.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CustomCalendarDayCell.identifier, for: indexPath) as! CustomCalendarDayCell
+        
+        guard let date = daysInMonth[indexPath.item] else {
+            cell.configureEmpty()
+            return cell
+        }
+        
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        let isSelected = selectedDate?.year == components.year && selectedDate?.month == components.month && selectedDate?.day == components.day
+        let isToday = calendar.isDateInToday(date)
+        
+        let decorations = delegate?.calendarView(self, decorationFor: components)
+        
+        cell.configure(day: components.day ?? 0, isSelected: isSelected, isToday: isToday, decorations: decorations)
+        
+        return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let date = daysInMonth[indexPath.item] else { return }
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        selectedDate = components
+        collectionView.reloadData()
+        delegate?.calendarView(self, didSelectDate: components)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        // 7 columns
+        let width = collectionView.bounds.width / 7.0
+        return CGSize(width: width, height: width) // Square cells
+    }
+}
+
+class CustomCalendarDayCell: UICollectionViewCell {
+    static let identifier = "CustomCalendarDayCell"
+    
+    private let selectionBackground = UIView()
+    private let dayLabel = UILabel()
+    private let dotStackView = UIStackView()
+    private let plusLabel = UILabel()
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) { fatalError() }
+    
+    private func setupUI() {
+        selectionBackground.backgroundColor = .systemBlue
+        selectionBackground.layer.cornerRadius = 18 // Approx radius
+        selectionBackground.isHidden = true
+        contentView.addSubview(selectionBackground)
+        
+        dayLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        dayLabel.textColor = .label
+        dayLabel.textAlignment = .center
+        contentView.addSubview(dayLabel)
+        
+        dotStackView.axis = .horizontal
+        dotStackView.spacing = 2
+        dotStackView.alignment = .center
+        dotStackView.distribution = .fillEqually
+        contentView.addSubview(dotStackView)
+        
+        plusLabel.text = "+"
+        plusLabel.font = .systemFont(ofSize: 10, weight: .bold)
+        plusLabel.textColor = .systemGray
+        plusLabel.textAlignment = .center
+        plusLabel.isHidden = true
+        contentView.addSubview(plusLabel)
+        
+        selectionBackground.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.equalTo(36)
+        }
+        
+        dayLabel.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+        }
+        
+        dotStackView.snp.makeConstraints { make in
+            make.top.equalTo(dayLabel.snp.bottom).offset(2)
+            make.centerX.equalToSuperview()
+            make.height.equalTo(6)
+        }
+        
+        plusLabel.snp.makeConstraints { make in
+            make.top.equalTo(dayLabel.snp.bottom).offset(0)
+            make.centerX.equalToSuperview()
+        }
+    }
+    
+    func configureEmpty() {
+        dayLabel.text = ""
+        selectionBackground.isHidden = true
+        dotStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        plusLabel.isHidden = true
+        isUserInteractionEnabled = false
+    }
+    
+    func configure(day: Int, isSelected: Bool, isToday: Bool, decorations: [UIColor]?) {
+        dayLabel.text = "\(day)"
+        isUserInteractionEnabled = true
+        
+        // Reset
+        dotStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        plusLabel.isHidden = true
+        
+        if isSelected {
+            selectionBackground.isHidden = false
+            selectionBackground.backgroundColor = .systemBlue // Or custom tint
+            dayLabel.textColor = .white
+            
+            // Show white dots if selected? Or hide? Standard behavior usually dots become white or hidden.
+            // Let's show white dots.
+            if let decorations = decorations, !decorations.isEmpty {
+                if decorations.count <= 2 {
+                    for _ in decorations {
+                        addDot(color: .white)
+                    }
+                } else {
+                    plusLabel.textColor = .white
+                    plusLabel.isHidden = false
+                }
+            }
+        } else {
+            selectionBackground.isHidden = true
+            dayLabel.textColor = isToday ? .systemBlue : .label
+            
+            if let decorations = decorations, !decorations.isEmpty {
+                if decorations.count <= 2 {
+                    for color in decorations {
+                        addDot(color: color)
+                    }
+                } else {
+                    plusLabel.textColor = .secondaryLabel
+                    plusLabel.isHidden = false
+                }
+            }
+        }
+    }
+    
+    private func addDot(color: UIColor) {
+        let dot = UIView()
+        dot.backgroundColor = color
+        dot.layer.cornerRadius = 2.5
+        dot.snp.makeConstraints { make in
+            make.width.height.equalTo(5)
+        }
+        dotStackView.addArrangedSubview(dot)
     }
 }

@@ -54,6 +54,7 @@ class HomeDashboardViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .dark // Force Dark Mode
         setupUI()
         setupSportCards()
     }
@@ -71,7 +72,7 @@ class HomeDashboardViewController: UIViewController {
     // MARK: - Setup
 
     private func setupUI() {
-        view.backgroundColor = .black
+        view.backgroundColor = .black // Deep black background
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentStackView)
@@ -113,6 +114,7 @@ class HomeDashboardViewController: UIViewController {
     }
 
     private func setupSportCards() {
+        sportsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for sport in SportType.allCases {
             let card = createSportCard(for: sport)
             sportsStackView.addArrangedSubview(card)
@@ -124,18 +126,27 @@ class HomeDashboardViewController: UIViewController {
 
     private func createSportCard(for sport: SportType) -> UIView {
         let card = UIView()
-        card.backgroundColor = sport.themeColor.withAlphaComponent(0.15)
-        card.layer.cornerRadius = 20
-        card.layer.borderWidth = 1
-        card.layer.borderColor = sport.themeColor.withAlphaComponent(0.3).cgColor
+        // Modern Dark Card Style
+        card.backgroundColor = .secondarySystemGroupedBackground // Dark gray in dark mode
+        card.layer.cornerRadius = 24
+        card.layer.cornerCurve = .continuous
+        // card.layer.borderWidth = 1
+        // card.layer.borderColor = UIColor.white.withAlphaComponent(0.1).cgColor
+        
+        // Subtle gradient or shadow
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.3
+        card.layer.shadowOffset = CGSize(width: 0, height: 4)
+        card.layer.shadowRadius = 8
 
         // Icon Container
         let iconContainer = UIView()
-        iconContainer.backgroundColor = sport.themeColor.withAlphaComponent(0.2)
+        // Use sport color for container with low alpha
+        iconContainer.backgroundColor = sport.themeColor.withAlphaComponent(0.15)
         iconContainer.layer.cornerRadius = 28
 
         let iconView = UIImageView()
-        let config = UIImage.SymbolConfiguration(pointSize: 28, weight: .medium)
+        let config = UIImage.SymbolConfiguration(pointSize: 26, weight: .semibold)
         iconView.image = UIImage(systemName: sport.iconName, withConfiguration: config)
         iconView.tintColor = sport.themeColor
         iconView.contentMode = .scaleAspectFit
@@ -148,49 +159,59 @@ class HomeDashboardViewController: UIViewController {
         // Labels
         let titleLabel = UILabel()
         titleLabel.text = sport.displayName
-        titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
+        titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
         titleLabel.textColor = .white
 
         let descriptionLabel = UILabel()
         descriptionLabel.text = getDescription(for: sport)
-        descriptionLabel.font = .systemFont(ofSize: 14)
-        descriptionLabel.textColor = .lightGray
+        descriptionLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        descriptionLabel.textColor = .secondaryLabel // Better contrast
         descriptionLabel.numberOfLines = 2
 
-        // Arrow
+        // Arrow - Use a circle button look
+        let arrowContainer = UIView()
+        arrowContainer.backgroundColor = .tertiarySystemGroupedBackground
+        arrowContainer.layer.cornerRadius = 16
+        
         let arrowView = UIImageView()
-        arrowView.image = UIImage(systemName: "chevron.right")
-        arrowView.tintColor = sport.themeColor
+        arrowView.image = UIImage(systemName: "arrow.right")
+        arrowView.tintColor = .white
         arrowView.contentMode = .scaleAspectFit
+        
+        arrowContainer.addSubview(arrowView)
+        arrowView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.equalTo(14)
+        }
 
         // Layout
         card.addSubview(iconContainer)
         card.addSubview(titleLabel)
         card.addSubview(descriptionLabel)
-        card.addSubview(arrowView)
+        card.addSubview(arrowContainer)
 
         iconContainer.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(20)
+            make.leading.equalToSuperview().offset(24)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(56)
         }
 
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconContainer.snp.trailing).offset(16)
-            make.top.equalToSuperview().offset(32)
-            make.trailing.equalTo(arrowView.snp.leading).offset(-16)
+            make.leading.equalTo(iconContainer.snp.trailing).offset(20)
+            make.top.equalTo(iconContainer.snp.top).offset(2)
+            make.trailing.equalTo(arrowContainer.snp.leading).offset(-16)
         }
 
         descriptionLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconContainer.snp.trailing).offset(16)
-            make.top.equalTo(titleLabel.snp.bottom).offset(6)
-            make.trailing.equalTo(arrowView.snp.leading).offset(-16)
+            make.leading.equalTo(titleLabel)
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.trailing.equalTo(arrowContainer.snp.leading).offset(-16)
         }
 
-        arrowView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-20)
+        arrowContainer.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-24)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(24)
+            make.width.height.equalTo(32)
         }
 
         // Tap Gesture
@@ -205,9 +226,9 @@ class HomeDashboardViewController: UIViewController {
     private func getDescription(for sport: SportType) -> String {
         switch sport {
         case .running:
-            return "HealthKit 또는 외부에서 가져온\n러닝 기록으로 사진 만들기"
+            return "HealthKit 데이터 연동\n러닝 기록 시각화"
         case .climbing:
-            return "볼더링, 리드 클라이밍\n직접 기록을 입력하여 사진 만들기"
+            return "볼더링, 리드 클라이밍\n루트 및 등반 기록"
         }
     }
 
@@ -220,7 +241,7 @@ class HomeDashboardViewController: UIViewController {
 
         // Animate tap
         UIView.animate(withDuration: 0.1, animations: {
-            card.transform = CGAffineTransform(scaleX: 0.97, y: 0.97)
+            card.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
         }) { _ in
             UIView.animate(withDuration: 0.1) {
                 card.transform = .identity
@@ -236,6 +257,7 @@ class HomeDashboardViewController: UIViewController {
             let workoutListVC = RunningListViewController()
             let navController = UINavigationController(rootViewController: workoutListVC)
             navController.modalPresentationStyle = .fullScreen
+            navController.overrideUserInterfaceStyle = .dark // Ensure Nav conforms
             present(navController, animated: true)
 
         case .climbing:
@@ -243,6 +265,7 @@ class HomeDashboardViewController: UIViewController {
             climbingInputVC.delegate = self
             let navController = UINavigationController(rootViewController: climbingInputVC)
             navController.modalPresentationStyle = .fullScreen
+            navController.overrideUserInterfaceStyle = .dark
             present(navController, animated: true)
         }
     }
