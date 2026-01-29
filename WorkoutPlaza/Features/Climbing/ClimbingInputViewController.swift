@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import PhotosUI
 
 protocol ClimbingInputDelegate: AnyObject {
     func climbingInputDidSave(_ controller: ClimbingInputViewController)
@@ -19,32 +20,49 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     weak var delegate: ClimbingInputDelegate?
 
     // MARK: - Data
-    private var gymName: String = ""
-    private var selectedDiscipline: ClimbingDiscipline = .bouldering
-    private var routes: [RouteData] = [RouteData()]
+    private var selectedGym: ClimbingGym? {
+        didSet {
+            // Update UI when gym changes (colors might change)
+            tableView.reloadData()
+        }
+    }
+    private var isCustomGym: Bool = false // Start with no selection
+    private var customGymName: String = ""
+    private var customLogoImage: UIImage?
+    
+    // Gym name is either selected gym's name or custom name
+    private var currentGymName: String {
+        return selectedGym?.name ?? customGymName
+    }
+    
+    private var currentGradeColors: [UIColor] {
+        let hexColors = selectedGym?.gradeColors ?? ClimbingGymManager.shared.defaultGradeColors
+        return hexColors.compactMap { UIColor(climbingHex: $0) }
+    }
+
+    private var selectedDiscipline: ClimbingDiscipline = .bouldering  // For next route to add
+    private var routes: [RouteData] = [RouteData(discipline: .bouldering)]
 
     struct RouteData {
+        var discipline: ClimbingDiscipline  // Each route has its own discipline
         var selectedColorIndex: Int?
         var customColor: UIColor?
         var grade: String = ""
         var attempts: Int = 1
         var isSent: Bool = false
 
-        var selectedColor: UIColor? {
-            if let custom = customColor {
-                return custom
-            }
-            if let index = selectedColorIndex {
-                return RouteData.presetColors[index]
+        init(discipline: ClimbingDiscipline = .bouldering) {
+            self.discipline = discipline
+        }
+
+        // Helper to get color from a provided palette
+        func resolveColor(from palette: [UIColor]) -> UIColor? {
+            if let custom = customColor { return custom }
+            if let index = selectedColorIndex, index < palette.count {
+                return palette[index]
             }
             return nil
         }
-
-        static let presetColors: [UIColor] = [
-            .systemRed, .systemOrange, .systemYellow, .systemGreen,
-            .systemBlue, .systemIndigo, .systemPurple, .systemPink,
-            .brown, .systemGray, .black
-        ]
     }
 
     // MARK: - Lifecycle
@@ -54,6 +72,11 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         overrideUserInterfaceStyle = .dark // Force Dark Mode
         setupTableView()
         setupNavigationBar()
+        setupKeyboardHandling()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - Setup
@@ -83,10 +106,44 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         tableView.backgroundColor = .systemGroupedBackground
         tableView.separatorStyle = .none
         tableView.keyboardDismissMode = .onDrag
+
+        // Enable dynamic cell height
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 200
+
         tableView.register(ClimbingHeaderCell.self, forCellReuseIdentifier: "ClimbingHeaderCell") // New Gym Name Cell
         tableView.register(DisciplineSelectionCell.self, forCellReuseIdentifier: "DisciplineSelectionCell") // New Discipline Cell
         tableView.register(RouteCell.self, forCellReuseIdentifier: "RouteCell")
         tableView.register(ButtonCell.self, forCellReuseIdentifier: "ButtonCell")
+    }
+
+    private func setupKeyboardHandling() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+        let keyboardHeight = keyboardFrame.height
+
+        let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: keyboardHeight, right: 0)
+        tableView.contentInset = contentInsets
+        tableView.scrollIndicatorInsets = contentInsets
+    }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        tableView.contentInset = .zero
+        tableView.scrollIndicatorInsets = .zero
     }
 
     @objc private func dismissTapped() {
@@ -96,15 +153,16 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     // MARK: - TableView DataSource
 
     func numberOfSections(in tableView: UITableView) -> Int {
-        return 4 // Gym, Discipline, Routes, Buttons
+        // Only show gym selection until a gym is selected
+        let hasGymSelected = selectedGym != nil || isCustomGym
+        return hasGymSelected ? 3 : 1  // Gym only, or Gym + Routes + Buttons (no discipline section)
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
-        case 0: return 1 // Gym name
-        case 1: return 1 // Discipline
-        case 2: return routes.count // Routes
-        case 3: return 2 // Add route + Create button
+        case 0: return isCustomGym ? 3 : 1  // Selector + (Name + Logo if custom)
+        case 1: return routes.count // Routes (discipline inside each route)
+        case 2: return 2 // Add route + Create button
         default: return 0
         }
     }
@@ -112,8 +170,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
         case 0: return nil // Header inside cell for modern look
-        case 1: return "종목"
-        case 2: return "루트 기록"
+        case 1: return "루트 기록"
         default: return nil
         }
     }
@@ -129,39 +186,88 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         return UITableView.automaticDimension
     }
 
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        // Show hint message when no gym is selected
+        if section == 0 && selectedGym == nil && !isCustomGym {
+            let footerView = UIView()
+            let label = UILabel()
+            label.text = "암장을 선택하면 기록을 시작할 수 있습니다"
+            label.font = .systemFont(ofSize: 14, weight: .regular)
+            label.textColor = .secondaryLabel
+            label.textAlignment = .center
+            label.numberOfLines = 0
+
+            footerView.addSubview(label)
+            label.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                label.topAnchor.constraint(equalTo: footerView.topAnchor, constant: 16),
+                label.leadingAnchor.constraint(equalTo: footerView.leadingAnchor, constant: 20),
+                label.trailingAnchor.constraint(equalTo: footerView.trailingAnchor, constant: -20),
+                label.bottomAnchor.constraint(equalTo: footerView.bottomAnchor, constant: -16)
+            ])
+
+            return footerView
+        }
+        return nil
+    }
+
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        if section == 0 && selectedGym == nil && !isCustomGym {
+            return UITableView.automaticDimension
+        }
+        return 0
+    }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         switch indexPath.section {
         case 0:
-            let cell = tableView.dequeueReusableCell(withIdentifier: "ClimbingHeaderCell", for: indexPath) as! ClimbingHeaderCell
-            cell.configure(placeholder: "클라이밍짐 이름", text: gymName) { [weak self] text in
-                self?.gymName = text
+            if indexPath.row == 0 {
+                // Gym Selector Cell
+                let cell = UITableViewCell(style: .value1, reuseIdentifier: "GymSelectorCell")
+                cell.textLabel?.text = "암장"
+                cell.detailTextLabel?.text = selectedGym?.name ?? (isCustomGym ? "사용자 지정" : "암장 선택")
+                cell.detailTextLabel?.textColor = selectedGym == nil && !isCustomGym ? .secondaryLabel : .label
+                cell.accessoryType = .disclosureIndicator
+                cell.backgroundColor = .secondarySystemGroupedBackground
+                return cell
+            } else if indexPath.row == 1 {
+                // Custom Name Input
+                let cell = tableView.dequeueReusableCell(withIdentifier: "ClimbingHeaderCell", for: indexPath) as! ClimbingHeaderCell
+                cell.configure(placeholder: "암장 이름 입력", text: customGymName) { [weak self] text in
+                    self?.customGymName = text
+                }
+                return cell
+            } else {
+                // Logo Picker
+                let cell = UITableViewCell(style: .default, reuseIdentifier: "LogoPickerCell")
+                cell.textLabel?.text = "로고 이미지 선택 (선택사항)"
+                cell.textLabel?.textColor = .systemBlue
+                cell.textLabel?.textAlignment = .center
+                if let logo = customLogoImage {
+                    cell.imageView?.image = logo
+                    cell.textLabel?.text = "이미지 변경"
+                } else {
+                    cell.imageView?.image = UIImage(systemName: "photo")
+                }
+                cell.backgroundColor = .secondarySystemGroupedBackground
+                return cell
             }
-            return cell
 
         case 1:
-            let cell = tableView.dequeueReusableCell(withIdentifier: "DisciplineSelectionCell", for: indexPath) as! DisciplineSelectionCell
-            cell.configure(
-                selectedDiscipline: selectedDiscipline
-            ) { [weak self] discipline in
-                self?.selectedDiscipline = discipline
-                self?.tableView.reloadSections(IndexSet(integer: 2), with: .automatic)
-            }
-            return cell
-
-        case 2:
             let cell = tableView.dequeueReusableCell(withIdentifier: "RouteCell", for: indexPath) as! RouteCell
             let route = routes[indexPath.row]
             cell.configure(
                 routeNumber: indexPath.row + 1,
                 route: route,
-                discipline: selectedDiscipline,
+                discipline: route.discipline,  // Use route's own discipline
+                availableColors: currentGradeColors, // Pass dynamic colors
                 canDelete: routes.count > 1
             )
             cell.delegate = self
             cell.tag = indexPath.row
             return cell
 
-        case 3:
+        case 2:
             let cell = tableView.dequeueReusableCell(withIdentifier: "ButtonCell", for: indexPath) as! ButtonCell
             if indexPath.row == 0 {
                 cell.configure(title: "+ 루트 추가", style: .secondary) { [weak self] in
@@ -182,49 +288,102 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     // MARK: - Actions
 
     private func addRoute() {
-        routes.append(RouteData())
-        tableView.insertRows(at: [IndexPath(row: routes.count - 1, section: 2)], with: .automatic)
+        routes.append(RouteData(discipline: selectedDiscipline))
+        tableView.insertRows(at: [IndexPath(row: routes.count - 1, section: 1)], with: .automatic)
     }
 
     private func deleteRoute(at index: Int) {
         guard routes.count > 1 else { return }
         routes.remove(at: index)
-        tableView.reloadSections(IndexSet(integer: 2), with: .automatic)
+        tableView.reloadSections(IndexSet(integer: 1), with: .automatic)
     }
 
     private func createRecord() {
-        guard !gymName.trimmingCharacters(in: .whitespaces).isEmpty else {
-            showAlert(message: "클라이밍짐 이름을 입력해주세요.")
+        let gymParams = getGymParams()
+        guard !gymParams.name.trimmingCharacters(in: .whitespaces).isEmpty else {
+            showAlert(message: "암장 이름을 입력하거나 선택해주세요.")
             return
         }
 
-        var climbingRoutes: [ClimbingRoute] = []
+        // Group routes by discipline
+        var boulderingRoutes: [ClimbingRoute] = []
+        var leadRoutes: [ClimbingRoute] = []
+        let colors = currentGradeColors
+
         for route in routes {
-            if route.selectedColor != nil || !route.grade.isEmpty {
-                climbingRoutes.append(ClimbingRoute(
+            let resolvedColor = route.resolveColor(from: colors)
+
+            if resolvedColor != nil || !route.grade.isEmpty {
+                let climbingRoute = ClimbingRoute(
                     grade: route.grade,
-                    colorHex: route.selectedColor?.toHexString(),
-                    attempts: selectedDiscipline == .bouldering ? route.attempts : nil,
-                    takes: selectedDiscipline == .leadEndurance ? route.attempts : nil,
+                    colorHex: resolvedColor?.toClimbingHex(),
+                    attempts: route.discipline == .bouldering ? route.attempts : nil,
+                    takes: route.discipline == .leadEndurance ? route.attempts : nil,
                     isSent: route.isSent
-                ))
+                )
+
+                if route.discipline == .bouldering {
+                    boulderingRoutes.append(climbingRoute)
+                } else {
+                    leadRoutes.append(climbingRoute)
+                }
             }
         }
 
-        guard !climbingRoutes.isEmpty else {
+        guard !boulderingRoutes.isEmpty || !leadRoutes.isEmpty else {
             showAlert(message: "최소 하나의 루트를 기록해주세요.")
             return
         }
 
-        let climbingData = ClimbingData(
-            gymName: gymName,
-            discipline: selectedDiscipline,
-            routes: climbingRoutes,
-            sessionDate: Date()
-        )
+        // Save bouldering session if exists
+        if !boulderingRoutes.isEmpty {
+            let boulderingData = ClimbingData(
+                gymName: gymParams.name,
+                discipline: .bouldering,
+                routes: boulderingRoutes,
+                sessionDate: Date()
+            )
+            ClimbingDataManager.shared.addSession(boulderingData)
+        }
 
-        // 먼저 저장
-        ClimbingDataManager.shared.addSession(climbingData)
+        // Save lead session if exists
+        if !leadRoutes.isEmpty {
+            let leadData = ClimbingData(
+                gymName: gymParams.name,
+                discipline: .leadEndurance,
+                routes: leadRoutes,
+                sessionDate: Date()
+            )
+            ClimbingDataManager.shared.addSession(leadData)
+        }
+
+        // Use the first session for card creation
+        let climbingData = !boulderingRoutes.isEmpty ?
+            ClimbingData(gymName: gymParams.name, discipline: .bouldering, routes: boulderingRoutes, sessionDate: Date()) :
+            ClimbingData(gymName: gymParams.name, discipline: .leadEndurance, routes: leadRoutes, sessionDate: Date())
+
+        // Save custom gym if it's a new custom gym
+        if isCustomGym && !gymParams.name.isEmpty {
+            // Check if custom gym with this name already exists
+            if ClimbingGymManager.shared.findGym(byName: gymParams.name) == nil {
+                let logoSource: ClimbingGym.LogoSource
+                if let logoData = gymParams.logoData {
+                    logoSource = .imageData(logoData)
+                } else {
+                    logoSource = .none
+                }
+
+                let newGym = ClimbingGym(
+                    name: gymParams.name,
+                    logoSource: logoSource,
+                    gradeColors: ClimbingGymManager.shared.defaultGradeColors,
+                    isBuiltIn: false
+                )
+                ClimbingGymManager.shared.addGym(newGym)
+            }
+        }
+
+        // Sessions already saved above (grouped by discipline)
 
         // 카드 생성 여부 묻기
         let alert = UIAlertController(
@@ -246,10 +405,106 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         present(alert, animated: true)
     }
 
+    private func getGymParams() -> (name: String, logoData: Data?) {
+        if let gym = selectedGym {
+            return (gym.name, nil) // Preset uses name-based logo lookup usually
+        }
+        return (customGymName, customLogoImage?.pngData())
+    }
+
     private func showAlert(message: String) {
         let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "확인", style: .default))
         present(alert, animated: true)
+    }
+    
+    // MARK: - TableView Delegate
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        if indexPath.section == 0 {
+            if indexPath.row == 0 {
+                showGymSelector()
+            } else if indexPath.row == 2 {
+                showImagePicker()
+            }
+        }
+    }
+    
+    // MARK: - Gym Selector
+
+    private func showGymSelector() {
+        let picker = GymPickerViewController()
+        picker.selectedGym = self.selectedGym
+        picker.delegate = self
+
+        let nav = UINavigationController(rootViewController: picker)
+        nav.modalPresentationStyle = .pageSheet
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(nav, animated: true)
+    }
+    
+    private func selectGym(_ gym: ClimbingGym) {
+        self.selectedGym = gym
+        self.isCustomGym = false
+        tableView.reloadSections([0, 2], with: .automatic)
+    }
+
+    private func selectCustomGym() {
+        self.selectedGym = nil
+        self.isCustomGym = true
+        self.customGymName = ""
+        self.customLogoImage = nil
+        tableView.reloadSections([0, 2], with: .automatic)
+    }
+    
+    // MARK: - Image Picker
+    
+    private func showImagePicker() {
+        var config = PHPickerConfiguration()
+        config.selectionLimit = 1
+        config.filter = .images
+        
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+}
+
+// MARK: - PHPickerViewControllerDelegate
+extension ClimbingInputViewController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        
+        guard let provider = results.first?.itemProvider,
+              provider.canLoadObject(ofClass: UIImage.self) else { return }
+        
+        provider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
+            DispatchQueue.main.async {
+                if let image = image as? UIImage {
+                    self?.customLogoImage = image
+                    self?.tableView.reloadRows(at: [IndexPath(row: 2, section: 0)], with: .automatic)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - GymPickerDelegate
+
+extension ClimbingInputViewController: GymPickerDelegate {
+    func gymPicker(_ picker: GymPickerViewController, didSelect gym: ClimbingGym?) {
+        if let gym = gym {
+            // 프리셋 또는 커스텀 암장 선택
+            selectGym(gym)
+        } else {
+            // 사용자 지정 선택
+            selectCustomGym()
+        }
     }
 }
 
@@ -259,6 +514,9 @@ extension ClimbingInputViewController: RouteCellDelegate {
     func routeCellDidUpdate(_ cell: RouteCell, route: ClimbingInputViewController.RouteData) {
         guard cell.tag < routes.count else { return }
         routes[cell.tag] = route
+
+        // Trigger cell height recalculation
+        tableView.performBatchUpdates(nil, completion: nil)
     }
 
     func routeCellDidRequestDelete(_ cell: RouteCell) {
@@ -283,7 +541,7 @@ extension ClimbingInputViewController: UIColorPickerViewControllerDelegate {
         guard index < routes.count else { return }
         routes[index].customColor = viewController.selectedColor
         routes[index].selectedColorIndex = nil
-        tableView.reloadRows(at: [IndexPath(row: index, section: 2)], with: .none)
+        tableView.reloadRows(at: [IndexPath(row: index, section: 1)], with: .none)
     }
 }
 
@@ -386,24 +644,24 @@ class DisciplineSelectionCell: UITableViewCell {
     required init?(coder: NSCoder) { fatalError() }
     
     private func setupButtons() {
-        stackView.spacing = 8
+        stackView.spacing = 6
         stackView.distribution = .fillEqually
         stackView.backgroundColor = .clear // No separator line
-        
+
         for (index, discipline) in ClimbingDiscipline.allCases.enumerated() {
             let btn = UIButton(type: .system)
             btn.setTitle(discipline.displayName, for: .normal)
             btn.setTitleColor(.secondaryLabel, for: .normal)
             btn.setTitleColor(.white, for: .selected)
             btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
-            
+
             // Initial state
             btn.backgroundColor = .tertiarySystemGroupedBackground
-            
-            // Fix shape: rounded rect
-            btn.layer.cornerRadius = 8
+
+            // More rectangular shape
+            btn.layer.cornerRadius = 4
             btn.layer.masksToBounds = true
-            
+
             btn.addTarget(self, action: #selector(buttonTapped(_:)), for: .touchUpInside)
             btn.tag = discipline.hashValue
             buttons.append(btn)
@@ -525,10 +783,12 @@ class RouteCell: UITableViewCell {
     // Header
     private let headerStack = UIStackView()
     private let headerLabel = UILabel()
+    private let disciplineSegment = UISegmentedControl(items: ["볼더링", "리드"])
     private let deleteButton = UIButton(type: .system)
 
     // Bouldering Color Section
     private let colorSectionView = UIView()
+    private let colorSectionLabel = UILabel()
     private let colorScrollView = UIScrollView()
     private let colorStack = UIStackView()
     private var colorButtons: [UIButton] = []
@@ -550,6 +810,9 @@ class RouteCell: UITableViewCell {
     
     // Constraints
     private var colorSectionHeightConstraint: NSLayoutConstraint!
+    private var gradeStackTopConstraint: NSLayoutConstraint!
+    private var gradeStackTopToHeaderConstraint: NSLayoutConstraint!
+    private var gradeStackTopToColorConstraint: NSLayoutConstraint!
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -586,18 +849,30 @@ class RouteCell: UITableViewCell {
         
         headerLabel.font = .systemFont(ofSize: 17, weight: .bold)
         headerLabel.textColor = .label
-        
+
+        // Discipline Segment
+        disciplineSegment.selectedSegmentIndex = 0
+        disciplineSegment.addTarget(self, action: #selector(disciplineChanged), for: .valueChanged)
+
         deleteButton.setImage(UIImage(systemName: "trash"), for: .normal)
         deleteButton.tintColor = .systemRed
         deleteButton.addTarget(self, action: #selector(deleteTapped), for: .touchUpInside)
-        
+
         headerStack.addArrangedSubview(headerLabel)
+        headerStack.addArrangedSubview(disciplineSegment)
         headerStack.addArrangedSubview(UIView()) // Spacer
         headerStack.addArrangedSubview(deleteButton)
         
         containerView.addSubview(headerStack)
         headerStack.translatesAutoresizingMaskIntoConstraints = false
-        
+
+        // Color Section Label
+        colorSectionLabel.text = "난이도 테이프"
+        colorSectionLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+        colorSectionLabel.textColor = .secondaryLabel
+        containerView.addSubview(colorSectionLabel)
+        colorSectionLabel.translatesAutoresizingMaskIntoConstraints = false
+
         // Color Section
         colorScrollView.showsHorizontalScrollIndicator = false
         colorStack.axis = .horizontal
@@ -613,8 +888,9 @@ class RouteCell: UITableViewCell {
             colorStack.heightAnchor.constraint(equalTo: colorScrollView.heightAnchor)
         ])
         
-        for i in 0..<ClimbingInputViewController.RouteData.presetColors.count {
-            let btn = createColorButton(color: ClimbingInputViewController.RouteData.presetColors[i], tag: i)
+        let defaults = ClimbingGymManager.shared.defaultGradeColors.compactMap { UIColor(climbingHex: $0) }
+        for i in 0..<defaults.count {
+            let btn = createColorButton(color: defaults[i], tag: i)
             colorButtons.append(btn)
             colorStack.addArrangedSubview(btn)
         }
@@ -629,16 +905,17 @@ class RouteCell: UITableViewCell {
         colorScrollView.translatesAutoresizingMaskIntoConstraints = false
         
         // Grade
-        gradeLabel.text = "GRADE"
+        gradeLabel.text = "GRADE (선택)"
         gradeLabel.font = .systemFont(ofSize: 11, weight: .semibold)
         gradeLabel.textColor = .secondaryLabel
-        
+
         gradeField.font = .monospacedSystemFont(ofSize: 16, weight: .medium)
         gradeField.backgroundColor = .tertiarySystemGroupedBackground
         gradeField.layer.cornerRadius = 6
         gradeField.textAlignment = .center
         gradeField.returnKeyType = .done
         gradeField.delegate = self
+        gradeField.placeholder = "V3, 파랑..."
         gradeField.addTarget(self, action: #selector(gradeChanged), for: .editingChanged)
         
         gradeStack.axis = .vertical
@@ -690,21 +967,29 @@ class RouteCell: UITableViewCell {
         sentStack.translatesAutoresizingMaskIntoConstraints = false
         
         colorSectionHeightConstraint = colorScrollView.heightAnchor.constraint(equalToConstant: 44)
-        
+
+        // Create two different top constraints for gradeStack
+        gradeStackTopToColorConstraint = gradeStack.topAnchor.constraint(equalTo: colorScrollView.bottomAnchor, constant: 16)
+        gradeStackTopToHeaderConstraint = gradeStack.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 16)
+
         NSLayoutConstraint.activate([
             // Header
             headerStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             headerStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             headerStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            
+
+            // Color Section Label
+            colorSectionLabel.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 12),
+            colorSectionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+
             // Color Scroll
-            colorScrollView.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 12),
+            colorScrollView.topAnchor.constraint(equalTo: colorSectionLabel.bottomAnchor, constant: 6),
             colorScrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             colorScrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             colorSectionHeightConstraint,
-            
-            // Grade
-            gradeStack.topAnchor.constraint(equalTo: colorScrollView.bottomAnchor, constant: 16),
+
+            // Grade - use color constraint initially
+            gradeStackTopToColorConstraint,
             gradeStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             gradeStack.widthAnchor.constraint(equalToConstant: 80),
             
@@ -729,49 +1014,94 @@ class RouteCell: UITableViewCell {
     private func createColorButton(color: UIColor, tag: Int) -> UIButton {
         let btn = UIButton(type: .custom)
         btn.backgroundColor = color
-        btn.layer.cornerRadius = 14
+        btn.layer.cornerRadius = 16
         btn.layer.borderWidth = 0
-        // btn.layer.borderColor = UIColor.systemGray4.cgColor
         btn.tag = tag
         btn.addTarget(self, action: #selector(colorTapped(_:)), for: .touchUpInside)
-        
+
         btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.widthAnchor.constraint(equalToConstant: 28).isActive = true
-        btn.heightAnchor.constraint(equalToConstant: 28).isActive = true
-        
-        if color == .white || color == .systemYellow {
-            btn.layer.shadowColor = UIColor.black.cgColor
-            btn.layer.shadowOffset = CGSize(width: 0, height: 1)
-            btn.layer.shadowOpacity = 0.1
-            btn.layer.shadowRadius = 2
-        }
-        
+        btn.widthAnchor.constraint(equalToConstant: 32).isActive = true
+        btn.heightAnchor.constraint(equalToConstant: 32).isActive = true
+
+        // Add subtle shadow for better visibility
+        btn.layer.shadowColor = UIColor.black.cgColor
+        btn.layer.shadowOffset = CGSize(width: 0, height: 1)
+        btn.layer.shadowOpacity = 0.15
+        btn.layer.shadowRadius = 2
+
         return btn
     }
 
-    func configure(routeNumber: Int, route: ClimbingInputViewController.RouteData, discipline: ClimbingDiscipline, canDelete: Bool) {
+    func configure(routeNumber: Int, route: ClimbingInputViewController.RouteData, discipline: ClimbingDiscipline, availableColors: [UIColor], canDelete: Bool) {
         self.route = route
         self.discipline = discipline
+        
+        // Rebuild color buttons if palette changed significantly?
+        // For simplicity, handle color updates. If count differs, rebuild.
+        if colorButtons.count != availableColors.count {
+            colorStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+            colorButtons.removeAll()
+            // Remove custom button to re-add at end
+            customColorButton.removeFromSuperview()
+            
+            for i in 0..<availableColors.count {
+                let btn = createColorButton(color: availableColors[i], tag: i)
+                colorButtons.append(btn)
+                colorStack.addArrangedSubview(btn)
+            }
+            colorStack.addArrangedSubview(customColorButton)
+        } else {
+            // Update colors of existing buttons
+            for (i, btn) in colorButtons.enumerated() {
+                btn.backgroundColor = availableColors[i]
+            }
+        }
 
         headerLabel.text = "Route #\(routeNumber)"
         deleteButton.isHidden = !canDelete
 
+        // Update discipline segment
+        disciplineSegment.selectedSegmentIndex = route.discipline == .bouldering ? 0 : 1
+
         gradeField.text = route.grade
         attemptsStepper.value = Double(route.attempts)
         attemptsValueLabel.text = "\(route.attempts)"
-        
+
         // Init switch state
         sentSwitch.isOn = route.isSent
-        
+
         updateColorSelection()
 
         // Hide/Show color section based on discipline
-        let isBouldering = discipline == .bouldering
+        let isBouldering = route.discipline == .bouldering
+
+        // Switch constraints based on discipline
+        if isBouldering {
+            gradeStackTopToHeaderConstraint.isActive = false
+            gradeStackTopToColorConstraint.isActive = true
+        } else {
+            gradeStackTopToColorConstraint.isActive = false
+            gradeStackTopToHeaderConstraint.isActive = true
+        }
+
+        colorSectionLabel.isHidden = !isBouldering
         colorScrollView.isHidden = !isBouldering
-        colorSectionHeightConstraint.constant = isBouldering ? 44 : 0
-        
-        // Update labels
+        colorSectionHeightConstraint.constant = isBouldering ? 48 : 0
+
+        // Update labels based on discipline
         attemptsLabel.text = isBouldering ? "ATTEMPTS" : "TAKES"
+
+        // Grade label and placeholder
+        if isBouldering {
+            gradeLabel.text = "GRADE (선택)"
+            gradeField.placeholder = "V3, 파랑..."
+        } else {
+            gradeLabel.text = "GRADE"
+            gradeField.placeholder = "5.11a, 6a..."
+        }
+
+        // Force layout update to prevent empty space
+        containerView.layoutIfNeeded()
     }
     
     // Removed updateSentButton() as we are observing switch
@@ -786,24 +1116,31 @@ class RouteCell: UITableViewCell {
     }
 
     private func updateColorSelection() {
-        // ... (Similar specific logic for highlight selected)
         for (i, btn) in colorButtons.enumerated() {
-             let isSelected = route.customColor == nil && route.selectedColorIndex == i
-             if isSelected {
-                 btn.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
-                 btn.layer.borderWidth = 2
-                 btn.layer.borderColor = UIColor.label.cgColor
-             } else {
-                 btn.transform = .identity
-                 btn.layer.borderWidth = 0
-             }
+            let isSelected = route.customColor == nil && route.selectedColorIndex == i
+            UIView.animate(withDuration: 0.2) {
+                if isSelected {
+                    btn.transform = CGAffineTransform(scaleX: 1.15, y: 1.15)
+                    btn.layer.borderWidth = 3
+                    btn.layer.borderColor = UIColor.white.cgColor
+                    btn.layer.shadowOpacity = 0.3
+                    btn.layer.shadowRadius = 4
+                } else {
+                    btn.transform = .identity
+                    btn.layer.borderWidth = 0
+                    btn.layer.shadowOpacity = 0.15
+                    btn.layer.shadowRadius = 2
+                }
+            }
         }
-        
+
+        // Custom color button
         if let custom = route.customColor {
-             customColorButton.tintColor = custom
-             // Highlight custom button logic...
+            customColorButton.tintColor = custom
+            customColorButton.transform = CGAffineTransform(scaleX: 1.15, y: 1.15)
         } else {
-             customColorButton.tintColor = .label
+            customColorButton.tintColor = .label
+            customColorButton.transform = .identity
         }
     }
 
@@ -811,6 +1148,42 @@ class RouteCell: UITableViewCell {
 
     @objc private func deleteTapped() {
         delegate?.routeCellDidRequestDelete(self)
+    }
+
+    @objc private func disciplineChanged(_ sender: UISegmentedControl) {
+        route.discipline = sender.selectedSegmentIndex == 0 ? .bouldering : .leadEndurance
+
+        // Update UI for new discipline with animation
+        let isBouldering = route.discipline == .bouldering
+
+        // Switch constraints
+        if isBouldering {
+            gradeStackTopToHeaderConstraint.isActive = false
+            gradeStackTopToColorConstraint.isActive = true
+        } else {
+            gradeStackTopToColorConstraint.isActive = false
+            gradeStackTopToHeaderConstraint.isActive = true
+        }
+
+        UIView.animate(withDuration: 0.3) {
+            self.colorSectionLabel.isHidden = !isBouldering
+            self.colorScrollView.isHidden = !isBouldering
+            self.colorSectionHeightConstraint.constant = isBouldering ? 48 : 0
+            self.containerView.layoutIfNeeded()
+        }
+
+        // Update labels based on discipline
+        attemptsLabel.text = isBouldering ? "ATTEMPTS" : "TAKES"
+
+        if isBouldering {
+            gradeLabel.text = "GRADE (선택)"
+            gradeField.placeholder = "V3, 파랑..."
+        } else {
+            gradeLabel.text = "GRADE"
+            gradeField.placeholder = "5.11a, 6a..."
+        }
+
+        delegate?.routeCellDidUpdate(self, route: route)
     }
 
     @objc private func colorTapped(_ sender: UIButton) {
@@ -847,18 +1220,20 @@ extension RouteCell: UITextFieldDelegate {
     }
 }
 
-// MARK: - UIColor Extension
+// MARK: - UIColor Extension (Private to avoid conflicts)
 
-extension UIColor {
-    func toHexString() -> String {
+private extension UIColor {
+    func toClimbingHex() -> String {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         getRed(&r, green: &g, blue: &b, alpha: &a)
         return String(format: "#%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
     }
 
-    convenience init?(hexString: String) {
-        var hex = hexString.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    convenience init?(climbingHex: String) {
+        var hex = climbingHex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         if hex.hasPrefix("#") { hex.removeFirst() }
+        
+        // Handle 6-digit hex only for simplicity as per requirement
         guard hex.count == 6 else { return nil }
 
         var rgbValue: UInt64 = 0

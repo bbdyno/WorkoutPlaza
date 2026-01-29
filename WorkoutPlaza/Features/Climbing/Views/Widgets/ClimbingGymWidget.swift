@@ -12,7 +12,7 @@ import SnapKit
 
 class ClimbingGymWidget: BaseClimbingWidget {
     private var gymName: String = ""
-    private var logoImageName: String?
+    private var gym: ClimbingGym?
 
     private let logoImageView: UIImageView = {
         let iv = UIImageView()
@@ -47,47 +47,44 @@ class ClimbingGymWidget: BaseClimbingWidget {
 
     func configure(gymName: String, logoImageName: String? = nil) {
         self.gymName = gymName
-        self.logoImageName = logoImageName
-
-        // 로고 이미지 이름 결정 순서:
-        // 1. 직접 전달된 logoImageName
-        // 2. ClimbingGymManager에서 저장된 암장 정보의 로고
-        // 3. 암장 이름으로 추론한 로고 이름
-        var effectiveLogoName: String? = logoImageName
-
-        if effectiveLogoName == nil {
-            // ClimbingGymManager에서 암장 정보 조회
-            if let savedGym = ClimbingGymManager.shared.findGym(byName: gymName) {
-                effectiveLogoName = savedGym.logoImageName
-            }
-        }
-
-        if effectiveLogoName == nil {
-            // 암장 이름으로 로고 추론
-            effectiveLogoName = suggestLogoImageName(for: gymName)
-        }
-
-        // 로고 이미지 표시 시도
-        if let imageName = effectiveLogoName, let image = UIImage(named: imageName) {
-            logoImageView.image = image
-            logoImageView.isHidden = false
-
-            // valueLabel을 로고 옆으로 이동
-            valueLabel.snp.remakeConstraints { make in
-                make.top.equalTo(titleLabel.snp.bottom).offset(4)
-                make.leading.equalTo(logoImageView.snp.trailing).offset(8)
-            }
-        } else {
-            // 로고 없음 - 기본 레이아웃
-            logoImageView.isHidden = true
-
-            valueLabel.snp.remakeConstraints { make in
-                make.top.equalTo(titleLabel.snp.bottom).offset(4)
-                make.leading.equalToSuperview().inset(12)
-            }
-        }
+        self.gym = ClimbingGymManager.shared.findGym(byName: gymName)
 
         valueLabel.text = gymName
+
+        // Load logo using ClimbingGymLogoManager
+        if let gym = self.gym {
+            ClimbingGymLogoManager.shared.loadLogo(for: gym) { [weak self] image in
+                guard let self = self, let image = image else { return }
+                self.logoImageView.image = image
+                self.logoImageView.isHidden = false
+
+                // valueLabel을 로고 옆으로 이동
+                self.valueLabel.snp.remakeConstraints { make in
+                    make.top.equalTo(self.titleLabel.snp.bottom).offset(4)
+                    make.leading.equalTo(self.logoImageView.snp.trailing).offset(8)
+                }
+            }
+        } else {
+            // Try to load by suggested name for backward compatibility
+            let suggestedName = suggestLogoImageName(for: gymName)
+            if let image = UIImage(named: suggestedName) {
+                logoImageView.image = image
+                logoImageView.isHidden = false
+
+                valueLabel.snp.remakeConstraints { make in
+                    make.top.equalTo(titleLabel.snp.bottom).offset(4)
+                    make.leading.equalTo(logoImageView.snp.trailing).offset(8)
+                }
+            } else {
+                // 로고 없음 - 기본 레이아웃
+                logoImageView.isHidden = true
+
+                valueLabel.snp.remakeConstraints { make in
+                    make.top.equalTo(titleLabel.snp.bottom).offset(4)
+                    make.leading.equalToSuperview().inset(12)
+                }
+            }
+        }
     }
 
     private func suggestLogoImageName(for name: String) -> String {
