@@ -80,7 +80,8 @@ let project = Project(
                 "WorkoutPlaza/Assets.xcassets",
                 "WorkoutPlaza/Base.lproj/**",
                 "WorkoutPlaza/Fonts/**",
-                "Resources/**/*.strings"
+                "Resources/**/*.strings",
+                "WorkoutPlaza/GoogleService-Info.plist"
             ],
             entitlements: "WorkoutPlaza/WorkoutPlaza.entitlements",
             dependencies: [

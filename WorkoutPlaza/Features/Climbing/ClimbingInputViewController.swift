@@ -449,17 +449,31 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     }
     
     private func selectGym(_ gym: ClimbingGym) {
+        let wasGymSelected = selectedGym != nil || isCustomGym
         self.selectedGym = gym
         self.isCustomGym = false
-        tableView.reloadSections([0, 2], with: .automatic)
+
+        // If sections changed (1 -> 3), use reloadData
+        if !wasGymSelected {
+            tableView.reloadData()
+        } else {
+            tableView.reloadSections(IndexSet([0, 2]), with: .automatic)
+        }
     }
 
     private func selectCustomGym() {
+        let wasGymSelected = selectedGym != nil || isCustomGym
         self.selectedGym = nil
         self.isCustomGym = true
         self.customGymName = ""
         self.customLogoImage = nil
-        tableView.reloadSections([0, 2], with: .automatic)
+
+        // If sections changed (1 -> 3), use reloadData
+        if !wasGymSelected {
+            tableView.reloadData()
+        } else {
+            tableView.reloadSections(IndexSet([0, 2]), with: .automatic)
+        }
     }
     
     // MARK: - Image Picker
