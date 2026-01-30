@@ -86,7 +86,8 @@ let project = Project(
             entitlements: "WorkoutPlaza/WorkoutPlaza.entitlements",
             dependencies: [
                 .external(name: "SnapKit"),
-                .external(name: "FirebaseRemoteConfig")
+                .external(name: "FirebaseRemoteConfig"),
+                .external(name: "FirebaseAnalytics")
             ],
             settings: .settings(
                 base: [
@@ -100,7 +101,8 @@ let project = Project(
                     "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents": "YES",
                     "INFOPLIST_KEY_UIMainStoryboardFile": "Main",
                     "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad": "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight",
-                    "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone": "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+                    "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone": "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight",
+                    "OTHER_LDFLAGS": ["-ObjC"]
                 ],
                 configurations: [
                     .debug(name: "Debug", settings: [

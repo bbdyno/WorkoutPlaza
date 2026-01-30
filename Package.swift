@@ -7,7 +7,8 @@ import PackageDescription
     let packageSettings = PackageSettings(
         productTypes: [
             "SnapKit": .framework,
-            "FirebaseRemoteConfig": .framework
+            "FirebaseRemoteConfig": .staticFramework,
+            "FirebaseAnalytics": .staticFramework
         ]
     )
 #endif

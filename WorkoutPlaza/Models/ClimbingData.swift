@@ -99,47 +99,7 @@ class ClimbingGymManager {
     // MARK: - Presets
     
     var presets: [ClimbingGym] {
-        return [
-            ClimbingGym(
-                id: "preset_seoul_forest_guro",
-                name: "서울숲클라이밍 구로점",
-                logoSource: .assetName("gym_logo_seoul_forest"),
-                gradeColors: [
-                    "#FF3B30", // systemRed
-                    "#FF9500", // systemOrange
-                    "#FFCC00", // systemYellow
-                    "#34C759", // systemGreen
-                    "#007AFF", // systemBlue
-                    "#5856D6", // systemIndigo
-                    "#AF52DE", // systemPurple
-                    "#A2845E", // brown
-                    "#000000", // black
-                    "#FF2D55"  // systemPink
-                ],
-                isBuiltIn: true,
-                metadata: ClimbingGym.GymMetadata(region: "Seoul", branch: "구로점")
-            ),
-            ClimbingGym(
-                id: "preset_the_climb_sadang",
-                name: "더클라임 사당점",
-                logoSource: .assetName("gym_logo_the_climb"),
-                gradeColors: [
-                    "#FFFFFF", // white
-                    "#FFCC00", // yellow
-                    "#FF9500", // orange
-                    "#34C759", // green
-                    "#007AFF", // blue
-                    "#FF3B30", // red
-                    "#FF2D55", // systemPink
-                    "#AF52DE", // purple
-                    "#8E8E93", // gray
-                    "#A2845E", // brown
-                    "#000000"  // black
-                ],
-                isBuiltIn: true,
-                metadata: ClimbingGym.GymMetadata(region: "Seoul", branch: "사당점")
-            )
-        ]
+        return []
     }
     
     var defaultGradeColors: [String] {
@@ -267,7 +227,7 @@ class ClimbingGymManager {
     }
 
     func syncRemotePresets(completion: @escaping (Result<Void, Error>) -> Void) {
-        ClimbingGymRemoteConfigManager.shared.fetchRemotePresets { result in
+        ClimbingGymRemoteConfigManager.shared.manualRefresh { result in
             switch result {
             case .success(_):
                 completion(.success(()))

@@ -12,9 +12,7 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        print("🚀 App launching...")
-        print("📋 App Bundle ID: \(Bundle.main.bundleIdentifier ?? "unknown")")
-
+        // Firebase 초기화
         FirebaseApp.configure()
 
         if let app = FirebaseApp.app() {
@@ -27,11 +25,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             print("🔑 Firebase Google App ID: \(options.googleAppID)")
             print("🔑 Firebase API Key: \(options.apiKey ?? "unknown")")
             print("🔑 Firebase Bundle ID: \(options.bundleID ?? "unknown")")
+
+            // Remote Config 자동 업데이트 설정
+            setupRemoteConfig()
+            
+            // Analytics App Open Logging
+            AnalyticsManager.shared.logAppOpen()
         } else {
             print("❌ Firebase initialization failed!")
         }
 
         return true
+    }
+
+    // MARK: - Remote Config Setup
+
+    private func setupRemoteConfig() {
+        ClimbingGymRemoteConfigManager.shared.setupAutoUpdate { result in
+            switch result {
+            case .success(let gyms):
+                print("✅ Remote Config auto-update setup complete: \(gyms.count) gyms loaded")
+            case .failure(let error):
+                print("⚠️ Remote Config auto-update setup failed: \(error.localizedDescription)")
+                print("⚠️ Will continue with cached/default values")
+            }
+        }
     }
 
     // MARK: UISceneSession Lifecycle

@@ -891,6 +891,7 @@ class RouteCell: UITableViewCell {
         colorScrollView.showsHorizontalScrollIndicator = false
         colorStack.axis = .horizontal
         colorStack.spacing = 10
+        colorStack.alignment = .center
         colorScrollView.addSubview(colorStack)
         colorStack.translatesAutoresizingMaskIntoConstraints = false
         
