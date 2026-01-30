@@ -267,7 +267,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             case .composite:
                 break
 
-            case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor:
+            case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo:
                 break
             }
 

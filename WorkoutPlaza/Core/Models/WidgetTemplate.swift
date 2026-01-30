@@ -164,6 +164,7 @@ enum WidgetType: String, Codable, CaseIterable {
     case climbingDiscipline = "ClimbingDiscipline"
     case climbingSession = "ClimbingSession"
     case climbingRoutesByColor = "ClimbingRoutesByColor"
+    case gymLogo = "GymLogo"
 
     var displayName: String {
         switch self {
@@ -182,6 +183,7 @@ enum WidgetType: String, Codable, CaseIterable {
         case .climbingDiscipline: return "종목"
         case .climbingSession: return "세션 기록"
         case .climbingRoutesByColor: return "완등 현황"
+        case .gymLogo: return "암장 로고"
         }
     }
 
@@ -202,6 +204,7 @@ enum WidgetType: String, Codable, CaseIterable {
         case .climbingDiscipline: return "figure.climbing"
         case .climbingSession: return "checkmark.circle"
         case .climbingRoutesByColor: return "list.bullet.circle"
+        case .gymLogo: return "photo.circle"
         }
     }
 
@@ -209,7 +212,7 @@ enum WidgetType: String, Codable, CaseIterable {
         switch self {
         case .routeMap, .distance, .duration, .pace, .speed, .calories, .location:
             return [.running]
-        case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor:
+        case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo:
             return [.climbing]
         case .date, .text, .composite, .currentDateTime:
             return SportType.allCases
