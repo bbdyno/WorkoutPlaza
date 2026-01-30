@@ -36,7 +36,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         // Add observer for receiving workout (e.g., via AirDrop)
         NotificationCenter.default.addObserver(self, selector: #selector(handleReceivedWorkoutInDetail(_:)), name: NSNotification.Name("ReceivedWorkoutInDetail"), object: nil)
         
-        print("🚀 RunningDetailViewController loaded (Inherited from Base)")
+        WPLog.debug("RunningDetailViewController loaded (Inherited from Base)")
     }
     
     // MARK: - Setup UI
@@ -118,7 +118,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         widgets.removeAll()
         selectionManager.deselectAll()
 
-        print("📐 Applying template '\(template.name)' version \(template.version)")
+        WPLog.debug("Applying template '\(template.name)' version \(template.version)")
 
         // Get template canvas size
         let templateCanvasSize: CGSize
@@ -240,7 +240,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
             case .location:
                 guard let firstLocation = data.route.first else {
-                    print("⚠️ No GPS data for location widget in template")
+                    WPLog.warning("No GPS data for location widget in template")
                     break
                 }
 
@@ -283,7 +283,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         }
         
         instructionLabel.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
-        print("✅ Applied template directly: \(template.name)")
+        WPLog.info("Applied template directly: \(template.name)")
     }
 
     // MARK: - Widget Restoration

@@ -1136,7 +1136,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             saveWorkoutCard(image: image)
             completion?(true)
         } catch {
-            print("Error saving design: \(error)")
+            WPLog.error("Error saving design: \(error)")
             completion?(false)
         }
     }
@@ -1161,13 +1161,13 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         let workoutId = getWorkoutId()
         
         guard let design = CardPersistenceManager.shared.loadDesign(for: workoutId) else {
-            print("No saved design found for \(workoutId)")
+            WPLog.debug("No saved design found for \(workoutId)")
             // Reset flag even if no saved design (initial state should be "no changes")
             hasUnsavedChanges = false
             return
         }
         
-        print("📂 Loading saved design for \(workoutId)")
+        WPLog.info("Loading saved design for \(workoutId)")
         
         // Restore Aspect Ratio
         currentAspectRatio = design.aspectRatio
@@ -1326,7 +1326,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             }
         }
 
-        print("✅ Design loaded and restored for \(workoutId)")
+        WPLog.info("Design loaded and restored for \(workoutId)")
 
         // Reset unsaved changes flag since we just loaded the saved state
         hasUnsavedChanges = false
@@ -2244,7 +2244,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 let fileURL = try TemplateManager.shared.exportTemplate(template)
                 self?.shareTemplate(fileURL: fileURL)
             } catch {
-                print("❌ Failed to export template: \(error)")
+                WPLog.error("Failed to export template: \(error)")
             }
         })
         alert.addAction(UIAlertAction(title: "취소", style: .cancel))
@@ -2376,7 +2376,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             // Use area-preserving uniform scale for aspect-ratio-locked widgets (reversible)
             let uniformScale = sqrt(scaleX * scaleY)
 
-            print("📐 Scaling widgets: \(scaleX) x \(scaleY), uniform: \(uniformScale)")
+            WPLog.debug("Scaling widgets: \(scaleX) x \(scaleY), uniform: \(uniformScale)")
 
             // Scale individual widgets
             for widget in widgets {
@@ -2437,7 +2437,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Store current size for next comparison
         previousCanvasSize = newCanvasSize
 
-        print("📐 Canvas size updated: \(canvasWidth) x \(canvasHeight) (ratio: \(currentAspectRatio.displayName))")
+        WPLog.debug("Canvas size updated: \(canvasWidth) x \(canvasHeight) (ratio: \(currentAspectRatio.displayName))")
     }
     
     func applyBackgroundTransform(_ transform: BackgroundTransform) {
@@ -2468,7 +2468,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Apply frame
         backgroundImageView.frame = CGRect(x: x, y: y, width: scaledWidth, height: scaledHeight)
         
-        print("🖼️ Applied Background Frame: \(backgroundImageView.frame)")
+        WPLog.debug("Applied Background Frame: \(backgroundImageView.frame)")
     }
     
     func createToolbarButton(systemName: String, action: Selector) -> UIButton {

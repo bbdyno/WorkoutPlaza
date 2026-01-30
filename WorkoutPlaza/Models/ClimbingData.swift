@@ -192,7 +192,7 @@ class ClimbingGymManager {
         // This is expected - old format had different structure
         // For safety, we'll clear old data and mark as migrated
         // Users will need to re-add custom gyms (safer than risking data corruption)
-        print("ClimbingGym migration: Old format detected, clearing for safety")
+        WPLog.warning("ClimbingGym migration: Old format detected, clearing for safety")
         userDefaults.removeObject(forKey: storageKey)
         userDefaults.set(true, forKey: migrationKey)
     }

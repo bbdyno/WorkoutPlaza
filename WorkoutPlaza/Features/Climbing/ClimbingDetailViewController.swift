@@ -28,7 +28,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         // Load saved design if exists
         loadSavedDesign()
         
-        print("🧗 ClimbingDetailViewController loaded (Inherited from Base)")
+        WPLog.debug("ClimbingDetailViewController loaded (Inherited from Base)")
     }
     
     // MARK: - UI Setup

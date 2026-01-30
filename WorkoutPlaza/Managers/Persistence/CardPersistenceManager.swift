@@ -85,7 +85,7 @@ class CardPersistenceManager {
             let data = try Data(contentsOf: url)
             return try decoder.decode(SavedCardDesign.self, from: data)
         } catch {
-            print("Failed to load design: \(error)")
+            WPLog.error("Failed to load design: \(error)")
             return nil
         }
     }

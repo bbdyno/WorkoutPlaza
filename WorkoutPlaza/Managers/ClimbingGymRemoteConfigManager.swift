@@ -40,7 +40,7 @@ class ClimbingGymRemoteConfigManager {
     }
 
     private func setupRemoteConfig() {
-        print("Initializing ClimbingGymRemoteConfigManager...")
+        WPLog.info("Initializing ClimbingGymRemoteConfigManager...")
 
         // Remote Config 설정
         let settings = RemoteConfigSettings()
@@ -69,10 +69,10 @@ class ClimbingGymRemoteConfigManager {
 
         // Default 값이 제대로 설정되었는지 확인
         let testValue = remoteConfig.configValue(forKey: "climbing_gym_presets")
-        print("✅ Firebase Remote Config initialized")
-        print("🔧 Minimum fetch interval: \(settings.minimumFetchInterval) seconds")
-        print("🔧 Fetch timeout: \(settings.fetchTimeout) seconds")
-        print("🔧 Default value length: \(testValue.stringValue.count) characters")
+        WPLog.info("Firebase Remote Config initialized",
+                   "Minimum fetch interval: \(settings.minimumFetchInterval)",
+                   "Fetch timeout: \(settings.fetchTimeout)",
+                   "Default value length: \(testValue.stringValue.count)")
     }
 
     // MARK: - Auto Update Setup
@@ -80,7 +80,7 @@ class ClimbingGymRemoteConfigManager {
     /// 앱 시작 시 호출하여 자동 업데이트 설정
     /// 초기 fetch 및 실시간 업데이트 리스너 등록
     func setupAutoUpdate(completion: ((Result<[ClimbingGym], Error>) -> Void)? = nil) {
-        print("Setting up auto-update for Remote Config...")
+        WPLog.info("Setting up auto-update for Remote Config...")
 
         // 1. 초기 fetch and activate
         fetchAndActivate { [weak self] result in
@@ -95,33 +95,33 @@ class ClimbingGymRemoteConfigManager {
 
     /// 실시간 config 업데이트 리스너 추가
     private func addConfigUpdateListener() {
-        print("Adding config update listener...")
+        WPLog.info("Adding config update listener...")
 
         configUpdateListenerHandle = remoteConfig.addOnConfigUpdateListener { [weak self] configUpdate, error in
             guard let self = self else { return }
 
             if let error = error {
-                print("❌ Config update listener error: \(error.localizedDescription)")
+                WPLog.error("Config update listener error: \(error.localizedDescription)")
                 return
             }
 
             guard let configUpdate = configUpdate else {
-                print("⚠️ Config update is nil")
+                WPLog.warning("Config update is nil")
                 return
             }
 
-            print("Remote Config updated! Updated keys: \(configUpdate.updatedKeys)")
+            WPLog.network("Remote Config updated! Updated keys: \(configUpdate.updatedKeys)")
             AnalyticsManager.shared.logEvent("remote_config_updated", parameters: ["keys": configUpdate.updatedKeys])
 
             // 업데이트된 config를 activate하고 파싱
             self.remoteConfig.activate { activated, activateError in
                 if let activateError = activateError {
-                    print("❌ Auto-activate error: \(activateError.localizedDescription)")
+                    WPLog.error("Auto-activate error: \(activateError.localizedDescription)")
                     AnalyticsManager.shared.logRemoteConfigFetch(status: "activate_failed", details: activateError.localizedDescription)
                     return
                 }
 
-                print("Auto-activated updated config (changed: \(activated))")
+                WPLog.info("Auto-activated updated config (changed: \(activated))")
 
                 // 파싱하고 캐시 업데이트
                 if let gyms = self.parseGyms() {
@@ -132,19 +132,19 @@ class ClimbingGymRemoteConfigManager {
 
                     // Publisher를 통해 업데이트 알림
                     self.configUpdateSubject.send(gyms)
-                    print("📢 Published \(gyms.count) gyms to subscribers")
+                    WPLog.info("Published \(gyms.count) gyms to subscribers")
                 }
             }
         }
 
-        print("Config update listener registered")
+        WPLog.info("Config update listener registered")
     }
 
     // MARK: - Manual Refresh
 
     /// 수동으로 최신 config를 가져오기 (Pull-to-refresh 등에 사용)
     func manualRefresh(completion: @escaping (Result<[ClimbingGym], Error>) -> Void) {
-        print("Manual refresh triggered...")
+        WPLog.info("Manual refresh triggered...")
         fetchAndActivate(completion: completion)
     }
 
@@ -152,13 +152,13 @@ class ClimbingGymRemoteConfigManager {
 
     /// Firebase Remote Config fetch and activate
     private func fetchAndActivate(completion: @escaping (Result<[ClimbingGym], Error>) -> Void) {
-        print("Starting fetchAndActivate...")
+        WPLog.network("Starting fetchAndActivate...")
 
         // 상세 디버깅 정보
-        print("📊 Remote Config Debug Info:")
-        print("   - Last fetch status: \(remoteConfig.lastFetchStatus.rawValue)")
-        print("   - Last fetch time: \(remoteConfig.lastFetchTime ?? Date(timeIntervalSince1970: 0))")
-        print("   - Config settings: \(remoteConfig.configSettings)")
+        WPLog.debug("Remote Config Debug Info:",
+                    "Last fetch status: \(remoteConfig.lastFetchStatus.rawValue)",
+                    "Last fetch time: \(remoteConfig.lastFetchTime ?? Date(timeIntervalSince1970: 0))",
+                    "Config settings: \(remoteConfig.configSettings)")
 
         // Firebase 초기화 확인
         guard let app = FirebaseApp.app() else {
@@ -167,35 +167,35 @@ class ClimbingGymRemoteConfigManager {
                 code: -3,
                 userInfo: [NSLocalizedDescriptionKey: "Firebase not initialized"]
             )
-            print("❌ Firebase not initialized!")
+            WPLog.error("Firebase not initialized!")
             AnalyticsManager.shared.logRemoteConfigFetch(status: "failure", details: "Firebase not initialized")
             DispatchQueue.main.async { completion(.failure(error)) }
             return
         }
 
         // Firebase 앱 정보 출력
-        print("📱 Firebase App Info:")
-        print("   - Name: \(app.name)")
-        print("   - Project ID: \(app.options.projectID ?? "unknown")")
-        print("   - Bundle ID: \(app.options.bundleID ?? "unknown")")
-        print("   - API Key: \(app.options.apiKey?.prefix(10) ?? "unknown")...")
+        WPLog.debug("Firebase App Info:",
+                    "Name: \(app.name)",
+                    "Project ID: \(app.options.projectID ?? "unknown")",
+                    "Bundle ID: \(app.options.bundleID ?? "unknown")",
+                    "API Key: \(app.options.apiKey?.prefix(10) ?? "unknown")...")
 
         // GoogleService-Info.plist 확인
         if let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") {
-            print("✅ GoogleService-Info.plist found at: \(path)")
+            WPLog.debug("GoogleService-Info.plist found at: \(path)")
             if let dict = NSDictionary(contentsOfFile: path) {
-                print("   - BUNDLE_ID: \(dict["BUNDLE_ID"] ?? "unknown")")
-                print("   - PROJECT_ID: \(dict["PROJECT_ID"] ?? "unknown")")
+                WPLog.debug("BUNDLE_ID: \(dict["BUNDLE_ID"] ?? "unknown")",
+                            "PROJECT_ID: \(dict["PROJECT_ID"] ?? "unknown")")
             }
         } else {
-            print("❌ GoogleService-Info.plist NOT found!")
+            WPLog.error("GoogleService-Info.plist NOT found!")
         }
 
         // 현재 config 값 확인
         let currentValue = remoteConfig.configValue(forKey: "climbing_gym_presets")
-        print("📋 Current config value:")
-        print("   - Source: \(currentValue.source.rawValue)")
-        print("   - Value: \(currentValue.stringValue.prefix(100))...")
+        WPLog.debug("Current config value:",
+                    "Source: \(currentValue.source.rawValue)",
+                    "Value: \(currentValue.stringValue.prefix(100))...")
 
         // Timeout 처리
         var hasCompleted = false
@@ -203,9 +203,9 @@ class ClimbingGymRemoteConfigManager {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + timeoutSeconds) {
             if !hasCompleted {
-                print("⏱️ Firebase Remote Config timeout after \(timeoutSeconds) seconds")
-                print("⚠️ Last fetch status was: \(self.remoteConfig.lastFetchStatus.rawValue)")
-                print("⚠️ Using cached values instead")
+                WPLog.warning("Firebase Remote Config timeout after \(timeoutSeconds) seconds",
+                              "Last fetch status was: \(self.remoteConfig.lastFetchStatus.rawValue)",
+                              "Using cached values instead")
                 hasCompleted = true
                 let cached = self.loadCachedRemoteGyms()
                 completion(.success(cached))
@@ -213,22 +213,22 @@ class ClimbingGymRemoteConfigManager {
         }
 
         // fetchAndActivate 호출 (권장되는 방식)
-        print("Calling fetchAndActivate()...")
+        WPLog.network("Calling fetchAndActivate()...")
         remoteConfig.fetchAndActivate { [weak self] status, error in
             guard let self = self else { return }
 
             guard !hasCompleted else {
-                print("⚠️ fetchAndActivate completed but timeout already triggered")
+                WPLog.warning("fetchAndActivate completed but timeout already triggered")
                 return
             }
             hasCompleted = true
-
-            print("📡 fetchAndActivate callback received")
+            
+            WPLog.network("fetchAndActivate callback received")
 
             // 에러 처리
             if let error = error {
                 let nsError = error as NSError
-                print("❌ fetchAndActivate error: \(error.localizedDescription)")
+                WPLog.error("fetchAndActivate error: \(error.localizedDescription)")
                 
                 AnalyticsManager.shared.logRemoteConfigFetch(status: "failure", details: error.localizedDescription)
 
@@ -236,13 +236,13 @@ class ClimbingGymRemoteConfigManager {
                 if nsError.domain == "com.google.remoteconfig.ErrorDomain" {
                     switch nsError.code {
                     case 8001:
-                        print("💡 Error 8001: Throttled - too many requests")
+                        WPLog.warning("Error 8001: Throttled - too many requests")
                     case 8002:
-                        print("💡 Error 8002: Internal error")
+                        WPLog.error("Error 8002: Internal error")
                     case 8003:
-                        print("💡 Error 8003: Config update unavailable")
+                        WPLog.warning("Error 8003: Config update unavailable")
                     default:
-                        print("💡 Unknown Remote Config error code: \(nsError.code)")
+                        WPLog.error("Unknown Remote Config error code: \(nsError.code)")
                     }
                 }
 
@@ -254,23 +254,23 @@ class ClimbingGymRemoteConfigManager {
             }
 
             // 상태 확인
-            print("📊 fetchAndActivate status: \(status.rawValue)")
+            WPLog.info("fetchAndActivate status: \(status.rawValue)")
             switch status {
             case .successFetchedFromRemote:
-                print("Successfully fetched and activated from remote")
+                WPLog.network("Successfully fetched and activated from remote")
                 self.handleSuccessfulFetch(completion: completion)
 
             case .successUsingPreFetchedData:
-                print("✅ Using pre-fetched data (no new data)")
+                WPLog.info("Using pre-fetched data (no new data)")
                 self.handleSuccessfulFetch(completion: completion)
 
             case .error:
-                print("❌ fetchAndActivate failed with error status")
+                WPLog.error("fetchAndActivate failed with error status")
                 let cached = self.loadCachedRemoteGyms()
                 DispatchQueue.main.async { completion(.success(cached)) }
 
             @unknown default:
-                print("⚠️ Unknown fetchAndActivate status: \(status.rawValue)")
+                WPLog.warning("Unknown fetchAndActivate status: \(status.rawValue)")
                 let cached = self.loadCachedRemoteGyms()
                 DispatchQueue.main.async { completion(.success(cached)) }
             }
@@ -288,7 +288,7 @@ class ClimbingGymRemoteConfigManager {
             return
         }
 
-        print("Parsed \(gyms.count) gyms from Remote Config")
+        WPLog.info("Parsed \(gyms.count) gyms from Remote Config")
         
         AnalyticsManager.shared.logRemoteConfigFetch(status: "success")
         AnalyticsManager.shared.logGymsLoaded(count: gyms.count, source: "remote")
@@ -306,11 +306,11 @@ class ClimbingGymRemoteConfigManager {
     private func parseGyms() -> [ClimbingGym]? {
         let jsonString = remoteConfig.configValue(forKey: "climbing_gym_presets").stringValue ?? ""
 
-        print("📥 Remote Config JSON: \(jsonString.prefix(200))...")
+        WPLog.debug("Remote Config JSON: \(jsonString.prefix(200))...")
 
         guard !jsonString.isEmpty,
               let data = jsonString.data(using: .utf8) else {
-            print("⚠️ Empty or invalid JSON string")
+            WPLog.warning("Empty or invalid JSON string")
             return nil
         }
 
@@ -322,9 +322,9 @@ class ClimbingGymRemoteConfigManager {
 
             return gyms
         } catch {
-            print("❌ JSON parsing error: \(error)")
+            WPLog.error("JSON parsing error: \(error)")
             if let decodingError = error as? DecodingError {
-                print("❌ Decoding error details: \(decodingError)")
+                WPLog.error("Decoding error details: \(decodingError)")
             }
             return nil
         }
@@ -355,10 +355,10 @@ class ClimbingGymRemoteConfigManager {
         guard let data = UserDefaults.standard.data(forKey: cacheKey),
               let gyms = try? JSONDecoder().decode([ClimbingGym].self, from: data)
         else {
-            print("⚠️ No cached remote gyms found")
+            WPLog.info("No cached remote gyms found")
             return []
         }
-        print("📦 Loaded \(gyms.count) gyms from cache")
+        WPLog.info("Loaded \(gyms.count) gyms from cache")
         AnalyticsManager.shared.logGymsLoaded(count: gyms.count, source: "cache_explicit")
         return gyms
     }
@@ -366,7 +366,7 @@ class ClimbingGymRemoteConfigManager {
     private func cacheRemoteGyms(_ gyms: [ClimbingGym]) {
         if let data = try? JSONEncoder().encode(gyms) {
             UserDefaults.standard.set(data, forKey: cacheKey)
-            print("💾 Cached \(gyms.count) gyms")
+            WPLog.info("Cached \(gyms.count) gyms")
         }
     }
 

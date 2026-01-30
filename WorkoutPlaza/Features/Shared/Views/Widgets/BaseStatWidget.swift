@@ -223,7 +223,7 @@ class BaseStatWidget: UIView, Selectable {
         valueLabel.font = currentFontStyle.font(size: valueSize, weight: .bold)
         unitLabel.font = currentFontStyle.font(size: unitSize, weight: .regular)
 
-        print("🔤 Font updated: style=\(currentFontStyle.displayName), scale=\(scaleFactor), valueSize=\(valueSize)")
+        WPLog.debug("Font updated: style=\(currentFontStyle.displayName), scale=\(scaleFactor), valueSize=\(valueSize)")
 
         // Auto-resize to fit content if font style changed
         autoResizeToFitContent()
@@ -294,7 +294,7 @@ class BaseStatWidget: UIView, Selectable {
                 positionResizeHandles()
             }
 
-            print("📏 Auto-resized widget: \(currentWidth)x\(currentHeight) -> \(newWidth)x\(newHeight)")
+            WPLog.debug("Auto-resized widget: \(currentWidth)x\(currentHeight) -> \(newWidth)x\(newHeight)")
         }
     }
 

@@ -42,7 +42,7 @@ enum FontStyle: String, CaseIterable {
             if let customFont = UIFont(name: fontName, size: size) {
                 return customFont
             } else {
-                print("⚠️ Font '\(fontName)' not found, using system font")
+                WPLog.warning("Font '\(fontName)' not found, using system font")
                 return .systemFont(ofSize: size, weight: weight)
             }
         }

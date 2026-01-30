@@ -64,7 +64,7 @@ class TemplateManager {
         // Reload custom templates
         loadCustomTemplates()
 
-        print("✅ Template saved: \(template.name) at \(fileURL.path)")
+        WPLog.info("Template saved: \(template.name) at \(fileURL.path)")
     }
 
     // MARK: - Delete Custom Template
@@ -74,7 +74,7 @@ class TemplateManager {
         if FileManager.default.fileExists(atPath: fileURL.path) {
             try FileManager.default.removeItem(at: fileURL)
             loadCustomTemplates()
-            print("🗑️ Template deleted: \(template.name)")
+            WPLog.info("Template deleted: \(template.name)")
         }
     }
 
@@ -93,11 +93,11 @@ class TemplateManager {
                 let template = try decoder.decode(WidgetTemplate.self, from: data)
                 customTemplates.append(template)
             } catch {
-                print("⚠️ Failed to load template from \(fileURL.lastPathComponent): \(error)")
+                WPLog.warning("Failed to load template from \(fileURL.lastPathComponent): \(error)")
             }
         }
 
-        print("📂 Loaded \(customTemplates.count) custom templates")
+        WPLog.info("Loaded \(customTemplates.count) custom templates")
     }
 
     // MARK: - Export Template
@@ -114,7 +114,7 @@ class TemplateManager {
 
         try data.write(to: fileURL)
 
-        print("📤 Template exported: \(fileURL.path)")
+        WPLog.info("Template exported: \(fileURL.path)")
         return fileURL
     }
 
@@ -127,7 +127,7 @@ class TemplateManager {
         // Save as custom template
         try saveCustomTemplate(template)
 
-        print("📥 Template imported: \(template.name)")
+        WPLog.info("Template imported: \(template.name)")
         return template
     }
 
