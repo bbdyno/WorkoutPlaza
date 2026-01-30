@@ -80,13 +80,18 @@ class GymPickerCell: UITableViewCell {
     }
 
     func configure(with gym: ClimbingGym, isSelected: Bool) {
+        // Reset state
+        logoImageView.image = UIImage(systemName: "building.2.fill")
+        logoImageView.tintColor = .secondaryLabel
+        
         nameLabel.text = gym.name
         infoLabel.text = "\(gym.gradeColors.count)개 난이도 색상"
         checkmarkImageView.isHidden = !isSelected
 
-        // Load logo asynchronously
-        ClimbingGymLogoManager.shared.loadLogo(for: gym) { [weak self] image in
+        // Load logo asynchronously as template (white)
+        ClimbingGymLogoManager.shared.loadLogo(for: gym, asTemplate: true) { [weak self] image in
             self?.logoImageView.image = image
+            self?.logoImageView.tintColor = .white // User requested white
         }
     }
 }

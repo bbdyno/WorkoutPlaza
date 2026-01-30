@@ -336,7 +336,10 @@ class ClimbingGymRemoteConfigManager {
         return ClimbingGym(
             id: remote.id,
             name: remote.name,
-            logoSource: remote.logoUrl.isEmpty ? .none : .url(remote.logoUrl),
+            logoSource: remote.logoUrl.isEmpty ? .none : {
+                WPLog.debug("Gym \(remote.name) has logo URL: \(remote.logoUrl)")
+                return .url(remote.logoUrl)
+            }(),
             gradeColors: colorHexStrings,
             isBuiltIn: true,
             metadata: ClimbingGym.GymMetadata(

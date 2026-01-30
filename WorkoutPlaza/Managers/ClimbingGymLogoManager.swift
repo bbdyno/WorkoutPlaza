@@ -16,19 +16,31 @@ class ClimbingGymLogoManager {
     private init() {}
 
     /// Load logo for a gym based on its LogoSource
-    func loadLogo(for gym: ClimbingGym, completion: @escaping (UIImage?) -> Void) {
+    /// - Parameters:
+    ///   - gym: The gym to load logo for
+    ///   - asTemplate: If true, returns image with .alwaysTemplate rendering mode (useful for tinting)
+    ///   - completion: Callback with loaded image
+    func loadLogo(for gym: ClimbingGym, asTemplate: Bool = false, completion: @escaping (UIImage?) -> Void) {
+        let handler: (UIImage?) -> Void = { image in
+            if asTemplate, let image = image {
+                completion(image.withRenderingMode(.alwaysTemplate))
+            } else {
+                completion(image)
+            }
+        }
+
         switch gym.logoSource {
         case .assetName(let name):
-            completion(UIImage(named: name))
+            handler(UIImage(named: name))
 
         case .imageData(let data):
-            completion(UIImage(data: data))
+            handler(UIImage(data: data))
 
         case .url(let urlString):
-            loadLogoFromURL(urlString, completion: completion)
+            loadLogoFromURL(urlString, completion: handler)
 
         case .none:
-            completion(placeholderImage)
+            handler(placeholderImage)
         }
     }
 
@@ -40,12 +52,11 @@ class ClimbingGymLogoManager {
         }
 
         // Check if already downloading
-        if downloadTasks[urlString] != nil {
-            // Already downloading, return placeholder for now
-            // In a production app, you might want to queue callbacks
-            completion(placeholderImage)
-            return
-        }
+        // Check if already downloading - For now, we'll allow concurrent requests to ensure all cells get a callback.
+        // In a clearer implementation, we should queue callbacks. 
+        // Removing the blocking check to prevent permanent placeholders.
+        
+        WPLog.debug("Loading logo from URL: \(urlString)")
 
         // Start download
         guard let url = URL(string: urlString) else {
@@ -59,9 +70,12 @@ class ClimbingGymLogoManager {
             guard let data = data,
                   let image = UIImage(data: data)
             else {
+                WPLog.warning("Failed to load image from URL: \(urlString)")
                 DispatchQueue.main.async { completion(self?.placeholderImage) }
                 return
             }
+
+            WPLog.debug("Successfully loaded logo for: \(urlString)")
 
             self?.imageCache[urlString] = image
             DispatchQueue.main.async { completion(image) }

@@ -126,6 +126,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         let climbingWidgets: [(String, WidgetType)] = [
             ("클라이밍짐", .climbingGym),
+            ("암장 로고", .gymLogo),
             ("종목", .climbingDiscipline),
             ("세션 기록", .climbingSession),
             ("완등 현황", .climbingRoutesByColor),
@@ -165,6 +166,14 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             let w = ClimbingGymWidget()
             w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
             w.configure(gymName: data.gymName)
+            w.initialSize = widgetSize
+            widget = w
+
+        case .gymLogo:
+            let w = GymLogoWidget()
+            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
+            let gym = ClimbingGymManager.shared.findGym(byName: data.gymName) ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
+            w.configure(with: gym)
             w.initialSize = widgetSize
             widget = w
 
@@ -323,6 +332,17 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             widget.frame = savedWidget.frame
             widget.initialSize = savedWidget.frame.size
             widget.configure(routes: data.routes)
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            return widget
+
+        case "GymLogoWidget":
+            let widget = GymLogoWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            let gym = ClimbingGymManager.shared.findGym(byName: data.gymName) ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
+            widget.configure(with: gym)
             if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
                 widget.applyColor(color)
             }
