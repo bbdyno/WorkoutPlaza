@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Combine
 
 protocol GymPickerDelegate: AnyObject {
     func gymPicker(_ picker: GymPickerViewController, didSelect gym: ClimbingGym?)
@@ -20,6 +21,8 @@ class GymPickerViewController: UIViewController {
 
     private var builtInGyms: [ClimbingGym] = []
     private var customGyms: [ClimbingGym] = []
+
+    private var cancellables = Set<AnyCancellable>()
 
     enum Section: Int, CaseIterable {
         case builtIn    // 프리셋 암장
@@ -40,7 +43,55 @@ class GymPickerViewController: UIViewController {
         overrideUserInterfaceStyle = .dark
         setupNavigationBar()
         setupTableView()
+        setupRemoteConfigSubscription()
         loadGyms()
+    }
+
+    deinit {
+        cancellables.removeAll()
+    }
+
+    /// Remote Config 자동 업데이트 구독
+    private func setupRemoteConfigSubscription() {
+        ClimbingGymRemoteConfigManager.shared.configUpdatePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] updatedGyms in
+                print("🔔 Received auto-update: \(updatedGyms.count) gyms")
+                self?.loadGyms()
+                self?.showAutoUpdateNotification()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func showAutoUpdateNotification() {
+        let banner = UILabel()
+        banner.text = "🔄 암장 데이터가 자동으로 업데이트되었습니다"
+        banner.textAlignment = .center
+        banner.font = .systemFont(ofSize: 14, weight: .medium)
+        banner.textColor = .white
+        banner.backgroundColor = .systemGreen
+        banner.alpha = 0
+        banner.layer.cornerRadius = 8
+        banner.clipsToBounds = true
+
+        view.addSubview(banner)
+        banner.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            banner.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            banner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            banner.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.9),
+            banner.heightAnchor.constraint(equalToConstant: 44)
+        ])
+
+        UIView.animate(withDuration: 0.3, animations: {
+            banner.alpha = 1
+        }) { _ in
+            UIView.animate(withDuration: 0.3, delay: 2.0, animations: {
+                banner.alpha = 0
+            }) { _ in
+                banner.removeFromSuperview()
+            }
+        }
     }
 
     private func setupNavigationBar() {
@@ -88,13 +139,16 @@ class GymPickerViewController: UIViewController {
         )
         present(loadingAlert, animated: true)
 
-        ClimbingGymManager.shared.syncRemotePresets { [weak self] result in
+        // 새로운 manualRefresh API 사용
+        ClimbingGymRemoteConfigManager.shared.manualRefresh { [weak self] result in
             loadingAlert.dismiss(animated: true) {
                 switch result {
-                case .success():
+                case .success(let gyms):
+                    print("✅ Manual refresh success: \(gyms.count) gyms")
                     self?.loadGyms()
                     self?.showSuccessAlert()
                 case .failure(let error):
+                    print("❌ Manual refresh failed: \(error.localizedDescription)")
                     self?.showErrorAlert(error)
                 }
             }
