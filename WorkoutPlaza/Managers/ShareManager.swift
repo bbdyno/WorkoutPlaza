@@ -75,10 +75,10 @@ class ShareManager {
         // Write to file
         do {
             try jsonData.write(to: fileURL)
-            print("✅ Exported workout to: \(fileURL.path)")
+            WPLog.info("Exported workout to: \(fileURL.path)")
             return fileURL
         } catch {
-            print("❌ Export failed: \(error)")
+            WPLog.error("Export failed: \(error)")
             throw ShareError.exportFailed
         }
     }
@@ -118,13 +118,13 @@ class ShareManager {
             let validationResult = validateImportedWorkout(shareableWorkout)
             switch validationResult {
             case .success:
-                print("✅ Imported workout from: \(url.lastPathComponent)")
+                WPLog.info("Imported workout from: \(url.lastPathComponent)")
                 return shareableWorkout
             case .failure(let error):
                 throw error
             }
         } catch let decodingError as DecodingError {
-            print("❌ Decoding error: \(decodingError)")
+            WPLog.error("Decoding error: \(decodingError)")
             throw ShareError.decodingFailed
         } catch {
             throw error
@@ -224,9 +224,9 @@ class ShareManager {
                 try? FileManager.default.removeItem(at: file)
             }
 
-            print("🧹 Cleaned up temporary .wplaza files")
+            WPLog.info("Cleaned up temporary .wplaza files")
         } catch {
-            print("⚠️ Failed to clean up temp files: \(error)")
+            WPLog.warning("Failed to clean up temp files: \(error)")
         }
     }
 }

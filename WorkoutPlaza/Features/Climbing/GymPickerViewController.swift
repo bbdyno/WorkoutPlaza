@@ -56,7 +56,7 @@ class GymPickerViewController: UIViewController {
         ClimbingGymRemoteConfigManager.shared.configUpdatePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] updatedGyms in
-                print("🔔 Received auto-update: \(updatedGyms.count) gyms")
+                WPLog.info("Received auto-update: \(updatedGyms.count) gyms")
                 self?.loadGyms()
                 self?.showAutoUpdateNotification()
             }
@@ -144,11 +144,11 @@ class GymPickerViewController: UIViewController {
             loadingAlert.dismiss(animated: true) {
                 switch result {
                 case .success(let gyms):
-                    print("✅ Manual refresh success: \(gyms.count) gyms")
+                    WPLog.info("Manual refresh success: \(gyms.count) gyms")
                     self?.loadGyms()
                     self?.showSuccessAlert()
                 case .failure(let error):
-                    print("❌ Manual refresh failed: \(error.localizedDescription)")
+                    WPLog.error("Manual refresh failed: \(error.localizedDescription)")
                     self?.showErrorAlert(error)
                 }
             }

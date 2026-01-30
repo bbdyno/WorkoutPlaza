@@ -131,7 +131,7 @@ class LocationWidget: UIView, Selectable {
             guard let self = self else { return }
 
             if let error = error {
-                print("❌ Geocoding failed: \(error.localizedDescription)")
+                WPLog.warning("Geocoding failed: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     self.locationLabel.text = "위치 정보 없음"
                     completion(false)
@@ -311,7 +311,7 @@ class LocationWidget: UIView, Selectable {
 
         locationLabel.font = currentFontStyle.font(size: fontSize, weight: .medium)
 
-        print("🔤 Location widget font updated: style=\(currentFontStyle.displayName), size=\(fontSize)")
+        WPLog.debug("Location widget font updated: style=\(currentFontStyle.displayName), size=\(fontSize)")
     }
 
     func applyFont(_ fontStyle: FontStyle) {

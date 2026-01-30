@@ -174,9 +174,9 @@ class ExternalWorkoutManager {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             workouts = try decoder.decode([ExternalWorkout].self, from: data)
-            print("✅ Loaded \(workouts.count) external workouts")
+            WPLog.info("Loaded \(workouts.count) external workouts")
         } catch {
-            print("❌ Failed to load external workouts: \(error)")
+            WPLog.error("Failed to load external workouts: \(error)")
             workouts = []
         }
     }
@@ -187,9 +187,9 @@ class ExternalWorkoutManager {
             encoder.dateEncodingStrategy = .iso8601
             let data = try encoder.encode(workouts)
             UserDefaults.standard.set(data, forKey: storageKey)
-            print("✅ Saved \(workouts.count) external workouts")
+            WPLog.info("Saved \(workouts.count) external workouts")
         } catch {
-            print("❌ Failed to save external workouts: \(error)")
+            WPLog.error("Failed to save external workouts: \(error)")
         }
     }
 }

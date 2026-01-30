@@ -335,9 +335,9 @@ extension RunningDetailViewController {
             // Configure asynchronously (geocoding takes time)
             w.configure(location: firstLocation) { [weak self] success in
                 if success {
-                    print("✅ Location widget configured successfully")
+                    WPLog.info("Location widget configured successfully")
                 } else {
-                    print("⚠️ Location widget configuration failed")
+                    WPLog.warning("Location widget configuration failed")
                 }
             }
         }
@@ -534,7 +534,7 @@ extension RunningDetailViewController {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
 
-        print("✅ Added workout group (type: \(groupType), owner: \(ownerName ?? "self"))")
+        WPLog.info("Added workout group (type: \(groupType), owner: \(ownerName ?? "self"))")
     }
 
     internal func createImportedWidgetsWithDefaultLayout(_ importedData: ImportedWorkoutData) -> [UIView] {

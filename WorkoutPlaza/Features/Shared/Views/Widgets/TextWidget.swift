@@ -231,7 +231,7 @@ class TextWidget: UIView, Selectable {
 
         textLabel.font = currentFontStyle.font(size: fontSize, weight: .bold)
 
-        print("🔤 Text widget font updated: style=\(currentFontStyle.displayName), size=\(fontSize)")
+        WPLog.debug("Text widget font updated: style=\(currentFontStyle.displayName), size=\(fontSize)")
     }
 
     func applyFont(_ fontStyle: FontStyle) {

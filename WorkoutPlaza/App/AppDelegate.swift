@@ -16,15 +16,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         FirebaseApp.configure()
 
         if let app = FirebaseApp.app() {
-            print("✅ Firebase initialized successfully")
-            print("📱 Firebase App Name: \(app.name)")
+            WPLog.info("Firebase initialized successfully")
+            WPLog.debug("Firebase App Name: \(app.name)")
 
             let options = app.options
-            print("🔑 Firebase Project ID: \(options.projectID ?? "unknown")")
-            print("🔑 Firebase GCM Sender ID: \(options.gcmSenderID)")
-            print("🔑 Firebase Google App ID: \(options.googleAppID)")
-            print("🔑 Firebase API Key: \(options.apiKey ?? "unknown")")
-            print("🔑 Firebase Bundle ID: \(options.bundleID ?? "unknown")")
+            WPLog.debug("Firebase Project ID: \(options.projectID ?? "unknown")",
+                        "Firebase GCM Sender ID: \(options.gcmSenderID)",
+                        "Firebase Google App ID: \(options.googleAppID)",
+                        "Firebase API Key: \(options.apiKey ?? "unknown")",
+                        "Firebase Bundle ID: \(options.bundleID ?? "unknown")")
 
             // Remote Config 자동 업데이트 설정
             setupRemoteConfig()
@@ -32,7 +32,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // Analytics App Open Logging
             AnalyticsManager.shared.logAppOpen()
         } else {
-            print("❌ Firebase initialization failed!")
+            WPLog.error("Firebase initialization failed!")
         }
 
         return true
@@ -44,10 +44,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         ClimbingGymRemoteConfigManager.shared.setupAutoUpdate { result in
             switch result {
             case .success(let gyms):
-                print("✅ Remote Config auto-update setup complete: \(gyms.count) gyms loaded")
+                WPLog.info("Remote Config auto-update setup complete: \(gyms.count) gyms loaded")
             case .failure(let error):
-                print("⚠️ Remote Config auto-update setup failed: \(error.localizedDescription)")
-                print("⚠️ Will continue with cached/default values")
+                WPLog.warning("Remote Config auto-update setup failed: \(error.localizedDescription)",
+                              "Will continue with cached/default values")
             }
         }
     }

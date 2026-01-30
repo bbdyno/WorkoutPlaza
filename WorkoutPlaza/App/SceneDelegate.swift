@@ -45,11 +45,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private func handleIncomingURL(_ url: URL) {
         // Only handle .wplaza files
         guard url.pathExtension.lowercased() == "wplaza" else {
-            print("⚠️ Unsupported file extension: \(url.pathExtension)")
+            WPLog.warning("Unsupported file extension: \(url.pathExtension)")
             return
         }
 
-        print("📥 Received .wplaza file: \(url.lastPathComponent)")
+        WPLog.info("Received .wplaza file: \(url.lastPathComponent)")
 
         // Post notification to handle the file
         NotificationCenter.default.post(
