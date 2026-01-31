@@ -172,8 +172,21 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         case .gymLogo:
             let w = GymLogoWidget()
             w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
-            let gym = ClimbingGymManager.shared.findGym(byName: data.gymName) ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
-            w.configure(with: gym)
+            
+            // Try to find the gym object to get logo and metadata
+            // 1. Try exact match via manager (covers presets and custom saved)
+            var gym = ClimbingGymManager.shared.findGym(byName: data.gymName)
+            
+            // 2. If not found, try searching ALL gyms including remote config explicitly
+            if gym == nil {
+                let allGyms = ClimbingGymManager.shared.getAllGyms()
+                gym = allGyms.first { $0.name.caseInsensitiveCompare(data.gymName) == .orderedSame }
+            }
+            
+            // 3. Fallback to dummy
+            let finalGym = gym ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
+            
+            w.configure(with: finalGym)
             w.initialSize = widgetSize
             widget = w
 
