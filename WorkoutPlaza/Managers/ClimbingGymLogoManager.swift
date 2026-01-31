@@ -29,6 +29,13 @@ class ClimbingGymLogoManager {
             }
         }
 
+        if case .url(let urlString) = gym.logoSource {
+            let remoteId = gym.metadata?.remoteId ?? "nil"
+            WPLog.debug("🖼️ Loading logo for '\(gym.name)' (RemoteID: \(remoteId)) -> URL: \(urlString)")
+        } else {
+            WPLog.debug("🖼️ Loading logo for '\(gym.name)' -> Source: \(gym.logoSource)")
+        }
+
         switch gym.logoSource {
         case .assetName(let name):
             handler(UIImage(named: name))
