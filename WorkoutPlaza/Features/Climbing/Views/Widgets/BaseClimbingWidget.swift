@@ -238,6 +238,22 @@ class BaseClimbingWidget: UIView, Selectable {
         unitLabel.font = currentFontStyle.font(size: unitSize, weight: .regular)
     }
 
+    var idealSize: CGSize {
+        // Force layout to ensure labels have text assigned
+        layoutIfNeeded()
+        
+        let titleSize = titleLabel.intrinsicContentSize
+        let valueSize = valueLabel.intrinsicContentSize
+        let unitSize = unitLabel.intrinsicContentSize
+        
+        let contentWidth = max(titleSize.width, valueSize.width + 4 + unitSize.width)
+        let width = contentWidth + 24 // 12 + 12 padding
+        
+        let height = 12 + titleSize.height + 4 + valueSize.height + 12 // Top + Title + Gap + Value + Bottom
+        
+        return CGSize(width: max(width, 100), height: max(height, 60))
+    }
+
     func calculateScaleFactor() -> CGFloat {
         // initialSize must be set externally before scaling works
         guard initialSize.width > 0 && initialSize.height > 0 else {
@@ -252,7 +268,7 @@ class BaseClimbingWidget: UIView, Selectable {
         let heightScale = bounds.height / initialSize.height
         let averageScale = (widthScale + heightScale) / 2.0
 
-        return min(max(averageScale, 0.5), 3.0)
+        return max(averageScale, 0.5)
     }
 
     // MARK: - Resize Handles
