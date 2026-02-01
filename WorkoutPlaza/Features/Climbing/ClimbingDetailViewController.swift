@@ -56,11 +56,11 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         
         let gymWidget = ClimbingGymWidget()
         gymWidget.configure(gymName: data.gymName)
-        addWidget(gymWidget, size: CGSize(width: 300, height: 60), position: CGPoint(x: 30, y: 100))
+        addWidget(gymWidget, size: gymWidget.idealSize, position: CGPoint(x: 30, y: 100))
         
         let sessionWidget = ClimbingSessionWidget()
         sessionWidget.configure(sent: data.sentRoutes, total: data.totalRoutes)
-        addWidget(sessionWidget, size: CGSize(width: 300, height: 100), position: CGPoint(x: 30, y: 180))
+        addWidget(sessionWidget, size: sessionWidget.idealSize, position: CGPoint(x: 30, y: 180))
         
         // Add more defaults...
     }
@@ -164,9 +164,10 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         switch type {
         case .climbingGym:
             let w = ClimbingGymWidget()
-            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
             w.configure(gymName: data.gymName)
-            w.initialSize = widgetSize
+            let gymSize = w.idealSize
+            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: gymSize)
+            w.initialSize = gymSize
             widget = w
 
         case .gymLogo:
@@ -199,16 +200,17 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         case .climbingSession:
             let w = ClimbingSessionWidget()
-            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
             w.configure(sent: data.sentRoutes, total: data.totalRoutes)
-            w.initialSize = widgetSize
+            let sessionSize = w.idealSize
+            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: sessionSize)
+            w.initialSize = sessionSize
             widget = w
 
         case .climbingRoutesByColor:
-            let routesByColorSize = CGSize(width: 180, height: 120)
             let w = ClimbingRoutesByColorWidget()
-            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: routesByColorSize)
             w.configure(routes: data.routes)
+            let routesByColorSize = w.idealSize
+            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: routesByColorSize)
             w.initialSize = routesByColorSize
             widget = w
 

@@ -108,4 +108,24 @@ class ClimbingGymWidget: BaseClimbingWidget {
             make.width.height.equalTo(logoSize)
         }
     }
+    
+    override var idealSize: CGSize {
+        layoutIfNeeded()
+        
+        let titleSize = titleLabel.intrinsicContentSize
+        let valueSize = valueLabel.intrinsicContentSize
+        
+        var contentWidth: CGFloat = 0
+        if !logoImageView.isHidden {
+            // Logo (28) + Spacing (8) + Text
+            contentWidth = max(titleSize.width, 28 + 8 + valueSize.width)
+        } else {
+            contentWidth = max(titleSize.width, valueSize.width)
+        }
+        
+        let width = contentWidth + 24 // Padding
+        let height = 12 + titleSize.height + 4 + max(valueSize.height, 28) + 12
+        
+        return CGSize(width: max(width, 120), height: max(height, 60))
+    }
 }

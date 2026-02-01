@@ -38,7 +38,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
     private let stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 2
+        stack.spacing = 0
         stack.alignment = .leading
         stack.distribution = .fill
         return stack
@@ -124,7 +124,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
         stackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         let scaleFactor = calculateScaleFactor()
-        let fontSize: CGFloat = 14 * scaleFactor
+        let fontSize: CGFloat = 16 * scaleFactor
 
         for data in routeData {
             let rowView = createRowView(colorHex: data.colorHex, sent: data.sent, total: data.total, fontSize: fontSize)
@@ -137,7 +137,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
         let scaleFactor = calculateScaleFactor()
 
         // Color circle - 크기도 스케일에 맞게 조정
-        let circleSize: CGFloat = 12 * scaleFactor
+        let circleSize: CGFloat = 24 * scaleFactor
         let colorCircle = UIView()
         colorCircle.backgroundColor = UIColor(hex: colorHex) ?? .white
         colorCircle.layer.cornerRadius = circleSize / 2
@@ -162,12 +162,12 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
         }
 
         textLabel.snp.makeConstraints { make in
-            make.leading.equalTo(colorCircle.snp.trailing).offset(8)
+            make.leading.equalTo(colorCircle.snp.trailing).offset(2)
             make.centerY.equalToSuperview()
             make.trailing.lessThanOrEqualToSuperview()
         }
 
-        let rowHeight: CGFloat = 20 * scaleFactor
+        let rowHeight: CGFloat = 26 * scaleFactor
         rowView.snp.makeConstraints { make in
             make.height.greaterThanOrEqualTo(rowHeight)
         }
@@ -289,6 +289,35 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
         updateStackView()
     }
 
+    var idealSize: CGSize {
+        layoutIfNeeded()
+        
+        let titleSize = titleLabel.intrinsicContentSize
+        
+        var maxRowWidth: CGFloat = 0
+        var totalStackHeight: CGFloat = 0
+        
+        // Calculate max width from subviews in stackView
+        for view in stackView.arrangedSubviews {
+            // Re-calculate assuming base sizes (scale=1)
+            // Circle (24) + Spacing (2) + Text
+            // We can approximate by checking the subviews of the row view
+            if let label = view.subviews.first(where: { $0 is UILabel }) as? UILabel {
+                let textWidth = label.intrinsicContentSize.width
+                let rowWidth = 24 + 2 + textWidth
+                maxRowWidth = max(maxRowWidth, rowWidth)
+            }
+            totalStackHeight += 26 // Row Height
+        }
+        
+        let contentWidth = max(titleSize.width, maxRowWidth)
+        let width = contentWidth + 24 // Padding
+        
+        let height = 8 + titleSize.height + 6 + totalStackHeight + 8
+        
+        return CGSize(width: max(width, 100), height: max(height, 80))
+    }
+
     func calculateScaleFactor() -> CGFloat {
         // initialSize must be set externally before scaling works
         guard initialSize.width > 0 && initialSize.height > 0 else {
@@ -303,7 +332,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
         let heightScale = bounds.height / initialSize.height
         let averageScale = (widthScale + heightScale) / 2.0
 
-        return min(max(averageScale, 0.5), 3.0)
+        return max(averageScale, 0.5)
     }
 
     // MARK: - Resize Handles

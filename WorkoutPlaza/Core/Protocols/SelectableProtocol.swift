@@ -16,6 +16,7 @@ protocol Selectable: UIView {
     var resizeHandles: [ResizeHandleView] { get set }
     var selectionBorderLayer: CAShapeLayer? { get set }
     var selectionDelegate: SelectionDelegate? { get set }
+    var initialSize: CGSize { get set }
 
     func showSelectionState()
     func hideSelectionState()
@@ -31,7 +32,7 @@ protocol SelectionDelegate: AnyObject {
 
 // MARK: - Default Implementation
 extension Selectable {
-
+    
     func showSelectionState() {
         isSelected = true
         createSelectionBorder()
