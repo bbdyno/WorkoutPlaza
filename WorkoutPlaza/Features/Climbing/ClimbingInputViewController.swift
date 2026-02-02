@@ -7,6 +7,7 @@
 
 import UIKit
 import PhotosUI
+import SnapKit
 
 protocol ClimbingInputDelegate: AnyObject {
     func climbingInputDidSave(_ controller: ClimbingInputViewController)
@@ -14,6 +15,11 @@ protocol ClimbingInputDelegate: AnyObject {
 }
 
 class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+    private enum Constants {
+        static let footerTopPadding: CGFloat = 16
+        static let footerHorizontalPadding: CGFloat = 20
+        static let footerBottomPadding: CGFloat = 16
+    }
 
     private let tableView = UITableView(frame: .zero, style: .insetGrouped)
 
@@ -93,13 +99,9 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
 
     private func setupTableView() {
         view.addSubview(tableView)
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
+        tableView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
         
         tableView.delegate = self
         tableView.dataSource = self
@@ -198,13 +200,12 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
             label.numberOfLines = 0
 
             footerView.addSubview(label)
-            label.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                label.topAnchor.constraint(equalTo: footerView.topAnchor, constant: 16),
-                label.leadingAnchor.constraint(equalTo: footerView.leadingAnchor, constant: 20),
-                label.trailingAnchor.constraint(equalTo: footerView.trailingAnchor, constant: -20),
-                label.bottomAnchor.constraint(equalTo: footerView.bottomAnchor, constant: -16)
-            ])
+            label.snp.makeConstraints { make in
+                make.top.equalToSuperview().offset(Constants.footerTopPadding)
+                make.leading.equalToSuperview().offset(Constants.footerHorizontalPadding)
+                make.trailing.equalToSuperview().offset(-Constants.footerHorizontalPadding)
+                make.bottom.equalToSuperview().offset(-Constants.footerBottomPadding)
+            }
 
             return footerView
         }
@@ -562,6 +563,12 @@ extension ClimbingInputViewController: UIColorPickerViewControllerDelegate {
 // MARK: - ClimbingHeaderCell
 
 class ClimbingHeaderCell: UITableViewCell {
+    private enum Constants {
+        static let textFieldVerticalPadding: CGFloat = 10
+        static let textFieldHorizontalPadding: CGFloat = 20
+        static let textFieldMinHeight: CGFloat = 44
+    }
+    
     private let textField = UITextField()
     private var onTextChange: ((String) -> Void)?
 
@@ -578,14 +585,13 @@ class ClimbingHeaderCell: UITableViewCell {
         textField.delegate = self
         
         contentView.addSubview(textField)
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            textField.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
-            textField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            textField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            textField.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
-            textField.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
-        ])
+        textField.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(Constants.textFieldVerticalPadding)
+            make.leading.equalToSuperview().offset(Constants.textFieldHorizontalPadding)
+            make.trailing.equalToSuperview().offset(-Constants.textFieldHorizontalPadding)
+            make.bottom.equalToSuperview().offset(-Constants.textFieldVerticalPadding)
+            make.height.greaterThanOrEqualTo(Constants.textFieldMinHeight)
+        }
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -611,6 +617,11 @@ extension ClimbingHeaderCell: UITextFieldDelegate {
 // MARK: - DisciplineSelectionCell
 
 class DisciplineSelectionCell: UITableViewCell {
+    private enum Constants {
+        static let disciplineButtonVerticalPadding: CGFloat = 5
+        static let disciplineButtonHeight: CGFloat = 44
+    }
+    
     private var onSelectionChange: ((ClimbingDiscipline) -> Void)?
     private var currentDiscipline: ClimbingDiscipline = .bouldering
     private let stackView = UIStackView()
@@ -637,20 +648,17 @@ class DisciplineSelectionCell: UITableViewCell {
         stackView.backgroundColor = .systemGray5 // Separator color
         
         container.addSubview(stackView)
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 5),
-            container.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0), // Edge to edge in cell content
-            container.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
-            container.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -5),
-            
-            stackView.topAnchor.constraint(equalTo: container.topAnchor),
-            stackView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            stackView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            stackView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            stackView.heightAnchor.constraint(equalToConstant: 44)
-        ])
+
+        container.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(Constants.disciplineButtonVerticalPadding)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview().offset(-Constants.disciplineButtonVerticalPadding)
+        }
+
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalTo(Constants.disciplineButtonHeight)
+        }
         
         setupButtons()
     }
@@ -730,6 +738,12 @@ class DisciplineSelectionCell: UITableViewCell {
 
 private class ButtonCell: UITableViewCell {
     enum Style { case primary, secondary }
+    
+    private enum Constants {
+        static let saveButtonVerticalPadding: CGFloat = 8
+        static let saveButtonHorizontalPadding: CGFloat = 20
+        static let saveButtonHeight: CGFloat = 50
+    }
 
     private let button = UIButton(type: .system)
     private var onTap: (() -> Void)?
@@ -744,14 +758,13 @@ private class ButtonCell: UITableViewCell {
         button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
 
         contentView.addSubview(button)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            button.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            button.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            button.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            button.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
-            button.heightAnchor.constraint(equalToConstant: 50)
-        ])
+        button.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(Constants.saveButtonVerticalPadding)
+            make.leading.equalToSuperview().offset(Constants.saveButtonHorizontalPadding)
+            make.trailing.equalToSuperview().offset(-Constants.saveButtonHorizontalPadding)
+            make.bottom.equalToSuperview().offset(-Constants.saveButtonVerticalPadding)
+            make.height.equalTo(Constants.saveButtonHeight)
+        }
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -848,13 +861,11 @@ class RouteCell: UITableViewCell {
         // containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
         // containerView.layer.shadowRadius = 4
         
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
-            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 0), // Grouped style handles inset usually, but if we want card in card... let's stick to 0 if native inset used
-            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 0),
-            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6)
-        ])
+        containerView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(6)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview().offset(-6)
+        }
         
         // Header
         headerStack.axis = .horizontal
@@ -878,14 +889,12 @@ class RouteCell: UITableViewCell {
         headerStack.addArrangedSubview(deleteButton)
         
         containerView.addSubview(headerStack)
-        headerStack.translatesAutoresizingMaskIntoConstraints = false
 
         // Color Section Label
         colorSectionLabel.text = "난이도 테이프"
         colorSectionLabel.font = .systemFont(ofSize: 11, weight: .semibold)
         colorSectionLabel.textColor = .secondaryLabel
         containerView.addSubview(colorSectionLabel)
-        colorSectionLabel.translatesAutoresizingMaskIntoConstraints = false
 
         // Color Section
         colorScrollView.showsHorizontalScrollIndicator = false
@@ -893,15 +902,13 @@ class RouteCell: UITableViewCell {
         colorStack.spacing = 10
         colorStack.alignment = .center
         colorScrollView.addSubview(colorStack)
-        colorStack.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            colorStack.topAnchor.constraint(equalTo: colorScrollView.topAnchor),
-            colorStack.leadingAnchor.constraint(equalTo: colorScrollView.leadingAnchor, constant: 16),
-            colorStack.trailingAnchor.constraint(equalTo: colorScrollView.trailingAnchor, constant: -16),
-            colorStack.bottomAnchor.constraint(equalTo: colorScrollView.bottomAnchor),
-            colorStack.heightAnchor.constraint(equalTo: colorScrollView.heightAnchor)
-        ])
+
+        colorStack.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.equalToSuperview().offset(16)
+            make.trailing.equalToSuperview().offset(-16)
+            make.height.equalToSuperview()
+        }
         
         let defaults = ClimbingGymManager.shared.defaultGradeColors.compactMap { UIColor(climbingHex: $0) }
         for i in 0..<defaults.count {
@@ -917,8 +924,7 @@ class RouteCell: UITableViewCell {
         colorStack.addArrangedSubview(customColorButton)
         
         containerView.addSubview(colorScrollView)
-        colorScrollView.translatesAutoresizingMaskIntoConstraints = false
-        
+
         // Grade
         gradeLabel.text = "GRADE (선택)"
         gradeLabel.font = .systemFont(ofSize: 11, weight: .semibold)
@@ -932,96 +938,94 @@ class RouteCell: UITableViewCell {
         gradeField.delegate = self
         gradeField.placeholder = "V3, 파랑..."
         gradeField.addTarget(self, action: #selector(gradeChanged), for: .editingChanged)
-        
+
         gradeStack.axis = .vertical
         gradeStack.spacing = 4
         gradeStack.addArrangedSubview(gradeLabel)
         gradeStack.addArrangedSubview(gradeField)
-        
+
         // Attempts
         attemptsLabel.text = "ATTEMPTS"
         attemptsLabel.font = .systemFont(ofSize: 11, weight: .semibold)
         attemptsLabel.textColor = .secondaryLabel
-        
+
         attemptsValueLabel.font = .monospacedDigitSystemFont(ofSize: 18, weight: .medium)
         attemptsValueLabel.textAlignment = .center
-        
+
         attemptsStepper.addTarget(self, action: #selector(stepperChanged), for: .valueChanged)
         attemptsStepper.minimumValue = 1
-        
+
         attemptsStack.axis = .vertical
         attemptsStack.spacing = 4
         attemptsStack.alignment = .center
         attemptsStack.addArrangedSubview(attemptsLabel)
-        
+
         let attemptsControlStack = UIStackView(arrangedSubviews: [attemptsValueLabel, attemptsStepper])
         attemptsControlStack.spacing = 8
         attemptsControlStack.alignment = .center
         attemptsStack.addArrangedSubview(attemptsControlStack)
-        
+
         // Sent Switch
         sentLabel.text = "완등"
         sentLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         sentLabel.textColor = .label
-        
+
         sentSwitch.onTintColor = .systemGreen
         sentSwitch.addTarget(self, action: #selector(sentChanged), for: .valueChanged)
-        
+
         let sentStack = UIStackView(arrangedSubviews: [sentLabel, sentSwitch])
         sentStack.axis = .vertical
         sentStack.alignment = .center
         sentStack.spacing = 8
-        
+
         // Layout Main Content
         containerView.addSubview(gradeStack)
         containerView.addSubview(attemptsStack)
         containerView.addSubview(sentStack)
-        
-        gradeStack.translatesAutoresizingMaskIntoConstraints = false
-        attemptsStack.translatesAutoresizingMaskIntoConstraints = false
-        sentStack.translatesAutoresizingMaskIntoConstraints = false
-        
-        colorSectionHeightConstraint = colorScrollView.heightAnchor.constraint(equalToConstant: 44)
 
-        // Create two different top constraints for gradeStack
+        // Create SnapKit constraints
+        headerStack.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.leading.equalToSuperview().offset(16)
+            make.trailing.equalToSuperview().offset(-16)
+        }
+
+        colorSectionLabel.snp.makeConstraints { make in
+            make.top.equalTo(headerStack.snp.bottom).offset(12)
+            make.leading.equalToSuperview().offset(16)
+        }
+
+        colorScrollView.snp.makeConstraints { make in
+            make.top.equalTo(colorSectionLabel.snp.bottom).offset(6)
+            make.leading.trailing.equalToSuperview()
+        }
+        colorSectionHeightConstraint = colorScrollView.heightAnchor.constraint(equalToConstant: 44)
+        colorSectionHeightConstraint.isActive = true
+
+        // Create two different top constraints for gradeStack (kept as NSLayoutConstraint for conditional activation)
         gradeStackTopToColorConstraint = gradeStack.topAnchor.constraint(equalTo: colorScrollView.bottomAnchor, constant: 16)
         gradeStackTopToHeaderConstraint = gradeStack.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 16)
+        gradeStackTopToColorConstraint.isActive = true
 
-        NSLayoutConstraint.activate([
-            // Header
-            headerStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
-            headerStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            headerStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+        gradeStack.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.width.equalTo(80)
+            make.bottom.equalToSuperview().offset(-16)
+        }
 
-            // Color Section Label
-            colorSectionLabel.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 12),
-            colorSectionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+        gradeField.snp.makeConstraints { make in
+            make.height.equalTo(36)
+        }
 
-            // Color Scroll
-            colorScrollView.topAnchor.constraint(equalTo: colorSectionLabel.bottomAnchor, constant: 6),
-            colorScrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            colorScrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            colorSectionHeightConstraint,
+        sentStack.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-16)
+            make.centerY.equalTo(gradeStack)
+        }
 
-            // Grade - use color constraint initially
-            gradeStackTopToColorConstraint,
-            gradeStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            gradeStack.widthAnchor.constraint(equalToConstant: 80),
-            
-            gradeField.heightAnchor.constraint(equalToConstant: 36),
-            
-            // Sent Switch (Replacing Button)
-            sentStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            sentStack.centerYAnchor.constraint(equalTo: gradeStack.centerYAnchor),
-            // sentStack.heightAnchor.constraint(equalToConstant: 36),
-            
-            // Attempts (Between Grade and Send)
-            attemptsStack.centerYAnchor.constraint(equalTo: gradeStack.centerYAnchor),
-            attemptsStack.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            
-            // Bottom constraint
-            gradeStack.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
-        ])
+        attemptsStack.snp.makeConstraints { make in
+            make.centerY.equalTo(gradeStack)
+            make.centerX.equalToSuperview()
+        }
     }
     
     // ... helpers and configure ...
@@ -1034,9 +1038,9 @@ class RouteCell: UITableViewCell {
         btn.tag = tag
         btn.addTarget(self, action: #selector(colorTapped(_:)), for: .touchUpInside)
 
-        btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.widthAnchor.constraint(equalToConstant: 32).isActive = true
-        btn.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        btn.snp.makeConstraints { make in
+            make.size.equalTo(32)
+        }
 
         // Add subtle shadow for better visibility
         btn.layer.shadowColor = UIColor.black.cgColor

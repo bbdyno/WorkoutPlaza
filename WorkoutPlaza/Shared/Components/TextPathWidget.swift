@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SnapKit
 
 class TextPathWidget: UIView, Selectable {
 
@@ -320,6 +321,30 @@ class TextPathWidget: UIView, Selectable {
 // MARK: - Text Path Drawing Overlay View
 
 class TextPathDrawingOverlay: UIView {
+    private enum Constants {
+        static let bottomToolbarHeight: CGFloat = 80
+        static let buttonStackHeight: CGFloat = 40
+        static let buttonStackWidth: CGFloat = 200
+        static let controlButtonWidth: CGFloat = 60
+        static let controlButtonHeight: CGFloat = 40
+        static let expandedPanelHorizontalPadding: CGFloat = 20
+        static let expandedPanelBottomOffset: CGFloat = 16
+        static let expandedPanelHeight: CGFloat = 120
+        static let colorStackHeight: CGFloat = 40
+        static let fontStackHorizontalPadding: CGFloat = 16
+        static let fontStackHeight: CGFloat = 40
+        static let sizeContainerHorizontalPadding: CGFloat = 24
+        static let sizeContainerHeight: CGFloat = 40
+        static let sizeIconSize: CGFloat = 24
+        static let sizeIconLeadingOffset: CGFloat = 12
+        static let sizeLabelWidth: CGFloat = 30
+        static let confirmButtonSize: CGFloat = 50
+        static let confirmButtonBottomOffset: CGFloat = 12
+        static let confirmButtonTrailingOffset: CGFloat = 20
+        static let cancelButtonSize: CGFloat = 50
+        static let redrawButtonSize: CGFloat = 40
+        static let colorButtonSize: CGFloat = 36
+    }
 
     // MARK: - Drawing State
     enum DrawingState {
@@ -550,13 +575,10 @@ class TextPathDrawingOverlay: UIView {
 
         // Bottom Toolbar
         addSubview(bottomToolbar)
-        bottomToolbar.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            bottomToolbar.leadingAnchor.constraint(equalTo: leadingAnchor),
-            bottomToolbar.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bottomToolbar.bottomAnchor.constraint(equalTo: bottomAnchor),
-            bottomToolbar.heightAnchor.constraint(equalToConstant: 80)
-        ])
+        bottomToolbar.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+            make.height.equalTo(Constants.bottomToolbarHeight)
+        }
 
         // Main control buttons in toolbar
         let buttonStack = UIStackView(arrangedSubviews: [colorButton, fontButton, sizeButton])
@@ -566,21 +588,18 @@ class TextPathDrawingOverlay: UIView {
         buttonStack.distribution = .fillEqually
 
         bottomToolbar.addSubview(buttonStack)
-        buttonStack.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            buttonStack.centerXAnchor.constraint(equalTo: bottomToolbar.centerXAnchor),
-            buttonStack.centerYAnchor.constraint(equalTo: bottomToolbar.centerYAnchor),
-            buttonStack.heightAnchor.constraint(equalToConstant: 40),
-            buttonStack.widthAnchor.constraint(equalToConstant: 200)
-        ])
+        buttonStack.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.height.equalTo(Constants.buttonStackHeight)
+            make.width.equalTo(Constants.buttonStackWidth)
+        }
 
         // Set button constraints
         [colorButton, fontButton, sizeButton].forEach { button in
-            button.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                button.widthAnchor.constraint(equalToConstant: 60),
-                button.heightAnchor.constraint(equalToConstant: 40)
-            ])
+            button.snp.makeConstraints { make in
+                make.width.equalTo(Constants.controlButtonWidth)
+                make.height.equalTo(Constants.controlButtonHeight)
+            }
         }
 
         colorButton.addTarget(self, action: #selector(colorButtonMainTapped), for: .touchUpInside)
@@ -589,22 +608,19 @@ class TextPathDrawingOverlay: UIView {
 
         // Expanded Panel Container
         addSubview(expandedPanelContainer)
-        expandedPanelContainer.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            expandedPanelContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            expandedPanelContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            expandedPanelContainer.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -16),
-            expandedPanelContainer.heightAnchor.constraint(equalToConstant: 120)
-        ])
+        expandedPanelContainer.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(20)
+            make.trailing.equalToSuperview().offset(-20)
+            make.bottom.equalTo(bottomToolbar.snp.top).offset(-16)
+            make.height.equalTo(120)
+        }
 
         // Setup color panel
         expandedPanelContainer.addSubview(colorStackView)
-        colorStackView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            colorStackView.centerXAnchor.constraint(equalTo: expandedPanelContainer.centerXAnchor),
-            colorStackView.centerYAnchor.constraint(equalTo: expandedPanelContainer.centerYAnchor),
-            colorStackView.heightAnchor.constraint(equalToConstant: 40)
-        ])
+        colorStackView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.height.equalTo(40)
+        }
 
         // Create color buttons
         for (index, color) in availableColors.enumerated() {
@@ -615,13 +631,12 @@ class TextPathDrawingOverlay: UIView {
 
         // Setup font panel
         expandedPanelContainer.addSubview(fontStackView)
-        fontStackView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            fontStackView.leadingAnchor.constraint(equalTo: expandedPanelContainer.leadingAnchor, constant: 16),
-            fontStackView.trailingAnchor.constraint(equalTo: expandedPanelContainer.trailingAnchor, constant: -16),
-            fontStackView.centerYAnchor.constraint(equalTo: expandedPanelContainer.centerYAnchor),
-            fontStackView.heightAnchor.constraint(equalToConstant: 40)
-        ])
+        fontStackView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.trailing.equalToSuperview().offset(-16)
+            make.centerY.equalToSuperview()
+            make.height.equalTo(40)
+        }
 
         // Create font buttons
         for (index, fontInfo) in availableFonts.enumerated() {
@@ -633,41 +648,34 @@ class TextPathDrawingOverlay: UIView {
         // Setup size panel
         let sizeContainer = UIView()
         expandedPanelContainer.addSubview(sizeContainer)
-        sizeContainer.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            sizeContainer.leadingAnchor.constraint(equalTo: expandedPanelContainer.leadingAnchor, constant: 24),
-            sizeContainer.trailingAnchor.constraint(equalTo: expandedPanelContainer.trailingAnchor, constant: -24),
-            sizeContainer.centerYAnchor.constraint(equalTo: expandedPanelContainer.centerYAnchor),
-            sizeContainer.heightAnchor.constraint(equalToConstant: 40)
-        ])
+        sizeContainer.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(24)
+            make.trailing.equalToSuperview().offset(-24)
+            make.centerY.equalToSuperview()
+            make.height.equalTo(40)
+        }
 
         let sizeIcon = UIImageView(image: UIImage(systemName: "textformat.size"))
         sizeIcon.tintColor = .white
         sizeIcon.contentMode = .scaleAspectFit
         sizeContainer.addSubview(sizeIcon)
-        sizeIcon.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            sizeIcon.leadingAnchor.constraint(equalTo: sizeContainer.leadingAnchor),
-            sizeIcon.centerYAnchor.constraint(equalTo: sizeContainer.centerYAnchor),
-            sizeIcon.widthAnchor.constraint(equalToConstant: 24),
-            sizeIcon.heightAnchor.constraint(equalToConstant: 24)
-        ])
+        sizeIcon.snp.makeConstraints { make in
+            make.leading.centerY.equalToSuperview()
+            make.size.equalTo(24)
+        }
 
         sizeContainer.addSubview(fontSizeLabel)
-        fontSizeLabel.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            fontSizeLabel.trailingAnchor.constraint(equalTo: sizeContainer.trailingAnchor),
-            fontSizeLabel.centerYAnchor.constraint(equalTo: sizeContainer.centerYAnchor),
-            fontSizeLabel.widthAnchor.constraint(equalToConstant: 30)
-        ])
+        fontSizeLabel.snp.makeConstraints { make in
+            make.trailing.centerY.equalToSuperview()
+            make.width.equalTo(30)
+        }
 
         sizeContainer.addSubview(fontSizeSlider)
-        fontSizeSlider.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            fontSizeSlider.leadingAnchor.constraint(equalTo: sizeIcon.trailingAnchor, constant: 12),
-            fontSizeSlider.trailingAnchor.constraint(equalTo: fontSizeLabel.leadingAnchor, constant: -12),
-            fontSizeSlider.centerYAnchor.constraint(equalTo: sizeContainer.centerYAnchor)
-        ])
+        fontSizeSlider.snp.makeConstraints { make in
+            make.leading.equalTo(sizeIcon.snp.trailing).offset(12)
+            make.trailing.equalTo(fontSizeLabel.snp.leading).offset(-12)
+            make.centerY.equalToSuperview()
+        }
         fontSizeSlider.addTarget(self, action: #selector(fontSizeSliderChanged(_:)), for: .valueChanged)
 
         updateColorSelection()
@@ -676,35 +684,29 @@ class TextPathDrawingOverlay: UIView {
 
         // Confirm Button
         addSubview(confirmButton)
-        confirmButton.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            confirmButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            confirmButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -12),
-            confirmButton.widthAnchor.constraint(equalToConstant: 50),
-            confirmButton.heightAnchor.constraint(equalToConstant: 50)
-        ])
+        confirmButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-20)
+            make.bottom.equalTo(bottomToolbar.snp.top).offset(-12)
+            make.size.equalTo(50)
+        }
         confirmButton.addTarget(self, action: #selector(confirmTapped), for: .touchUpInside)
 
         // Cancel Button
         addSubview(cancelButton)
-        cancelButton.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            cancelButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            cancelButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -12),
-            cancelButton.widthAnchor.constraint(equalToConstant: 50),
-            cancelButton.heightAnchor.constraint(equalToConstant: 50)
-        ])
+        cancelButton.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(20)
+            make.bottom.equalTo(bottomToolbar.snp.top).offset(-12)
+            make.size.equalTo(50)
+        }
         cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
 
         // Redraw Button
         addSubview(redrawButton)
-        redrawButton.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            redrawButton.centerXAnchor.constraint(equalTo: centerXAnchor),
-            redrawButton.bottomAnchor.constraint(equalTo: bottomToolbar.topAnchor, constant: -12),
-            redrawButton.widthAnchor.constraint(equalToConstant: 40),
-            redrawButton.heightAnchor.constraint(equalToConstant: 40)
-        ])
+        redrawButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(bottomToolbar.snp.top).offset(-12)
+            make.size.equalTo(40)
+        }
         redrawButton.addTarget(self, action: #selector(redrawTapped), for: .touchUpInside)
     }
 
@@ -717,11 +719,9 @@ class TextPathDrawingOverlay: UIView {
         button.tag = index
         button.addTarget(self, action: #selector(colorButtonTapped(_:)), for: .touchUpInside)
 
-        button.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(equalToConstant: 36),
-            button.heightAnchor.constraint(equalToConstant: 36)
-        ])
+        button.snp.makeConstraints { make in
+            make.size.equalTo(36)
+        }
 
         return button
     }
