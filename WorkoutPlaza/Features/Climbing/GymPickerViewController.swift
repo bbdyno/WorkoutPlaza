@@ -7,12 +7,19 @@
 
 import UIKit
 import Combine
+import SnapKit
 
 protocol GymPickerDelegate: AnyObject {
     func gymPicker(_ picker: GymPickerViewController, didSelect gym: ClimbingGym?)
 }
 
 class GymPickerViewController: UIViewController {
+    private enum Constants {
+        static let bannerTopOffset: CGFloat = 16
+        static let bannerWidthMultiplier: CGFloat = 0.9
+        static let bannerHeight: CGFloat = 44
+    }
+
     weak var delegate: GymPickerDelegate?
     var selectedGym: ClimbingGym?
 
@@ -75,13 +82,12 @@ class GymPickerViewController: UIViewController {
         banner.clipsToBounds = true
 
         view.addSubview(banner)
-        banner.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            banner.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            banner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            banner.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.9),
-            banner.heightAnchor.constraint(equalToConstant: 44)
-        ])
+        banner.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(Constants.bannerTopOffset)
+            make.centerX.equalToSuperview()
+            make.width.lessThanOrEqualToSuperview().multipliedBy(Constants.bannerWidthMultiplier)
+            make.height.equalTo(Constants.bannerHeight)
+        }
 
         UIView.animate(withDuration: 0.3, animations: {
             banner.alpha = 1
@@ -106,13 +112,9 @@ class GymPickerViewController: UIViewController {
 
     private func setupTableView() {
         view.addSubview(tableView)
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
+        tableView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
 
         tableView.delegate = self
         tableView.dataSource = self

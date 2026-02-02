@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SnapKit
 
 protocol BackgroundImageEditorDelegate: AnyObject {
     func backgroundImageEditor(_ editor: BackgroundImageEditorViewController, didFinishEditing image: UIImage, transform: BackgroundTransform)
@@ -17,6 +18,24 @@ struct BackgroundTransform {
 }
 
 class BackgroundImageEditorViewController: UIViewController {
+    private enum Constants {
+        static let instructionLabelTopOffset: CGFloat = 16
+        static let instructionLabelHeight: CGFloat = 32
+        static let instructionLabelHorizontalPadding: CGFloat = 40
+        static let overlayControlsTopOffset: CGFloat = 12
+        static let overlayControlsHorizontalPadding: CGFloat = 20
+        static let overlayControlsHeight: CGFloat = 140
+        static let overlayLabelTopOffset: CGFloat = 12
+        static let overlayLabelLeadingOffset: CGFloat = 16
+        static let overlayToggleTrailingOffset: CGFloat = 16
+        static let colorPresetsTopOffset: CGFloat = 12
+        static let colorPresetsHeight: CGFloat = 40
+        static let colorPresetsTrailingOffset: CGFloat = 8
+        static let customColorButtonWidth: CGFloat = 70
+        static let customColorButtonHeight: CGFloat = 36
+        static let opacitySliderTopOffset: CGFloat = 12
+        static let opacityLabelWidth: CGFloat = 50
+    }
 
     // MARK: - Properties
     weak var delegate: BackgroundImageEditorDelegate?
@@ -167,14 +186,12 @@ class BackgroundImageEditorViewController: UIViewController {
         instructionLabel.clipsToBounds = true
 
         view.addSubview(instructionLabel)
-        instructionLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            instructionLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            instructionLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            instructionLabel.heightAnchor.constraint(equalToConstant: 32),
-            instructionLabel.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, constant: -40)
-        ])
+        instructionLabel.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(Constants.instructionLabelTopOffset)
+            make.centerX.equalToSuperview()
+            make.height.equalTo(Constants.instructionLabelHeight)
+            make.width.lessThanOrEqualToSuperview().offset(-Constants.instructionLabelHorizontalPadding)
+        }
 
         // Setup overlay controls
         setupOverlayControls()
@@ -193,15 +210,12 @@ class BackgroundImageEditorViewController: UIViewController {
         overlayControlsContainer.backgroundColor = UIColor.black.withAlphaComponent(0.8)
         overlayControlsContainer.layer.cornerRadius = 12
         view.addSubview(overlayControlsContainer)
-        overlayControlsContainer.translatesAutoresizingMaskIntoConstraints = false
 
         // Toggle
         overlayToggle.isOn = false
         overlayToggle.addTarget(self, action: #selector(overlayToggleChanged), for: .valueChanged)
         overlayControlsContainer.addSubview(overlayLabel)
         overlayControlsContainer.addSubview(overlayToggle)
-        overlayLabel.translatesAutoresizingMaskIntoConstraints = false
-        overlayToggle.translatesAutoresizingMaskIntoConstraints = false
 
         // Collection view for color presets
         let layout = UICollectionViewFlowLayout()
@@ -218,59 +232,63 @@ class BackgroundImageEditorViewController: UIViewController {
         colorPresetsCollectionView.register(ColorSwatchCell.self, forCellWithReuseIdentifier: "ColorSwatchCell")
         colorPresetsCollectionView.isHidden = true
         overlayControlsContainer.addSubview(colorPresetsCollectionView)
-        colorPresetsCollectionView.translatesAutoresizingMaskIntoConstraints = false
 
         // Custom color button
         customColorButton.addTarget(self, action: #selector(selectCustomColor), for: .touchUpInside)
         customColorButton.isHidden = true
         overlayControlsContainer.addSubview(customColorButton)
-        customColorButton.translatesAutoresizingMaskIntoConstraints = false
 
         // Opacity slider
         opacitySlider.addTarget(self, action: #selector(opacitySliderChanged), for: .valueChanged)
         opacitySlider.isHidden = true
         overlayControlsContainer.addSubview(opacitySlider)
-        opacitySlider.translatesAutoresizingMaskIntoConstraints = false
 
         opacityLabel.isHidden = true
         overlayControlsContainer.addSubview(opacityLabel)
-        opacityLabel.translatesAutoresizingMaskIntoConstraints = false
 
         // Layout constraints
-        NSLayoutConstraint.activate([
-            // Container
-            overlayControlsContainer.topAnchor.constraint(equalTo: instructionLabel.bottomAnchor, constant: 12),
-            overlayControlsContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            overlayControlsContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            overlayControlsContainer.heightAnchor.constraint(equalToConstant: 140),
+        overlayControlsContainer.snp.makeConstraints { make in
+            make.top.equalTo(instructionLabel.snp.bottom).offset(Constants.overlayControlsTopOffset)
+            make.leading.equalToSuperview().offset(Constants.overlayControlsHorizontalPadding)
+            make.trailing.equalToSuperview().offset(-Constants.overlayControlsHorizontalPadding)
+            make.height.equalTo(Constants.overlayControlsHeight)
+        }
 
-            // Toggle row
-            overlayLabel.topAnchor.constraint(equalTo: overlayControlsContainer.topAnchor, constant: 12),
-            overlayLabel.leadingAnchor.constraint(equalTo: overlayControlsContainer.leadingAnchor, constant: 16),
+        overlayLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(Constants.overlayLabelTopOffset)
+            make.leading.equalToSuperview().offset(Constants.overlayLabelLeadingOffset)
+        }
 
-            overlayToggle.centerYAnchor.constraint(equalTo: overlayLabel.centerYAnchor),
-            overlayToggle.trailingAnchor.constraint(equalTo: overlayControlsContainer.trailingAnchor, constant: -16),
+        overlayToggle.snp.makeConstraints { make in
+            make.centerY.equalTo(overlayLabel)
+            make.trailing.equalToSuperview().offset(-Constants.overlayToggleTrailingOffset)
+        }
 
-            // Color presets row
-            colorPresetsCollectionView.topAnchor.constraint(equalTo: overlayLabel.bottomAnchor, constant: 12),
-            colorPresetsCollectionView.leadingAnchor.constraint(equalTo: overlayControlsContainer.leadingAnchor, constant: 16),
-            colorPresetsCollectionView.heightAnchor.constraint(equalToConstant: 40),
-            colorPresetsCollectionView.trailingAnchor.constraint(equalTo: customColorButton.leadingAnchor, constant: -8),
+        colorPresetsCollectionView.snp.makeConstraints { make in
+            make.top.equalTo(overlayLabel.snp.bottom).offset(Constants.colorPresetsTopOffset)
+            make.leading.equalToSuperview().offset(Constants.overlayLabelLeadingOffset)
+            make.trailing.equalTo(customColorButton.snp.leading).offset(-Constants.colorPresetsTrailingOffset)
+            make.height.equalTo(Constants.colorPresetsHeight)
+        }
 
-            customColorButton.centerYAnchor.constraint(equalTo: colorPresetsCollectionView.centerYAnchor),
-            customColorButton.trailingAnchor.constraint(equalTo: overlayControlsContainer.trailingAnchor, constant: -16),
-            customColorButton.widthAnchor.constraint(equalToConstant: 70),
-            customColorButton.heightAnchor.constraint(equalToConstant: 36),
+        customColorButton.snp.makeConstraints { make in
+            make.centerY.equalTo(colorPresetsCollectionView)
+            make.trailing.equalToSuperview().offset(-Constants.overlayToggleTrailingOffset)
+            make.width.equalTo(Constants.customColorButtonWidth)
+            make.height.equalTo(Constants.customColorButtonHeight)
+        }
 
-            // Opacity row
-            opacitySlider.topAnchor.constraint(equalTo: colorPresetsCollectionView.bottomAnchor, constant: 12),
-            opacitySlider.leadingAnchor.constraint(equalTo: overlayControlsContainer.leadingAnchor, constant: 16),
-            opacitySlider.trailingAnchor.constraint(equalTo: opacityLabel.leadingAnchor, constant: -8),
+        opacitySlider.snp.makeConstraints { make in
+            make.top.equalTo(colorPresetsCollectionView.snp.bottom).offset(Constants.opacitySliderTopOffset)
+            make.leading.equalToSuperview().offset(Constants.overlayLabelLeadingOffset)
+            make.trailing.equalTo(opacityLabel.snp.leading).offset(-Constants.colorPresetsTrailingOffset)
+        }
 
-            opacityLabel.centerYAnchor.constraint(equalTo: opacitySlider.centerYAnchor),
-            opacityLabel.trailingAnchor.constraint(equalTo: overlayControlsContainer.trailingAnchor, constant: -16),
-            opacityLabel.widthAnchor.constraint(equalToConstant: 50)
-        ])
+        opacityLabel.snp.makeConstraints { make in
+            make.centerY.equalTo(opacitySlider)
+            make.trailing.equalToSuperview().offset(-Constants.overlayToggleTrailingOffset)
+            make.width.equalTo(Constants.opacityLabelWidth)
+        }
 
         // Setup overlay view
         overlayView.isHidden = true

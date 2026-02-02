@@ -6,8 +6,12 @@
 //
 
 import UIKit
+import SnapKit
 
 class SavedCardsViewController: UIViewController {
+    private enum Constants {
+        static let emptyLabelHorizontalPadding: CGFloat = 40
+    }
 
     // MARK: - Properties
     private var cards: [WorkoutCard] = []
@@ -60,20 +64,16 @@ class SavedCardsViewController: UIViewController {
         view.addSubview(collectionView)
         view.addSubview(emptyLabel)
 
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        emptyLabel.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
 
-        NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            emptyLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            emptyLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            emptyLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            emptyLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
-        ])
+        emptyLabel.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.leading.equalToSuperview().offset(Constants.emptyLabelHorizontalPadding)
+            make.trailing.equalToSuperview().offset(-Constants.emptyLabelHorizontalPadding)
+        }
     }
 
     private func loadCards() {
@@ -137,11 +137,20 @@ extension SavedCardsViewController: UICollectionViewDelegateFlowLayout {
 // MARK: - CardCell
 
 private class CardCell: UICollectionViewCell {
+    private enum Constants {
+        static let thumbnailCornerRadius: CGFloat = 12
+        static let iconTopOffset: CGFloat = 8
+        static let iconLeadingOffset: CGFloat = 4
+        static let iconSize: CGFloat = 16
+        static let labelHorizontalPadding: CGFloat = 4
+        static let dateLabelTopOffset: CGFloat = 2
+    }
+
     private let thumbnailImageView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
-        iv.layer.cornerRadius = 12
+        iv.layer.cornerRadius = Constants.thumbnailCornerRadius
         iv.backgroundColor = .secondarySystemBackground
         return iv
     }()
@@ -183,30 +192,28 @@ private class CardCell: UICollectionViewCell {
         contentView.addSubview(titleLabel)
         contentView.addSubview(dateLabel)
 
-        thumbnailImageView.translatesAutoresizingMaskIntoConstraints = false
-        sportTypeIcon.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        dateLabel.translatesAutoresizingMaskIntoConstraints = false
+        thumbnailImageView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(thumbnailImageView.snp.width).multipliedBy(16.0/9.0)
+        }
 
-        NSLayoutConstraint.activate([
-            thumbnailImageView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            thumbnailImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            thumbnailImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            thumbnailImageView.heightAnchor.constraint(equalTo: thumbnailImageView.widthAnchor, multiplier: 16.0/9.0),
+        sportTypeIcon.snp.makeConstraints { make in
+            make.top.equalTo(thumbnailImageView.snp.bottom).offset(Constants.iconTopOffset)
+            make.leading.equalToSuperview().offset(Constants.iconLeadingOffset)
+            make.size.equalTo(Constants.iconSize)
+        }
 
-            sportTypeIcon.topAnchor.constraint(equalTo: thumbnailImageView.bottomAnchor, constant: 8),
-            sportTypeIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 4),
-            sportTypeIcon.widthAnchor.constraint(equalToConstant: 16),
-            sportTypeIcon.heightAnchor.constraint(equalToConstant: 16),
+        titleLabel.snp.makeConstraints { make in
+            make.centerY.equalTo(sportTypeIcon)
+            make.leading.equalTo(sportTypeIcon.snp.trailing).offset(Constants.labelHorizontalPadding)
+            make.trailing.equalToSuperview().offset(-Constants.labelHorizontalPadding)
+        }
 
-            titleLabel.centerYAnchor.constraint(equalTo: sportTypeIcon.centerYAnchor),
-            titleLabel.leadingAnchor.constraint(equalTo: sportTypeIcon.trailingAnchor, constant: 4),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -4),
-
-            dateLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
-            dateLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 4),
-            dateLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -4)
-        ])
+        dateLabel.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(Constants.dateLabelTopOffset)
+            make.leading.equalToSuperview().offset(Constants.labelHorizontalPadding)
+            make.trailing.equalToSuperview().offset(-Constants.labelHorizontalPadding)
+        }
     }
 
     func configure(with card: WorkoutCard) {
@@ -266,27 +273,23 @@ class CardDetailViewController: UIViewController {
         view.addSubview(scrollView)
         scrollView.addSubview(imageView)
 
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.snp.makeConstraints { make in
+            make.top.bottom.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+        }
 
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-
-            imageView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            imageView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            imageView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            imageView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
-        ])
+        imageView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.width.equalTo(scrollView)
+        }
 
         imageView.image = cardImage
 
         // Adjust image height based on aspect ratio
         let aspectRatio = cardImage.size.height / cardImage.size.width
-        imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: aspectRatio).isActive = true
+        imageView.snp.makeConstraints { make in
+            make.height.equalTo(imageView.snp.width).multipliedBy(aspectRatio)
+        }
     }
 
     private func setupNavigationBar() {

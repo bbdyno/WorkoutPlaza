@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SnapKit
 
 protocol ColorPaletteDelegate: AnyObject {
     func colorPalette(_ palette: ColorPaletteView, didSelectColor color: UIColor)
@@ -14,6 +15,13 @@ protocol ColorPaletteDelegate: AnyObject {
 }
 
 class ColorPaletteView: UIView {
+    private enum Constants {
+        static let buttonSpacing: CGFloat = 12
+        static let moreButtonWidth: CGFloat = 60
+        static let actionButtonSize: CGFloat = 44
+        static let actionButtonTrailingOffset: CGFloat = 16
+        static let collectionViewTrailingOffset: CGFloat = 8
+    }
 
     // MARK: - Properties
     weak var delegate: ColorPaletteDelegate?
@@ -97,35 +105,28 @@ class ColorPaletteView: UIView {
     }
 
     private func setupLayout() {
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        moreButton.translatesAutoresizingMaskIntoConstraints = false
-        fontButton.translatesAutoresizingMaskIntoConstraints = false
-        deleteButton.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.snp.makeConstraints { make in
+            make.top.leading.bottom.equalToSuperview()
+            make.trailing.equalTo(moreButton.snp.leading).offset(-Constants.collectionViewTrailingOffset)
+        }
 
-        NSLayoutConstraint.activate([
-            // Collection view
-            collectionView.topAnchor.constraint(equalTo: topAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: moreButton.leadingAnchor, constant: -8),
+        moreButton.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.trailing.equalTo(fontButton.snp.leading).offset(-Constants.buttonSpacing)
+            make.width.equalTo(Constants.moreButtonWidth)
+        }
 
-            // More button
-            moreButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            moreButton.trailingAnchor.constraint(equalTo: fontButton.leadingAnchor, constant: -12),
-            moreButton.widthAnchor.constraint(equalToConstant: 60),
+        fontButton.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.trailing.equalTo(deleteButton.snp.leading).offset(-Constants.buttonSpacing)
+            make.size.equalTo(Constants.actionButtonSize)
+        }
 
-            // Font button
-            fontButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            fontButton.trailingAnchor.constraint(equalTo: deleteButton.leadingAnchor, constant: -12),
-            fontButton.widthAnchor.constraint(equalToConstant: 44),
-            fontButton.heightAnchor.constraint(equalToConstant: 44),
-
-            // Delete button
-            deleteButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            deleteButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            deleteButton.widthAnchor.constraint(equalToConstant: 44),
-            deleteButton.heightAnchor.constraint(equalToConstant: 44)
-        ])
+        deleteButton.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.trailing.equalToSuperview().offset(-Constants.actionButtonTrailingOffset)
+            make.size.equalTo(Constants.actionButtonSize)
+        }
     }
 
     // MARK: - Actions
@@ -254,6 +255,12 @@ extension UIView {
 
 // MARK: - Color Swatch Cell
 class ColorSwatchCell: UICollectionViewCell {
+    private enum Constants {
+        static let swatchSize: CGFloat = 44
+        static let cornerRadius: CGFloat = 22
+        static let borderWidth: CGFloat = 2
+        static let selectedBorderWidth: CGFloat = 3
+    }
 
     private let colorView = UIView()
 
@@ -268,17 +275,13 @@ class ColorSwatchCell: UICollectionViewCell {
 
     private func setupView() {
         contentView.addSubview(colorView)
-        colorView.translatesAutoresizingMaskIntoConstraints = false
+        colorView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.size.equalTo(Constants.swatchSize)
+        }
 
-        NSLayoutConstraint.activate([
-            colorView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            colorView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            colorView.widthAnchor.constraint(equalToConstant: 44),
-            colorView.heightAnchor.constraint(equalToConstant: 44)
-        ])
-
-        colorView.layer.cornerRadius = 22
-        colorView.layer.borderWidth = 2
+        colorView.layer.cornerRadius = Constants.cornerRadius
+        colorView.layer.borderWidth = Constants.borderWidth
         colorView.layer.borderColor = UIColor.systemGray4.cgColor
     }
 
@@ -297,14 +300,14 @@ class ColorSwatchCell: UICollectionViewCell {
         didSet {
             if isSelected {
                 colorView.layer.borderColor = UIColor.systemBlue.cgColor
-                colorView.layer.borderWidth = 3
+                colorView.layer.borderWidth = Constants.selectedBorderWidth
             } else {
                 if colorView.backgroundColor == .white {
                     colorView.layer.borderColor = UIColor.systemGray4.cgColor
                 } else {
                     colorView.layer.borderColor = UIColor.clear.cgColor
                 }
-                colorView.layer.borderWidth = 2
+                colorView.layer.borderWidth = Constants.borderWidth
             }
         }
     }

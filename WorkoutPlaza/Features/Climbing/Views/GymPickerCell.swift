@@ -6,8 +6,23 @@
 //
 
 import UIKit
+import SnapKit
 
 class GymPickerCell: UITableViewCell {
+    private enum Constants {
+        static let borderWidth: CGFloat = 2.0
+        static let logoContainerSize: CGFloat = 40
+        static let logoImageSize: CGFloat = 34
+        static let logoLeadingOffset: CGFloat = 16
+        static let logoCornerRadius: CGFloat = 8
+        static let labelStackLeadingOffset: CGFloat = 12
+        static let labelStackSpacing: CGFloat = 2
+        static let checkmarkTrailingOffset: CGFloat = 16
+        static let checkmarkSize: CGFloat = 20
+        static let cellMinHeight: CGFloat = 60
+    }
+
+    private let logoContainer = UIView()
     private let logoImageView = UIImageView()
     private let nameLabel = UILabel()
     private let infoLabel = UILabel()
@@ -26,11 +41,13 @@ class GymPickerCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .secondarySystemGroupedBackground
 
+        // Logo Container
+        logoContainer.layer.cornerRadius = Constants.logoCornerRadius
+        logoContainer.clipsToBounds = true
+        logoContainer.backgroundColor = .tertiarySystemGroupedBackground
+
         // Logo Image
         logoImageView.contentMode = .scaleAspectFit
-        logoImageView.layer.cornerRadius = 8
-        logoImageView.clipsToBounds = true
-        logoImageView.backgroundColor = .tertiarySystemGroupedBackground
         logoImageView.tintColor = .secondaryLabel
 
         // Name Label
@@ -49,44 +66,56 @@ class GymPickerCell: UITableViewCell {
         // Stack for labels
         let labelStack = UIStackView(arrangedSubviews: [nameLabel, infoLabel])
         labelStack.axis = .vertical
-        labelStack.spacing = 2
+        labelStack.spacing = Constants.labelStackSpacing
 
         // Add subviews
-        contentView.addSubview(logoImageView)
+        contentView.addSubview(logoContainer)
+        logoContainer.addSubview(logoImageView)
         contentView.addSubview(labelStack)
         contentView.addSubview(checkmarkImageView)
 
-        logoImageView.translatesAutoresizingMaskIntoConstraints = false
-        labelStack.translatesAutoresizingMaskIntoConstraints = false
-        checkmarkImageView.translatesAutoresizingMaskIntoConstraints = false
+        logoContainer.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Constants.logoLeadingOffset)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(Constants.logoContainerSize)
+        }
 
-        NSLayoutConstraint.activate([
-            logoImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            logoImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            logoImageView.widthAnchor.constraint(equalToConstant: 40),
-            logoImageView.heightAnchor.constraint(equalToConstant: 40),
+        logoImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.size.equalTo(Constants.logoImageSize)
+        }
 
-            labelStack.leadingAnchor.constraint(equalTo: logoImageView.trailingAnchor, constant: 12),
-            labelStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            labelStack.trailingAnchor.constraint(equalTo: checkmarkImageView.leadingAnchor, constant: -12),
+        labelStack.snp.makeConstraints { make in
+            make.leading.equalTo(logoContainer.snp.trailing).offset(Constants.labelStackLeadingOffset)
+            make.centerY.equalToSuperview()
+            make.trailing.equalTo(checkmarkImageView.snp.leading).offset(-Constants.labelStackLeadingOffset)
+        }
 
-            checkmarkImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            checkmarkImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            checkmarkImageView.widthAnchor.constraint(equalToConstant: 20),
-            checkmarkImageView.heightAnchor.constraint(equalToConstant: 20),
+        checkmarkImageView.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-Constants.checkmarkTrailingOffset)
+            make.centerY.equalToSuperview()
+            make.size.equalTo(Constants.checkmarkSize)
+        }
 
-            contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: 60)
-        ])
+        contentView.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(Constants.cellMinHeight)
+        }
     }
 
     func configure(with gym: ClimbingGym, isSelected: Bool) {
         // Reset state
         logoImageView.image = UIImage(systemName: "building.2.fill")
         logoImageView.tintColor = .secondaryLabel
-        
+
         nameLabel.text = gym.name
         infoLabel.text = "\(gym.gradeColors.count)개 난이도 색상"
         checkmarkImageView.isHidden = !isSelected
+
+        // Apply branch color border to container
+        let branchColorHex = gym.branchColor ?? "#FFFFFF"
+        let branchColor = TemplateManager.color(from: branchColorHex) ?? .white
+        logoContainer.layer.borderWidth = Constants.borderWidth
+        logoContainer.layer.borderColor = branchColor.cgColor
 
         // Load logo asynchronously as template (white)
         ClimbingGymLogoManager.shared.loadLogo(for: gym, asTemplate: true) { [weak self] image in

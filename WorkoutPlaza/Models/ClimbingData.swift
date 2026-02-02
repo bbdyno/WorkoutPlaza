@@ -16,6 +16,7 @@ struct ClimbingGym: Codable, Identifiable, Equatable {
     var name: String
     var logoSource: LogoSource  // 통합 로고 관리
     var gradeColors: [String]   // 난이도 체계 (Hex Colors)
+    var branchColor: String?    // 지점 색상 (Hex Color, 기본값: "#FFFFFF")
     var isBuiltIn: Bool         // 프리셋 여부
     var metadata: GymMetadata?  // 확장 정보
 
@@ -38,6 +39,7 @@ struct ClimbingGym: Codable, Identifiable, Equatable {
         name: String,
         logoSource: LogoSource = .none,
         gradeColors: [String] = [],
+        branchColor: String? = nil,
         isBuiltIn: Bool = false,
         metadata: GymMetadata? = nil
     ) {
@@ -45,6 +47,7 @@ struct ClimbingGym: Codable, Identifiable, Equatable {
         self.name = name
         self.logoSource = logoSource
         self.gradeColors = gradeColors
+        self.branchColor = branchColor
         self.isBuiltIn = isBuiltIn
         self.metadata = metadata
     }

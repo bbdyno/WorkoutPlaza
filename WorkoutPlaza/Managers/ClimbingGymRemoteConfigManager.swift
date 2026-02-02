@@ -341,6 +341,7 @@ class ClimbingGymRemoteConfigManager {
                 return .url(remote.logoUrl)
             }(),
             gradeColors: colorHexStrings,
+            branchColor: remote.branchColor ?? "#FFFFFF",
             isBuiltIn: true,
             metadata: ClimbingGym.GymMetadata(
                 region: remote.metadata?.region,
@@ -395,7 +396,18 @@ class ClimbingGymRemoteConfigManager {
         let logoUrl: String
         let gradeSystem: String
         let colors: [ColorPreset]
+        let branchColor: String?
         let metadata: RemoteMetadata?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case name
+            case logoUrl
+            case gradeSystem
+            case colors
+            case branchColor
+            case metadata
+        }
     }
 
     struct ColorPreset: Codable {
