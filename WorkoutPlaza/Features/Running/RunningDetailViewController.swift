@@ -108,182 +108,118 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
          // Handle received workout data
     }
     // MARK: - Template Application
-    
-    override func applyWidgetTemplate(_ template: WidgetTemplate) {
-        guard let data = workoutData else { return }
 
-        // Clear existing widgets
-        widgets.forEach { $0.removeFromSuperview() }
+    override func clearCustomWidgets() {
         routeMapView?.removeFromSuperview()
-        widgets.removeAll()
-        selectionManager.deselectAll()
+        routeMapView = nil
+    }
 
-        WPLog.debug("Applying template '\(template.name)' version \(template.version)")
+    override func createWidget(for item: WidgetItem, frame: CGRect) -> UIView? {
+        guard let data = workoutData else { return nil }
 
-        // Get template canvas size
-        let templateCanvasSize: CGSize
-        if let tCanvasSize = template.canvasSize {
-            templateCanvasSize = CGSize(width: tCanvasSize.width, height: tCanvasSize.height)
-        } else {
-            // For very old templates without canvas size, assume a default
-            templateCanvasSize = CGSize(width: 414, height: 700)
-        }
+        var widget: UIView?
 
-        // STEP 1: Change canvas aspect ratio to match template
-        let detectedAspectRatio = AspectRatio.detect(from: templateCanvasSize)
+        switch item.type {
+        case .routeMap:
+            let mapView = RouteMapView()
+            mapView.setRoute(data.route)
+            routeMapView = mapView
+            mapView.frame = frame
+            mapView.initialSize = frame.size
 
-        // Update aspect ratio button and canvas size
-        currentAspectRatio = detectedAspectRatio
-        aspectRatioButton.setTitle(detectedAspectRatio.displayName, for: .normal)
-        updateCanvasSize()
-
-        // Force immediate layout update
-        view.layoutIfNeeded()
-
-        // STEP 2: Get updated canvas size after aspect ratio change
-        let canvasSize = contentView.bounds.size
-
-        // STEP 3: Apply background image aspect ratio if available
-        if let aspectRatio = template.backgroundImageAspectRatio {
-            // Note: This will be applied when user selects a background image
-            // Store it for later use
-        }
-
-        // STEP 4: Apply background transform if available
-        if let transformData = template.backgroundTransform {
-            let transform = BackgroundTransform(
-                scale: transformData.scale,
-                offset: CGPoint(x: transformData.offsetX, y: transformData.offsetY)
-            )
-            backgroundTransform = transform
-            if !backgroundImageView.isHidden {
-                applyBackgroundTransform(transform)
+            if let colorHex = item.color, let color = TemplateManager.color(from: colorHex) {
+                mapView.applyColor(color)
             }
-        }
+            widget = mapView
 
-        // STEP 5: Create all widgets in the new canvas
-        for item in template.items {
-            // Use ratio-based positioning (version 2.0+) or fallback to legacy
-            let frame = TemplateManager.absoluteFrame(from: item, canvasSize: canvasSize, templateCanvasSize: templateCanvasSize)
+        case .distance:
+            let w = DistanceWidget()
+            w.configure(distance: data.distance)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
 
-            var widget: UIView?
+        case .duration:
+            let w = DurationWidget()
+            w.configure(duration: data.duration)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
 
-            switch item.type {
-            case .routeMap:
-                let mapView = RouteMapView()
-                mapView.setRoute(data.route)
-                routeMapView = mapView
-                mapView.frame = frame
-                mapView.initialSize = frame.size
+        case .pace:
+            let w = PaceWidget()
+            w.configure(pace: data.pace)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
 
-                if let colorHex = item.color, let color = TemplateManager.color(from: colorHex) {
-                    mapView.applyColor(color)
-                }
-                widget = mapView
+        case .speed:
+            let w = SpeedWidget()
+            w.configure(speed: data.avgSpeed)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
 
-            case .distance:
-                let w = DistanceWidget()
-                w.configure(distance: data.distance)
-                w.frame = frame
-                w.initialSize = frame.size
-                applyItemStyles(to: w, item: item)
-                widget = w
+        case .calories:
+            let w = CaloriesWidget()
+            w.configure(calories: data.calories)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
 
-            case .duration:
-                let w = DurationWidget()
-                w.configure(duration: data.duration)
-                w.frame = frame
-                w.initialSize = frame.size
-                applyItemStyles(to: w, item: item)
-                widget = w
+        case .date:
+            let w = DateWidget()
+            w.configure(startDate: data.startDate)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
 
-            case .pace:
-                let w = PaceWidget()
-                w.configure(pace: data.pace)
-                w.frame = frame
-                w.initialSize = frame.size
-                applyItemStyles(to: w, item: item)
-                widget = w
+        case .text:
+            let w = TextWidget()
+            w.configure(text: "텍스트 입력")
+            w.textDelegate = self
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
 
-            case .speed:
-                let w = SpeedWidget()
-                w.configure(speed: data.avgSpeed)
-                w.frame = frame
-                w.initialSize = frame.size
-                applyItemStyles(to: w, item: item)
-                widget = w
-
-            case .calories:
-                let w = CaloriesWidget()
-                w.configure(calories: data.calories)
-                w.frame = frame
-                w.initialSize = frame.size
-                applyItemStyles(to: w, item: item)
-                widget = w
-
-            case .date:
-                let w = DateWidget()
-                w.configure(startDate: data.startDate)
-                w.frame = frame
-                w.initialSize = frame.size
-                applyItemStyles(to: w, item: item)
-                widget = w
-
-            case .text:
-                let w = TextWidget()
-                w.configure(text: "텍스트 입력")
-                w.textDelegate = self
-                w.frame = frame
-                w.initialSize = frame.size
-                applyItemStyles(to: w, item: item)
-                widget = w
-
-            case .location:
-                guard let firstLocation = data.route.first else {
-                    WPLog.warning("No GPS data for location widget in template")
-                    break
-                }
-
-                let w = LocationWidget()
-                w.frame = frame
-                w.initialSize = frame.size
-                applyItemStyles(to: w, item: item)
-
-                // Configure asynchronously
-                w.configure(location: firstLocation) { success in
-                    // Completion
-                }
-
-                widget = w
-                
-            case .currentDateTime:
-                let w = CurrentDateTimeWidget()
-                w.configure(date: data.startDate)
-                w.frame = frame
-                w.initialSize = frame.size
-                applyItemStyles(to: w, item: item)
-                widget = w
-
-            case .composite:
-                break
-
-            case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo:
-                break
+        case .location:
+            guard let firstLocation = data.route.first else {
+                WPLog.warning("No GPS data for location widget in template")
+                return nil
             }
 
-            if let w = widget {
-                contentView.addSubview(w)
-                widgets.append(w)
-                
-                if var selectable = w as? Selectable {
-                    selectable.selectionDelegate = self
-                    selectionManager.registerItem(selectable)
-                }
+            let w = LocationWidget()
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+
+            // Configure asynchronously
+            w.configure(location: firstLocation) { success in
+                // Completion
             }
+
+            widget = w
+
+        case .currentDateTime:
+            let w = CurrentDateTimeWidget()
+            w.configure(date: data.startDate)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .composite, .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo:
+            return nil
         }
-        
-        instructionLabel.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
-        WPLog.info("Applied template directly: \(template.name)")
+
+        return widget
     }
 
     // MARK: - Widget Restoration

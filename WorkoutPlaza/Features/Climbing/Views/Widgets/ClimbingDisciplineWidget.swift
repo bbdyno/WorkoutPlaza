@@ -10,7 +10,7 @@ import SnapKit
 
 // MARK: - Discipline Widget
 
-class ClimbingDisciplineWidget: BaseClimbingWidget {
+class ClimbingDisciplineWidget: BaseStatWidget {
     private var discipline: ClimbingDiscipline = .bouldering
 
     private let iconImageView: UIImageView = {
