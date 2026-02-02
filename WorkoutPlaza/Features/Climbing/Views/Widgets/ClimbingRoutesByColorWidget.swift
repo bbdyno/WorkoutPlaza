@@ -380,7 +380,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
         removeSelectionBorder()
 
         let borderLayer = CAShapeLayer()
-        borderLayer.strokeColor = UIColor.systemBlue.cgColor
+        borderLayer.strokeColor = ColorSystem.primaryBlue.cgColor
         borderLayer.fillColor = nil
         borderLayer.lineWidth = 2
         borderLayer.lineDashPattern = [6, 4]

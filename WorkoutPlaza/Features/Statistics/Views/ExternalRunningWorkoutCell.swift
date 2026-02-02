@@ -33,36 +33,36 @@ class ExternalRunningWorkoutCell: UIView {
     // MARK: - Setup
     
     private func setupUI() {
-        backgroundColor = .systemBlue.withAlphaComponent(0.1)
+        backgroundColor = ColorSystem.primaryBlue.withAlphaComponent(0.1)
         layer.cornerRadius = 12
-        
+
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
         iconView.image = UIImage(systemName: "figure.run", withConfiguration: config)
-        iconView.tintColor = .systemBlue
+        iconView.tintColor = ColorSystem.primaryBlue
         iconView.contentMode = .scaleAspectFit
-        
+
         titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
-        titleLabel.textColor = .label
-        
+        titleLabel.textColor = ColorSystem.mainText
+
         timeLabel.font = .systemFont(ofSize: 13)
-        timeLabel.textColor = .secondaryLabel
-        
+        timeLabel.textColor = ColorSystem.subText
+
         externalBadge.text = "외부"
         externalBadge.font = .systemFont(ofSize: 10, weight: .semibold)
         externalBadge.textColor = .white
-        externalBadge.backgroundColor = .systemOrange
+        externalBadge.backgroundColor = ColorSystem.warning
         externalBadge.textAlignment = .center
         externalBadge.layer.cornerRadius = 4
         externalBadge.clipsToBounds = true
-        
+
         distanceLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        distanceLabel.textColor = .systemBlue
-        
+        distanceLabel.textColor = ColorSystem.primaryBlue
+
         durationLabel.font = .systemFont(ofSize: 13)
-        durationLabel.textColor = .secondaryLabel
-        
+        durationLabel.textColor = ColorSystem.subText
+
         paceLabel.font = .systemFont(ofSize: 12)
-        paceLabel.textColor = .tertiaryLabel
+        paceLabel.textColor = ColorSystem.subText
         
         addSubview(iconView)
         addSubview(titleLabel)

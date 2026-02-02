@@ -64,7 +64,7 @@ class MainTabBarController: UITabBarController {
             tabBar.scrollEdgeAppearance = appearance
         }
 
-        tabBar.tintColor = .systemOrange
-        tabBar.unselectedItemTintColor = .systemGray
+        tabBar.tintColor = ColorSystem.primaryBlue
+        tabBar.unselectedItemTintColor = ColorSystem.subText
     }
 }

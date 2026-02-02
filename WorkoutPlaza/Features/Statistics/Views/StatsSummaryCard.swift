@@ -22,7 +22,7 @@ class StatsSummaryCard: UIView {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .secondaryLabel
+        label.textColor = ColorSystem.subText
         return label
     }()
     
@@ -36,7 +36,7 @@ class StatsSummaryCard: UIView {
     private let subtitleLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 11)
-        label.textColor = .tertiaryLabel
+        label.textColor = ColorSystem.subText
         return label
     }()
     

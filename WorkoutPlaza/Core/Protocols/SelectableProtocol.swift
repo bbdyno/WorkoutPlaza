@@ -51,7 +51,7 @@ extension Selectable {
         guard selectionBorderLayer == nil else { return }
 
         let borderLayer = CAShapeLayer()
-        borderLayer.strokeColor = UIColor.systemBlue.cgColor
+        borderLayer.strokeColor = ColorSystem.primaryBlue.cgColor
         borderLayer.fillColor = UIColor.clear.cgColor
         borderLayer.lineWidth = 2
         borderLayer.lineDashPattern = [6, 3]

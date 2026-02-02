@@ -29,11 +29,11 @@ class ColorPaletteView: UIView {
     private let presetColors: [UIColor] = [
         .white,
         .black,
+        ColorSystem.primaryBlue,
+        ColorSystem.primaryGreen,
         .systemRed,
         .systemOrange,
         .systemYellow,
-        .systemGreen,
-        .systemBlue,
         .systemPurple,
         .systemPink,
         .systemIndigo

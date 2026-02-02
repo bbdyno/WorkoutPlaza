@@ -59,9 +59,9 @@ class CustomGradientPickerViewController: UIViewController {
 
     weak var delegate: CustomGradientPickerDelegate?
 
-    private var startColor: UIColor = .systemBlue
-    private var endColor: UIColor = .systemPurple
-    private var selectedDirection: GradientDirection = .topToBottom
+    private var startColor: UIColor = ColorSystem.primaryBlue
+    private var endColor: UIColor = ColorSystem.primaryGreen
+    private var selectedDirection: GradientDirection = .topLeftToBottomRight
 
     // MARK: - UI Components
 

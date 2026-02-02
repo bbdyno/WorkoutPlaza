@@ -16,8 +16,8 @@ enum WorkoutType: CaseIterable {
 
     var color: UIColor {
         switch self {
-        case .running: return .systemBlue
-        case .climbing: return .systemOrange
+        case .running: return ColorSystem.primaryBlue
+        case .climbing: return ColorSystem.primaryGreen
         }
     }
 

@@ -10,7 +10,7 @@ import UIKit
 class BackgroundTemplateView: UIView {
     
     enum TemplateStyle: String, CaseIterable {
-        case gradient1  // 블루 그라데이션
+        case gradient1  // 브랜드 그라데이션 (Blue → Green)
         case gradient2  // 퍼플 그라데이션
         case gradient3  // 오렌지 그라데이션
         case gradient4  // 그린 그라데이션
@@ -50,10 +50,7 @@ class BackgroundTemplateView: UIView {
         switch style {
         case .gradient1:
             applyGradient(
-                colors: [
-                    UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0),
-                    UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)
-                ],
+                colors: ColorSystem.brandGradientColors,
                 startPoint: CGPoint(x: 0, y: 0),
                 endPoint: CGPoint(x: 1, y: 1)
             )
@@ -89,7 +86,7 @@ class BackgroundTemplateView: UIView {
             )
             
         case .minimal:
-            backgroundColor = .white
+            backgroundColor = ColorSystem.background
             gradientLayer.colors = []
             
         case .dark:

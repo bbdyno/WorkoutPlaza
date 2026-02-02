@@ -238,10 +238,10 @@ extension StatisticsViewController: UICollectionViewDataSource {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StatsSummaryCell.identifier, for: indexPath) as! StatsSummaryCell
             if indexPath.item == 0 {
                 let totalDistance = (runningWorkouts.reduce(0) { $0 + $1.distance } + externalRunningWorkouts.reduce(0) { $0 + $1.workoutData.distance }) / 1000.0
-                cell.configure(title: "Running", value: String(format: "%.1f km", totalDistance), icon: "figure.run", color: .systemBlue)
+                cell.configure(title: "Running", value: String(format: "%.1f km", totalDistance), icon: "figure.run", color: ColorSystem.primaryBlue)
             } else {
                 let totalRoutes = climbingSessions.reduce(0) { $0 + $1.totalRoutes }
-                cell.configure(title: "Climbing", value: "\(totalRoutes) Routes", icon: "figure.climbing", color: .systemOrange)
+                cell.configure(title: "Climbing", value: "\(totalRoutes) Routes", icon: "figure.climbing", color: ColorSystem.primaryGreen)
             }
             return cell
         } else if indexPath.section == 1 {
@@ -264,7 +264,7 @@ extension StatisticsViewController: UICollectionViewDataSource {
                             title: session.gymName.isEmpty ? "Climbing" : session.gymName,
                             subtitle: "\(session.totalRoutes) Routes",
                             date: session.sessionDate,
-                            color: .systemOrange
+                            color: ColorSystem.primaryGreen
                         )
                     }
                 case .running:
@@ -358,8 +358,8 @@ extension StatisticsViewController: CustomCalendarViewDelegate {
         guard let types = workoutsByDate[queryComponents], !types.isEmpty else { return nil }
         
         var colors: [UIColor] = []
-        if types.contains(.running) { colors.append(.systemBlue) }
-        if types.contains(.climbing) { colors.append(.systemOrange) }
+        if types.contains(.running) { colors.append(ColorSystem.primaryBlue) }
+        if types.contains(.climbing) { colors.append(ColorSystem.primaryGreen) }
         // Add other types if any
         
         return colors
@@ -812,7 +812,6 @@ class CustomCalendarDayCell: UICollectionViewCell {
     required init?(coder: NSCoder) { fatalError() }
     
     private func setupUI() {
-        selectionBackground.backgroundColor = .systemBlue
         selectionBackground.layer.cornerRadius = 18 // Approx radius
         selectionBackground.isHidden = true
         contentView.addSubview(selectionBackground)
@@ -874,7 +873,7 @@ class CustomCalendarDayCell: UICollectionViewCell {
         
         if isSelected {
             selectionBackground.isHidden = false
-            selectionBackground.backgroundColor = .systemBlue // Or custom tint
+            selectionBackground.setGradientBackground()
             dayLabel.textColor = .white
             
             // Show white dots if selected? Or hide? Standard behavior usually dots become white or hidden.

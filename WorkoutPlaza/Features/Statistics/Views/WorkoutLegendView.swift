@@ -31,11 +31,11 @@ class WorkoutLegendView: UIView {
         container.distribution = .equalCentering
         
         // Running legend
-        let runningLegend = createLegendItem(color: .systemBlue, text: "러닝")
+        let runningLegend = createLegendItem(color: ColorSystem.primaryBlue, text: "러닝")
         container.addArrangedSubview(runningLegend)
-        
+
         // Climbing legend
-        let climbingLegend = createLegendItem(color: .systemOrange, text: "클라이밍")
+        let climbingLegend = createLegendItem(color: ColorSystem.primaryGreen, text: "클라이밍")
         container.addArrangedSubview(climbingLegend)
         
         addSubview(container)
@@ -61,7 +61,7 @@ class WorkoutLegendView: UIView {
         let label = UILabel()
         label.text = text
         label.font = .systemFont(ofSize: 12)
-        label.textColor = .secondaryLabel
+        label.textColor = ColorSystem.subText
         
         stack.addArrangedSubview(dot)
         stack.addArrangedSubview(label)

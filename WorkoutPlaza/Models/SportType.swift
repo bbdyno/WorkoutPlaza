@@ -28,10 +28,7 @@ enum SportType: String, Codable, CaseIterable {
     }
 
     var themeColor: UIColor {
-        switch self {
-        case .running: return .systemBlue
-        case .climbing: return .systemOrange
-        }
+        return ColorSystem.color(for: self)
     }
 
     var availableWidgetTypes: [WidgetType] {
