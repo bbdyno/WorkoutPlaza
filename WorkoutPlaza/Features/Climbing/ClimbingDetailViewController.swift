@@ -13,9 +13,13 @@ import UniformTypeIdentifiers
 class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
     // MARK: - Properties
-    
+
     // Data
     var climbingData: ClimbingData?
+
+    // Track date widgets for updating
+    private var dateWidgets: [DateWidget] = []
+    private var currentDateTimeWidgets: [CurrentDateTimeWidget] = []
     
     // MARK: - Lifecycle
     
@@ -120,7 +124,30 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
     }
     
     // MARK: - Widget Management
-    
+
+    private func canAddWidget(_ type: WidgetType) -> Bool {
+        switch type {
+        case .climbingGym:
+            return !widgets.contains(where: { $0 is ClimbingGymWidget })
+        case .gymLogo:
+            return !widgets.contains(where: { $0 is GymLogoWidget })
+        case .climbingDiscipline:
+            return !widgets.contains(where: { $0 is ClimbingDisciplineWidget })
+        case .climbingSession:
+            return !widgets.contains(where: { $0 is ClimbingSessionWidget })
+        case .climbingRoutesByColor:
+            return !widgets.contains(where: { $0 is ClimbingRoutesByColorWidget })
+        case .date:
+            return !widgets.contains(where: { $0 is DateWidget })
+        case .currentDateTime:
+            return !widgets.contains(where: { $0 is CurrentDateTimeWidget })
+        case .text:
+            return true  // Multiple text widgets allowed
+        default:
+            return true
+        }
+    }
+
     @objc private func showAddWidgetMenu() {
         let actionSheet = UIAlertController(title: "위젯 추가", message: nil, preferredStyle: .actionSheet)
 
@@ -135,9 +162,19 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         ]
 
         for (name, type) in climbingWidgets {
-            actionSheet.addAction(UIAlertAction(title: name, style: .default) { [weak self] _ in
+            let isAdded = !canAddWidget(type)
+            var title = name
+
+            if isAdded {
+                title = "✓ \(name)"
+            }
+
+            let action = UIAlertAction(title: title, style: .default) { [weak self] _ in
                 self?.addNewWidget(type: type)
-            })
+            }
+
+            action.isEnabled = !isAdded
+            actionSheet.addAction(action)
         }
 
         actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
@@ -235,8 +272,15 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             let w = DateWidget()
             w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
             w.configure(startDate: data.sessionDate)
+            w.dateDelegate = self
             w.initialSize = widgetSize
+            dateWidgets.append(w)
             widget = w
+
+            // Show date picker immediately when adding new date widget
+            DispatchQueue.main.async { [weak self] in
+                self?.showDatePicker(for: w)
+            }
 
         default:
             break
@@ -361,17 +405,21 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         case .date:
             let w = DateWidget()
             w.configure(startDate: data.sessionDate)
+            w.dateDelegate = self
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
+            dateWidgets.append(w)
             widget = w
 
         case .currentDateTime:
             let w = CurrentDateTimeWidget()
             w.configure(date: data.sessionDate)
+            w.currentDateTimeDelegate = self
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
+            currentDateTimeWidgets.append(w)
             widget = w
 
         case .composite, .routeMap, .distance, .duration, .pace, .speed, .calories, .location:
@@ -464,8 +512,158 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             }
             return widget
 
+        case "DateWidget":
+            let widget = DateWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(startDate: data.sessionDate)
+            widget.dateDelegate = self
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            dateWidgets.append(widget)
+            return widget
+
+        case "CurrentDateTimeWidget":
+            let widget = CurrentDateTimeWidget()
+            widget.frame = savedWidget.frame
+            widget.initialSize = savedWidget.frame.size
+            widget.configure(date: data.sessionDate)
+            widget.currentDateTimeDelegate = self
+            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                widget.applyColor(color)
+            }
+            currentDateTimeWidgets.append(widget)
+            return widget
+
         default:
             return nil
         }
+    }
+}
+
+// MARK: - Date Widget Delegate
+extension ClimbingDetailViewController: DateWidgetDelegate {
+    func dateWidgetDidRequestEdit(_ widget: DateWidget) {
+        showDatePicker(for: widget)
+    }
+
+    private func showDatePicker(for widget: DateWidget) {
+        let alert = UIAlertController(title: "날짜 선택", message: "\n\n\n\n\n\n\n\n", preferredStyle: .alert)
+
+        let datePicker = UIDatePicker()
+        datePicker.datePickerMode = .date
+        datePicker.preferredDatePickerStyle = .wheels
+        datePicker.locale = Locale(identifier: "ko_KR")
+        datePicker.date = widget.configuredDate ?? Date()
+
+        alert.view.addSubview(datePicker)
+        datePicker.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            datePicker.centerXAnchor.constraint(equalTo: alert.view.centerXAnchor),
+            datePicker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50)
+        ])
+
+        let confirmAction = UIAlertAction(title: "확인", style: .default) { [weak self, weak widget] _ in
+            guard let self = self, let widget = widget else { return }
+            let selectedDate = datePicker.date
+
+            // Update widget
+            widget.updateDate(selectedDate)
+
+            // Update climbing data
+            if var data = self.climbingData {
+                data.sessionDate = selectedDate
+                self.climbingData = data
+
+                // Update all date widgets to show the new date
+                for dateWidget in self.dateWidgets {
+                    dateWidget.updateDate(selectedDate)
+                }
+
+                // Update all current date time widgets to show the new date
+                for currentDateTimeWidget in self.currentDateTimeWidgets {
+                    currentDateTimeWidget.updateDate(selectedDate)
+                }
+
+                // Mark as having unsaved changes
+                self.hasUnsavedChanges = true
+
+                // Update the data in the manager
+                ClimbingDataManager.shared.updateSession(data)
+
+                WPLog.debug("Date updated to: \(selectedDate)")
+            }
+        }
+
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+
+        alert.addAction(confirmAction)
+        alert.addAction(cancelAction)
+
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - Current Date Time Widget Delegate
+extension ClimbingDetailViewController: CurrentDateTimeWidgetDelegate {
+    func currentDateTimeWidgetDidRequestEdit(_ widget: CurrentDateTimeWidget) {
+        showCurrentDateTimePicker(for: widget)
+    }
+
+    private func showCurrentDateTimePicker(for widget: CurrentDateTimeWidget) {
+        let alert = UIAlertController(title: "날짜 선택", message: "\n\n\n\n\n\n\n\n", preferredStyle: .alert)
+
+        let datePicker = UIDatePicker()
+        datePicker.datePickerMode = .dateAndTime
+        datePicker.preferredDatePickerStyle = .wheels
+        datePicker.locale = Locale(identifier: "ko_KR")
+        datePicker.date = widget.configuredDate ?? Date()
+
+        alert.view.addSubview(datePicker)
+        datePicker.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            datePicker.centerXAnchor.constraint(equalTo: alert.view.centerXAnchor),
+            datePicker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50)
+        ])
+
+        let confirmAction = UIAlertAction(title: "확인", style: .default) { [weak self, weak widget] _ in
+            guard let self = self, let widget = widget else { return }
+            let selectedDate = datePicker.date
+
+            // Update widget
+            widget.updateDate(selectedDate)
+
+            // Update climbing data
+            if var data = self.climbingData {
+                data.sessionDate = selectedDate
+                self.climbingData = data
+
+                // Update all date widgets to show the new date
+                for dateWidget in self.dateWidgets {
+                    dateWidget.updateDate(selectedDate)
+                }
+
+                // Update all current date time widgets to show the new date
+                for currentDateTimeWidget in self.currentDateTimeWidgets {
+                    currentDateTimeWidget.updateDate(selectedDate)
+                }
+
+                // Mark as having unsaved changes
+                self.hasUnsavedChanges = true
+
+                // Update the data in the manager
+                ClimbingDataManager.shared.updateSession(data)
+
+                WPLog.debug("Date updated to: \(selectedDate)")
+            }
+        }
+
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+
+        alert.addAction(confirmAction)
+        alert.addAction(cancelAction)
+
+        present(alert, animated: true)
     }
 }
