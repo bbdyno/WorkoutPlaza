@@ -266,33 +266,102 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             }
 
             // Load saved font if available
-            if let statWidget = widget as? BaseStatWidget,
-               let savedFont = FontPreferences.shared.loadFont(for: selectableWidget.itemIdentifier) {
-                statWidget.applyFont(savedFont)
+            if let savedFont = FontPreferences.shared.loadFont(for: selectableWidget.itemIdentifier) {
+                if let statWidget = widget as? BaseStatWidget {
+                    statWidget.applyFont(savedFont)
+                } else if let routesWidget = widget as? ClimbingRoutesByColorWidget {
+                    routesWidget.applyFont(savedFont)
+                }
             }
         }
     }
     
     // MARK: - Template Application
-    
-    override func applyWidgetTemplate(_ template: WidgetTemplate) {
-        guard let data = climbingData else { return }
 
-        // Clear existing widgets
-        widgets.forEach { $0.removeFromSuperview() }
-        widgets.removeAll()
-        selectionManager.deselectAll()
+    override func createWidget(for item: WidgetItem, frame: CGRect) -> UIView? {
+        guard let data = climbingData else { return nil }
 
-        // ... (Template application logic specific to Climbing widgets) ...
-        // Since extracted widgets have standard interfaces, we can likely reuse logic or copy adapted logic.
-        
-        // For brevity in this refactor step, I'll stub the full template logic or copy relevant parts if needed.
-        // But ideally Base should handle template application if items are standardized.
-        // However, template items are specific to Climbing types.
-        
-         for item in template.items {
-              // ... create widgets based on item.type ...
-         }
+        var widget: UIView?
+
+        switch item.type {
+        case .climbingGym:
+            let w = ClimbingGymWidget()
+            w.configure(gymName: data.gymName)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .gymLogo:
+            let w = GymLogoWidget()
+            var gym = ClimbingGymManager.shared.findGym(byName: data.gymName)
+            if gym == nil {
+                let allGyms = ClimbingGymManager.shared.getAllGyms()
+                gym = allGyms.first { $0.name.caseInsensitiveCompare(data.gymName) == .orderedSame }
+            }
+            let finalGym = gym ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
+            w.configure(with: finalGym)
+            w.frame = frame
+            w.initialSize = frame.size
+            if let colorHex = item.color, let color = TemplateManager.color(from: colorHex) {
+                w.applyColor(color)
+            }
+            widget = w
+
+        case .climbingDiscipline:
+            let w = ClimbingDisciplineWidget()
+            w.configure(discipline: data.discipline)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .climbingSession:
+            let w = ClimbingSessionWidget()
+            w.configure(sent: data.sentRoutes, total: data.totalRoutes)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .climbingRoutesByColor:
+            let w = ClimbingRoutesByColorWidget()
+            w.configure(routes: data.routes)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .text:
+            let w = TextWidget()
+            w.configure(text: "텍스트 입력")
+            w.textDelegate = self as? TextWidgetDelegate
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .date:
+            let w = DateWidget()
+            w.configure(startDate: data.sessionDate)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .currentDateTime:
+            let w = CurrentDateTimeWidget()
+            w.configure(date: data.sessionDate)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .composite, .routeMap, .distance, .duration, .pace, .speed, .calories, .location:
+            return nil
+        }
+
+        return widget
     }
 
     // MARK: - Widget Restoration
@@ -349,6 +418,9 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             widget.configure(routes: data.routes)
             if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
                 widget.applyColor(color)
+            }
+            if let savedFont = FontPreferences.shared.loadFont(for: savedWidget.identifier) {
+                widget.applyFont(savedFont)
             }
             return widget
 

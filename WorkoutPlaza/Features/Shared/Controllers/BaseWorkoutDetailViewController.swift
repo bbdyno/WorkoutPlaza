@@ -117,7 +117,7 @@ class TextPathPreviewView: UIView {
 }
 import PhotosUI
 
-class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, UIGestureRecognizerDelegate {
+class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, UIGestureRecognizerDelegate, TextWidgetDelegate {
 
     // MARK: - Constants
     private enum Constants {
@@ -439,10 +439,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         setupDefaultBackground()
         setupLongPressGesture()
         setupMultiSelectToolbarConfig() // Renamed to avoid confusion with constraints setup if any
-        
+
         // Add observer for widget move notification
         NotificationCenter.default.addObserver(self, selector: #selector(handleWidgetDidMove), name: .widgetDidMove, object: nil)
-        
+
         // Initial button state
         aspectRatioButton.setTitle(currentAspectRatio.displayName, for: .normal)
         updateToolbarItemsState()
@@ -1245,6 +1245,15 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 statWidget.updateFonts()
                 if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
                     statWidget.applyColor(color)
+                }
+            } else if let routesWidget = widget as? ClimbingRoutesByColorWidget {
+                routesWidget.initialSize = savedWidget.frame.size
+                if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
+                    routesWidget.applyColor(color)
+                }
+                // Load and apply saved font
+                if let savedFont = FontPreferences.shared.loadFont(for: savedWidget.identifier) {
+                    routesWidget.applyFont(savedFont)
                 }
             }
             
@@ -2191,9 +2200,87 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
 
     // MARK: - Template Management
-    
+
+    /// Override in subclasses to create workout-specific widgets
+    func createWidget(for item: WidgetItem, frame: CGRect) -> UIView? {
+        // Override in subclasses to handle workout-specific widget types
+        return nil
+    }
+
+    /// Override in subclasses to clear workout-specific widgets (e.g., routeMapView for running)
+    func clearCustomWidgets() {
+        // Override in subclasses if needed
+    }
+
     func applyWidgetTemplate(_ template: WidgetTemplate) {
-        // Override in subclasses
+        // Clear existing widgets
+        widgets.forEach { $0.removeFromSuperview() }
+        clearCustomWidgets()
+        widgets.removeAll()
+        selectionManager.deselectAll()
+
+        WPLog.debug("Applying template '\(template.name)' version \(template.version)")
+
+        // Get template canvas size
+        let templateCanvasSize: CGSize
+        if let tCanvasSize = template.canvasSize {
+            templateCanvasSize = CGSize(width: tCanvasSize.width, height: tCanvasSize.height)
+        } else {
+            // For very old templates without canvas size, assume a default
+            templateCanvasSize = CGSize(width: 414, height: 700)
+        }
+
+        // STEP 1: Change canvas aspect ratio to match template
+        let detectedAspectRatio = AspectRatio.detect(from: templateCanvasSize)
+
+        // Update aspect ratio button and canvas size
+        currentAspectRatio = detectedAspectRatio
+        aspectRatioButton.setTitle(detectedAspectRatio.displayName, for: .normal)
+        updateCanvasSize()
+
+        // Force immediate layout update
+        view.layoutIfNeeded()
+
+        // STEP 2: Get updated canvas size after aspect ratio change
+        let canvasSize = contentView.bounds.size
+
+        // STEP 3: Apply background image aspect ratio if available
+        if let aspectRatio = template.backgroundImageAspectRatio {
+            // Note: This will be applied when user selects a background image
+            // Store it for later use
+        }
+
+        // STEP 4: Apply background transform if available
+        if let transformData = template.backgroundTransform {
+            let transform = BackgroundTransform(
+                scale: transformData.scale,
+                offset: CGPoint(x: transformData.offsetX, y: transformData.offsetY)
+            )
+            backgroundTransform = transform
+            if !backgroundImageView.isHidden {
+                applyBackgroundTransform(transform)
+            }
+        }
+
+        // STEP 5: Create all widgets in the new canvas
+        for item in template.items {
+            // Use ratio-based positioning (version 2.0+) or fallback to legacy
+            let frame = TemplateManager.absoluteFrame(from: item, canvasSize: canvasSize, templateCanvasSize: templateCanvasSize)
+
+            // Try to create widget using subclass implementation
+            if let widget = createWidget(for: item, frame: frame) {
+                contentView.addSubview(widget)
+                widgets.append(widget)
+
+                if var selectable = widget as? Selectable {
+                    selectable.selectionDelegate = self
+                    selectionManager.registerItem(selectable)
+                }
+            }
+        }
+
+        instructionLabel.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
+        WPLog.info("Applied template directly: \(template.name)")
     }
     
     @objc dynamic func importTemplate() {
@@ -2751,10 +2838,12 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                         if let statWidget = widget as? BaseStatWidget {
                             statWidget.applyFont(fontStyle)
                             FontPreferences.shared.saveFont(fontStyle, for: statWidget.itemIdentifier)
-                        }
-                        if let textWidget = widget as? TextWidget {
+                        } else if let textWidget = widget as? TextWidget {
                             textWidget.applyFont(fontStyle)
                             FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
+                        } else if let routesWidget = widget as? ClimbingRoutesByColorWidget {
+                            routesWidget.applyFont(fontStyle)
+                            FontPreferences.shared.saveFont(fontStyle, for: routesWidget.itemIdentifier)
                         }
                     }
                     // Also update the group's font style
@@ -2765,6 +2854,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 } else if let textWidget = item as? TextWidget {
                     textWidget.applyFont(fontStyle)
                     FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
+                } else if let routesWidget = item as? ClimbingRoutesByColorWidget {
+                    routesWidget.applyFont(fontStyle)
+                    FontPreferences.shared.saveFont(fontStyle, for: routesWidget.itemIdentifier)
                 }
             }
         } else if let selectedItem = selectionManager.currentlySelectedItem {
@@ -2775,15 +2867,20 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             } else if let textWidget = selectedItem as? TextWidget {
                 textWidget.applyFont(fontStyle)
                 FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
+            } else if let routesWidget = selectedItem as? ClimbingRoutesByColorWidget {
+                routesWidget.applyFont(fontStyle)
+                FontPreferences.shared.saveFont(fontStyle, for: routesWidget.itemIdentifier)
             } else if let group = selectedItem as? TemplateGroupView {
                 for widget in group.groupedItems {
                     if let statWidget = widget as? BaseStatWidget {
                         statWidget.applyFont(fontStyle)
                         FontPreferences.shared.saveFont(fontStyle, for: statWidget.itemIdentifier)
-                    }
-                    if let textWidget = widget as? TextWidget {
+                    } else if let textWidget = widget as? TextWidget {
                         textWidget.applyFont(fontStyle)
                         FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
+                    } else if let routesWidget = widget as? ClimbingRoutesByColorWidget {
+                        routesWidget.applyFont(fontStyle)
+                        FontPreferences.shared.saveFont(fontStyle, for: routesWidget.itemIdentifier)
                     }
                 }
                 group.applyFont(fontStyle)
@@ -3171,6 +3268,37 @@ extension BaseWorkoutDetailViewController {
         }
 
         return true
+    }
+}
+
+// MARK: - TextWidgetDelegate
+extension BaseWorkoutDetailViewController {
+    func textWidgetDidRequestEdit(_ widget: TextWidget) {
+        let currentText = widget.textLabel.text ?? ""
+
+        let alert = UIAlertController(
+            title: "텍스트 편집",
+            message: "위젯에 표시할 텍스트를 입력하세요",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.text = currentText
+            textField.placeholder = "텍스트 입력"
+            textField.clearButtonMode = .whileEditing
+        }
+
+        alert.addAction(UIAlertAction(title: "완료", style: .default) { [weak alert, weak widget] _ in
+            guard let textField = alert?.textFields?.first,
+                  let newText = textField.text,
+                  !newText.isEmpty else { return }
+
+            widget?.updateText(newText)
+        })
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        present(alert, animated: true)
     }
 }
 

@@ -10,7 +10,7 @@ import SnapKit
 
 // MARK: - Gym Name Widget
 
-class ClimbingGymWidget: BaseClimbingWidget {
+class ClimbingGymWidget: BaseStatWidget {
     private var gymName: String = ""
     private var gym: ClimbingGym?
 
@@ -109,7 +109,7 @@ class ClimbingGymWidget: BaseClimbingWidget {
         }
     }
     
-    override var idealSize: CGSize {
+    var idealSize: CGSize {
         layoutIfNeeded()
         
         let titleSize = titleLabel.intrinsicContentSize
