@@ -173,20 +173,30 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         case .gymLogo:
             let w = GymLogoWidget()
             w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
-            
+
             // Try to find the gym object to get logo and metadata
+            WPLog.debug("🏢 Looking for gym with name: '\(data.gymName)'")
+
             // 1. Try exact match via manager (covers presets and custom saved)
             var gym = ClimbingGymManager.shared.findGym(byName: data.gymName)
-            
+
             // 2. If not found, try searching ALL gyms including remote config explicitly
             if gym == nil {
+                WPLog.debug("🏢 Gym not found by exact name, searching all gyms...")
                 let allGyms = ClimbingGymManager.shared.getAllGyms()
+                WPLog.debug("🏢 Total gyms available: \(allGyms.count)")
                 gym = allGyms.first { $0.name.caseInsensitiveCompare(data.gymName) == .orderedSame }
             }
-            
+
             // 3. Fallback to dummy
+            if let foundGym = gym {
+                WPLog.debug("🏢 Found gym: '\(foundGym.name)' with logoSource: \(foundGym.logoSource)")
+            } else {
+                WPLog.warning("🏢 Gym not found, using fallback with .none logoSource")
+            }
+
             let finalGym = gym ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
-            
+
             w.configure(with: finalGym)
             w.initialSize = widgetSize
             widget = w
@@ -294,10 +304,17 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         case .gymLogo:
             let w = GymLogoWidget()
+            WPLog.debug("🏢 [Template] Looking for gym with name: '\(data.gymName)'")
             var gym = ClimbingGymManager.shared.findGym(byName: data.gymName)
             if gym == nil {
+                WPLog.debug("🏢 [Template] Gym not found by exact name, searching all gyms...")
                 let allGyms = ClimbingGymManager.shared.getAllGyms()
                 gym = allGyms.first { $0.name.caseInsensitiveCompare(data.gymName) == .orderedSame }
+            }
+            if let foundGym = gym {
+                WPLog.debug("🏢 [Template] Found gym: '\(foundGym.name)' with logoSource: \(foundGym.logoSource)")
+            } else {
+                WPLog.warning("🏢 [Template] Gym not found, using fallback")
             }
             let finalGym = gym ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
             w.configure(with: finalGym)
@@ -428,8 +445,20 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             let widget = GymLogoWidget()
             widget.frame = savedWidget.frame
             widget.initialSize = savedWidget.frame.size
-            let gym = ClimbingGymManager.shared.findGym(byName: data.gymName) ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
-            widget.configure(with: gym)
+            WPLog.debug("🏢 [Saved] Looking for gym with name: '\(data.gymName)'")
+            var gym = ClimbingGymManager.shared.findGym(byName: data.gymName)
+            if gym == nil {
+                WPLog.debug("🏢 [Saved] Gym not found by exact name, searching all gyms...")
+                let allGyms = ClimbingGymManager.shared.getAllGyms()
+                gym = allGyms.first { $0.name.caseInsensitiveCompare(data.gymName) == .orderedSame }
+            }
+            if let foundGym = gym {
+                WPLog.debug("🏢 [Saved] Found gym: '\(foundGym.name)' with logoSource: \(foundGym.logoSource)")
+            } else {
+                WPLog.warning("🏢 [Saved] Gym not found, using fallback")
+            }
+            let finalGym = gym ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
+            widget.configure(with: finalGym)
             if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
                 widget.applyColor(color)
             }

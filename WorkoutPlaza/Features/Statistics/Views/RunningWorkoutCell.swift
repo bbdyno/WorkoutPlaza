@@ -30,28 +30,28 @@ class RunningWorkoutCell: UIView {
     }
     
     private func setupUI() {
-        backgroundColor = .systemBlue.withAlphaComponent(0.1)
+        backgroundColor = ColorSystem.primaryBlue.withAlphaComponent(0.1)
         layer.cornerRadius = 12
-        
+
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
         iconView.image = UIImage(systemName: "figure.run", withConfiguration: config)
-        iconView.tintColor = .systemBlue
+        iconView.tintColor = ColorSystem.primaryBlue
         iconView.contentMode = .scaleAspectFit
-        
+
         titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
-        titleLabel.textColor = .label
-        
+        titleLabel.textColor = ColorSystem.mainText
+
         timeLabel.font = .systemFont(ofSize: 13)
-        timeLabel.textColor = .secondaryLabel
-        
+        timeLabel.textColor = ColorSystem.subText
+
         distanceLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        distanceLabel.textColor = .systemBlue
+        distanceLabel.textColor = ColorSystem.primaryBlue
         
         durationLabel.font = .systemFont(ofSize: 13)
-        durationLabel.textColor = .secondaryLabel
-        
+        durationLabel.textColor = ColorSystem.subText
+
         paceLabel.font = .systemFont(ofSize: 12)
-        paceLabel.textColor = .tertiaryLabel
+        paceLabel.textColor = ColorSystem.subText
         
         chevronView.image = UIImage(systemName: "chevron.right")
         chevronView.tintColor = .tertiaryLabel

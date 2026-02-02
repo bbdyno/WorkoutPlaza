@@ -99,9 +99,12 @@ class GymLogoWidget: UIView, Selectable {
     
     func configure(with gym: ClimbingGym) {
         ClimbingGymLogoManager.shared.loadLogo(for: gym, asTemplate: true) { [weak self] image in
-            self?.logoImageView.image = image
+            guard let self = self else { return }
+            self.logoImageView.image = image
+            self.setNeedsLayout()
+            self.layoutIfNeeded()
         }
-        
+
         if let branch = gym.metadata?.branch, !branch.isEmpty {
             branchLabel.text = branch
             branchLabel.isHidden = false

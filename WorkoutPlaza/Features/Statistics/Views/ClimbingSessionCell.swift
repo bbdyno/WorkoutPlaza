@@ -29,25 +29,25 @@ class ClimbingSessionCell: UIView {
     }
     
     private func setupUI() {
-        backgroundColor = .systemOrange.withAlphaComponent(0.1)
+        backgroundColor = ColorSystem.primaryGreen.withAlphaComponent(0.1)
         layer.cornerRadius = 12
-        
+
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
         iconView.image = UIImage(systemName: "figure.climbing", withConfiguration: config)
-        iconView.tintColor = .systemOrange
+        iconView.tintColor = ColorSystem.primaryGreen
         iconView.contentMode = .scaleAspectFit
-        
+
         titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
-        titleLabel.textColor = .label
-        
+        titleLabel.textColor = ColorSystem.mainText
+
         disciplineLabel.font = .systemFont(ofSize: 13)
-        disciplineLabel.textColor = .secondaryLabel
-        
+        disciplineLabel.textColor = ColorSystem.subText
+
         routesLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        routesLabel.textColor = .systemOrange
-        
+        routesLabel.textColor = ColorSystem.primaryGreen
+
         gradeLabel.font = .systemFont(ofSize: 12)
-        gradeLabel.textColor = .tertiaryLabel
+        gradeLabel.textColor = ColorSystem.subText
         
         let chevronConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
         chevronView.image = UIImage(systemName: "chevron.right", withConfiguration: chevronConfig)
