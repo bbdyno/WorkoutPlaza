@@ -188,6 +188,10 @@ class TextPathWidget: UIView, Selectable {
                 positionResizeHandles()
             }
 
+        case .ended, .cancelled:
+            // 위젯 이동 완료 알림
+            NotificationCenter.default.post(name: .widgetDidMove, object: nil)
+
         default:
             break
         }

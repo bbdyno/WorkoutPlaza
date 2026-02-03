@@ -60,7 +60,7 @@ class TextWidget: UIView, Selectable {
         label.textAlignment = .center
         label.numberOfLines = 0
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.5
+        label.minimumScaleFactor = 0.2
         return label
     }()
 

@@ -30,7 +30,7 @@ class BaseClimbingWidget: UIView, Selectable {
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .white.withAlphaComponent(0.7)
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.5
+        label.minimumScaleFactor = 0.2
         return label
     }()
 
@@ -48,7 +48,7 @@ class BaseClimbingWidget: UIView, Selectable {
         label.font = .systemFont(ofSize: 14, weight: .regular)
         label.textColor = .white.withAlphaComponent(0.7)
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.5
+        label.minimumScaleFactor = 0.2
         return label
     }()
 

@@ -919,7 +919,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Size Panel Content
         let sliderContainer = UIView()
         let fontSizeSlider = UISlider()
-        fontSizeSlider.minimumValue = 12
+        fontSizeSlider.minimumValue = 8
         fontSizeSlider.maximumValue = 40
         fontSizeSlider.value = Float(textPathSelectedFontSize)
         fontSizeSlider.minimumTrackTintColor = .white
