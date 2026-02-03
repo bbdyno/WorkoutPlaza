@@ -3193,22 +3193,28 @@ extension BaseWorkoutDetailViewController: UIDocumentPickerDelegate {
     }
     
     internal func handleImportedTemplateFile(at fileURL: URL) {
-        do {
-            let template = try TemplateManager.shared.importTemplate(from: fileURL)
-            let alert = UIAlertController(
-                title: "템플릿 가져오기 성공",
-                message: "'\(template.name)' 템플릿을 적용하시겠습니까?",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "적용", style: .default) { [weak self] _ in
-                self?.applyWidgetTemplate(template)
-            })
-            alert.addAction(UIAlertAction(title: "나중에", style: .cancel))
-            present(alert, animated: true)
-        } catch {
-            let alert = UIAlertController(title: "가져오기 실패", message: "오류: \(error.localizedDescription)", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "확인", style: .default))
-            present(alert, animated: true)
+        Task {
+            do {
+                let template = try await TemplateManager.shared.importTemplate(from: fileURL)
+                await MainActor.run {
+                    let alert = UIAlertController(
+                        title: "템플릿 가져오기 성공",
+                        message: "'\(template.name)' 템플릿을 적용하시겠습니까?",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "적용", style: .default) { [weak self] _ in
+                        self?.applyWidgetTemplate(template)
+                    })
+                    alert.addAction(UIAlertAction(title: "나중에", style: .cancel))
+                    present(alert, animated: true)
+                }
+            } catch {
+                await MainActor.run {
+                    let alert = UIAlertController(title: "가져오기 실패", message: "오류: \(error.localizedDescription)", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "확인", style: .default))
+                    present(alert, animated: true)
+                }
+            }
         }
     }
 }

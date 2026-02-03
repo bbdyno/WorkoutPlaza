@@ -7,75 +7,89 @@
 
 import UIKit
 
-class ClimbingGymLogoManager {
+actor ClimbingGymLogoManager {
     static let shared = ClimbingGymLogoManager()
 
-    private var imageCache: [String: UIImage] = [:]
-    private var downloadTasks: [String: URLSessionDataTask] = [:]
+    private let imageCache = NSCache<NSString, UIImage>()
+    
+    // Keep track of ongoing tasks to avoid duplicate requests
+    private var activeTasks: [String: Task<UIImage?, Error>] = [:]
 
-    private init() {}
+    private init() {
+        // Optional: specific limits for cache
+        imageCache.countLimit = 100 // Example limit
+    }
 
-    /// Load logo for a gym based on its LogoSource
+    /// Load logo for a gym based on its LogoSource (Async)
     /// - Parameters:
     ///   - gym: The gym to load logo for
     ///   - asTemplate: If true, returns image with .alwaysTemplate rendering mode (useful for tinting)
-    ///   - completion: Callback with loaded image
-    func loadLogo(for gym: ClimbingGym, asTemplate: Bool = false, completion: @escaping (UIImage?) -> Void) {
-        let handler: (UIImage?) -> Void = { image in
-            if asTemplate, let image = image {
-                completion(image.withRenderingMode(.alwaysTemplate))
-            } else {
-                completion(image)
-            }
-        }
+    /// - Returns: Loaded UIImage or nil
+    func loadLogo(for gym: ClimbingGym, asTemplate: Bool = false) async -> UIImage? {
+        var image: UIImage?
 
         switch gym.logoSource {
         case .assetName(let name):
-            handler(UIImage(named: name))
+            image = UIImage(named: name)
 
         case .imageData(let data):
-            handler(UIImage(data: data))
+            image = UIImage(data: data)
 
         case .url(let urlString):
-            loadLogoFromURL(urlString, completion: handler)
+            image = await loadLogoFromURL(urlString)
 
         case .none:
-            handler(placeholderImage)
+            image = placeholderImage
         }
+
+        if asTemplate, let loadedImage = image {
+            return loadedImage.withRenderingMode(.alwaysTemplate)
+        }
+        
+        return image
     }
 
-    private func loadLogoFromURL(_ urlString: String, completion: @escaping (UIImage?) -> Void) {
-        // Check cache first
-        if let cached = imageCache[urlString] {
-            completion(cached)
-            return
+    private func loadLogoFromURL(_ urlString: String) async -> UIImage? {
+        let cacheKey = urlString as NSString
+
+        // 1. Check Memory Cache
+        if let cachedImage = imageCache.object(forKey: cacheKey) {
+            return cachedImage
         }
 
-        // Start download
-        guard let url = URL(string: urlString) else {
-            completion(placeholderImage)
-            return
+        // 2. Check for existing task (deduplication)
+        if let existingTask = activeTasks[urlString] {
+            return try? await existingTask.value
         }
 
-        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            defer { self?.downloadTasks.removeValue(forKey: urlString) }
-
-            guard let data = data,
-                  let image = UIImage(data: data)
-            else {
-                WPLog.warning("Failed to load image from URL: \(urlString)")
-                DispatchQueue.main.async { completion(self?.placeholderImage) }
-                return
+        // 3. Create new task
+        let task = Task<UIImage?, Error> {
+            guard let url = URL(string: urlString) else { return nil }
+            
+            let (data, response) = try await URLSession.shared.data(from: url)
+            
+            guard let httpResponse = response as? HTTPURLResponse, 
+                  (200...299).contains(httpResponse.statusCode),
+                  let image = UIImage(data: data) else {
+                return nil
             }
-
-            WPLog.debug("Successfully loaded logo for: \(urlString)")
-
-            self?.imageCache[urlString] = image
-            DispatchQueue.main.async { completion(image) }
+            
+            return image
         }
-
-        downloadTasks[urlString] = task
-        task.resume()
+        
+        activeTasks[urlString] = task
+        
+        let loadedImage = try? await task.value
+        
+        // Cleanup task
+        activeTasks.removeValue(forKey: urlString)
+        
+        if let image = loadedImage {
+             // Cache the result
+             imageCache.setObject(image, forKey: cacheKey)
+        }
+        
+        return loadedImage ?? placeholderImage
     }
 
     var placeholderImage: UIImage? {
@@ -83,8 +97,6 @@ class ClimbingGymLogoManager {
     }
 
     func clearCache() {
-        imageCache.removeAll()
-        downloadTasks.values.forEach { $0.cancel() }
-        downloadTasks.removeAll()
+        imageCache.removeAllObjects()
     }
 }
