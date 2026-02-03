@@ -30,7 +30,7 @@ class HomeDashboardViewController: UIViewController {
         let label = UILabel()
         label.text = "WorkoutPlaza"
         label.font = .systemFont(ofSize: 34, weight: .bold)
-        label.textColor = .white
+        label.textColor = ColorSystem.mainText
         return label
     }()
 
@@ -38,7 +38,7 @@ class HomeDashboardViewController: UIViewController {
         let label = UILabel()
         label.text = "운동 기록을 사진으로 만들어보세요"
         label.font = .systemFont(ofSize: 16)
-        label.textColor = .lightGray
+        label.textColor = ColorSystem.subText
         return label
     }()
 
@@ -54,7 +54,6 @@ class HomeDashboardViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        overrideUserInterfaceStyle = .dark // Force Dark Mode
         setupUI()
         setupSportCards()
     }
@@ -72,7 +71,7 @@ class HomeDashboardViewController: UIViewController {
     // MARK: - Setup
 
     private func setupUI() {
-        view.backgroundColor = .black // Deep black background
+        view.backgroundColor = ColorSystem.background
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentStackView)
@@ -107,7 +106,7 @@ class HomeDashboardViewController: UIViewController {
         let sectionLabel = UILabel()
         sectionLabel.text = "운동 종목 선택"
         sectionLabel.font = .systemFont(ofSize: 20, weight: .semibold)
-        sectionLabel.textColor = .white
+        sectionLabel.textColor = ColorSystem.mainText
 
         contentStackView.addArrangedSubview(sectionLabel)
         contentStackView.addArrangedSubview(sportsStackView)
@@ -126,18 +125,18 @@ class HomeDashboardViewController: UIViewController {
 
     private func createSportCard(for sport: SportType) -> UIView {
         let card = UIView()
-        // Modern Dark Card Style
-        card.backgroundColor = .secondarySystemGroupedBackground // Dark gray in dark mode
+        // Modern Card Style
+        card.backgroundColor = ColorSystem.cardBackground
         card.layer.cornerRadius = 24
         card.layer.cornerCurve = .continuous
         // card.layer.borderWidth = 1
         // card.layer.borderColor = UIColor.white.withAlphaComponent(0.1).cgColor
         
-        // Subtle gradient or shadow
+        // Subtle shadow
         card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.3
-        card.layer.shadowOffset = CGSize(width: 0, height: 4)
-        card.layer.shadowRadius = 8
+        card.layer.shadowOpacity = 0.08
+        card.layer.shadowOffset = CGSize(width: 0, height: 2)
+        card.layer.shadowRadius = 12
 
         // Icon Container
         let iconContainer = UIView()
@@ -160,22 +159,22 @@ class HomeDashboardViewController: UIViewController {
         let titleLabel = UILabel()
         titleLabel.text = sport.displayName
         titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        titleLabel.textColor = .white
+        titleLabel.textColor = ColorSystem.mainText
 
         let descriptionLabel = UILabel()
         descriptionLabel.text = getDescription(for: sport)
         descriptionLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        descriptionLabel.textColor = .secondaryLabel // Better contrast
+        descriptionLabel.textColor = ColorSystem.subText
         descriptionLabel.numberOfLines = 2
 
         // Arrow - Use a circle button look
         let arrowContainer = UIView()
-        arrowContainer.backgroundColor = .tertiarySystemGroupedBackground
+        arrowContainer.backgroundColor = ColorSystem.background
         arrowContainer.layer.cornerRadius = 16
-        
+
         let arrowView = UIImageView()
         arrowView.image = UIImage(systemName: "arrow.right")
-        arrowView.tintColor = .white
+        arrowView.tintColor = ColorSystem.mainText
         arrowView.contentMode = .scaleAspectFit
         
         arrowContainer.addSubview(arrowView)
@@ -257,7 +256,6 @@ class HomeDashboardViewController: UIViewController {
             let workoutListVC = RunningListViewController()
             let navController = UINavigationController(rootViewController: workoutListVC)
             navController.modalPresentationStyle = .fullScreen
-            navController.overrideUserInterfaceStyle = .dark // Ensure Nav conforms
             present(navController, animated: true)
 
         case .climbing:
@@ -265,7 +263,6 @@ class HomeDashboardViewController: UIViewController {
             climbingInputVC.delegate = self
             let navController = UINavigationController(rootViewController: climbingInputVC)
             navController.modalPresentationStyle = .fullScreen
-            navController.overrideUserInterfaceStyle = .dark
             present(navController, animated: true)
         }
     }

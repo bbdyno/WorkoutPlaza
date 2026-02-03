@@ -137,4 +137,36 @@ class BackgroundTemplateView: UIView {
         let randomTemplate = templates.randomElement() ?? .gradient1
         applyTemplate(randomTemplate)
     }
+
+    // 현재 그라데이션 색상 가져오기 (밝기 계산용)
+    func getCurrentColors() -> [UIColor] {
+        switch currentStyle {
+        case .gradient1:
+            return ColorSystem.brandGradientColors
+        case .gradient2:
+            return [
+                UIColor(red: 0.5, green: 0.2, blue: 0.8, alpha: 1.0),
+                UIColor(red: 0.8, green: 0.3, blue: 0.9, alpha: 1.0)
+            ]
+        case .gradient3:
+            return [
+                UIColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1.0),
+                UIColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)
+            ]
+        case .gradient4:
+            return [
+                UIColor(red: 0.2, green: 0.7, blue: 0.5, alpha: 1.0),
+                UIColor(red: 0.4, green: 0.9, blue: 0.6, alpha: 1.0)
+            ]
+        case .minimal:
+            return [.white]
+        case .dark:
+            return [
+                UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0),
+                UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
+            ]
+        case .custom:
+            return customColors ?? []
+        }
+    }
 }

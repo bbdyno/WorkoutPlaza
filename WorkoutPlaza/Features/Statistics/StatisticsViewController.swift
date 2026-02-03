@@ -27,7 +27,7 @@ class StatisticsViewController: UIViewController {
     private lazy var collectionView: UICollectionView = {
         let layout = createCompositionalLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.backgroundColor = .systemBackground
+        cv.backgroundColor = ColorSystem.background
         cv.delegate = self
         cv.dataSource = self
         cv.register(StatsSummaryCell.self, forCellWithReuseIdentifier: StatsSummaryCell.identifier)
@@ -41,7 +41,6 @@ class StatisticsViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        overrideUserInterfaceStyle = .dark // Force Dark Mode
         setupUI()
         setupNotificationObservers()
     }
@@ -58,7 +57,7 @@ class StatisticsViewController: UIViewController {
     // MARK: - Setup
     
     private func setupUI() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = ColorSystem.background
         navigationController?.navigationBar.prefersLargeTitles = true
         title = "Statistics"
         
@@ -385,7 +384,7 @@ class CalendarCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = .secondarySystemGroupedBackground
+        contentView.backgroundColor = ColorSystem.cardBackground
         contentView.layer.cornerRadius = 16
         contentView.layer.cornerCurve = .continuous
         
@@ -416,7 +415,7 @@ class StatsSummaryCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = .secondarySystemGroupedBackground
+        contentView.backgroundColor = ColorSystem.cardBackground
         contentView.layer.cornerRadius = 16
         contentView.layer.cornerCurve = .continuous
         
@@ -427,10 +426,10 @@ class StatsSummaryCell: UICollectionViewCell {
         iconImageView.tintColor = .white
         
         valueLabel.font = .systemFont(ofSize: 24, weight: .bold)
-        valueLabel.textColor = .label
+        valueLabel.textColor = ColorSystem.mainText
         
         titleLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        titleLabel.textColor = .secondaryLabel
+        titleLabel.textColor = ColorSystem.subText
         
         let stack = UIStackView(arrangedSubviews: [iconContainer, valueLabel, titleLabel])
         stack.axis = .vertical
@@ -474,7 +473,7 @@ class RecentSessionCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = .secondarySystemGroupedBackground
+        contentView.backgroundColor = ColorSystem.cardBackground
         contentView.layer.cornerRadius = 16
         contentView.layer.cornerCurve = .continuous
         
@@ -484,13 +483,13 @@ class RecentSessionCell: UICollectionViewCell {
         iconImageView.tintColor = .white
         
         titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-        titleLabel.textColor = .label
+        titleLabel.textColor = ColorSystem.mainText
         
         subtitleLabel.font = .systemFont(ofSize: 14)
-        subtitleLabel.textColor = .secondaryLabel
+        subtitleLabel.textColor = ColorSystem.subText
         
         dateLabel.font = .systemFont(ofSize: 12)
-        dateLabel.textColor = .tertiaryLabel
+        dateLabel.textColor = ColorSystem.subText
         
         let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         textStack.axis = .vertical
@@ -543,7 +542,7 @@ class SectionHeaderView: UICollectionReusableView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
-        titleLabel.textColor = .label
+        titleLabel.textColor = ColorSystem.mainText
         addSubview(titleLabel)
         titleLabel.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(4) // Align with cell content inset if needed
@@ -669,7 +668,7 @@ class CustomCalendarView: UIView {
             let label = UILabel()
             label.text = day
             label.font = .systemFont(ofSize: 13, weight: .semibold)
-            label.textColor = .secondaryLabel
+            label.textColor = ColorSystem.subText
             label.textAlignment = .center
             weekDayStack.addArrangedSubview(label)
         }
@@ -812,12 +811,13 @@ class CustomCalendarDayCell: UICollectionViewCell {
     required init?(coder: NSCoder) { fatalError() }
     
     private func setupUI() {
-        selectionBackground.layer.cornerRadius = 18 // Approx radius
+        selectionBackground.layer.cornerRadius = 18  // Perfect circle (36 / 2)
+        selectionBackground.layer.masksToBounds = true  // Clip gradient to circle
         selectionBackground.isHidden = true
         contentView.addSubview(selectionBackground)
         
         dayLabel.font = .systemFont(ofSize: 15, weight: .medium)
-        dayLabel.textColor = .label
+        dayLabel.textColor = ColorSystem.mainText
         dayLabel.textAlignment = .center
         contentView.addSubview(dayLabel)
         
@@ -829,7 +829,7 @@ class CustomCalendarDayCell: UICollectionViewCell {
         
         plusLabel.text = "+"
         plusLabel.font = .systemFont(ofSize: 10, weight: .bold)
-        plusLabel.textColor = .systemGray
+        plusLabel.textColor = ColorSystem.subText
         plusLabel.textAlignment = .center
         plusLabel.isHidden = true
         contentView.addSubview(plusLabel)
@@ -874,8 +874,8 @@ class CustomCalendarDayCell: UICollectionViewCell {
         if isSelected {
             selectionBackground.isHidden = false
             selectionBackground.setGradientBackground()
-            dayLabel.textColor = .white
-            
+            dayLabel.textColor = .white  // Selected cell - white text on blue background
+
             // Show white dots if selected? Or hide? Standard behavior usually dots become white or hidden.
             // Let's show white dots.
             if let decorations = decorations, !decorations.isEmpty {
@@ -890,7 +890,7 @@ class CustomCalendarDayCell: UICollectionViewCell {
             }
         } else {
             selectionBackground.isHidden = true
-            dayLabel.textColor = isToday ? .systemBlue : .label
+            dayLabel.textColor = isToday ? .systemBlue : ColorSystem.mainText
             
             if let decorations = decorations, !decorations.isEmpty {
                 if decorations.count <= 2 {
@@ -898,7 +898,7 @@ class CustomCalendarDayCell: UICollectionViewCell {
                         addDot(color: color)
                     }
                 } else {
-                    plusLabel.textColor = .secondaryLabel
+                    plusLabel.textColor = ColorSystem.subText
                     plusLabel.isHidden = false
                 }
             }

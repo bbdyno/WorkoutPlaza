@@ -26,7 +26,8 @@ class RunningListViewController: UIViewController {
         table.delegate = self
         table.dataSource = self
         table.register(WorkoutCell.self, forCellReuseIdentifier: "WorkoutCell")
-        table.rowHeight = 100
+        table.rowHeight = 116  // 100 + 16 padding
+        table.separatorStyle = .none
         return table
     }()
     
@@ -39,7 +40,7 @@ class RunningListViewController: UIViewController {
     private let emptyLabel: UILabel = {
         let label = UILabel()
         label.text = "러닝 기록이 없습니다"
-        label.textColor = .lightGray
+        label.textColor = ColorSystem.subText
         label.font = .systemFont(ofSize: 16)
         label.textAlignment = .center
         label.isHidden = true
@@ -49,12 +50,23 @@ class RunningListViewController: UIViewController {
     private let segmentedControl: UISegmentedControl = {
         let sc = UISegmentedControl(items: ["전체", "HealthKit", "외부 기록"])
         sc.selectedSegmentIndex = 0
-        sc.backgroundColor = UIColor(white: 0.15, alpha: 1.0)
-        sc.selectedSegmentTintColor = .systemBlue
-        let normalAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.lightGray]
-        let selectedAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: UIColor.white]
+        sc.backgroundColor = ColorSystem.cardBackground
+        sc.selectedSegmentTintColor = ColorSystem.primaryGreen
+        sc.layer.cornerRadius = 10
+        sc.layer.masksToBounds = true
+
+        // Modern styling
+        let normalAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: ColorSystem.subText,
+            .font: UIFont.systemFont(ofSize: 14, weight: .semibold)
+        ]
+        let selectedAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: UIColor.white,
+            .font: UIFont.systemFont(ofSize: 14, weight: .bold)
+        ]
         sc.setTitleTextAttributes(normalAttributes, for: .normal)
         sc.setTitleTextAttributes(selectedAttributes, for: .selected)
+
         return sc
     }()
 
@@ -62,7 +74,7 @@ class RunningListViewController: UIViewController {
         let button = UIButton(type: .system)
 
         var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = .systemBlue
+        config.baseBackgroundColor = ColorSystem.primaryGreen
         config.baseForegroundColor = .white
         config.cornerStyle = .capsule
         config.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20)
@@ -223,7 +235,7 @@ class RunningListViewController: UIViewController {
     
     private func setupUI() {
         title = "러닝 기록"
-        view.backgroundColor = .black
+        view.backgroundColor = ColorSystem.background
         navigationItem.largeTitleDisplayMode = .never
 
         // 닫기 버튼 추가
@@ -234,17 +246,19 @@ class RunningListViewController: UIViewController {
             action: #selector(dismissSheet)
         )
 
-        // Dark Navigation Bar Style
+        // Navigation Bar Style
         let appearance = UINavigationBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .black
-        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.backgroundColor = ColorSystem.background
+        appearance.titleTextAttributes = [.foregroundColor: ColorSystem.mainText]
+        appearance.largeTitleTextAttributes = [.foregroundColor: ColorSystem.mainText]
+        appearance.shadowColor = nil  // Remove bottom line
+        appearance.shadowImage = UIImage()  // Remove shadow
 
         navigationController?.navigationBar.standardAppearance = appearance
         navigationController?.navigationBar.scrollEdgeAppearance = appearance
         navigationController?.navigationBar.compactAppearance = appearance
-        navigationController?.navigationBar.tintColor = .white
+        navigationController?.navigationBar.tintColor = ColorSystem.mainText
         navigationController?.navigationBar.prefersLargeTitles = true
 
         // Segmented Control
@@ -261,7 +275,7 @@ class RunningListViewController: UIViewController {
         view.addSubview(loadingIndicator)
         view.addSubview(emptyLabel)
 
-        tableView.backgroundColor = .black
+        tableView.backgroundColor = ColorSystem.background
         tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 80, right: 0)
 
         tableView.snp.makeConstraints { make in
@@ -462,7 +476,7 @@ extension RunningListViewController: UITableViewDelegate, UITableViewDataSource 
                 completionHandler(true)
             }
             shareAction.image = UIImage(systemName: "square.and.arrow.up")
-            shareAction.backgroundColor = .systemBlue
+            shareAction.backgroundColor = ColorSystem.primaryGreen
             actions.append(shareAction)
         }
 
@@ -607,39 +621,71 @@ extension RunningListViewController: ImportWorkoutViewControllerDelegate {
 // MARK: - Workout Cell
 class WorkoutCell: UITableViewCell {
 
-    private let typeLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .semibold)
-        label.textColor = .white
-        return label
+    private let cardContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = ColorSystem.cardBackground
+        view.layer.cornerRadius = 16
+        view.layer.cornerCurve = .continuous
+        view.layer.masksToBounds = false
+
+        // Improved shadow
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 0, height: 4)
+        view.layer.shadowOpacity = 0.06
+        view.layer.shadowRadius = 16
+        view.layer.shouldRasterize = true
+        view.layer.rasterizationScale = UIScreen.main.scale
+        return view
+    }()
+
+    private let accentBar: UIView = {
+        let view = UIView()
+        view.backgroundColor = ColorSystem.primaryGreen
+        view.layer.cornerRadius = 3
+        return view
     }()
 
     private let dateLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14)
-        label.textColor = .lightGray
+        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.textColor = ColorSystem.mainText
+        return label
+    }()
+
+    private let timeLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.textColor = ColorSystem.subText
         return label
     }()
 
     private let distanceLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .medium)
-        label.textColor = .white
+        label.font = .monospacedDigitSystemFont(ofSize: 28, weight: .bold)
+        label.textColor = ColorSystem.mainText
+        return label
+    }()
+
+    private let distanceUnitLabel: UILabel = {
+        let label = UILabel()
+        label.text = "km"
+        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.textColor = ColorSystem.subText
         return label
     }()
 
     private let durationLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14)
-        label.textColor = .lightGray
+        label.font = .monospacedDigitSystemFont(ofSize: 16, weight: .semibold)
+        label.textColor = ColorSystem.primaryGreen
         return label
     }()
 
-    private let iconImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = .systemBlue
-        return imageView
+    private let paceLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14)
+        label.textColor = ColorSystem.subText
+        return label
     }()
 
     private let sourceBadge: UILabel = {
@@ -647,7 +693,7 @@ class WorkoutCell: UITableViewCell {
         label.font = .systemFont(ofSize: 10, weight: .semibold)
         label.textColor = .white
         label.textAlignment = .center
-        label.layer.cornerRadius = 4
+        label.layer.cornerRadius = 8
         label.layer.masksToBounds = true
         label.isHidden = true
         return label
@@ -663,100 +709,117 @@ class WorkoutCell: UITableViewCell {
     }
 
     private func setupUI() {
-        // Dark theme cell background
-        backgroundColor = UIColor(white: 0.12, alpha: 1.0)
-        contentView.backgroundColor = UIColor(white: 0.12, alpha: 1.0)
+        backgroundColor = ColorSystem.background
+        contentView.backgroundColor = .clear
+        selectionStyle = .none
 
-        // Selection style
-        let selectedView = UIView()
-        selectedView.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
-        selectedBackgroundView = selectedView
+        contentView.addSubview(cardContainer)
+        cardContainer.addSubview(accentBar)
+        cardContainer.addSubview(dateLabel)
+        cardContainer.addSubview(timeLabel)
+        cardContainer.addSubview(distanceLabel)
+        cardContainer.addSubview(distanceUnitLabel)
+        cardContainer.addSubview(durationLabel)
+        cardContainer.addSubview(paceLabel)
+        cardContainer.addSubview(sourceBadge)
 
-        contentView.addSubview(iconImageView)
-        contentView.addSubview(typeLabel)
-        contentView.addSubview(sourceBadge)
-        contentView.addSubview(dateLabel)
-        contentView.addSubview(distanceLabel)
-        contentView.addSubview(durationLabel)
-
-        iconImageView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(40)
+        cardContainer.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(6)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().offset(-6)
+            make.height.equalTo(100)
         }
 
-        typeLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(16)
-            make.leading.equalTo(iconImageView.snp.trailing).offset(12)
-        }
-
-        sourceBadge.snp.makeConstraints { make in
-            make.leading.equalTo(typeLabel.snp.trailing).offset(8)
-            make.centerY.equalTo(typeLabel)
-            make.height.equalTo(18)
-            make.width.greaterThanOrEqualTo(40)
+        accentBar.snp.makeConstraints { make in
+            make.leading.equalToSuperview()
+            make.top.bottom.equalToSuperview().inset(12)
+            make.width.equalTo(4)
         }
 
         dateLabel.snp.makeConstraints { make in
-            make.top.equalTo(typeLabel.snp.bottom).offset(4)
-            make.leading.equalTo(typeLabel)
+            make.top.equalToSuperview().offset(16)
+            make.leading.equalTo(accentBar.snp.trailing).offset(16)
+        }
+
+        timeLabel.snp.makeConstraints { make in
+            make.leading.equalTo(dateLabel.snp.trailing).offset(8)
+            make.centerY.equalTo(dateLabel)
+        }
+
+        sourceBadge.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(16)
+            make.top.equalToSuperview().offset(12)
+            make.height.equalTo(20)
+            make.width.greaterThanOrEqualTo(50)
         }
 
         distanceLabel.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(16)
-            make.centerY.equalTo(typeLabel)
+            make.leading.equalTo(accentBar.snp.trailing).offset(16)
+            make.bottom.equalToSuperview().offset(-16)
+        }
+
+        distanceUnitLabel.snp.makeConstraints { make in
+            make.leading.equalTo(distanceLabel.snp.trailing).offset(4)
+            make.baseline.equalTo(distanceLabel)
         }
 
         durationLabel.snp.makeConstraints { make in
             make.trailing.equalToSuperview().inset(16)
-            make.centerY.equalTo(dateLabel)
+            make.bottom.equalToSuperview().offset(-16)
+        }
+
+        paceLabel.snp.makeConstraints { make in
+            make.trailing.equalTo(durationLabel.snp.leading).offset(-12)
+            make.centerY.equalTo(durationLabel)
         }
     }
 
     func configure(with workout: UnifiedWorkoutItem) {
-        typeLabel.text = workout.workoutType
+        // Date formatting
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "M월 d일"
+        dateLabel.text = dateFormatter.string(from: workout.startDate)
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy.MM.dd HH:mm"
-        dateLabel.text = formatter.string(from: workout.startDate)
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm"
+        timeLabel.text = timeFormatter.string(from: workout.startDate)
 
-        distanceLabel.text = String(format: "%.2f km", workout.distance / 1000)
+        // Distance
+        let distanceKm = workout.distance / 1000
+        distanceLabel.text = String(format: "%.2f", distanceKm)
 
+        // Duration
         let minutes = Int(workout.duration) / 60
         let seconds = Int(workout.duration) % 60
-        durationLabel.text = String(format: "%02d:%02d", minutes, seconds)
+        durationLabel.text = String(format: "%d:%02d", minutes, seconds)
 
-        // Set icon based on workout type
-        switch workout.workoutType {
-        case "러닝":
-            iconImageView.image = UIImage(systemName: "figure.run")
-        case "사이클링":
-            iconImageView.image = UIImage(systemName: "bicycle")
-        case "걷기":
-            iconImageView.image = UIImage(systemName: "figure.walk")
-        case "하이킹":
-            iconImageView.image = UIImage(systemName: "figure.hiking")
-        default:
-            iconImageView.image = UIImage(systemName: "figure.mixed.cardio")
+        // Pace (min/km)
+        if workout.distance > 0 {
+            let paceSeconds = workout.duration / (workout.distance / 1000)
+            let paceMinutes = Int(paceSeconds) / 60
+            let paceRemainingSeconds = Int(paceSeconds) % 60
+            paceLabel.text = String(format: "%d'%02d\"", paceMinutes, paceRemainingSeconds)
+        } else {
+            paceLabel.text = "-'--\""
         }
 
-        // Show source badge for external workouts
+        // Source badge and accent color
         switch workout.source {
         case .healthKit:
             sourceBadge.isHidden = true
-            iconImageView.tintColor = .systemBlue
+            accentBar.backgroundColor = ColorSystem.primaryGreen
         case .external:
             sourceBadge.isHidden = false
-            sourceBadge.text = " 외부 "
-            sourceBadge.backgroundColor = .systemOrange
-            iconImageView.tintColor = .systemOrange
+            sourceBadge.text = " 외부 기록 "
+            sourceBadge.backgroundColor = ColorSystem.warning
+            accentBar.backgroundColor = ColorSystem.warning
         }
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
         sourceBadge.isHidden = true
-        iconImageView.tintColor = .systemBlue
+        accentBar.backgroundColor = ColorSystem.primaryGreen
     }
 }
 

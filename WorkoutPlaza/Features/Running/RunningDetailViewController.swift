@@ -44,6 +44,18 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
     override func setupNavigationButtons() {
         super.setupNavigationButtons()
         title = "러닝 기록"
+
+        // Add import button to navigation bar
+        let importButton = UIBarButtonItem(
+            image: UIImage(systemName: "person.badge.plus"),
+            style: .plain,
+            target: self,
+            action: #selector(showImportOthersRecordMenu)
+        )
+        navigationItem.rightBarButtonItems = [
+            navigationItem.rightBarButtonItem!,
+            importButton
+        ]
     }
     
     // MARK: - Actions
@@ -105,7 +117,44 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
     
     // Logic specific to Running (HealthKit, GPS, etc)
     @objc func handleReceivedWorkoutInDetail(_ notification: Notification) {
-         // Handle received workout data
+        guard let shareableWorkout = notification.userInfo?["workout"] as? ShareableWorkout else { return }
+        showImportOptionsSheet(for: shareableWorkout)
+    }
+
+    @objc private func showImportOthersRecordMenu() {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.init(filenameExtension: "wplaza")!])
+        picker.delegate = self
+        picker.allowsMultipleSelection = false
+        present(picker, animated: true)
+    }
+
+    private func showImportOptionsSheet(for shareableWorkout: ShareableWorkout) {
+        let alert = UIAlertController(
+            title: "기록 가져오기",
+            message: "이 기록을 어떻게 가져올까요?",
+            preferredStyle: .actionSheet
+        )
+
+        // Option 1: Import as my record (clear existing content)
+        alert.addAction(UIAlertAction(title: "내 기록으로 가져오기", style: .default) { [weak self] _ in
+            self?.importAsMyRecord(shareableWorkout)
+        })
+
+        // Option 2: Attach to current layout (as other's record)
+        alert.addAction(UIAlertAction(title: "타인 기록으로 추가", style: .default) { [weak self] _ in
+            self?.showImportFieldSelectionSheet(for: shareableWorkout)
+        })
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        // iPad support
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+
+        present(alert, animated: true)
     }
     // MARK: - Template Application
 
@@ -233,6 +282,17 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         return nil
     }
 
+    private func applyWidgetStyles(to widget: UIView, from savedState: SavedWidgetState) {
+        if let selectable = widget as? Selectable {
+            if let colorHex = savedState.textColor, let color = UIColor(hex: colorHex) {
+                selectable.applyColor(color)
+            }
+            if let fontStyleRaw = savedState.fontStyle, let fontStyle = FontStyle(rawValue: fontStyleRaw) {
+                selectable.applyFont(fontStyle)
+            }
+        }
+    }
+
     override func createWidgetFromSavedState(_ savedWidget: SavedWidgetState) -> UIView? {
         // Try base implementation first
         if let widget = super.createWidgetFromSavedState(savedWidget) {
@@ -240,78 +300,98 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         }
 
         // Handle Running-specific widgets
+        guard let data = workoutData else { return nil }
         let widgetType = savedWidget.type
+
+        let widget: UIView?
 
         switch widgetType {
         case "LocationWidget":
-            let widget = LocationWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
+            let w = LocationWidget()
             if let locationText = savedWidget.additionalText {
-                widget.configure(withText: locationText)
+                w.configure(withText: locationText)
             }
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            return widget
+            widget = w
 
         case "DistanceWidget":
-            guard let data = workoutData else { return nil }
-            let widget = DistanceWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(distance: data.distance)
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            return widget
+            let w = DistanceWidget()
+            w.configure(distance: data.distance)
+            widget = w
 
         case "DurationWidget":
-            guard let data = workoutData else { return nil }
-            let widget = DurationWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(duration: data.duration)
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            return widget
+            let w = DurationWidget()
+            w.configure(duration: data.duration)
+            widget = w
 
         case "PaceWidget":
-            guard let data = workoutData else { return nil }
-            let widget = PaceWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(pace: data.pace)
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            return widget
+            let w = PaceWidget()
+            w.configure(pace: data.pace)
+            widget = w
 
         case "SpeedWidget":
-            guard let data = workoutData else { return nil }
-            let widget = SpeedWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(speed: data.avgSpeed)
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            return widget
+            let w = SpeedWidget()
+            w.configure(speed: data.avgSpeed)
+            widget = w
 
         case "CaloriesWidget":
-            guard let data = workoutData else { return nil }
-            let widget = CaloriesWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(calories: data.calories)
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            return widget
+            let w = CaloriesWidget()
+            w.configure(calories: data.calories)
+            widget = w
 
         default:
             return nil
         }
+
+        // Apply common properties
+        if let widget = widget {
+            widget.frame = savedWidget.frame
+            if var selectable = widget as? Selectable {
+                selectable.initialSize = savedWidget.frame.size
+            }
+            applyWidgetStyles(to: widget, from: savedWidget)
+        }
+
+        return widget
+    }
+}
+
+// MARK: - UIDocumentPickerDelegate
+extension RunningDetailViewController {
+    override func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let url = urls.first else { return }
+
+        // Request access to security-scoped resource
+        guard url.startAccessingSecurityScopedResource() else {
+            WPLog.error("Failed to access security-scoped resource")
+            showFileLoadError()
+            return
+        }
+
+        defer {
+            url.stopAccessingSecurityScopedResource()
+        }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let shareableWorkout = try decoder.decode(ShareableWorkout.self, from: data)
+
+            WPLog.info("Successfully loaded workout from file: \(url.lastPathComponent)")
+            showImportOptionsSheet(for: shareableWorkout)
+        } catch {
+            WPLog.error("Failed to load workout file: \(error)")
+            showFileLoadError()
+        }
+    }
+
+    private func showFileLoadError() {
+        let alert = UIAlertController(
+            title: "파일 불러오기 실패",
+            message: "선택한 파일을 불러올 수 없습니다.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
     }
 }

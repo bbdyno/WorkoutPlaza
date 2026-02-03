@@ -20,10 +20,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Use Tab Bar Controller as root
         let tabBarController = MainTabBarController()
         window?.rootViewController = tabBarController
-        
-        // Force Global Dark Mode to prevent flickering during transitions
-        window?.overrideUserInterfaceStyle = .dark
-        
+
         window?.makeKeyAndVisible()
 
         // Handle URL if app was launched with one

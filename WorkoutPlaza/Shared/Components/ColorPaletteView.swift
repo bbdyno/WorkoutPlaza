@@ -256,10 +256,10 @@ extension UIView {
 // MARK: - Color Swatch Cell
 class ColorSwatchCell: UICollectionViewCell {
     private enum Constants {
-        static let swatchSize: CGFloat = 44
-        static let cornerRadius: CGFloat = 22
-        static let borderWidth: CGFloat = 2
-        static let selectedBorderWidth: CGFloat = 3
+        static let swatchSize: CGFloat = 32
+        static let cornerRadius: CGFloat = 16
+        static let borderWidth: CGFloat = 1.5
+        static let selectedBorderWidth: CGFloat = 2
     }
 
     private let colorView = UIView()
@@ -282,15 +282,15 @@ class ColorSwatchCell: UICollectionViewCell {
 
         colorView.layer.cornerRadius = Constants.cornerRadius
         colorView.layer.borderWidth = Constants.borderWidth
-        colorView.layer.borderColor = UIColor.systemGray4.cgColor
+        colorView.layer.borderColor = ColorSystem.divider.cgColor
     }
 
     func configure(with color: UIColor) {
         colorView.backgroundColor = color
 
         // Add border for light colors
-        if color == .white {
-            colorView.layer.borderColor = UIColor.systemGray4.cgColor
+        if color == .white || color.isLight {
+            colorView.layer.borderColor = ColorSystem.divider.cgColor
         } else {
             colorView.layer.borderColor = UIColor.clear.cgColor
         }
@@ -299,11 +299,11 @@ class ColorSwatchCell: UICollectionViewCell {
     override var isSelected: Bool {
         didSet {
             if isSelected {
-                colorView.layer.borderColor = UIColor.systemBlue.cgColor
+                colorView.layer.borderColor = ColorSystem.primaryGreen.cgColor
                 colorView.layer.borderWidth = Constants.selectedBorderWidth
             } else {
-                if colorView.backgroundColor == .white {
-                    colorView.layer.borderColor = UIColor.systemGray4.cgColor
+                if colorView.backgroundColor == .white || colorView.backgroundColor?.isLight == true {
+                    colorView.layer.borderColor = ColorSystem.divider.cgColor
                 } else {
                     colorView.layer.borderColor = UIColor.clear.cgColor
                 }

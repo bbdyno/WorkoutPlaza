@@ -36,6 +36,7 @@ struct SavedWidgetState: Codable {
     let text: String?
     let fontName: String?
     let fontSize: CGFloat?
+    let fontStyle: String? // FontStyle rawValue (system, rounded, monospaced, etc.)
     let textColor: String? // Hex code
     let backgroundColor: String? // Hex code
     let rotation: CGFloat

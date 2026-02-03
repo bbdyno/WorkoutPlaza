@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import PhotosUI
 import SnapKit
 
 protocol ClimbingInputDelegate: AnyObject {
@@ -26,15 +25,9 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     weak var delegate: ClimbingInputDelegate?
 
     // MARK: - Data
-    private var selectedGym: ClimbingGym? {
-        didSet {
-            // Update UI when gym changes (colors might change)
-            tableView.reloadData()
-        }
-    }
+    private var selectedGym: ClimbingGym?
     private var isCustomGym: Bool = false // Start with no selection
     private var customGymName: String = ""
-    private var customLogoImage: UIImage?
     
     // Gym name is either selected gym's name or custom name
     private var currentGymName: String {
@@ -75,7 +68,6 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        overrideUserInterfaceStyle = .dark // Force Dark Mode
         setupTableView()
         setupNavigationBar()
         setupKeyboardHandling()
@@ -105,7 +97,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.backgroundColor = .systemGroupedBackground
+        tableView.backgroundColor = ColorSystem.background
         tableView.separatorStyle = .none
         tableView.keyboardDismissMode = .onDrag
 
@@ -162,7 +154,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
-        case 0: return isCustomGym ? 3 : 1  // Selector + (Name + Logo if custom)
+        case 0: return isCustomGym ? 2 : 1  // Selector + (Name if custom)
         case 1: return routes.count // Routes (discipline inside each route)
         case 2: return 2 // Add route + Create button
         default: return 0
@@ -195,7 +187,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
             let label = UILabel()
             label.text = "암장을 선택하면 기록을 시작할 수 있습니다"
             label.font = .systemFont(ofSize: 14, weight: .regular)
-            label.textColor = .secondaryLabel
+            label.textColor = ColorSystem.subText
             label.textAlignment = .center
             label.numberOfLines = 0
 
@@ -226,31 +218,39 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
                 // Gym Selector Cell
                 let cell = UITableViewCell(style: .value1, reuseIdentifier: "GymSelectorCell")
                 cell.textLabel?.text = "암장"
+                cell.textLabel?.textColor = ColorSystem.mainText
                 cell.detailTextLabel?.text = selectedGym?.name ?? (isCustomGym ? "사용자 지정" : "암장 선택")
-                cell.detailTextLabel?.textColor = selectedGym == nil && !isCustomGym ? .secondaryLabel : .label
+                cell.detailTextLabel?.textColor = selectedGym == nil && !isCustomGym ? ColorSystem.subText : ColorSystem.mainText
                 cell.accessoryType = .disclosureIndicator
-                cell.backgroundColor = .secondarySystemGroupedBackground
-                return cell
-            } else if indexPath.row == 1 {
-                // Custom Name Input
-                let cell = tableView.dequeueReusableCell(withIdentifier: "ClimbingHeaderCell", for: indexPath) as! ClimbingHeaderCell
-                cell.configure(placeholder: "암장 이름 입력", text: customGymName) { [weak self] text in
-                    self?.customGymName = text
-                }
+                cell.backgroundColor = ColorSystem.cardBackground
                 return cell
             } else {
-                // Logo Picker
-                let cell = UITableViewCell(style: .default, reuseIdentifier: "LogoPickerCell")
-                cell.textLabel?.text = "로고 이미지 선택 (선택사항)"
-                cell.textLabel?.textColor = .systemBlue
-                cell.textLabel?.textAlignment = .center
-                if let logo = customLogoImage {
-                    cell.imageView?.image = logo
-                    cell.textLabel?.text = "이미지 변경"
-                } else {
-                    cell.imageView?.image = UIImage(systemName: "photo")
+                // Custom Name Input
+                let cell = tableView.dequeueReusableCell(withIdentifier: "GymNameInputCell") ?? UITableViewCell(style: .default, reuseIdentifier: "GymNameInputCell")
+                cell.backgroundColor = ColorSystem.cardBackground
+                cell.selectionStyle = .none
+
+                // 기존 서브뷰 제거
+                cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+
+                let textField = UITextField()
+                textField.placeholder = "암장 이름 입력"
+                textField.text = customGymName
+                textField.font = .systemFont(ofSize: 17)
+                textField.textColor = ColorSystem.mainText
+                textField.clearButtonMode = .whileEditing
+                textField.returnKeyType = .done
+                textField.tag = 100
+//                textField.delegate = self
+                textField.addTarget(self, action: #selector(customGymNameChanged(_:)), for: .editingChanged)
+
+                cell.contentView.addSubview(textField)
+                textField.snp.makeConstraints { make in
+                    make.leading.trailing.equalToSuperview().inset(16)
+                    make.centerY.equalToSuperview()
+                    make.height.equalTo(44)
                 }
-                cell.backgroundColor = .secondarySystemGroupedBackground
+
                 return cell
             }
 
@@ -367,16 +367,9 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         if isCustomGym && !gymParams.name.isEmpty {
             // Check if custom gym with this name already exists
             if ClimbingGymManager.shared.findGym(byName: gymParams.name) == nil {
-                let logoSource: ClimbingGym.LogoSource
-                if let logoData = gymParams.logoData {
-                    logoSource = .imageData(logoData)
-                } else {
-                    logoSource = .none
-                }
-
                 let newGym = ClimbingGym(
                     name: gymParams.name,
-                    logoSource: logoSource,
+                    logoSource: .none,  // Custom gyms don't use logo images
                     gradeColors: ClimbingGymManager.shared.defaultGradeColors,
                     isBuiltIn: false
                 )
@@ -410,7 +403,11 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         if let gym = selectedGym {
             return (gym.name, nil) // Preset uses name-based logo lookup usually
         }
-        return (customGymName, customLogoImage?.pngData())
+        return (customGymName, nil) // Custom gyms don't use logo images
+    }
+
+    @objc private func customGymNameChanged(_ textField: UITextField) {
+        customGymName = textField.text ?? ""
     }
 
     private func showAlert(message: String) {
@@ -423,13 +420,9 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        
-        if indexPath.section == 0 {
-            if indexPath.row == 0 {
-                showGymSelector()
-            } else if indexPath.row == 2 {
-                showImagePicker()
-            }
+
+        if indexPath.section == 0 && indexPath.row == 0 {
+            showGymSelector()
         }
     }
     
@@ -458,7 +451,8 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         if !wasGymSelected {
             tableView.reloadData()
         } else {
-            tableView.reloadSections(IndexSet([0, 2]), with: .automatic)
+            // Reload all sections to update colors in route cells
+            tableView.reloadSections(IndexSet([0, 1, 2]), with: .automatic)
         }
     }
 
@@ -467,44 +461,13 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         self.selectedGym = nil
         self.isCustomGym = true
         self.customGymName = ""
-        self.customLogoImage = nil
 
         // If sections changed (1 -> 3), use reloadData
         if !wasGymSelected {
             tableView.reloadData()
         } else {
-            tableView.reloadSections(IndexSet([0, 2]), with: .automatic)
-        }
-    }
-    
-    // MARK: - Image Picker
-    
-    private func showImagePicker() {
-        var config = PHPickerConfiguration()
-        config.selectionLimit = 1
-        config.filter = .images
-        
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = self
-        present(picker, animated: true)
-    }
-}
-
-// MARK: - PHPickerViewControllerDelegate
-extension ClimbingInputViewController: PHPickerViewControllerDelegate {
-    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-        picker.dismiss(animated: true)
-        
-        guard let provider = results.first?.itemProvider,
-              provider.canLoadObject(ofClass: UIImage.self) else { return }
-        
-        provider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
-            DispatchQueue.main.async {
-                if let image = image as? UIImage {
-                    self?.customLogoImage = image
-                    self?.tableView.reloadRows(at: [IndexPath(row: 2, section: 0)], with: .automatic)
-                }
-            }
+            // Reload all sections to update colors in route cells
+            tableView.reloadSections(IndexSet([0, 1, 2]), with: .automatic)
         }
     }
 }
@@ -578,6 +541,7 @@ class ClimbingHeaderCell: UITableViewCell {
         backgroundColor = .clear
         
         textField.font = .systemFont(ofSize: 34, weight: .bold) // Large Title style
+        textField.textColor = ColorSystem.mainText
         textField.placeholder = "Gym Name"
         textField.borderStyle = .none
         textField.returnKeyType = .done
@@ -635,7 +599,7 @@ class DisciplineSelectionCell: UITableViewCell {
         
         // Card container
         let container = UIView()
-        container.backgroundColor = .secondarySystemGroupedBackground
+        container.backgroundColor = ColorSystem.cardBackground
         container.layer.cornerRadius = 10
         container.clipsToBounds = true
         
@@ -645,7 +609,7 @@ class DisciplineSelectionCell: UITableViewCell {
         stackView.axis = .horizontal
         stackView.distribution = .fillEqually
         stackView.spacing = 2
-        stackView.backgroundColor = .systemGray5 // Separator color
+        stackView.backgroundColor = ColorSystem.divider // Separator color
         
         container.addSubview(stackView)
 
@@ -673,12 +637,12 @@ class DisciplineSelectionCell: UITableViewCell {
         for (index, discipline) in ClimbingDiscipline.allCases.enumerated() {
             let btn = UIButton(type: .system)
             btn.setTitle(discipline.displayName, for: .normal)
-            btn.setTitleColor(.secondaryLabel, for: .normal)
+            btn.setTitleColor(ColorSystem.subText, for: .normal)
             btn.setTitleColor(.white, for: .selected)
             btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
 
             // Initial state
-            btn.backgroundColor = .tertiarySystemGroupedBackground
+            btn.backgroundColor = ColorSystem.background
 
             // More rectangular shape
             btn.layer.cornerRadius = 4
@@ -707,15 +671,15 @@ class DisciplineSelectionCell: UITableViewCell {
             // Visual update
             UIView.animate(withDuration: 0.2) {
                 if isSelected {
-                    btn.backgroundColor = .systemBlue
+                    btn.backgroundColor = ColorSystem.primaryGreen
                     btn.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
-                    btn.layer.shadowColor = UIColor.systemBlue.cgColor
+                    btn.layer.shadowColor = ColorSystem.primaryGreen.cgColor
                     btn.layer.shadowOffset = CGSize(width: 0, height: 2)
                     btn.layer.shadowOpacity = 0.3
                     btn.layer.shadowRadius = 4
                     btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .bold)
                 } else {
-                    btn.backgroundColor = .tertiarySystemGroupedBackground
+                    btn.backgroundColor = ColorSystem.background
                     btn.transform = .identity
                     btn.layer.shadowOpacity = 0
                     btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
@@ -775,11 +739,11 @@ private class ButtonCell: UITableViewCell {
 
         switch style {
         case .primary:
-            button.backgroundColor = .systemOrange
+            button.backgroundColor = ColorSystem.primaryGreen
             button.setTitleColor(.white, for: .normal)
         case .secondary:
-            button.backgroundColor = .secondarySystemBackground
-            button.setTitleColor(.systemBlue, for: .normal)
+            button.backgroundColor = ColorSystem.cardBackground
+            button.setTitleColor(ColorSystem.primaryGreen, for: .normal)
         }
     }
 
@@ -853,7 +817,7 @@ class RouteCell: UITableViewCell {
     private func setupUI() {
         // Card Container
         contentView.addSubview(containerView)
-        containerView.backgroundColor = .secondarySystemGroupedBackground
+        containerView.backgroundColor = ColorSystem.cardBackground
         containerView.layer.cornerRadius = 12
         containerView.layer.cornerCurve = .continuous
         // containerView.layer.shadowColor = UIColor.black.cgColor
@@ -873,14 +837,14 @@ class RouteCell: UITableViewCell {
         headerStack.alignment = .center
         
         headerLabel.font = .systemFont(ofSize: 17, weight: .bold)
-        headerLabel.textColor = .label
+        headerLabel.textColor = ColorSystem.mainText
 
         // Discipline Segment
         disciplineSegment.selectedSegmentIndex = 0
         disciplineSegment.addTarget(self, action: #selector(disciplineChanged), for: .valueChanged)
 
         deleteButton.setImage(UIImage(systemName: "trash"), for: .normal)
-        deleteButton.tintColor = .systemRed
+        deleteButton.tintColor = ColorSystem.error
         deleteButton.addTarget(self, action: #selector(deleteTapped), for: .touchUpInside)
 
         headerStack.addArrangedSubview(headerLabel)
@@ -893,7 +857,7 @@ class RouteCell: UITableViewCell {
         // Color Section Label
         colorSectionLabel.text = "난이도 테이프"
         colorSectionLabel.font = .systemFont(ofSize: 11, weight: .semibold)
-        colorSectionLabel.textColor = .secondaryLabel
+        colorSectionLabel.textColor = ColorSystem.subText
         containerView.addSubview(colorSectionLabel)
 
         // Color Section
@@ -919,7 +883,7 @@ class RouteCell: UITableViewCell {
         
         customColorButton = UIButton(type: .system)
         customColorButton.setImage(UIImage(systemName: "pencil.circle.fill"), for: .normal)
-        customColorButton.tintColor = .label
+        customColorButton.tintColor = ColorSystem.mainText
         customColorButton.addTarget(self, action: #selector(customColorTapped), for: .touchUpInside)
         colorStack.addArrangedSubview(customColorButton)
         
@@ -928,10 +892,11 @@ class RouteCell: UITableViewCell {
         // Grade
         gradeLabel.text = "GRADE (선택)"
         gradeLabel.font = .systemFont(ofSize: 11, weight: .semibold)
-        gradeLabel.textColor = .secondaryLabel
+        gradeLabel.textColor = ColorSystem.subText
 
         gradeField.font = .monospacedSystemFont(ofSize: 16, weight: .medium)
-        gradeField.backgroundColor = .tertiarySystemGroupedBackground
+        gradeField.backgroundColor = ColorSystem.background
+        gradeField.textColor = ColorSystem.mainText
         gradeField.layer.cornerRadius = 6
         gradeField.textAlignment = .center
         gradeField.returnKeyType = .done
@@ -947,9 +912,10 @@ class RouteCell: UITableViewCell {
         // Attempts
         attemptsLabel.text = "ATTEMPTS"
         attemptsLabel.font = .systemFont(ofSize: 11, weight: .semibold)
-        attemptsLabel.textColor = .secondaryLabel
+        attemptsLabel.textColor = ColorSystem.subText
 
         attemptsValueLabel.font = .monospacedDigitSystemFont(ofSize: 18, weight: .medium)
+        attemptsValueLabel.textColor = ColorSystem.mainText
         attemptsValueLabel.textAlignment = .center
 
         attemptsStepper.addTarget(self, action: #selector(stepperChanged), for: .valueChanged)
@@ -968,9 +934,9 @@ class RouteCell: UITableViewCell {
         // Sent Switch
         sentLabel.text = "완등"
         sentLabel.font = .systemFont(ofSize: 15, weight: .semibold)
-        sentLabel.textColor = .label
+        sentLabel.textColor = ColorSystem.mainText
 
-        sentSwitch.onTintColor = .systemGreen
+        sentSwitch.onTintColor = ColorSystem.success
         sentSwitch.addTarget(self, action: #selector(sentChanged), for: .valueChanged)
 
         let sentStack = UIStackView(arrangedSubviews: [sentLabel, sentSwitch])
@@ -1158,7 +1124,7 @@ class RouteCell: UITableViewCell {
             customColorButton.tintColor = custom
             customColorButton.transform = CGAffineTransform(scaleX: 1.15, y: 1.15)
         } else {
-            customColorButton.tintColor = .label
+            customColorButton.tintColor = ColorSystem.mainText
             customColorButton.transform = .identity
         }
     }

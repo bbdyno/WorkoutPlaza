@@ -47,7 +47,6 @@ class GymPickerViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        overrideUserInterfaceStyle = .dark
         setupNavigationBar()
         setupTableView()
         setupRemoteConfigSubscription()
@@ -72,11 +71,11 @@ class GymPickerViewController: UIViewController {
 
     private func showAutoUpdateNotification() {
         let banner = UILabel()
-        banner.text = "🔄 암장 데이터가 자동으로 업데이트되었습니다"
+        banner.text = "암장 데이터가 자동으로 업데이트되었습니다"
         banner.textAlignment = .center
         banner.font = .systemFont(ofSize: 14, weight: .medium)
-        banner.textColor = .white
-        banner.backgroundColor = .systemGreen
+        banner.textColor = .white  // Banner는 배경색 있으므로 흰색 유지
+        banner.backgroundColor = ColorSystem.success
         banner.alpha = 0
         banner.layer.cornerRadius = 8
         banner.clipsToBounds = true
@@ -200,6 +199,12 @@ extension GymPickerViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         guard let sectionType = Section(rawValue: section) else { return nil }
+
+        // Hide "내 암장" section title if there are no custom gyms
+        if sectionType == .custom && customGyms.isEmpty {
+            return nil
+        }
+
         return sectionType.title
     }
 
@@ -223,18 +228,18 @@ extension GymPickerViewController: UITableViewDataSource {
 
         case .actions:
             let cell = tableView.dequeueReusableCell(withIdentifier: "ActionCell", for: indexPath)
-            cell.backgroundColor = .secondarySystemGroupedBackground
+            cell.backgroundColor = ColorSystem.cardBackground
 
             if indexPath.row == 0 {
                 cell.textLabel?.text = "+ 사용자 지정"
-                cell.textLabel?.textColor = .systemBlue
+                cell.textLabel?.textColor = ColorSystem.primaryGreen
                 cell.imageView?.image = UIImage(systemName: "plus.circle.fill")
-                cell.imageView?.tintColor = .systemBlue
+                cell.imageView?.tintColor = ColorSystem.primaryGreen
             } else {
                 cell.textLabel?.text = "암장 데이터 동기화"
-                cell.textLabel?.textColor = .systemBlue
+                cell.textLabel?.textColor = ColorSystem.primaryGreen
                 cell.imageView?.image = UIImage(systemName: "arrow.clockwise.circle.fill")
-                cell.imageView?.tintColor = .systemBlue
+                cell.imageView?.tintColor = ColorSystem.primaryGreen
             }
 
             cell.textLabel?.font = .systemFont(ofSize: 17, weight: .medium)
