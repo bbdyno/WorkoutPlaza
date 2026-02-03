@@ -31,7 +31,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .white.withAlphaComponent(0.7)
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.5
+        label.minimumScaleFactor = 0.2
         return label
     }()
 
@@ -150,7 +150,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
         textLabel.font = currentFontStyle.font(size: fontSize, weight: .bold)
         textLabel.textColor = currentColor
         textLabel.adjustsFontSizeToFitWidth = true
-        textLabel.minimumScaleFactor = 0.5
+        textLabel.minimumScaleFactor = 0.2
 
         rowView.addSubview(colorCircle)
         rowView.addSubview(textLabel)

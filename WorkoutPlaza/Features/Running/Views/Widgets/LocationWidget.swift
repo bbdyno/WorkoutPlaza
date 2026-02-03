@@ -71,7 +71,7 @@ class LocationWidget: UIView, Selectable {
         label.textAlignment = .left
         label.numberOfLines = 1
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.5
+        label.minimumScaleFactor = 0.2
         return label
     }()
 

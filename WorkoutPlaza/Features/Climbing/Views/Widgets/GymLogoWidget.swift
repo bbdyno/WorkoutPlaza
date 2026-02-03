@@ -51,7 +51,7 @@ class GymLogoWidget: UIView, Selectable {
         label.font = .systemFont(ofSize: 14, weight: .medium)
         label.numberOfLines = 1
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.5
+        label.minimumScaleFactor = 0.2
         return label
     }()
     
