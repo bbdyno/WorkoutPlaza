@@ -58,9 +58,13 @@ class TextWidget: UIView, Selectable {
         label.textColor = .label
         label.font = .systemFont(ofSize: 20, weight: .bold)
         label.textAlignment = .center
-        label.numberOfLines = 0
+        label.numberOfLines = 1
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0.2
+        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        label.setContentHuggingPriority(.defaultLow, for: .vertical)
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        label.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         return label
     }()
 
@@ -79,7 +83,7 @@ class TextWidget: UIView, Selectable {
 
         addSubview(textLabel)
         textLabel.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(8)
+            make.edges.equalToSuperview().inset(4)
         }
 
         // Set default text
@@ -191,7 +195,7 @@ class TextWidget: UIView, Selectable {
 
         // Apply to font size
         let fontSize = baseFontSize * averageScale
-        let clampedSize = min(max(fontSize, baseFontSize * 0.5), baseFontSize * 3.0)
+        let clampedSize = min(max(fontSize, baseFontSize * 0.2), baseFontSize * 3.0)
 
         textLabel.font = currentFontStyle.font(size: clampedSize, weight: .bold)
     }
@@ -252,12 +256,12 @@ class TextWidget: UIView, Selectable {
         let heightScale = bounds.height / initialSize.height
         let averageScale = (widthScale + heightScale) / 2.0
 
-        return min(max(averageScale, 0.5), 3.0)
+        return min(max(averageScale, 0.2), 3.0)
     }
 
     /// Update fonts with a specific scale factor (used by group resize)
     func updateFontsWithScale(_ scale: CGFloat) {
-        let clampedScale = min(max(scale, 0.5), 3.0)
+        let clampedScale = min(max(scale, 0.2), 3.0)
         let fontSize = baseFontSize * clampedScale
         textLabel.font = currentFontStyle.font(size: fontSize, weight: .bold)
     }
@@ -282,7 +286,7 @@ class TextWidget: UIView, Selectable {
             // Frame-based scaling (resize handles)
             let scaleFactor = calculateScaleFactor()
             let fontSize = baseFontSize * scaleFactor
-            let clampedSize = min(max(fontSize, baseFontSize * 0.5), baseFontSize * 3.0)
+            let clampedSize = min(max(fontSize, baseFontSize * 0.2), baseFontSize * 3.0)
 
             textLabel.font = currentFontStyle.font(size: clampedSize, weight: .bold)
         }
