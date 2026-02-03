@@ -31,6 +31,13 @@ enum SportType: String, Codable, CaseIterable {
         return ColorSystem.color(for: self)
     }
 
+    var backgroundImage: UIImage {
+        switch self {
+        case .running: return WorkoutPlazaAsset.running.image
+        case .climbing: return WorkoutPlazaAsset.climbing.image
+        }
+    }
+
     var availableWidgetTypes: [WidgetType] {
         switch self {
         case .running:
