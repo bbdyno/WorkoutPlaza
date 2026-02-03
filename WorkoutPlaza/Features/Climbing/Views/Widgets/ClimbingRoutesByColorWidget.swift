@@ -141,6 +141,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
         let colorCircle = UIView()
         colorCircle.backgroundColor = UIColor(hex: colorHex) ?? .white
         colorCircle.layer.cornerRadius = circleSize / 2
+        colorCircle.clipsToBounds = true
         colorCircle.layer.borderWidth = 1
         colorCircle.layer.borderColor = UIColor.white.withAlphaComponent(0.3).cgColor
 

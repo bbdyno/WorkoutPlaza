@@ -49,7 +49,7 @@ class BaseStatWidget: UIView, Selectable {
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .white.withAlphaComponent(0.7)
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.2
+        label.minimumScaleFactor = 0.1
         return label
     }()
 
@@ -58,7 +58,7 @@ class BaseStatWidget: UIView, Selectable {
         label.font = .systemFont(ofSize: 24, weight: .bold)
         label.textColor = .white
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.1 // Allow significant shrinking for long text like dates
+        label.minimumScaleFactor = 0.1
         return label
     }()
 
@@ -67,7 +67,7 @@ class BaseStatWidget: UIView, Selectable {
         label.font = .systemFont(ofSize: 14, weight: .regular)
         label.textColor = .white.withAlphaComponent(0.7)
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.2
+        label.minimumScaleFactor = 0.1
         return label
     }()
     
