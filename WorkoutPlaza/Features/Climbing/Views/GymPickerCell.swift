@@ -85,16 +85,17 @@ class GymPickerCell: UITableViewCell {
             make.size.equalTo(Constants.logoImageSize)
         }
 
-        labelStack.snp.makeConstraints { make in
-            make.leading.equalTo(logoContainer.snp.trailing).offset(Constants.labelStackLeadingOffset)
-            make.centerY.equalToSuperview()
-            make.trailing.equalTo(checkmarkImageView.snp.leading).offset(-Constants.labelStackLeadingOffset)
-        }
-
+        // Checkmark first, so labelStack can reference it
         checkmarkImageView.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-Constants.checkmarkTrailingOffset)
             make.centerY.equalToSuperview()
             make.size.equalTo(Constants.checkmarkSize)
+        }
+
+        labelStack.snp.makeConstraints { make in
+            make.leading.equalTo(logoContainer.snp.trailing).offset(Constants.labelStackLeadingOffset)
+            make.centerY.equalToSuperview()
+//            make.trailing.lessThanOrEqualTo(checkmarkImageView.snp.leading).offset(-Constants.labelStackLeadingOffset)
         }
 
         contentView.snp.makeConstraints { make in
@@ -104,8 +105,8 @@ class GymPickerCell: UITableViewCell {
 
     func configure(with gym: ClimbingGym, isSelected: Bool) {
         // Reset state
-        logoImageView.image = UIImage(systemName: "building.2.fill")
-        logoImageView.tintColor = .secondaryLabel
+//        logoImageView.image = UIImage(systemName: "building.2.fill")
+//        logoImageView.tintColor = .secondaryLabel
 
         nameLabel.text = gym.name
         infoLabel.text = "\(gym.gradeColors.count)개 난이도 색상"
@@ -116,6 +117,7 @@ class GymPickerCell: UITableViewCell {
         let branchColor = TemplateManager.color(from: branchColorHex) ?? .white
         logoContainer.layer.borderWidth = Constants.borderWidth
         logoContainer.layer.borderColor = branchColor.cgColor
+        logoContainer.backgroundColor = branchColor
 
         // Load logo asynchronously as template (white)
         ClimbingGymLogoManager.shared.loadLogo(for: gym, asTemplate: true) { [weak self] image in

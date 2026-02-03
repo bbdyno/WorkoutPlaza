@@ -19,22 +19,23 @@ struct BackgroundTransform {
 
 class BackgroundImageEditorViewController: UIViewController {
     private enum Constants {
-        static let instructionLabelTopOffset: CGFloat = 16
+        static let instructionLabelTopOffset: CGFloat = 8
         static let instructionLabelHeight: CGFloat = 32
         static let instructionLabelHorizontalPadding: CGFloat = 40
-        static let overlayControlsTopOffset: CGFloat = 12
+        static let overlayControlsTopOffset: CGFloat = 8
         static let overlayControlsHorizontalPadding: CGFloat = 20
-        static let overlayControlsHeight: CGFloat = 140
-        static let overlayLabelTopOffset: CGFloat = 12
+        static let overlayControlsHeightExpanded: CGFloat = 128
+        static let overlayControlsHeightCollapsed: CGFloat = 52
+        static let overlayLabelTopOffset: CGFloat = 16
         static let overlayLabelLeadingOffset: CGFloat = 16
         static let overlayToggleTrailingOffset: CGFloat = 16
-        static let colorPresetsTopOffset: CGFloat = 12
-        static let colorPresetsHeight: CGFloat = 40
-        static let colorPresetsTrailingOffset: CGFloat = 8
-        static let customColorButtonWidth: CGFloat = 70
-        static let customColorButtonHeight: CGFloat = 36
-        static let opacitySliderTopOffset: CGFloat = 12
+        static let colorPresetsTopOffset: CGFloat = 10
+        static let colorPresetsHeight: CGFloat = 32
+        static let colorPresetsLeadingOffset: CGFloat = 16
+        static let colorPresetsTrailingOffset: CGFloat = 16
+        static let opacitySliderTopOffset: CGFloat = 10
         static let opacityLabelWidth: CGFloat = 50
+        static let colorSwatchSize: CGFloat = 32
     }
 
     // MARK: - Properties
@@ -52,30 +53,25 @@ class BackgroundImageEditorViewController: UIViewController {
 
     // MARK: - Overlay Controls
     private let overlayControlsContainer = UIView()
+    private var overlayControlsHeightConstraint: Constraint?
     private let overlayToggle = UISwitch()
     private let overlayLabel: UILabel = {
         let label = UILabel()
         label.text = "색상 오버레이"
         label.font = .systemFont(ofSize: 16, weight: .medium)
-        label.textColor = .white
+        label.textColor = ColorSystem.mainText
         return label
     }()
 
     private var colorPresetsCollectionView: UICollectionView!
-    private let customColorButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("커스텀", for: .normal)
-        button.setTitleColor(.label, for: .normal)
-        button.backgroundColor = .systemGray5
-        button.layer.cornerRadius = 8
-        return button
-    }()
 
     private let opacitySlider: UISlider = {
         let slider = UISlider()
         slider.minimumValue = 0.0
         slider.maximumValue = 1.0
         slider.value = 0.5
+        slider.minimumTrackTintColor = ColorSystem.primaryGreen
+        slider.maximumTrackTintColor = ColorSystem.divider
         return slider
     }()
 
@@ -83,7 +79,7 @@ class BackgroundImageEditorViewController: UIViewController {
         let label = UILabel()
         label.text = "50%"
         label.font = .systemFont(ofSize: 14)
-        label.textColor = .white
+        label.textColor = ColorSystem.subText
         label.textAlignment = .center
         return label
     }()
@@ -123,7 +119,7 @@ class BackgroundImageEditorViewController: UIViewController {
     // MARK: - Setup
     private func setupUI() {
         title = "배경 편집"
-        view.backgroundColor = .black
+        view.backgroundColor = ColorSystem.background
 
         // Cancel button
         navigationItem.leftBarButtonItem = UIBarButtonItem(
@@ -144,11 +140,7 @@ class BackgroundImageEditorViewController: UIViewController {
         containerView.frame = CGRect(origin: .zero, size: canvasSize)
         containerView.center = view.center
         containerView.clipsToBounds = true
-        // Shadow for better visibility against black background
-        containerView.layer.shadowColor = UIColor.white.withAlphaComponent(0.3).cgColor
-        containerView.layer.shadowOpacity = 1
-        containerView.layer.shadowRadius = 0
-        containerView.layer.shadowOffset = .zero
+        containerView.backgroundColor = .clear
         
         // Scroll View
         scrollView.delegate = self
@@ -178,10 +170,10 @@ class BackgroundImageEditorViewController: UIViewController {
         // Instructions label
         instructionLabel = UILabel()
         instructionLabel.text = "핀치로 확대/축소, 드래그로 이동하세요"
-        instructionLabel.textColor = .white
+        instructionLabel.textColor = ColorSystem.subText
         instructionLabel.font = .systemFont(ofSize: 14)
         instructionLabel.textAlignment = .center
-        instructionLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+//        instructionLabel.backgroundColor = ColorSystem.cardBackground.withAlphaComponent(0.95)
         instructionLabel.layer.cornerRadius = 8
         instructionLabel.clipsToBounds = true
 
@@ -198,7 +190,7 @@ class BackgroundImageEditorViewController: UIViewController {
     }
     
     private func setupGuideLayer() {
-        guideLayer.strokeColor = UIColor.white.cgColor
+        guideLayer.strokeColor = ColorSystem.primaryGreen.cgColor
         guideLayer.fillColor = nil
         guideLayer.lineWidth = 2
         guideLayer.lineDashPattern = [6, 4]
@@ -207,12 +199,13 @@ class BackgroundImageEditorViewController: UIViewController {
 
     private func setupOverlayControls() {
         // Container setup
-        overlayControlsContainer.backgroundColor = UIColor.black.withAlphaComponent(0.8)
-        overlayControlsContainer.layer.cornerRadius = 12
+        overlayControlsContainer.backgroundColor = ColorSystem.cardBackground.withAlphaComponent(0.95)
+        overlayControlsContainer.layer.cornerRadius = 16
         view.addSubview(overlayControlsContainer)
 
         // Toggle
         overlayToggle.isOn = false
+        overlayToggle.onTintColor = ColorSystem.primaryGreen
         overlayToggle.addTarget(self, action: #selector(overlayToggleChanged), for: .valueChanged)
         overlayControlsContainer.addSubview(overlayLabel)
         overlayControlsContainer.addSubview(overlayToggle)
@@ -222,7 +215,8 @@ class BackgroundImageEditorViewController: UIViewController {
         layout.scrollDirection = .horizontal
         layout.minimumInteritemSpacing = 8
         layout.minimumLineSpacing = 8
-        layout.itemSize = CGSize(width: 36, height: 36)
+        layout.itemSize = CGSize(width: Constants.colorSwatchSize, height: Constants.colorSwatchSize)
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
 
         colorPresetsCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         colorPresetsCollectionView.backgroundColor = .clear
@@ -230,13 +224,10 @@ class BackgroundImageEditorViewController: UIViewController {
         colorPresetsCollectionView.dataSource = self
         colorPresetsCollectionView.showsHorizontalScrollIndicator = false
         colorPresetsCollectionView.register(ColorSwatchCell.self, forCellWithReuseIdentifier: "ColorSwatchCell")
+        colorPresetsCollectionView.register(CustomColorCell.self, forCellWithReuseIdentifier: "CustomColorCell")
         colorPresetsCollectionView.isHidden = true
+        colorPresetsCollectionView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         overlayControlsContainer.addSubview(colorPresetsCollectionView)
-
-        // Custom color button
-        customColorButton.addTarget(self, action: #selector(selectCustomColor), for: .touchUpInside)
-        customColorButton.isHidden = true
-        overlayControlsContainer.addSubview(customColorButton)
 
         // Opacity slider
         opacitySlider.addTarget(self, action: #selector(opacitySliderChanged), for: .valueChanged)
@@ -251,7 +242,7 @@ class BackgroundImageEditorViewController: UIViewController {
             make.top.equalTo(instructionLabel.snp.bottom).offset(Constants.overlayControlsTopOffset)
             make.leading.equalToSuperview().offset(Constants.overlayControlsHorizontalPadding)
             make.trailing.equalToSuperview().offset(-Constants.overlayControlsHorizontalPadding)
-            make.height.equalTo(Constants.overlayControlsHeight)
+            overlayControlsHeightConstraint = make.height.equalTo(Constants.overlayControlsHeightCollapsed).constraint
         }
 
         overlayLabel.snp.makeConstraints { make in
@@ -266,22 +257,15 @@ class BackgroundImageEditorViewController: UIViewController {
 
         colorPresetsCollectionView.snp.makeConstraints { make in
             make.top.equalTo(overlayLabel.snp.bottom).offset(Constants.colorPresetsTopOffset)
-            make.leading.equalToSuperview().offset(Constants.overlayLabelLeadingOffset)
-            make.trailing.equalTo(customColorButton.snp.leading).offset(-Constants.colorPresetsTrailingOffset)
+            make.leading.equalToSuperview().offset(Constants.colorPresetsLeadingOffset)
+            make.trailing.equalToSuperview().offset(-Constants.colorPresetsTrailingOffset)
             make.height.equalTo(Constants.colorPresetsHeight)
-        }
-
-        customColorButton.snp.makeConstraints { make in
-            make.centerY.equalTo(colorPresetsCollectionView)
-            make.trailing.equalToSuperview().offset(-Constants.overlayToggleTrailingOffset)
-            make.width.equalTo(Constants.customColorButtonWidth)
-            make.height.equalTo(Constants.customColorButtonHeight)
         }
 
         opacitySlider.snp.makeConstraints { make in
             make.top.equalTo(colorPresetsCollectionView.snp.bottom).offset(Constants.opacitySliderTopOffset)
             make.leading.equalToSuperview().offset(Constants.overlayLabelLeadingOffset)
-            make.trailing.equalTo(opacityLabel.snp.leading).offset(-Constants.colorPresetsTrailingOffset)
+            make.trailing.equalTo(opacityLabel.snp.leading).offset(-8)
         }
 
         opacityLabel.snp.makeConstraints { make in
@@ -345,9 +329,17 @@ class BackgroundImageEditorViewController: UIViewController {
     @objc private func overlayToggleChanged() {
         overlayEnabled = overlayToggle.isOn
 
-        UIView.animate(withDuration: 0.25) {
+        // Update height constraint
+        let newHeight = overlayEnabled ? Constants.overlayControlsHeightExpanded : Constants.overlayControlsHeightCollapsed
+        overlayControlsHeightConstraint?.update(offset: newHeight)
+
+        UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0, options: .curveEaseInOut) {
+            self.colorPresetsCollectionView.alpha = self.overlayEnabled ? 1.0 : 0.0
+            self.opacitySlider.alpha = self.overlayEnabled ? 1.0 : 0.0
+            self.opacityLabel.alpha = self.overlayEnabled ? 1.0 : 0.0
+            self.view.layoutIfNeeded()
+        } completion: { _ in
             self.colorPresetsCollectionView.isHidden = !self.overlayEnabled
-            self.customColorButton.isHidden = !self.overlayEnabled
             self.opacitySlider.isHidden = !self.overlayEnabled
             self.opacityLabel.isHidden = !self.overlayEnabled
         }
@@ -470,22 +462,33 @@ extension BackgroundImageEditorViewController: UIScrollViewDelegate {
 // MARK: - UICollectionViewDataSource
 extension BackgroundImageEditorViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return presetColors.count
+        return presetColors.count + 1 // +1 for custom color button
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ColorSwatchCell", for: indexPath) as! ColorSwatchCell
-        cell.configure(with: presetColors[indexPath.item])
-        return cell
+        // Last item is the custom color button
+        if indexPath.item == presetColors.count {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CustomColorCell", for: indexPath) as! CustomColorCell
+            return cell
+        } else {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ColorSwatchCell", for: indexPath) as! ColorSwatchCell
+            cell.configure(with: presetColors[indexPath.item])
+            return cell
+        }
     }
 }
 
 // MARK: - UICollectionViewDelegate
 extension BackgroundImageEditorViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        overlayColor = presetColors[indexPath.item]
-        if overlayEnabled {
-            updateOverlayView()
+        // Last item is the custom color button
+        if indexPath.item == presetColors.count {
+            selectCustomColor()
+        } else {
+            overlayColor = presetColors[indexPath.item]
+            if overlayEnabled {
+                updateOverlayView()
+            }
         }
     }
 }
@@ -496,6 +499,51 @@ extension BackgroundImageEditorViewController: UIColorPickerViewControllerDelega
         overlayColor = viewController.selectedColor
         if overlayEnabled {
             updateOverlayView()
+        }
+    }
+}
+
+// MARK: - CustomColorCell
+class CustomColorCell: UICollectionViewCell {
+    private let iconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(systemName: "eyedropper.halffull")
+        imageView.tintColor = ColorSystem.primaryGreen
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupView()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupView() {
+        contentView.backgroundColor = ColorSystem.cardBackgroundHighlight
+        contentView.layer.cornerRadius = 16
+        contentView.layer.borderWidth = 1.5
+        contentView.layer.borderColor = ColorSystem.divider.cgColor
+
+        contentView.addSubview(iconImageView)
+        iconImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.size.equalTo(18)
+        }
+    }
+
+    override var isSelected: Bool {
+        didSet {
+            if isSelected {
+                contentView.layer.borderColor = ColorSystem.primaryGreen.cgColor
+                contentView.layer.borderWidth = 2
+            } else {
+                contentView.layer.borderColor = ColorSystem.divider.cgColor
+                contentView.layer.borderWidth = 1.5
+            }
         }
     }
 }

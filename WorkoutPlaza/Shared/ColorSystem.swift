@@ -21,20 +21,47 @@ enum ColorSystem {
 
     // MARK: - Interface & Typography
 
-    /// Background: 매우 밝은 그레이, 카드의 화이트와 대비
-    static let background = UIColor(red: 248/255, green: 249/255, blue: 250/255, alpha: 1.0)
+    /// Background: 매우 밝은 그레이 (라이트) / 진한 검정 (다크)
+    static let background = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 18/255, green: 18/255, blue: 18/255, alpha: 1.0)  // Dark: 진한 검정
+            : UIColor(red: 248/255, green: 249/255, blue: 250/255, alpha: 1.0)  // Light: 밝은 그레이
+    }
 
-    /// Main Text: 가독성을 위한 짙은 차콜
-    static let mainText = UIColor(red: 26/255, green: 28/255, blue: 30/255, alpha: 1.0)
+    /// Main Text: 가독성을 위한 짙은 차콜 (라이트) / 밝은 화이트 (다크)
+    static let mainText = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 255/255, green: 255/255, blue: 255/255, alpha: 1.0)  // Dark: 화이트
+            : UIColor(red: 26/255, green: 28/255, blue: 30/255, alpha: 1.0)  // Light: 차콜
+    }
 
     /// Sub Text: 날짜, 단위, 설명용 그레이
-    static let subText = UIColor(red: 108/255, green: 117/255, blue: 125/255, alpha: 1.0)
+    static let subText = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 142/255, green: 142/255, blue: 147/255, alpha: 1.0)  // Dark: 중간 그레이
+            : UIColor(red: 108/255, green: 117/255, blue: 125/255, alpha: 1.0)  // Light: 진한 그레이
+    }
 
     /// Divider/Border: 매우 연한 경계선
-    static let divider = UIColor(red: 233/255, green: 236/255, blue: 239/255, alpha: 1.0)
+    static let divider = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 58/255, green: 58/255, blue: 60/255, alpha: 1.0)  // Dark: 진한 그레이
+            : UIColor(red: 233/255, green: 236/255, blue: 239/255, alpha: 1.0)  // Light: 연한 그레이
+    }
 
-    /// Card Background: 순수 화이트
-    static let cardBackground = UIColor.white
+    /// Card Background: 순수 화이트 (라이트) / 진한 그레이 (다크)
+    static let cardBackground = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 28/255, green: 28/255, blue: 30/255, alpha: 1.0)  // Dark: 진한 그레이
+            : UIColor.white  // Light: 화이트
+    }
+
+    /// Card Background Highlight: 선택/강조 상태의 카드 배경
+    static let cardBackgroundHighlight = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 38/255, green: 38/255, blue: 40/255, alpha: 1.0)  // Dark: 약간 더 밝은 그레이
+            : UIColor(red: 245/255, green: 245/255, blue: 245/255, alpha: 1.0)  // Light: 약간 어두운 그레이
+    }
 
     // MARK: - Shadow Colors
 
@@ -130,6 +157,70 @@ extension UIColor {
         let rgb: Int = (Int)(r * 255) << 16 | (Int)(g * 255) << 8 | (Int)(b * 255)
 
         return String(format: "#%06x", rgb)
+    }
+
+    /// 색상의 인지 밝기를 계산 (0.0 = 어두움, 1.0 = 밝음)
+    /// Perceived brightness formula: (0.299*R + 0.587*G + 0.114*B)
+    var perceivedBrightness: CGFloat {
+        var r: CGFloat = 0
+        var g: CGFloat = 0
+        var b: CGFloat = 0
+        var a: CGFloat = 0
+
+        getRed(&r, green: &g, blue: &b, alpha: &a)
+
+        return (0.299 * r + 0.587 * g + 0.114 * b)
+    }
+
+    /// 배경이 밝은지 어두운지 판단
+    var isLight: Bool {
+        return perceivedBrightness > 0.5
+    }
+}
+
+// MARK: - UIImage Extension
+
+extension UIImage {
+    /// 이미지의 평균 색상 계산
+    var averageColor: UIColor? {
+        guard let inputImage = CIImage(image: self) else { return nil }
+
+        let extentVector = CIVector(
+            x: inputImage.extent.origin.x,
+            y: inputImage.extent.origin.y,
+            z: inputImage.extent.size.width,
+            w: inputImage.extent.size.height
+        )
+
+        guard let filter = CIFilter(
+            name: "CIAreaAverage",
+            parameters: [kCIInputImageKey: inputImage, kCIInputExtentKey: extentVector]
+        ) else { return nil }
+
+        guard let outputImage = filter.outputImage else { return nil }
+
+        var bitmap = [UInt8](repeating: 0, count: 4)
+        let context = CIContext(options: [.workingColorSpace: kCFNull as Any])
+        context.render(
+            outputImage,
+            toBitmap: &bitmap,
+            rowBytes: 4,
+            bounds: CGRect(x: 0, y: 0, width: 1, height: 1),
+            format: .RGBA8,
+            colorSpace: nil
+        )
+
+        return UIColor(
+            red: CGFloat(bitmap[0]) / 255,
+            green: CGFloat(bitmap[1]) / 255,
+            blue: CGFloat(bitmap[2]) / 255,
+            alpha: CGFloat(bitmap[3]) / 255
+        )
+    }
+
+    /// 이미지가 밝은지 어두운지 판단
+    var isLight: Bool {
+        return averageColor?.isLight ?? true
     }
 }
 

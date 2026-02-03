@@ -20,7 +20,7 @@ class BaseStatWidget: UIView, Selectable {
 
     // MARK: - Selectable Properties
     var isSelected: Bool = false
-    var currentColor: UIColor = .label {
+    var currentColor: UIColor = .white {
         didSet {
             updateColors()
         }
@@ -47,7 +47,7 @@ class BaseStatWidget: UIView, Selectable {
     let titleLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .secondaryLabel
+        label.textColor = .white.withAlphaComponent(0.7)
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0.5
         return label
@@ -56,7 +56,7 @@ class BaseStatWidget: UIView, Selectable {
     let valueLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 24, weight: .bold)
-        label.textColor = .label
+        label.textColor = .white
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0.1 // Allow significant shrinking for long text like dates
         return label
@@ -65,7 +65,7 @@ class BaseStatWidget: UIView, Selectable {
     let unitLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 14, weight: .regular)
-        label.textColor = .secondaryLabel
+        label.textColor = .white.withAlphaComponent(0.7)
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0.5
         return label

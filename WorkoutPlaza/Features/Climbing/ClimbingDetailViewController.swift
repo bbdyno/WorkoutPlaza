@@ -445,54 +445,36 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         guard let data = climbingData else { return nil }
         let widgetType = savedWidget.type
 
+        let widget: UIView?
+
         switch widgetType {
         case "ClimbingGymWidget":
-            let widget = ClimbingGymWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(gymName: data.gymName)
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            return widget
+            let w = ClimbingGymWidget()
+            w.configure(gymName: data.gymName)
+            widget = w
 
         case "ClimbingSessionWidget":
-            let widget = ClimbingSessionWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(sent: data.sentRoutes, total: data.totalRoutes)
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            return widget
+            let w = ClimbingSessionWidget()
+            w.configure(sent: data.sentRoutes, total: data.totalRoutes)
+            widget = w
 
         case "ClimbingDisciplineWidget":
-            let widget = ClimbingDisciplineWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(discipline: data.discipline)
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            return widget
+            let w = ClimbingDisciplineWidget()
+            w.configure(discipline: data.discipline)
+            widget = w
 
         case "ClimbingRoutesByColorWidget":
-            let widget = ClimbingRoutesByColorWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(routes: data.routes)
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
+            let w = ClimbingRoutesByColorWidget()
+            w.configure(routes: data.routes)
+            // Apply styles with fallback to old font preferences
+            applyCommonWidgetStyles(to: w, from: savedWidget)
+            if savedWidget.fontStyle == nil, let savedFont = FontPreferences.shared.loadFont(for: savedWidget.identifier) {
+                w.applyFont(savedFont)
             }
-            if let savedFont = FontPreferences.shared.loadFont(for: savedWidget.identifier) {
-                widget.applyFont(savedFont)
-            }
-            return widget
+            return w
 
         case "GymLogoWidget":
-            let widget = GymLogoWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
+            let w = GymLogoWidget()
             WPLog.debug("🏢 [Saved] Looking for gym with name: '\(data.gymName)'")
             var gym = ClimbingGymManager.shared.findGym(byName: data.gymName)
             if gym == nil {
@@ -506,39 +488,35 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
                 WPLog.warning("🏢 [Saved] Gym not found, using fallback")
             }
             let finalGym = gym ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
-            widget.configure(with: finalGym)
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            return widget
+            w.configure(with: finalGym)
+            widget = w
 
         case "DateWidget":
-            let widget = DateWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(startDate: data.sessionDate)
-            widget.dateDelegate = self
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            dateWidgets.append(widget)
-            return widget
+            let w = DateWidget()
+            w.configure(startDate: data.sessionDate)
+            w.dateDelegate = self
+            applyCommonWidgetStyles(to: w, from: savedWidget)
+            dateWidgets.append(w)
+            return w
 
         case "CurrentDateTimeWidget":
-            let widget = CurrentDateTimeWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
-            widget.configure(date: data.sessionDate)
-            widget.currentDateTimeDelegate = self
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
-            currentDateTimeWidgets.append(widget)
-            return widget
+            let w = CurrentDateTimeWidget()
+            w.configure(date: data.sessionDate)
+            w.currentDateTimeDelegate = self
+            applyCommonWidgetStyles(to: w, from: savedWidget)
+            currentDateTimeWidgets.append(w)
+            return w
 
         default:
             return nil
         }
+
+        // Apply common styles for non-special cases
+        if let widget = widget {
+            applyCommonWidgetStyles(to: widget, from: savedWidget)
+        }
+
+        return widget
     }
 }
 

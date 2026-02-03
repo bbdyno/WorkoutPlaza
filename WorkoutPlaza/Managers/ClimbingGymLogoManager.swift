@@ -29,13 +29,6 @@ class ClimbingGymLogoManager {
             }
         }
 
-        if case .url(let urlString) = gym.logoSource {
-            let remoteId = gym.metadata?.remoteId ?? "nil"
-            WPLog.debug("🖼️ Loading logo for '\(gym.name)' (RemoteID: \(remoteId)) -> URL: \(urlString)")
-        } else {
-            WPLog.debug("🖼️ Loading logo for '\(gym.name)' -> Source: \(gym.logoSource)")
-        }
-
         switch gym.logoSource {
         case .assetName(let name):
             handler(UIImage(named: name))
@@ -57,13 +50,6 @@ class ClimbingGymLogoManager {
             completion(cached)
             return
         }
-
-        // Check if already downloading
-        // Check if already downloading - For now, we'll allow concurrent requests to ensure all cells get a callback.
-        // In a clearer implementation, we should queue callbacks. 
-        // Removing the blocking check to prevent permanent placeholders.
-        
-        WPLog.debug("Loading logo from URL: \(urlString)")
 
         // Start download
         guard let url = URL(string: urlString) else {

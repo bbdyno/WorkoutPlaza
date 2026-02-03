@@ -39,7 +39,7 @@ class ImportWorkoutViewController: UIViewController {
     private let headerLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 22, weight: .bold)
-        label.textColor = .label
+        label.textColor = ColorSystem.mainText
         label.textAlignment = .center
         label.numberOfLines = 0
         return label
@@ -48,9 +48,22 @@ class ImportWorkoutViewController: UIViewController {
     private let ownerNameTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "기록 소유자 이름"
-        textField.borderStyle = .roundedRect
+        textField.borderStyle = .none
         textField.font = .systemFont(ofSize: 16)
+        textField.textColor = ColorSystem.mainText
         textField.clearButtonMode = .whileEditing
+        textField.backgroundColor = ColorSystem.background
+        textField.layer.cornerRadius = 8
+        textField.layer.borderWidth = 1
+        textField.layer.borderColor = ColorSystem.divider.cgColor
+
+        // Add padding
+        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 44))
+        textField.leftView = paddingView
+        textField.leftViewMode = .always
+        textField.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 44))
+        textField.rightViewMode = .unlessEditing
+
         return textField
     }()
 
@@ -58,15 +71,15 @@ class ImportWorkoutViewController: UIViewController {
         let label = UILabel()
         label.text = "기록 소유자 이름"
         label.font = .systemFont(ofSize: 14, weight: .medium)
-        label.textColor = .secondaryLabel
+        label.textColor = ColorSystem.subText
         return label
     }()
 
     private let fieldsHeaderLabel: UILabel = {
         let label = UILabel()
         label.text = "가져올 데이터 선택"
-        label.font = .systemFont(ofSize: 14, weight: .medium)
-        label.textColor = .secondaryLabel
+        label.font = .systemFont(ofSize: 15, weight: .bold)
+        label.textColor = ColorSystem.mainText
         return label
     }()
 
@@ -81,14 +94,14 @@ class ImportWorkoutViewController: UIViewController {
     private let previewHeaderLabel: UILabel = {
         let label = UILabel()
         label.text = "미리보기"
-        label.font = .systemFont(ofSize: 14, weight: .medium)
-        label.textColor = .secondaryLabel
+        label.font = .systemFont(ofSize: 15, weight: .bold)
+        label.textColor = ColorSystem.mainText
         return label
     }()
 
     private let previewContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = .secondarySystemGroupedBackground
+        view.backgroundColor = ColorSystem.cardBackground
         view.layer.cornerRadius = 12
         return view
     }()
@@ -106,14 +119,15 @@ class ImportWorkoutViewController: UIViewController {
     private let layoutOptionLabel: UILabel = {
         let label = UILabel()
         label.text = "레이아웃 옵션"
-        label.font = .systemFont(ofSize: 14, weight: .medium)
-        label.textColor = .secondaryLabel
+        label.font = .systemFont(ofSize: 15, weight: .bold)
+        label.textColor = ColorSystem.mainText
         return label
     }()
 
     private let useCurrentLayoutSwitch: UISwitch = {
         let toggle = UISwitch()
         toggle.isOn = false
+        toggle.onTintColor = ColorSystem.primaryGreen
         return toggle
     }()
 
@@ -121,7 +135,7 @@ class ImportWorkoutViewController: UIViewController {
         let label = UILabel()
         label.text = "현재 템플릿과 동일하게 가져오기"
         label.font = .systemFont(ofSize: 16)
-        label.textColor = .label
+        label.textColor = ColorSystem.mainText
         label.numberOfLines = 0
         return label
     }()
@@ -130,7 +144,7 @@ class ImportWorkoutViewController: UIViewController {
         let label = UILabel()
         label.text = "활성화하면 현재 화면의 위젯 배치와 동일한 위치, 크기로 가져옵니다."
         label.font = .systemFont(ofSize: 12)
-        label.textColor = .tertiaryLabel
+        label.textColor = ColorSystem.subText
         label.numberOfLines = 0
         return label
     }()
@@ -148,7 +162,7 @@ class ImportWorkoutViewController: UIViewController {
 
     // MARK: - Setup
     private func setupUI() {
-        view.backgroundColor = .systemGroupedBackground
+        view.backgroundColor = ColorSystem.background
 
         // Set title based on mode
         title = importMode == .createNew ? "내 기록으로 가져오기" : "타인 기록 가져오기"
@@ -272,8 +286,17 @@ class ImportWorkoutViewController: UIViewController {
 
     private func createSectionContainer() -> UIView {
         let view = UIView()
-        view.backgroundColor = .secondarySystemGroupedBackground
+        view.backgroundColor = ColorSystem.cardBackground
         view.layer.cornerRadius = 12
+        view.layer.cornerCurve = .continuous
+
+        // Subtle shadow
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
+        view.layer.shadowOpacity = 0.04
+        view.layer.shadowRadius = 8
+        view.layer.masksToBounds = false
+
         return view
     }
 
@@ -288,15 +311,17 @@ class ImportWorkoutViewController: UIViewController {
         let container = UIView()
 
         let iconImageView = UIImageView(image: UIImage(systemName: field.icon))
-        iconImageView.tintColor = .systemBlue
+        iconImageView.tintColor = ColorSystem.primaryGreen
         iconImageView.contentMode = .scaleAspectFit
 
         let label = UILabel()
         label.text = field.rawValue
         label.font = .systemFont(ofSize: 16)
+        label.textColor = ColorSystem.mainText
 
         let toggle = UISwitch()
         toggle.isOn = true
+        toggle.onTintColor = ColorSystem.primaryGreen
         toggle.tag = ImportField.allCases.firstIndex(of: field) ?? 0
         toggle.addTarget(self, action: #selector(fieldToggleChanged(_:)), for: .valueChanged)
 
@@ -417,7 +442,7 @@ class ImportWorkoutViewController: UIViewController {
             let displayOwnerName = ownerName.isEmpty ? (workout.creator?.name ?? "알 수 없음") : ownerName
             ownerLabel.text = "\(displayOwnerName)의 기록"
             ownerLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-            ownerLabel.textColor = .systemOrange
+            ownerLabel.textColor = ColorSystem.warning
             previewStackView.addArrangedSubview(ownerLabel)
         }
 
@@ -463,7 +488,7 @@ class ImportWorkoutViewController: UIViewController {
             let emptyLabel = UILabel()
             emptyLabel.text = "선택된 데이터가 없습니다"
             emptyLabel.font = .systemFont(ofSize: 14)
-            emptyLabel.textColor = .tertiaryLabel
+            emptyLabel.textColor = ColorSystem.subText
             emptyLabel.textAlignment = .center
             previewStackView.addArrangedSubview(emptyLabel)
         }
@@ -475,12 +500,12 @@ class ImportWorkoutViewController: UIViewController {
         let titleLabel = UILabel()
         titleLabel.text = title
         titleLabel.font = .systemFont(ofSize: 14)
-        titleLabel.textColor = .secondaryLabel
+        titleLabel.textColor = ColorSystem.subText
 
         let valueLabel = UILabel()
         valueLabel.text = value
         valueLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        valueLabel.textColor = .label
+        valueLabel.textColor = ColorSystem.mainText
         valueLabel.textAlignment = .right
 
         container.addSubview(titleLabel)

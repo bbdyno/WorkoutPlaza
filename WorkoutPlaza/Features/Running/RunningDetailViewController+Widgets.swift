@@ -13,12 +13,17 @@ import UniformTypeIdentifiers
 extension RunningDetailViewController {
     
     // MARK: - Widget Configuration
-    
+
     internal func configureWithWorkoutData() {
-        guard let data = workoutData else { return }
+        // Check workoutData first, then importedWorkoutData
+        if let data = workoutData {
+            configureWithHealthKitData(data)
+        } else if let imported = importedWorkoutData {
+            configureWithImportedData(imported)
+        }
+    }
 
-        // Always create widgets first - loadSavedDesign() will restore their positions if saved design exists
-
+    private func configureWithHealthKitData(_ data: WorkoutData) {
         // GPS 경로 데이터가 있을 때만 경로 맵 뷰 추가
         if data.hasRoute {
             let mapView = RouteMapView()
@@ -48,6 +53,57 @@ extension RunningDetailViewController {
 
         // 기본 위젯만 생성 (거리, 시간, 평균 페이스)
         createDefaultWidgets(for: data)
+    }
+
+    private func configureWithImportedData(_ imported: ImportedWorkoutData) {
+        let data = imported.originalData
+
+        // GPS 경로 데이터가 있을 때만 경로 맵 뷰 추가
+        if imported.hasRoute {
+            let mapView = RouteMapView()
+            mapView.setRoute(imported.routeLocations)
+            routeMapView = mapView
+
+            contentView.addSubview(mapView)
+            widgets.append(mapView)
+
+            let mapSize = mapView.calculateOptimalSize(maxDimension: 280)
+            let mapY: CGFloat = 70
+            let mapX = (view.bounds.width - mapSize.width) / 2
+            mapView.frame = CGRect(x: mapX, y: mapY, width: mapSize.width, height: mapSize.height)
+
+            mapView.selectionDelegate = self
+            selectionManager.registerItem(mapView)
+            mapView.initialSize = mapSize
+
+            if let savedColor = ColorPreferences.shared.loadColor(for: mapView.itemIdentifier) {
+                mapView.applyColor(savedColor)
+            }
+        }
+
+        // 기본 위젯 생성
+        createDefaultWidgetsFromImported(imported)
+    }
+
+    private func createDefaultWidgetsFromImported(_ imported: ImportedWorkoutData) {
+        let data = imported.originalData
+        let widgetSize = CGSize(width: 160, height: 80)
+        let startY: CGFloat = imported.hasRoute ? 350 : 100
+
+        // 1. 거리 위젯
+        let distanceWidget = DistanceWidget()
+        distanceWidget.configure(distance: data.distance)
+        addWidget(distanceWidget, size: widgetSize, position: CGPoint(x: 30, y: startY))
+
+        // 2. 시간 위젯
+        let durationWidget = DurationWidget()
+        durationWidget.configure(duration: data.duration)
+        addWidget(durationWidget, size: widgetSize, position: CGPoint(x: 210, y: startY))
+
+        // 3. 페이스 위젯
+        let paceWidget = PaceWidget()
+        paceWidget.configure(pace: data.pace)
+        addWidget(paceWidget, size: widgetSize, position: CGPoint(x: 30, y: startY + 120))
     }
 
     internal func createDefaultWidgets(for data: WorkoutData) {
@@ -181,7 +237,7 @@ extension RunningDetailViewController {
     }
     
     internal func canAddWidget(_ type: SingleWidgetType) -> Bool {
-        let hasRoute = workoutData?.hasRoute ?? false
+        let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? false
 
         switch type {
         case .routeMap:
@@ -210,10 +266,11 @@ extension RunningDetailViewController {
     }
 
     @objc internal func showAddWidgetMenu() {
-        guard let data = workoutData else { return }
+        // Check if we have any data
+        guard workoutData != nil || importedWorkoutData != nil else { return }
 
         let actionSheet = UIAlertController(title: "위젯 추가", message: nil, preferredStyle: .actionSheet)
-        let hasRoute = data.hasRoute
+        let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? false
 
         // 1. Single Widgets
         for type in SingleWidgetType.allCases {
@@ -232,7 +289,7 @@ extension RunningDetailViewController {
             }
 
             let action = UIAlertAction(title: title, style: .default) { [weak self] _ in
-                self?.addSingleWidget(type, data: data)
+                self?.addSingleWidgetFromAvailableData(type)
             }
 
             action.isEnabled = !isAdded
@@ -248,11 +305,19 @@ extension RunningDetailViewController {
 
         present(actionSheet, animated: true)
     }
+
+    private func addSingleWidgetFromAvailableData(_ type: SingleWidgetType) {
+        if let data = workoutData {
+            addSingleWidget(type, data: data)
+        } else if let imported = importedWorkoutData {
+            addSingleWidgetFromImported(type, imported: imported)
+        }
+    }
     
     internal func addSingleWidget(_ type: SingleWidgetType, data: WorkoutData) {
         var widget: UIView?
         var size = CGSize(width: 160, height: 80)
-        
+
         switch type {
         case .routeMap:
             guard data.hasRoute else {
@@ -271,37 +336,37 @@ extension RunningDetailViewController {
             routeMapView = mapView
             widget = mapView
             size = mapView.calculateOptimalSize(maxDimension: 250)
-            
+
         case .distance:
             let w = DistanceWidget()
             w.configure(distance: data.distance)
             widget = w
-            
+
         case .duration:
             let w = DurationWidget()
             w.configure(duration: data.duration)
             widget = w
-            
+
         case .pace:
             let w = PaceWidget()
             w.configure(pace: data.pace)
             widget = w
-            
+
         case .speed:
             let w = SpeedWidget()
             w.configure(speed: data.avgSpeed)
             widget = w
-            
+
         case .calories:
             let w = CaloriesWidget()
             w.configure(calories: data.calories)
             widget = w
-            
+
         case .date:
             let w = DateWidget()
             w.configure(startDate: data.startDate)
             widget = w
-            
+
         case .currentDateTime:
             let w = CurrentDateTimeWidget()
             w.configure(date: data.startDate)
@@ -346,14 +411,122 @@ extension RunningDetailViewController {
             // Position in center of visible area
             let centerX = view.bounds.width / 2 - size.width / 2
             let centerY = scrollView.contentOffset.y + view.bounds.height / 2 - size.height / 2
-            
+
             // For route map, use specific initial size logic if needed
             if let map = widget as? RouteMapView {
                 map.initialSize = size
             }
-            
+
             addWidget(widget, size: size, position: CGPoint(x: centerX, y: centerY))
-            
+
+            if let selectable = widget as? Selectable {
+                selectionManager.selectItem(selectable)
+            }
+        }
+    }
+
+    private func addSingleWidgetFromImported(_ type: SingleWidgetType, imported: ImportedWorkoutData) {
+        let data = imported.originalData
+        var widget: UIView?
+        var size = CGSize(width: 160, height: 80)
+
+        switch type {
+        case .routeMap:
+            guard imported.hasRoute else {
+                let alert = UIAlertController(
+                    title: "경로 정보 없음",
+                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                present(alert, animated: true)
+                return
+            }
+
+            let mapView = RouteMapView()
+            mapView.setRoute(imported.routeLocations)
+            routeMapView = mapView
+            widget = mapView
+            size = mapView.calculateOptimalSize(maxDimension: 250)
+
+        case .distance:
+            let w = DistanceWidget()
+            w.configure(distance: data.distance)
+            widget = w
+
+        case .duration:
+            let w = DurationWidget()
+            w.configure(duration: data.duration)
+            widget = w
+
+        case .pace:
+            let w = PaceWidget()
+            w.configure(pace: data.pace)
+            widget = w
+
+        case .speed:
+            let w = SpeedWidget()
+            w.configure(speed: data.avgSpeed)
+            widget = w
+
+        case .calories:
+            let w = CaloriesWidget()
+            w.configure(calories: data.calories)
+            widget = w
+
+        case .date:
+            let w = DateWidget()
+            w.configure(startDate: data.startDate)
+            widget = w
+
+        case .currentDateTime:
+            let w = CurrentDateTimeWidget()
+            w.configure(date: data.startDate)
+            widget = w
+            size = CGSize(width: 300, height: 80)
+
+        case .text:
+            let w = TextWidget()
+            w.configure(text: "텍스트 입력")
+            w.textDelegate = self
+            widget = w
+            size = CGSize(width: 200, height: 60)
+
+        case .location:
+            guard let firstLocation = imported.routeLocations.first else {
+                let alert = UIAlertController(
+                    title: "위치 정보 없음",
+                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                present(alert, animated: true)
+                return
+            }
+
+            let w = LocationWidget()
+            widget = w
+            size = CGSize(width: 220, height: 50)
+
+            w.configure(location: firstLocation) { [weak self] success in
+                if success {
+                    WPLog.info("Location widget configured successfully")
+                } else {
+                    WPLog.warning("Location widget configuration failed")
+                }
+            }
+        }
+
+        if let widget = widget {
+            let centerX = view.bounds.width / 2 - size.width / 2
+            let centerY = scrollView.contentOffset.y + view.bounds.height / 2 - size.height / 2
+
+            if let map = widget as? RouteMapView {
+                map.initialSize = size
+            }
+
+            addWidget(widget, size: size, position: CGPoint(x: centerX, y: centerY))
+
             if let selectable = widget as? Selectable {
                 selectionManager.selectItem(selectable)
             }

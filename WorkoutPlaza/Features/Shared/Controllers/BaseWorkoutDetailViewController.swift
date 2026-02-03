@@ -119,25 +119,23 @@ import PhotosUI
 
 class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, UIGestureRecognizerDelegate, TextWidgetDelegate {
 
-    // MARK: - Constants
+    // MARK: - Constants (Light Mode for Card Design)
     private enum Constants {
-        static let canvasBackgroundColor = UIColor(white: 0.1, alpha: 1.0)
-        static let canvasBorderColor = UIColor(white: 0.2, alpha: 1.0).cgColor
-        
-        static let toolbarBackgroundColor = UIColor(white: 0.2, alpha: 0.9)
-        static let multiSelectToolbarBackgroundColor = UIColor(white: 0.2, alpha: 0.95)
-        static let multiSelectBorderColor = UIColor.systemBlue.withAlphaComponent(0.5).cgColor
-        
-        static let toastBackgroundColor = UIColor(white: 0.2, alpha: 0.9)
-        
-        static let watermarkTextColor = UIColor.white.withAlphaComponent(0.5)
-        
-        static let textPathDrawingToolbarBackgroundColor = UIColor.black.withAlphaComponent(0.95)
-        static let textPathDrawingOverlayColor = UIColor.black.withAlphaComponent(0.4)
-        
-        static let dimOverlayColor = UIColor.black.withAlphaComponent(0.4)
-        
-        static let defaultBackgroundColor = UIColor.black
+        static let canvasBackgroundColor = UIColor.white
+        static let canvasBorderColor = UIColor(white: 0.9, alpha: 1.0).cgColor
+
+        static let toolbarBackgroundColor = UIColor.white.withAlphaComponent(0.95)
+        static let multiSelectToolbarBackgroundColor = UIColor.white.withAlphaComponent(0.98)
+        static let multiSelectBorderColor = ColorSystem.primaryGreen.withAlphaComponent(0.5).cgColor
+
+        static let toastBackgroundColor = UIColor(white: 0.95, alpha: 0.95)
+
+        static let textPathDrawingToolbarBackgroundColor = UIColor.white.withAlphaComponent(0.98)
+        static let textPathDrawingOverlayColor = UIColor.black.withAlphaComponent(0.2)
+
+        static let dimOverlayColor = UIColor.black.withAlphaComponent(0.3)
+
+        static let defaultBackgroundColor = UIColor.white
         
         struct Layout {
             static let instructionTopOffset: CGFloat = 10
@@ -171,15 +169,20 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
     
     // MARK: - Properties
-    
+
     // State
     var widgets: [UIView] = []
     var previousCanvasSize: CGSize = .zero
     var currentAspectRatio: AspectRatio = .portrait4_5 // Default 4:5
     var hasUnsavedChanges: Bool = false
-    
+
     // Background State
     var backgroundTransform: BackgroundTransform?
+
+    // Navigation Bar State (for restoration)
+    private var originalStandardAppearance: UINavigationBarAppearance?
+    private var originalScrollEdgeAppearance: UINavigationBarAppearance?
+    private var originalTintColor: UIColor?
 
     // Selection Manager
     lazy var selectionManager: SelectionManager = {
@@ -282,7 +285,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         let label = UILabel()
         label.text = "WorkoutPlaza"
         label.font = UIFont.systemFont(ofSize: 12, weight: .bold)
-        label.textColor = Constants.watermarkTextColor
+        label.textColor = UIColor.black.withAlphaComponent(0.3) // Initial color, will be updated dynamically
         label.textAlignment = .right
         return label
     }()
@@ -447,7 +450,40 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         aspectRatioButton.setTitle(currentAspectRatio.displayName, for: .normal)
         updateToolbarItemsState()
     }
-    
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        // Save original navigation bar appearance
+        originalStandardAppearance = navigationController?.navigationBar.standardAppearance
+        originalScrollEdgeAppearance = navigationController?.navigationBar.scrollEdgeAppearance
+        originalTintColor = navigationController?.navigationBar.tintColor
+
+        // Configure navigation bar to match the white background
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.shadowColor = .clear
+
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.tintColor = ColorSystem.primaryGreen
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        // Restore original navigation bar appearance
+        if let originalStandard = originalStandardAppearance {
+            navigationController?.navigationBar.standardAppearance = originalStandard
+        }
+        if let originalScrollEdge = originalScrollEdgeAppearance {
+            navigationController?.navigationBar.scrollEdgeAppearance = originalScrollEdge
+        }
+        if let originalTint = originalTintColor {
+            navigationController?.navigationBar.tintColor = originalTint
+        }
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateCanvasSize()
@@ -460,7 +496,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     // MARK: - Setup UI
     
     func setupUI() {
-        view.backgroundColor = Constants.defaultBackgroundColor
+        view.backgroundColor = ColorSystem.background
         navigationItem.largeTitleDisplayMode = .never
         
         setupNavigationButtons()
@@ -1020,11 +1056,17 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             var text: String?
             var fontName: String?
             var fontSize: CGFloat?
+            var fontStyle: String?
             var textColor: String?
             var pathPoints: [[CGFloat]]?
             var workoutDate: Date?
             var numericValue: Double?
             var additionalText: String?
+
+            // Extract fontStyle from Selectable widgets
+            if let selectable = widget as? Selectable {
+                fontStyle = selectable.currentFontStyle.rawValue
+            }
 
             // Extract data based on widget type
             if let textWidget = widget as? TextWidget {
@@ -1069,6 +1111,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 text: text,
                 fontName: fontName,
                 fontSize: fontSize,
+                fontStyle: fontStyle,
                 textColor: textColor,
                 backgroundColor: widget.backgroundColor?.toHex(),
                 rotation: 0,
@@ -1337,11 +1380,27 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         WPLog.info("Design loaded and restored for \(workoutId)")
 
+        // Update watermark color based on loaded background
+        updateWatermarkColorForBackground()
+
         // Reset unsaved changes flag since we just loaded the saved state
         hasUnsavedChanges = false
     }
 
     // Create widget from saved state - override in subclasses for specific widgets
+    func applyCommonWidgetStyles(to widget: UIView, from savedState: SavedWidgetState) {
+        widget.frame = savedState.frame
+        if var selectable = widget as? Selectable {
+            selectable.initialSize = savedState.frame.size
+            if let colorHex = savedState.textColor, let color = UIColor(hex: colorHex) {
+                selectable.applyColor(color)
+            }
+            if let fontStyleRaw = savedState.fontStyle, let fontStyle = FontStyle(rawValue: fontStyleRaw) {
+                selectable.applyFont(fontStyle)
+            }
+        }
+    }
+
     func createWidgetFromSavedState(_ savedWidget: SavedWidgetState) -> UIView? {
         let widgetType = savedWidget.type
 
@@ -1349,15 +1408,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         switch widgetType {
         case "TextWidget":
             let widget = TextWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
             if let text = savedWidget.text {
                 widget.configure(text: text)
             }
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
             widget.textDelegate = self as? TextWidgetDelegate
+            applyCommonWidgetStyles(to: widget, from: savedWidget)
             return widget
 
         case "TextPathWidget":
@@ -1369,7 +1424,6 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 guard arr.count >= 2 else { return nil }
                 return CGPoint(x: arr[0], y: arr[1])
             }
-            // Convert normalized points back to frame coordinates
             let framePoints = pathPoints.map { point in
                 CGPoint(
                     x: point.x * savedWidget.frame.width,
@@ -1390,30 +1444,22 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         case "DateWidget":
             let widget = DateWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
             if let date = savedWidget.workoutDate {
                 widget.configure(startDate: date)
             } else if let date = getWorkoutDate() {
                 widget.configure(startDate: date)
             }
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
+            applyCommonWidgetStyles(to: widget, from: savedWidget)
             return widget
 
         case "CurrentDateTimeWidget":
             let widget = CurrentDateTimeWidget()
-            widget.frame = savedWidget.frame
-            widget.initialSize = savedWidget.frame.size
             if let date = savedWidget.workoutDate {
                 widget.configure(date: date)
             } else if let date = getWorkoutDate() {
                 widget.configure(date: date)
             }
-            if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
-                widget.applyColor(color)
-            }
+            applyCommonWidgetStyles(to: widget, from: savedWidget)
             return widget
 
         default:
@@ -1557,19 +1603,47 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         present(picker, animated: true)
     }
     
+    /// 현재 배경의 밝기에 따라 워터마크 색상을 자동으로 조정
+    private func updateWatermarkColorForBackground() {
+        var isBackgroundLight = true // Default to light
+
+        if !backgroundImageView.isHidden, let image = backgroundImageView.image {
+            // Image background - calculate average brightness
+            isBackgroundLight = image.isLight
+        } else if !backgroundTemplateView.isHidden {
+            // Gradient background - calculate average brightness of gradient colors
+            let colors = backgroundTemplateView.getCurrentColors()
+            if !colors.isEmpty {
+                let totalBrightness = colors.reduce(0.0) { $0 + $1.perceivedBrightness }
+                let averageBrightness = totalBrightness / CGFloat(colors.count)
+                isBackgroundLight = averageBrightness > 0.5
+            }
+        } else {
+            // No background (white default)
+            isBackgroundLight = true
+        }
+
+        // Set watermark color based on background brightness
+        watermarkLabel.textColor = isBackgroundLight
+            ? UIColor.black.withAlphaComponent(0.3)
+            : UIColor.white.withAlphaComponent(0.3)
+    }
+
     private func useTemplate() {
         backgroundImageView.isHidden = true
         backgroundTemplateView.isHidden = false
         dimOverlay.isHidden = true
         hasUnsavedChanges = true
+        updateWatermarkColorForBackground()
     }
-    
+
     private func removeBackground() {
         backgroundImageView.isHidden = true
         backgroundTemplateView.isHidden = true
         dimOverlay.isHidden = true
         view.backgroundColor = .systemGroupedBackground
         hasUnsavedChanges = true
+        updateWatermarkColorForBackground()
     }
     
     @objc dynamic func showTextPathInput() {
@@ -2135,6 +2209,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         actionSheet.addAction(UIAlertAction(title: "랜덤", style: .default) { [weak self] _ in
             self?.backgroundTemplateView.applyRandomTemplate()
             self?.hasUnsavedChanges = true
+            self?.updateWatermarkColorForBackground()
         })
 
         // Custom
@@ -2197,6 +2272,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         backgroundTemplateView.applyTemplate(style)
         dimOverlay.isHidden = true
         hasUnsavedChanges = true
+        updateWatermarkColorForBackground()
     }
 
     // MARK: - Template Management
@@ -3237,6 +3313,9 @@ extension BaseWorkoutDetailViewController: BackgroundImageEditorDelegate {
         // Apply transform to background image
         applyBackgroundTransform(transform)
 
+        // Update watermark color based on new background
+        updateWatermarkColorForBackground()
+
         // Show dim overlay option
         showDimOverlayOption()
     }
@@ -3250,6 +3329,7 @@ extension BaseWorkoutDetailViewController: CustomGradientPickerDelegate {
         dimOverlay.isHidden = true
         backgroundTemplateView.applyCustomGradient(colors: colors, direction: direction)
         hasUnsavedChanges = true
+        updateWatermarkColorForBackground()
     }
 }
 

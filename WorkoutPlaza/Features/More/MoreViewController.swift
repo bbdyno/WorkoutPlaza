@@ -37,7 +37,6 @@ class MoreViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        overrideUserInterfaceStyle = .dark // Force Dark Mode
         setupData()
         setupUI()
     }
@@ -79,15 +78,15 @@ class MoreViewController: UIViewController {
     }
 
     private func setupUI() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = ColorSystem.background
         navigationItem.largeTitleDisplayMode = .automatic // Modern large title
         title = "더보기"
         navigationController?.navigationBar.prefersLargeTitles = true
 
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.backgroundColor = .systemGroupedBackground // Dark gray in dark mode
-        tableView.separatorColor = .separator
+        tableView.backgroundColor = ColorSystem.background
+        tableView.separatorColor = ColorSystem.divider
         
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
@@ -259,7 +258,6 @@ class LicensesViewController: UIViewController {
         super.viewDidLoad()
         title = "오픈소스 라이선스"
         view.backgroundColor = .systemBackground
-        overrideUserInterfaceStyle = .dark // Force dark mode for consistency
 
         view.addSubview(textView)
         textView.snp.makeConstraints { make in
