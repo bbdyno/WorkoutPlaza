@@ -129,14 +129,37 @@ class HomeDashboardViewController: UIViewController {
         card.backgroundColor = ColorSystem.cardBackground
         card.layer.cornerRadius = 24
         card.layer.cornerCurve = .continuous
+        card.clipsToBounds = true
         // card.layer.borderWidth = 1
         // card.layer.borderColor = UIColor.white.withAlphaComponent(0.1).cgColor
-        
+
         // Subtle shadow
         card.layer.shadowColor = UIColor.black.cgColor
         card.layer.shadowOpacity = 0.08
         card.layer.shadowOffset = CGSize(width: 0, height: 2)
         card.layer.shadowRadius = 12
+
+        // Background Image
+        let backgroundImageView = UIImageView()
+        backgroundImageView.image = sport.backgroundImage
+        backgroundImageView.contentMode = .scaleAspectFill
+        backgroundImageView.clipsToBounds = true
+
+        card.addSubview(backgroundImageView)
+        backgroundImageView.snp.makeConstraints { make in
+            make.trailing.top.bottom.equalToSuperview()
+            make.width.equalTo(180)
+        }
+
+        // White Gradient Overlay
+        let gradientView = HorizontalGradientView()
+        gradientView.colors = [.white, .white,
+            .white.withAlphaComponent(0.8), .white.withAlphaComponent(0.0)]
+        gradientView.locations = [0.0, 0.6, 0.8, 1.0]
+        card.addSubview(gradientView)
+        gradientView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
 
         // Icon Container
         let iconContainer = UIView()
@@ -281,3 +304,4 @@ extension HomeDashboardViewController: ClimbingInputDelegate {
         controller.navigationController?.pushViewController(detailVC, animated: true)
     }
 }
+
