@@ -130,7 +130,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         static let toastBackgroundColor = UIColor(white: 0.95, alpha: 0.95)
 
-        static let textPathDrawingToolbarBackgroundColor = UIColor.white.withAlphaComponent(0.98)
+        static let textPathDrawingToolbarBackgroundColor = UIColor.black.withAlphaComponent(0.85)
         static let textPathDrawingOverlayColor = UIColor.black.withAlphaComponent(0.2)
 
         static let dimOverlayColor = UIColor.black.withAlphaComponent(0.3)
@@ -204,6 +204,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     var pendingTextForPath: String = ""
     var isTextPathDrawingMode: Bool = false
     var textPathPoints: [CGPoint] = []
+    var isTextPathStraightLineMode: Bool = false
+    var textPathStraightLineStartPoint: CGPoint = .zero
 
     // Text Path Style
     var textPathSelectedColor: UIColor = .white
@@ -385,8 +387,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "checkmark.circle.fill"), for: .normal)
         button.tintColor = .systemGreen
-        button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
-        button.layer.cornerRadius = 25
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.3)
+        button.layer.cornerRadius = 20
         button.isHidden = true
         return button
     }()
@@ -395,8 +397,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "arrow.counterclockwise"), for: .normal)
         button.tintColor = .white
-        button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
-        button.layer.cornerRadius = 25
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.3)
+        button.layer.cornerRadius = 20
         button.isHidden = true
         return button
     }()
@@ -536,8 +538,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         view.addSubview(bottomFloatingToolbar)
         view.addSubview(multiSelectToolbar)
         view.addSubview(textPathDrawingToolbar)
-        view.addSubview(textPathConfirmButton)
-        view.addSubview(textPathRedrawButton)
+        textPathDrawingToolbar.addSubview(textPathConfirmButton)
+        textPathDrawingToolbar.addSubview(textPathRedrawButton)
         view.addSubview(toastLabel)
         view.addSubview(textPathColorPanel)
         view.addSubview(textPathFontPanel)
@@ -630,15 +632,15 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         }
 
         textPathConfirmButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(24)
-            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(Constants.Layout.textPathButtonBottomOffset)
-            make.size.equalTo(Constants.Layout.standardButtonSize)
+            make.trailing.equalToSuperview().inset(16)
+            make.top.equalToSuperview().inset(8)
+            make.size.equalTo(40)
         }
 
         textPathRedrawButton.snp.makeConstraints { make in
-            make.leading.equalToSuperview().inset(24)
-            make.bottom.equalTo(textPathDrawingToolbar.snp.top).offset(Constants.Layout.textPathButtonBottomOffset)
-            make.size.equalTo(Constants.Layout.standardButtonSize)
+            make.leading.equalToSuperview().inset(16)
+            make.top.equalToSuperview().inset(8)
+            make.size.equalTo(40)
         }
     }
     
@@ -690,7 +692,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         textPathColorMainButton.backgroundColor = .white
         textPathColorMainButton.layer.cornerRadius = 16
         textPathColorMainButton.layer.borderWidth = 2
-        textPathColorMainButton.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        textPathColorMainButton.layer.borderColor = UIColor.gray.cgColor
         textPathColorMainButton.tag = 9000
         textPathColorMainButton.addTarget(self, action: #selector(textPathColorMainButtonTapped(_:)), for: .touchUpInside)
 
@@ -788,7 +790,43 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             make.bottom.equalToSuperview()
         }
 
-        let buttonStack = UIStackView(arrangedSubviews: [colorButtonContainer, fontButtonContainer, sizeButtonContainer])
+        // Mode Button (자유곡선/직선 토글)
+        let modeButtonContainer = UIView()
+        let modeLabel = UILabel()
+        modeLabel.text = "모드"
+        modeLabel.textColor = .white
+        modeLabel.font = .systemFont(ofSize: 11, weight: .medium)
+        modeLabel.textAlignment = .center
+
+        let textPathModeMainButton = UIButton(type: .system)
+        textPathModeMainButton.setImage(UIImage(systemName: "scribble"), for: .normal)
+        textPathModeMainButton.tintColor = .white
+        textPathModeMainButton.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        textPathModeMainButton.layer.cornerRadius = 16
+        textPathModeMainButton.layer.borderWidth = 2
+        textPathModeMainButton.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        textPathModeMainButton.tag = 9003
+        textPathModeMainButton.addTarget(self, action: #selector(textPathModeButtonTapped(_:)), for: .touchUpInside)
+
+        modeButtonContainer.addSubview(textPathModeMainButton)
+        modeButtonContainer.addSubview(modeLabel)
+
+        modeButtonContainer.snp.makeConstraints { make in
+            make.width.equalTo(50)
+        }
+        textPathModeMainButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.top.equalToSuperview()
+            make.size.equalTo(32)
+        }
+        modeLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+            make.top.equalTo(textPathModeMainButton.snp.bottom).offset(4)
+            make.bottom.equalToSuperview()
+        }
+
+        let buttonStack = UIStackView(arrangedSubviews: [modeButtonContainer, colorButtonContainer, fontButtonContainer, sizeButtonContainer])
         buttonStack.axis = .horizontal
         buttonStack.spacing = 32
         buttonStack.alignment = .top
@@ -1733,6 +1771,13 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     @objc func exitTextPathDrawingMode() {
         isTextPathDrawingMode = false
         textPathPoints = []
+        isTextPathStraightLineMode = false
+        textPathStraightLineStartPoint = .zero
+
+        // Reset mode button icon
+        if let modeButton = textPathDrawingToolbar.viewWithTag(9003) as? UIButton {
+            modeButton.setImage(UIImage(systemName: "scribble"), for: .normal)
+        }
 
         // Clear drawing view
         textPathDrawingOverlayView.subviews.forEach { $0.removeFromSuperview() }
@@ -1831,6 +1876,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         switch gesture.state {
         case .began:
+            textPathStraightLineStartPoint = location
             textPathPoints = [location]
             textPathConfirmButton.isHidden = true
             textPathRedrawButton.isHidden = true
@@ -1839,11 +1885,23 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             hideAllTextPathPanels()
 
         case .changed:
-            textPathPoints.append(location)
+            if isTextPathStraightLineMode {
+                // 직선 모드: 시작점과 현재점만 유지
+                textPathPoints = [textPathStraightLineStartPoint, location]
+            } else {
+                // 자유곡선 모드: 계속 추가
+                textPathPoints.append(location)
+            }
             updateTextPathDrawing()
 
         case .ended, .cancelled:
-            textPathPoints.append(location)
+            if isTextPathStraightLineMode {
+                // 직선 모드: 시작점과 끝점
+                textPathPoints = [textPathStraightLineStartPoint, location]
+            } else {
+                // 자유곡선 모드: 마지막 점 추가
+                textPathPoints.append(location)
+            }
             if textPathPoints.count >= 2 {
                 textPathConfirmButton.isHidden = false
                 textPathRedrawButton.isHidden = false
@@ -1883,6 +1941,15 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         } else {
             hideAllTextPathPanels()
         }
+    }
+
+    @objc func textPathModeButtonTapped(_ sender: UIButton) {
+        // 모드 토글
+        isTextPathStraightLineMode.toggle()
+
+        // 아이콘 업데이트
+        let iconName = isTextPathStraightLineMode ? "line.diagonal" : "scribble"
+        sender.setImage(UIImage(systemName: iconName), for: .normal)
     }
 
     func hideAllTextPathPanels(except viewToKeep: UIView? = nil) {
