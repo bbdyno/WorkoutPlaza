@@ -7,7 +7,7 @@
 
 import UIKit
 
-class TemplateManager {
+actor TemplateManager {
     static let shared = TemplateManager()
 
     private init() {}
@@ -28,8 +28,8 @@ class TemplateManager {
     }
 
     // MARK: - Get Templates
-    func getAllTemplates() -> [WidgetTemplate] {
-        loadCustomTemplates()
+    func getAllTemplates() async -> [WidgetTemplate] {
+        await loadCustomTemplates()
         return WidgetTemplate.allBuiltInTemplates + customTemplates
     }
 
@@ -37,13 +37,13 @@ class TemplateManager {
         return WidgetTemplate.allBuiltInTemplates
     }
 
-    func getCustomTemplates() -> [WidgetTemplate] {
-        loadCustomTemplates()
+    func getCustomTemplates() async -> [WidgetTemplate] {
+        await loadCustomTemplates()
         return customTemplates
     }
 
-    func getTemplates(for sport: SportType) -> [WidgetTemplate] {
-        loadCustomTemplates()
+    func getTemplates(for sport: SportType) async -> [WidgetTemplate] {
+        await loadCustomTemplates()
         // Get built-in for sport
         let builtIn = try? WidgetTemplate.templates(for: sport)
         // Get custom for sport
@@ -52,52 +52,65 @@ class TemplateManager {
     }
 
     // MARK: - Save Custom Template
-    func saveCustomTemplate(_ template: WidgetTemplate) throws {
+    func saveCustomTemplate(_ template: WidgetTemplate) async throws {
         let fileURL = templatesDirectoryURL.appendingPathComponent("\(template.id).json")
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
         let data = try encoder.encode(template)
-        try data.write(to: fileURL)
+        
+        try await Task.detached(priority: .utility) {
+            try data.write(to: fileURL)
+        }.value
 
         // Reload custom templates
-        loadCustomTemplates()
+        await loadCustomTemplates()
 
         WPLog.info("Template saved: \(template.name) at \(fileURL.path)")
     }
 
     // MARK: - Delete Custom Template
-    func deleteCustomTemplate(_ template: WidgetTemplate) throws {
+    func deleteCustomTemplate(_ template: WidgetTemplate) async throws {
         let fileURL = templatesDirectoryURL.appendingPathComponent("\(template.id).json")
 
         if FileManager.default.fileExists(atPath: fileURL.path) {
-            try FileManager.default.removeItem(at: fileURL)
-            loadCustomTemplates()
+            try await Task.detached(priority: .utility) {
+                try FileManager.default.removeItem(at: fileURL)
+            }.value
+            
+            await loadCustomTemplates()
             WPLog.info("Template deleted: \(template.name)")
         }
     }
 
     // MARK: - Load Custom Templates
-    private func loadCustomTemplates() {
-        customTemplates.removeAll()
-
-        guard let files = try? FileManager.default.contentsOfDirectory(at: templatesDirectoryURL, includingPropertiesForKeys: nil) else {
-            return
-        }
-
-        for fileURL in files where fileURL.pathExtension == "json" {
-            do {
-                let data = try Data(contentsOf: fileURL)
-                let decoder = JSONDecoder()
-                let template = try decoder.decode(WidgetTemplate.self, from: data)
-                customTemplates.append(template)
-            } catch {
-                WPLog.warning("Failed to load template from \(fileURL.lastPathComponent): \(error)")
+    private func loadCustomTemplates() async {
+        let directoryURL = templatesDirectoryURL
+        
+        let templates = await Task.detached(priority: .userInitiated) { () -> [WidgetTemplate] in
+            var loadedTemplates: [WidgetTemplate] = []
+            
+            guard let files = try? FileManager.default.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil) else {
+                return []
             }
-        }
 
-        WPLog.info("Loaded \(customTemplates.count) custom templates")
+            for fileURL in files where fileURL.pathExtension == "json" {
+                do {
+                    let data = try Data(contentsOf: fileURL)
+                    let decoder = JSONDecoder()
+                    let template = try decoder.decode(WidgetTemplate.self, from: data)
+                    loadedTemplates.append(template)
+                } catch {
+                    WPLog.warning("Failed to load template from \(fileURL.lastPathComponent): \(error)")
+                }
+            }
+            return loadedTemplates
+        }.value
+        
+        // Update on actor context
+        self.customTemplates = templates
+        WPLog.info("Loaded \(self.customTemplates.count) custom templates")
     }
 
     // MARK: - Export Template
@@ -119,13 +132,13 @@ class TemplateManager {
     }
 
     // MARK: - Import Template
-    func importTemplate(from url: URL) throws -> WidgetTemplate {
+    func importTemplate(from url: URL) async throws -> WidgetTemplate {
         let data = try Data(contentsOf: url)
         let decoder = JSONDecoder()
         let template = try decoder.decode(WidgetTemplate.self, from: data)
 
         // Save as custom template
-        try saveCustomTemplate(template)
+        try await saveCustomTemplate(template)
 
         WPLog.info("Template imported: \(template.name)")
         return template

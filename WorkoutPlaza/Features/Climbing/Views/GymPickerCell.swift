@@ -120,9 +120,17 @@ class GymPickerCell: UITableViewCell {
         logoContainer.backgroundColor = branchColor
 
         // Load logo asynchronously as template (white)
-        ClimbingGymLogoManager.shared.loadLogo(for: gym, asTemplate: true) { [weak self] image in
-            self?.logoImageView.image = image
-            self?.logoImageView.tintColor = .white // User requested white
+        Task { [weak self] in
+            let image = await ClimbingGymLogoManager.shared.loadLogo(for: gym, asTemplate: true)
+            
+            // UI updates must be on main thread
+            await MainActor.run {
+                // Verify cell is still valid for this gym if possible, or just update
+                if self?.nameLabel.text == gym.name {
+                    self?.logoImageView.image = image
+                    self?.logoImageView.tintColor = .white // User requested white
+                }
+            }
         }
     }
 }

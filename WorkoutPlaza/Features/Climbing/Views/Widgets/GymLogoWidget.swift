@@ -98,11 +98,15 @@ class GymLogoWidget: UIView, Selectable {
     }
     
     func configure(with gym: ClimbingGym) {
-        ClimbingGymLogoManager.shared.loadLogo(for: gym, asTemplate: true) { [weak self] image in
-            guard let self = self else { return }
-            self.logoImageView.image = image
-            self.setNeedsLayout()
-            self.layoutIfNeeded()
+        Task { [weak self] in
+            let image = await ClimbingGymLogoManager.shared.loadLogo(for: gym, asTemplate: true)
+            
+            await MainActor.run {
+                guard let self = self else { return }
+                self.logoImageView.image = image
+                self.setNeedsLayout()
+                self.layoutIfNeeded()
+            }
         }
 
         if let branch = gym.metadata?.branch, !branch.isEmpty {

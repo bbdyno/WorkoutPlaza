@@ -70,33 +70,37 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         // For now, we'll keep the specific implementation in extension if it relies on Running templates
          let alert = UIAlertController(title: "레이아웃 템플릿", message: "위젯 배치를 선택하세요", preferredStyle: .actionSheet)
 
-        // Get running templates
-        let templates = TemplateManager.shared.getTemplates(for: .running)
+        Task {
+            // Get running templates
+            let templates = await TemplateManager.shared.getTemplates(for: .running)
 
-        for template in templates {
-            alert.addAction(UIAlertAction(title: template.name, style: .default) { [weak self] _ in
-                self?.applyWidgetTemplate(template)
-            })
+            await MainActor.run {
+                for template in templates {
+                    alert.addAction(UIAlertAction(title: template.name, style: .default) { [weak self] _ in
+                        self?.applyWidgetTemplate(template)
+                    })
+                }
+
+                // Import template
+                alert.addAction(UIAlertAction(title: "📥 템플릿 가져오기", style: .default) { [weak self] _ in
+                    self?.importTemplate()
+                })
+
+                // Export current layout
+                alert.addAction(UIAlertAction(title: "📤 현재 레이아웃 내보내기", style: .default) { [weak self] _ in
+                    self?.exportCurrentLayout()
+                })
+
+                alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+                if let popover = alert.popoverPresentationController {
+                    popover.sourceView = layoutTemplateButton
+                    popover.sourceRect = layoutTemplateButton.bounds
+                }
+
+                present(alert, animated: true)
+            }
         }
-
-        // Import template
-        alert.addAction(UIAlertAction(title: "📥 템플릿 가져오기", style: .default) { [weak self] _ in
-            self?.importTemplate()
-        })
-
-        // Export current layout
-        alert.addAction(UIAlertAction(title: "📤 현재 레이아웃 내보내기", style: .default) { [weak self] _ in
-            self?.exportCurrentLayout()
-        })
-
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-
-        if let popover = alert.popoverPresentationController {
-            popover.sourceView = layoutTemplateButton
-            popover.sourceRect = layoutTemplateButton.bounds
-        }
-
-        present(alert, animated: true)
     }
     
     // Override other actions as needed or rely on Base if generic enough

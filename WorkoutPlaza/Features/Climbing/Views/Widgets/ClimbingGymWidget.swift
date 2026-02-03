@@ -53,15 +53,19 @@ class ClimbingGymWidget: BaseStatWidget {
 
         // Load logo using ClimbingGymLogoManager
         if let gym = self.gym {
-            ClimbingGymLogoManager.shared.loadLogo(for: gym) { [weak self] image in
-                guard let self = self, let image = image else { return }
-                self.logoImageView.image = image
-                self.logoImageView.isHidden = false
+            Task { [weak self] in
+                let image = await ClimbingGymLogoManager.shared.loadLogo(for: gym)
+                
+                await MainActor.run {
+                    guard let self = self, let image = image else { return }
+                    self.logoImageView.image = image
+                    self.logoImageView.isHidden = false
 
-                // valueLabel을 로고 옆으로 이동
-                self.valueLabel.snp.remakeConstraints { make in
-                    make.top.equalTo(self.titleLabel.snp.bottom).offset(4)
-                    make.leading.equalTo(self.logoImageView.snp.trailing).offset(8)
+                    // valueLabel을 로고 옆으로 이동
+                    self.valueLabel.snp.remakeConstraints { make in
+                        make.top.equalTo(self.titleLabel.snp.bottom).offset(4)
+                        make.leading.equalTo(self.logoImageView.snp.trailing).offset(8)
+                    }
                 }
             }
         } else {
