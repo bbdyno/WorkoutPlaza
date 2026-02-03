@@ -328,7 +328,7 @@ class TextPathDrawingOverlay: UIView {
     private enum Constants {
         static let bottomToolbarHeight: CGFloat = 80
         static let buttonStackHeight: CGFloat = 40
-        static let buttonStackWidth: CGFloat = 200
+        static let buttonStackWidth: CGFloat = 292
         static let controlButtonWidth: CGFloat = 60
         static let controlButtonHeight: CGFloat = 40
         static let expandedPanelHorizontalPadding: CGFloat = 20
@@ -357,10 +357,19 @@ class TextPathDrawingOverlay: UIView {
         case preview    // 미리보기 (확인 대기)
     }
 
+    enum DrawingMode {
+        case freeform       // 자유곡선
+        case straightLine   // 직선
+    }
+
     private(set) var currentState: DrawingState = .ready
+    private var currentDrawingMode: DrawingMode = .freeform
 
     /// 사용자가 드래그한 경로의 좌표들
     private(set) var pathPoints: [CGPoint] = []
+
+    /// 직선 모드에서 시작점 저장
+    private var straightLineStartPoint: CGPoint = .zero
 
     /// 반복할 텍스트
     var textToRepeat: String = ""
@@ -449,6 +458,17 @@ class TextPathDrawingOverlay: UIView {
         button.setTitle("20", for: .normal)
         button.setTitleColor(.white, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
+        button.layer.cornerRadius = 20
+        button.layer.borderWidth = 2
+        button.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        return button
+    }()
+
+    private let modeButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "scribble"), for: .normal)
+        button.tintColor = .white
         button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
         button.layer.cornerRadius = 20
         button.layer.borderWidth = 2
@@ -585,7 +605,7 @@ class TextPathDrawingOverlay: UIView {
         }
 
         // Main control buttons in toolbar
-        let buttonStack = UIStackView(arrangedSubviews: [colorButton, fontButton, sizeButton])
+        let buttonStack = UIStackView(arrangedSubviews: [modeButton, colorButton, fontButton, sizeButton])
         buttonStack.axis = .horizontal
         buttonStack.spacing = 16
         buttonStack.alignment = .center
@@ -599,13 +619,14 @@ class TextPathDrawingOverlay: UIView {
         }
 
         // Set button constraints
-        [colorButton, fontButton, sizeButton].forEach { button in
+        [modeButton, colorButton, fontButton, sizeButton].forEach { button in
             button.snp.makeConstraints { make in
                 make.width.equalTo(Constants.controlButtonWidth)
                 make.height.equalTo(Constants.controlButtonHeight)
             }
         }
 
+        modeButton.addTarget(self, action: #selector(modeButtonTapped), for: .touchUpInside)
         colorButton.addTarget(self, action: #selector(colorButtonMainTapped), for: .touchUpInside)
         fontButton.addTarget(self, action: #selector(fontButtonMainTapped), for: .touchUpInside)
         sizeButton.addTarget(self, action: #selector(sizeButtonMainTapped), for: .touchUpInside)
@@ -788,6 +809,17 @@ class TextPathDrawingOverlay: UIView {
     }
 
     // MARK: - Main Button Actions
+    @objc private func modeButtonTapped() {
+        // Toggle drawing mode
+        currentDrawingMode = currentDrawingMode == .freeform ? .straightLine : .freeform
+        updateModeButton()
+    }
+
+    private func updateModeButton() {
+        let iconName = currentDrawingMode == .freeform ? "scribble" : "line.diagonal"
+        modeButton.setImage(UIImage(systemName: iconName), for: .normal)
+    }
+
     @objc private func colorButtonMainTapped() {
         showPanel(.color)
     }
@@ -882,6 +914,9 @@ class TextPathDrawingOverlay: UIView {
 
     // MARK: - State Management
     private func updateUIForState() {
+        // Toolbar와 버튼들은 항상 표시
+        bottomToolbar.isHidden = false
+
         switch currentState {
         case .ready:
             guideLabel.isHidden = false
@@ -947,16 +982,30 @@ class TextPathDrawingOverlay: UIView {
         switch gesture.state {
         case .began:
             guard canvasFrame.contains(location) else { return }
+            straightLineStartPoint = location
             pathPoints = [location]
             currentState = .drawing
             updateUIForState()
 
         case .changed:
-            pathPoints.append(location)
+            if currentDrawingMode == .straightLine {
+                // 직선 모드: 시작점과 현재점만 유지
+                pathPoints = [straightLineStartPoint, location]
+            } else {
+                // 자유곡선 모드: 계속 추가
+                pathPoints.append(location)
+            }
             setNeedsDisplay()
 
         case .ended, .cancelled:
-            pathPoints.append(location)
+            if currentDrawingMode == .straightLine {
+                // 직선 모드: 시작점과 끝점
+                pathPoints = [straightLineStartPoint, location]
+            } else {
+                // 자유곡선 모드: 마지막 점 추가
+                pathPoints.append(location)
+            }
+
             if pathPoints.count >= 2 {
                 currentState = .preview
             } else {
@@ -1130,13 +1179,16 @@ class TextPathDrawingOverlay: UIView {
 
     func reset() {
         pathPoints.removeAll()
+        straightLineStartPoint = .zero
         currentState = .ready
+        currentDrawingMode = .freeform
         selectedColorIndex = 0
         selectedFontIndex = 0
         selectedFontSize = 20
         fontSizeSlider.value = 20
         fontSizeLabel.text = "20"
         sizeButton.setTitle("20", for: .normal)
+        updateModeButton()
         hidePanel()
         updateColorSelection()
         updateFontSelection()
