@@ -220,22 +220,13 @@ class LocationWidget: UIView, Selectable {
                 y: initialCenter.y + translation.y
             )
 
+            // Snap to grid based on center (회전된 뷰에서는 center 기준 snap)
             let snapStep: CGFloat = LayoutConstants.snapStep
-            let width = view.frame.width
-            let height = view.frame.height
 
-            let proposedOriginX = proposedCenter.x - width / 2
-            let proposedOriginY = proposedCenter.y - height / 2
+            let snappedCenterX = round(proposedCenter.x / snapStep) * snapStep
+            let snappedCenterY = round(proposedCenter.y / snapStep) * snapStep
 
-            let snappedOriginX = round(proposedOriginX / snapStep) * snapStep
-            let snappedOriginY = round(proposedOriginY / snapStep) * snapStep
-
-            let snappedCenter = CGPoint(
-                x: snappedOriginX + width / 2,
-                y: snappedOriginY + height / 2
-            )
-
-            view.center = snappedCenter
+            view.center = CGPoint(x: snappedCenterX, y: snappedCenterY)
 
             if isSelected {
                 positionResizeHandles()

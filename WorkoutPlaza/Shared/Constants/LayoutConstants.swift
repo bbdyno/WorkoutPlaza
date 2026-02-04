@@ -41,8 +41,8 @@ enum LayoutConstants {
     static let minimumScaleFactor: CGFloat = 0.1
     static let titleMinimumScaleFactor: CGFloat = 0.2
     static let maximumScaleFactor: CGFloat = 3.0
-    static let minimumAllowedScale: CGFloat = 0.5
-    static let textWidgetMinimumScale: CGFloat = 0.2
+    static let minimumAllowedScale: CGFloat = 0.65      // 0.5 → 0.65
+    static let textWidgetMinimumScale: CGFloat = 0.35   // 0.2 → 0.35
 
     // MARK: - Size Thresholds
     static let significantSizeChange: CGFloat = 5
