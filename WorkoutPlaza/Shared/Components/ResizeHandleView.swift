@@ -16,12 +16,16 @@ class ResizeHandleView: UIView {
     private let handleSize: CGFloat = LayoutConstants.resizeHandleSize
     private let circleSize: CGFloat = LayoutConstants.resizeCircleSize
     private var panGesture: UIPanGestureRecognizer!
-    private var initialParentFrame: CGRect = .zero
     private var initialTouchPoint: CGPoint = .zero
 
     // Rotation-specific properties
     private var initialRotation: CGFloat = 0
     private var initialAngle: CGFloat = 0
+
+    // Resize-specific properties
+    private var initialBounds: CGRect = .zero
+    private var initialCenter: CGPoint = .zero
+    private var initialTopLeft: CGPoint = .zero
 
     // MARK: - Initialization
     init(position: ResizeHandlePosition) {
@@ -39,19 +43,22 @@ class ResizeHandleView: UIView {
     private func setupView() {
         backgroundColor = .clear
 
-        // Different style for rotation handle (bottomLeft)
+        let iconSize = LayoutConstants.handleIconSize
+        let iconFontSize = LayoutConstants.handleIconFontSize
+
+        // Different style for rotation handle (bottomLeft) and resize handle (bottomRight)
         if position == .bottomLeft {
-            // Rotation handle - circular with rotation icon
+            // Rotation handle - larger circular with rotation icon (Blue)
             let circleLayer = CAShapeLayer()
             circleLayer.path = UIBezierPath(
                 ovalIn: CGRect(
-                    x: (handleSize - circleSize) / 2,
-                    y: (handleSize - circleSize) / 2,
-                    width: circleSize,
-                    height: circleSize
+                    x: (handleSize - iconSize) / 2,
+                    y: (handleSize - iconSize) / 2,
+                    width: iconSize,
+                    height: iconSize
                 )
             ).cgPath
-            circleLayer.fillColor = UIColor.systemBlue.cgColor
+            circleLayer.fillColor = ColorSystem.rotationHandle.cgColor
             circleLayer.strokeColor = UIColor.white.cgColor
             circleLayer.lineWidth = 2
 
@@ -59,21 +66,53 @@ class ResizeHandleView: UIView {
             circleLayer.shadowColor = UIColor.black.cgColor
             circleLayer.shadowOffset = CGSize(width: 0, height: 2)
             circleLayer.shadowOpacity = 0.3
-            circleLayer.shadowRadius = 3
+            circleLayer.shadowRadius = 4
 
             layer.addSublayer(circleLayer)
 
-            // Add rotation icon
-            let iconLayer = CATextLayer()
-            iconLayer.string = "↻"
-            iconLayer.font = CTFontCreateWithName("ArialMT" as CFString, 20, nil)
-            iconLayer.fontSize = 20
-            iconLayer.foregroundColor = UIColor.white.cgColor
-            iconLayer.alignmentMode = .center
-            iconLayer.frame = CGRect(x: 0, y: 0, width: handleSize, height: handleSize)
-            layer.addSublayer(iconLayer)
+            // Add rotation icon using SF Symbol
+            let iconImageView = UIImageView()
+            let config = UIImage.SymbolConfiguration(pointSize: iconFontSize, weight: .semibold)
+            iconImageView.image = UIImage(systemName: "arrow.trianglehead.2.clockwise.rotate.90", withConfiguration: config)
+            iconImageView.tintColor = .white
+            iconImageView.contentMode = .center
+            iconImageView.frame = CGRect(x: 0, y: 0, width: handleSize, height: handleSize)
+            addSubview(iconImageView)
+
+        } else if position == .bottomRight {
+            // Resize handle - larger circular with resize icon (Green)
+            let circleLayer = CAShapeLayer()
+            circleLayer.path = UIBezierPath(
+                ovalIn: CGRect(
+                    x: (handleSize - iconSize) / 2,
+                    y: (handleSize - iconSize) / 2,
+                    width: iconSize,
+                    height: iconSize
+                )
+            ).cgPath
+            circleLayer.fillColor = ColorSystem.resizeHandle.cgColor
+            circleLayer.strokeColor = UIColor.white.cgColor
+            circleLayer.lineWidth = 2
+
+            // Shadow
+            circleLayer.shadowColor = UIColor.black.cgColor
+            circleLayer.shadowOffset = CGSize(width: 0, height: 2)
+            circleLayer.shadowOpacity = 0.3
+            circleLayer.shadowRadius = 4
+
+            layer.addSublayer(circleLayer)
+
+            // Add resize icon using SF Symbol
+            let iconImageView = UIImageView()
+            let config = UIImage.SymbolConfiguration(pointSize: iconFontSize, weight: .semibold)
+            iconImageView.image = UIImage(systemName: "arrow.up.left.and.arrow.down.right", withConfiguration: config)
+            iconImageView.tintColor = .white
+            iconImageView.contentMode = .center
+            iconImageView.frame = CGRect(x: 0, y: 0, width: handleSize, height: handleSize)
+            addSubview(iconImageView)
+
         } else {
-            // Resize handle - white circle with blue border
+            // Other resize handles (topLeft, topRight) - small white circle with blue border
             let circleLayer = CAShapeLayer()
             circleLayer.path = UIBezierPath(
                 ovalIn: CGRect(
@@ -84,7 +123,7 @@ class ResizeHandleView: UIView {
                 )
             ).cgPath
             circleLayer.fillColor = UIColor.white.cgColor
-            circleLayer.strokeColor = UIColor.systemBlue.cgColor
+            circleLayer.strokeColor = ColorSystem.primaryBlue.cgColor
             circleLayer.lineWidth = 2
 
             // Shadow
@@ -156,6 +195,9 @@ class ResizeHandleView: UIView {
             // Apply rotation transform
             parentView.transform = CGAffineTransform(rotationAngle: snappedRotationRadians)
 
+            // 핸들 위치도 함께 업데이트
+            selectable.positionResizeHandles()
+
         case .ended, .cancelled:
             selectable.isRotating = false
             selectable.hideRotationIndicator()
@@ -167,193 +209,120 @@ class ResizeHandleView: UIView {
     }
 
     private func handleResizeGesture(_ gesture: UIPanGestureRecognizer, parentView: UIView, superview: UIView) {
+        guard let selectable = parentView as? Selectable else { return }
+
         switch gesture.state {
         case .began:
-            initialParentFrame = parentView.frame
+            // 회전된 뷰에서는 bounds와 center를 사용해야 함
+            initialBounds = parentView.bounds
+            initialCenter = parentView.center
             initialTouchPoint = gesture.location(in: superview)
+
+            // 좌상단 위치를 superview 좌표로 저장
+            initialTopLeft = parentView.convert(CGPoint.zero, to: superview)
+
+            // Set resizing flag to prevent auto-resize during handle resize
+            selectable.isResizing = true
+
             animateScale(to: 1.3)
 
         case .changed:
             let currentPoint = gesture.location(in: superview)
-            let delta = CGPoint(
+            let rotation = selectable.rotation
+
+            // 델타를 회전 역방향으로 변환하여 로컬 좌표계 기준으로 계산
+            let rawDelta = CGPoint(
                 x: currentPoint.x - initialTouchPoint.x,
                 y: currentPoint.y - initialTouchPoint.y
             )
 
-            var newFrame = initialParentFrame
+            // 회전 역변환 적용
+            let cosAngle = cos(-rotation)
+            let sinAngle = sin(-rotation)
+            let localDelta = CGPoint(
+                x: rawDelta.x * cosAngle - rawDelta.y * sinAngle,
+                y: rawDelta.x * sinAngle + rawDelta.y * cosAngle
+            )
+
             let snapStep: CGFloat = LayoutConstants.snapStep
+            let minSize: CGFloat = selectable.minimumSize
 
-            // Check if aspect ratio should be locked (for RouteMapView, TemplateGroupView, and TextPathWidget)
-            let shouldLockAspectRatio = parentView is RouteMapView || parentView is TemplateGroupView || parentView is TextPathWidget
-            let aspectRatio = initialParentFrame.width / initialParentFrame.height
+            // 모든 크기 조절은 좌상단 기준으로 통일
+            var newWidth = initialBounds.width
+            var newHeight = initialBounds.height
 
-            if shouldLockAspectRatio {
-                // Aspect ratio locked resize
-                // Drive resize primarily by width for simplicity, or diagonal.
-                // Use the width change as the primary driver and snap it.
-
-                var rawNewWidth: CGFloat = initialParentFrame.width
-
-                // Calculate expected width change based on handle movement
-                switch position {
-                case .topLeft:
-                    rawNewWidth = initialParentFrame.width - delta.x
-                case .topRight, .bottomRight:
-                    rawNewWidth = initialParentFrame.width + delta.x
-                case .bottomLeft:
-                    // Rotation-only, no resize - keep original width
-                    rawNewWidth = initialParentFrame.width
-                }
-
-                // Snap the width
-                let snappedWidth = round(rawNewWidth / snapStep) * snapStep
-                let snappedHeight = snappedWidth / aspectRatio
-
-                // Determine new frame based on fixed corner
-                switch position {
-                case .topLeft:
-                    // Bottom-Right is fixed
-                    newFrame.origin.x = initialParentFrame.maxX - snappedWidth
-                    newFrame.origin.y = initialParentFrame.maxY - snappedHeight
-                    newFrame.size = CGSize(width: snappedWidth, height: snappedHeight)
-
-                case .topRight:
-                    // Bottom-Left is fixed
-                    newFrame.origin.y = initialParentFrame.maxY - snappedHeight
-                    newFrame.size = CGSize(width: snappedWidth, height: snappedHeight)
-
-                case .bottomRight:
-                    // Top-Left is fixed
-                    newFrame.size = CGSize(width: snappedWidth, height: snappedHeight)
-
-                case .bottomLeft:
-                    // Rotation-only, no resize
-                    break
-                }
-
-            } else {
-                // Free resize with snapping
-                // Snap the moving edges to the grid (relative to superview origin)
-
-                switch position {
-                case .topLeft:
-                    let rawX = initialParentFrame.minX + delta.x
-                    let rawY = initialParentFrame.minY + delta.y
-
-                    let snappedX = round(rawX / snapStep) * snapStep
-                    let snappedY = round(rawY / snapStep) * snapStep
-
-                    newFrame.origin.x = snappedX
-                    newFrame.origin.y = snappedY
-                    newFrame.size.width = initialParentFrame.maxX - snappedX
-                    newFrame.size.height = initialParentFrame.maxY - snappedY
-
-                case .topRight:
-                    let rawMaxX = initialParentFrame.maxX + delta.x
-                    let rawY = initialParentFrame.minY + delta.y
-
-                    let snappedMaxX = round(rawMaxX / snapStep) * snapStep
-                    let snappedY = round(rawY / snapStep) * snapStep
-
-                    newFrame.origin.y = snappedY
-                    newFrame.size.width = snappedMaxX - initialParentFrame.minX
-                    newFrame.size.height = initialParentFrame.maxY - snappedY
-
-                case .bottomRight:
-                    let rawMaxX = initialParentFrame.maxX + delta.x
-                    let rawMaxY = initialParentFrame.maxY + delta.y
-
-                    let snappedMaxX = round(rawMaxX / snapStep) * snapStep
-                    let snappedMaxY = round(rawMaxY / snapStep) * snapStep
-
-                    newFrame.size.width = snappedMaxX - initialParentFrame.minX
-                    newFrame.size.height = snappedMaxY - initialParentFrame.minY
-
-                case .bottomLeft:
-                    // Rotation-only, no resize
-                    break
-                }
-            }
-
-            // Apply minimum size constraint
-            let minSize: CGFloat
-            if let selectable = parentView as? Selectable {
-                minSize = selectable.minimumSize
-            } else {
-                minSize = LayoutConstants.minimumWidgetSize
-            }
-
-            // If already at minimum size and shrinking, don't update
-            let atMinHeight = parentView.frame.height <= minSize
-            let atMinWidth = parentView.frame.width <= minSize
-
-            let shrinkingHeight: Bool
-            let shrinkingWidth: Bool
-
-            switch position {
-            case .topLeft, .topRight:
-                shrinkingHeight = delta.y > 0  // dragging down shrinks
-            case .bottomRight:
-                shrinkingHeight = delta.y < 0  // dragging up shrinks
-            case .bottomLeft:
-                shrinkingHeight = false // Rotation-only
-            }
+            // Check if aspect ratio should be locked
+            // 회전된 상태에서는 항상 비율 고정 (회전 + 자유 비율 조합 시 좌표 계산 복잡성 회피)
+            let isRotated = abs(rotation) > 0.01
+            let shouldLockAspectRatio = isRotated || parentView is RouteMapView || parentView is TemplateGroupView || parentView is TextPathWidget
+            let aspectRatio = initialBounds.width / initialBounds.height
 
             switch position {
             case .topLeft:
-                shrinkingWidth = delta.x > 0  // dragging right shrinks
-            case .topRight, .bottomRight:
-                shrinkingWidth = delta.x < 0  // dragging left shrinks
+                // 좌상단: width와 height 모두 음의 델타로 증가
+                newWidth = initialBounds.width - localDelta.x
+                newHeight = initialBounds.height - localDelta.y
+            case .topRight:
+                // 우상단: width는 양의 델타, height는 음의 델타
+                newWidth = initialBounds.width + localDelta.x
+                newHeight = initialBounds.height - localDelta.y
+            case .bottomRight:
+                // 우하단: 양의 델타로 증가 (좌상단 기준)
+                newWidth = initialBounds.width + localDelta.x
+                newHeight = initialBounds.height + localDelta.y
             case .bottomLeft:
-                shrinkingWidth = false // Rotation-only
-            }
-
-            // Stop updating if at min size and still shrinking in that direction
-            if (atMinHeight && shrinkingHeight) || (atMinWidth && shrinkingWidth) {
+                // 회전 전용
                 return
             }
 
-            // Clamp and update
-            let clampedWidth = max(minSize, newFrame.width)
-            let clampedHeight = max(minSize, newFrame.height)
+            // Snap to grid
+            newWidth = round(newWidth / snapStep) * snapStep
+            newHeight = round(newHeight / snapStep) * snapStep
 
-            if clampedWidth != parentView.frame.width || clampedHeight != parentView.frame.height {
-                let finalFrame: CGRect
+            // Apply aspect ratio if needed
+            if shouldLockAspectRatio {
+                // 더 큰 변화량을 기준으로 비율 유지
+                let widthChange = abs(newWidth - initialBounds.width)
+                let heightChange = abs(newHeight - initialBounds.height)
 
-                switch position {
-                case .topLeft:
-                    finalFrame = CGRect(
-                        x: initialParentFrame.maxX - clampedWidth,
-                        y: initialParentFrame.maxY - clampedHeight,
-                        width: clampedWidth,
-                        height: clampedHeight
-                    )
-                case .topRight:
-                    finalFrame = CGRect(
-                        x: initialParentFrame.minX,
-                        y: initialParentFrame.maxY - clampedHeight,
-                        width: clampedWidth,
-                        height: clampedHeight
-                    )
-                case .bottomRight:
-                    finalFrame = CGRect(
-                        x: initialParentFrame.minX,
-                        y: initialParentFrame.minY,
-                        width: clampedWidth,
-                        height: clampedHeight
-                    )
-                case .bottomLeft:
-                    finalFrame = newFrame // Should not reach here for rotation
-                }
-
-                parentView.frame = finalFrame
-
-                if let selectable = parentView as? Selectable {
-                    selectable.positionResizeHandles()
+                if widthChange > heightChange {
+                    newHeight = newWidth / aspectRatio
+                } else {
+                    newWidth = newHeight * aspectRatio
                 }
             }
 
+            // Clamp to minimum size
+            newWidth = max(minSize, newWidth)
+            newHeight = max(minSize, newHeight)
+
+            // 새 bounds 적용
+            let newBounds = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
+
+            // 좌상단을 고정하기 위해 center 조정
+            // 새 center = 좌상단 위치 + 회전된 (width/2, height/2)
+            let halfWidth = newWidth / 2
+            let halfHeight = newHeight / 2
+
+            let cosR = cos(rotation)
+            let sinR = sin(rotation)
+
+            let newCenter = CGPoint(
+                x: initialTopLeft.x + halfWidth * cosR - halfHeight * sinR,
+                y: initialTopLeft.y + halfWidth * sinR + halfHeight * cosR
+            )
+
+            // bounds와 center 업데이트
+            parentView.bounds = newBounds
+            parentView.center = newCenter
+
+            // 핸들 위치 업데이트
+            selectable.positionResizeHandles()
+
         case .ended, .cancelled:
+            // Reset resizing flag
+            selectable.isResizing = false
+
             animateScale(to: 1.0)
 
         default:
@@ -370,7 +339,10 @@ class ResizeHandleView: UIView {
             initialSpringVelocity: 0.5,
             options: [.curveEaseInOut],
             animations: {
-                self.transform = CGAffineTransform(scaleX: scale, y: scale)
+                // 기존 회전을 유지하면서 스케일 적용
+                let currentRotation = atan2(self.transform.b, self.transform.a)
+                self.transform = CGAffineTransform(rotationAngle: currentRotation)
+                    .scaledBy(x: scale, y: scale)
             },
             completion: nil
         )

@@ -105,6 +105,14 @@ enum ColorSystem {
         }
     }
 
+    // MARK: - Handle Colors
+
+    /// Rotation Handle: 회전 핸들용 블루
+    static let rotationHandle = primaryBlue
+
+    /// Resize Handle: 크기조절 핸들용 그린
+    static let resizeHandle = primaryGreen
+
     // MARK: - Semantic Colors
 
     /// Success: 성공, 완료 상태

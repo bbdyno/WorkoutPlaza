@@ -34,6 +34,7 @@ class BaseStatWidget: UIView, Selectable {
     var initialSize: CGSize = .zero
     var baseFontSizes: [String: CGFloat] = [:]  // labelName: baseSize
     var isGroupManaged: Bool = false  // Prevents auto font scaling when inside a group
+    var isResizing: Bool = false  // Prevents auto resize during handle resize
 
     // Movement properties
     private var initialCenter: CGPoint = .zero
@@ -220,8 +221,10 @@ class BaseStatWidget: UIView, Selectable {
 
         WPLog.debug("Font updated: style=\(currentFontStyle.displayName), scale=\(scaleFactor), valueSize=\(valueSize)")
 
-        // Auto-resize to fit content if font style changed
-        autoResizeToFitContent()
+        // Auto-resize to fit content only when font style changed (not during resize)
+        if !isResizing {
+            autoResizeToFitContent()
+        }
     }
 
     // MARK: - Auto Resize
