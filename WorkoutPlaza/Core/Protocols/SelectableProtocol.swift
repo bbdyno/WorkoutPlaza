@@ -17,6 +17,7 @@ protocol Selectable: UIView {
     var selectionBorderLayer: CAShapeLayer? { get set }
     var selectionDelegate: SelectionDelegate? { get set }
     var initialSize: CGSize { get set }
+    var minimumSize: CGFloat { get }
 
     func showSelectionState()
     func hideSelectionState()
@@ -32,7 +33,10 @@ protocol SelectionDelegate: AnyObject {
 
 // MARK: - Default Implementation
 extension Selectable {
-    
+    var minimumSize: CGFloat {
+        return LayoutConstants.minimumWidgetSize
+    }
+
     func showSelectionState() {
         isSelected = true
         createSelectionBorder()

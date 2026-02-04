@@ -331,9 +331,12 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
 
         let widthScale = bounds.width / initialSize.width
         let heightScale = bounds.height / initialSize.height
-        let averageScale = (widthScale + heightScale) / 2.0
 
-        return max(averageScale, 0.5)
+        // Use the smaller scale factor to prevent text overflow
+        // This ensures text fits within the available space without causing extra padding
+        let minScale = min(widthScale, heightScale)
+
+        return max(minScale, 0.5)
     }
 
     // MARK: - Resize Handles
@@ -399,9 +402,13 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        // Update fonts when size changes (during resize)
-        if initialSize != .zero && bounds.size != initialSize {
-            updateFonts()
+        // Update fonts when size changes significantly (more than 5pt)
+        // This prevents excessive font updates during small resize adjustments
+        if initialSize != .zero {
+            let sizeDelta = abs(bounds.width - initialSize.width) + abs(bounds.height - initialSize.height)
+            if sizeDelta > 5 {
+                updateFonts()
+            }
         }
 
         selectionBorderLayer?.frame = bounds

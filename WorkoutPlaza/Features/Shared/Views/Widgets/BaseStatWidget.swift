@@ -5,13 +5,6 @@
 //  Created by bbdyno on 1/27/26.
 //
 
-//
-//  BaseStatWidget.swift
-//  WorkoutPlaza
-//
-//  Created by bbdyno on 1/27/26.
-//
-
 import UIKit
 import SnapKit
 
@@ -46,28 +39,28 @@ class BaseStatWidget: UIView, Selectable {
     // MARK: - UI Components
     let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .white.withAlphaComponent(0.7)
+        label.font = .systemFont(ofSize: LayoutConstants.titleFontSize, weight: .medium)
+        label.textColor = .white.withAlphaComponent(LayoutConstants.secondaryAlpha)
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.1
+        label.minimumScaleFactor = LayoutConstants.minimumScaleFactor
         return label
     }()
 
     let valueLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 24, weight: .bold)
+        label.font = .systemFont(ofSize: LayoutConstants.valueFontSize, weight: .bold)
         label.textColor = .white
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.1
+        label.minimumScaleFactor = LayoutConstants.minimumScaleFactor
         return label
     }()
 
     let unitLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14, weight: .regular)
-        label.textColor = .white.withAlphaComponent(0.7)
+        label.font = .systemFont(ofSize: LayoutConstants.unitFontSize, weight: .regular)
+        label.textColor = .white.withAlphaComponent(LayoutConstants.secondaryAlpha)
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.1
+        label.minimumScaleFactor = LayoutConstants.minimumScaleFactor
         return label
     }()
     
@@ -90,19 +83,19 @@ class BaseStatWidget: UIView, Selectable {
         addSubview(unitLabel)
         
         titleLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(12)
-            make.leading.trailing.equalToSuperview().inset(12)
+            make.top.equalToSuperview().offset(LayoutConstants.standardPadding)
+            make.leading.trailing.equalToSuperview().inset(LayoutConstants.standardPadding)
         }
-        
+
         valueLabel.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.leading.equalToSuperview().inset(12)
+            make.leading.equalToSuperview().inset(LayoutConstants.standardPadding)
         }
-        
+
         unitLabel.snp.makeConstraints { make in
             make.bottom.equalTo(valueLabel.snp.bottom).offset(-2)
             make.leading.equalTo(valueLabel.snp.trailing).offset(4)
-            make.trailing.lessThanOrEqualToSuperview().inset(12)
+            make.trailing.lessThanOrEqualToSuperview().inset(LayoutConstants.standardPadding)
         }
     }
     
@@ -140,8 +133,8 @@ class BaseStatWidget: UIView, Selectable {
                 y: initialCenter.y + translation.y
             )
             
-            // Snap to 5pt grid based on origin
-            let snapStep: CGFloat = 5.0
+            // Snap to grid based on origin
+            let snapStep: CGFloat = LayoutConstants.snapStep
             let width = view.frame.width
             let height = view.frame.height
             
@@ -167,7 +160,7 @@ class BaseStatWidget: UIView, Selectable {
             }
 
         case .ended, .cancelled:
-            // 위젯 이동 완료 알림
+            // Notify widget movement complete
             NotificationCenter.default.post(name: .widgetDidMove, object: nil)
 
         default:
@@ -200,24 +193,24 @@ class BaseStatWidget: UIView, Selectable {
 
     func updateColors() {
         valueLabel.textColor = currentColor
-        titleLabel.textColor = currentColor.withAlphaComponent(0.7)
-        unitLabel.textColor = currentColor.withAlphaComponent(0.7)
+        titleLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+        unitLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
     }
 
     func updateFonts() {
         // Store base font sizes if not already stored
         if baseFontSizes.isEmpty {
-            baseFontSizes["title"] = 12
-            baseFontSizes["value"] = 24
-            baseFontSizes["unit"] = 14
+            baseFontSizes["title"] = LayoutConstants.titleFontSize
+            baseFontSizes["value"] = LayoutConstants.valueFontSize
+            baseFontSizes["unit"] = LayoutConstants.unitFontSize
         }
 
         // Calculate scale factor based on current size
         let scaleFactor = calculateScaleFactor()
 
-        let titleSize = (baseFontSizes["title"] ?? 12) * scaleFactor
-        let valueSize = (baseFontSizes["value"] ?? 24) * scaleFactor
-        let unitSize = (baseFontSizes["unit"] ?? 14) * scaleFactor
+        let titleSize = (baseFontSizes["title"] ?? LayoutConstants.titleFontSize) * scaleFactor
+        let valueSize = (baseFontSizes["value"] ?? LayoutConstants.valueFontSize) * scaleFactor
+        let unitSize = (baseFontSizes["unit"] ?? LayoutConstants.unitFontSize) * scaleFactor
 
         titleLabel.font = currentFontStyle.font(size: titleSize, weight: .medium)
         valueLabel.font = currentFontStyle.font(size: valueSize, weight: .bold)
@@ -242,8 +235,8 @@ class BaseStatWidget: UIView, Selectable {
         let valuePlusUnit = max(valueHeight, unitHeight)
 
         // Calculate total height needed (with padding)
-        let topPadding: CGFloat = 12
-        let bottomPadding: CGFloat = 12
+        let topPadding: CGFloat = LayoutConstants.standardPadding
+        let bottomPadding: CGFloat = LayoutConstants.standardPadding
         let titleToValueSpacing: CGFloat = 4
 
         let requiredHeight = topPadding + titleHeight + titleToValueSpacing + valuePlusUnit + bottomPadding
@@ -253,7 +246,7 @@ class BaseStatWidget: UIView, Selectable {
         let valueWidth = valueLabel.intrinsicContentSize.width + unitLabel.intrinsicContentSize.width + 4
         let requiredContentWidth = max(titleWidth, valueWidth)
 
-        let sidePadding: CGFloat = 12 * 2
+        let sidePadding: CGFloat = LayoutConstants.standardPadding * 2
         let requiredWidth = requiredContentWidth + sidePadding
 
         // Only resize if content doesn't fit in current frame
@@ -263,20 +256,21 @@ class BaseStatWidget: UIView, Selectable {
         var newWidth = currentWidth
         var newHeight = currentHeight
 
-        // Expand if needed, but don't shrink too much (maintain minimum size)
-        let minWidth: CGFloat = 80
-        let minHeight: CGFloat = 60
+        // Expand if content doesn't fit, but don't auto-shrink
+        // This prevents the widget from shrinking when user intentionally makes it larger
+        let minWidth: CGFloat = LayoutConstants.minWidth
+        let minHeight: CGFloat = LayoutConstants.minHeight
 
-        if requiredWidth > currentWidth || requiredWidth < currentWidth * 0.7 {
+        if requiredWidth > currentWidth {
             newWidth = max(requiredWidth, minWidth)
         }
 
-        if requiredHeight > currentHeight || requiredHeight < currentHeight * 0.7 {
+        if requiredHeight > currentHeight {
             newHeight = max(requiredHeight, minHeight)
         }
 
-        // Only update if size changed significantly (more than 2pt)
-        if abs(newWidth - currentWidth) > 2 || abs(newHeight - currentHeight) > 2 {
+        // Only update if size changed significantly
+        if abs(newWidth - currentWidth) > LayoutConstants.significantSizeChange2pt || abs(newHeight - currentHeight) > LayoutConstants.significantSizeChange2pt {
             let newFrame = CGRect(
                 x: frame.origin.x,
                 y: frame.origin.y,
@@ -314,29 +308,32 @@ class BaseStatWidget: UIView, Selectable {
             return 1.0
         }
 
-        // Calculate scale based on average of width and height change
+        // Calculate scale based on width and height change
         let widthScale = bounds.width / initialSize.width
         let heightScale = bounds.height / initialSize.height
-        let averageScale = (widthScale + heightScale) / 2.0
 
-        // Clamp scale factor between 0.5 and 3.0
-        return min(max(averageScale, 0.5), 3.0)
+        // Use the smaller scale factor to prevent text overflow
+        // This ensures text fits within the available space without causing extra padding
+        let minScale = min(widthScale, heightScale)
+
+        // Clamp scale factor between minimum and maximum
+        return min(max(minScale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
     }
 
     /// Update fonts with a specific scale factor (used by group resize)
     /// This method doesn't call autoResizeToFitContent to prevent resize feedback loops
     func updateFontsWithScale(_ scale: CGFloat) {
         if baseFontSizes.isEmpty {
-            baseFontSizes["title"] = 12
-            baseFontSizes["value"] = 24
-            baseFontSizes["unit"] = 14
+            baseFontSizes["title"] = LayoutConstants.titleFontSize
+            baseFontSizes["value"] = LayoutConstants.valueFontSize
+            baseFontSizes["unit"] = LayoutConstants.unitFontSize
         }
 
-        let clampedScale = min(max(scale, 0.5), 3.0)
+        let clampedScale = min(max(scale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
 
-        let titleSize = (baseFontSizes["title"] ?? 12) * clampedScale
-        let valueSize = (baseFontSizes["value"] ?? 24) * clampedScale
-        let unitSize = (baseFontSizes["unit"] ?? 14) * clampedScale
+        let titleSize = (baseFontSizes["title"] ?? LayoutConstants.titleFontSize) * clampedScale
+        let valueSize = (baseFontSizes["value"] ?? LayoutConstants.valueFontSize) * clampedScale
+        let unitSize = (baseFontSizes["unit"] ?? LayoutConstants.unitFontSize) * clampedScale
 
         titleLabel.font = currentFontStyle.font(size: titleSize, weight: .medium)
         valueLabel.font = currentFontStyle.font(size: valueSize, weight: .bold)
@@ -361,10 +358,14 @@ class BaseStatWidget: UIView, Selectable {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        // Update fonts when size changes (during resize)
+        // Update fonts when size changes significantly
+        // This prevents excessive font updates during small resize adjustments
         // But not when managed by a group - group handles font scaling
-        if !isGroupManaged && initialSize != .zero && bounds.size != initialSize {
-            updateFonts()
+        if !isGroupManaged && initialSize != .zero {
+            let sizeDelta = abs(bounds.width - initialSize.width) + abs(bounds.height - initialSize.height)
+            if sizeDelta > LayoutConstants.significantSizeChange {
+                updateFonts()
+            }
         }
 
         if isSelected {

@@ -5,13 +5,6 @@
 //  Created by bbdyno on 1/27/26.
 //
 
-//
-//  LocationWidget.swift
-//  WorkoutPlaza
-//
-//  Created by bbdyno on 1/27/26.
-//
-
 import UIKit
 import CoreLocation
 import SnapKit
@@ -51,7 +44,7 @@ class LocationWidget: UIView, Selectable {
     private let containerStack: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
-        stack.spacing = 8
+        stack.spacing = LayoutConstants.smallSpacing
         stack.alignment = .center
         stack.distribution = .fill
         return stack
@@ -71,7 +64,7 @@ class LocationWidget: UIView, Selectable {
         label.textAlignment = .left
         label.numberOfLines = 1
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.2
+        label.minimumScaleFactor = LayoutConstants.titleMinimumScaleFactor
         return label
     }()
 
@@ -105,7 +98,7 @@ class LocationWidget: UIView, Selectable {
         }
 
         // Set default text
-        locationLabel.text = "위치 로딩중..."
+        locationLabel.text = "Loading location..."
     }
 
     private func setupGestures() {
@@ -124,7 +117,7 @@ class LocationWidget: UIView, Selectable {
 
     // MARK: - Configuration
     func configure(location: CLLocation, completion: @escaping (Bool) -> Void) {
-        locationLabel.text = "위치 로딩중..."
+        locationLabel.text = "Loading location..."
 
         let geocoder = CLGeocoder()
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
@@ -133,7 +126,7 @@ class LocationWidget: UIView, Selectable {
             if let error = error {
                 WPLog.warning("Geocoding failed: \(error.localizedDescription)")
                 DispatchQueue.main.async {
-                    self.locationLabel.text = "위치 정보 없음"
+                    self.locationLabel.text = "Location unavailable"
                     completion(false)
                 }
                 return
@@ -141,7 +134,7 @@ class LocationWidget: UIView, Selectable {
 
             guard let placemark = placemarks?.first else {
                 DispatchQueue.main.async {
-                    self.locationLabel.text = "위치 정보 없음"
+                    self.locationLabel.text = "Location unavailable"
                     completion(false)
                 }
                 return
@@ -203,7 +196,7 @@ class LocationWidget: UIView, Selectable {
             return administrativeArea
         }
 
-        return "위치 정보 없음"
+        return "Location unavailable"
     }
 
     // MARK: - Gesture Handlers
@@ -225,7 +218,7 @@ class LocationWidget: UIView, Selectable {
                 y: initialCenter.y + translation.y
             )
 
-            let snapStep: CGFloat = 5.0
+            let snapStep: CGFloat = LayoutConstants.snapStep
             let width = view.frame.width
             let height = view.frame.height
 
@@ -280,7 +273,7 @@ class LocationWidget: UIView, Selectable {
         locationLabel.font = currentFontStyle.font(size: clampedSize, weight: .medium)
 
         // Scale icon proportionally
-        let iconSize = 20 * averageScale
+        let iconSize = LayoutConstants.standardSpacing * averageScale
         iconImageView.snp.updateConstraints { make in
             make.width.height.equalTo(iconSize)
         }
@@ -330,19 +323,22 @@ class LocationWidget: UIView, Selectable {
 
         let widthScale = bounds.width / initialSize.width
         let heightScale = bounds.height / initialSize.height
-        let averageScale = (widthScale + heightScale) / 2.0
 
-        return min(max(averageScale, 0.5), 3.0)
+        // Use the smaller scale factor to prevent text overflow
+        // This ensures text fits within the available space without causing extra padding
+        let minScale = min(widthScale, heightScale)
+
+        return min(max(minScale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
     }
 
     /// Update fonts with a specific scale factor (used by group resize)
     func updateFontsWithScale(_ scale: CGFloat) {
-        let clampedScale = min(max(scale, 0.5), 3.0)
+        let clampedScale = min(max(scale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
         let fontSize = baseFontSize * clampedScale
         locationLabel.font = currentFontStyle.font(size: fontSize, weight: .medium)
 
         // Scale icon proportionally
-        let iconSize = 20 * clampedScale
+        let iconSize = LayoutConstants.standardSpacing * clampedScale
         iconImageView.snp.updateConstraints { make in
             make.width.height.equalTo(iconSize)
         }
@@ -363,11 +359,15 @@ class LocationWidget: UIView, Selectable {
         if !transform.isIdentity {
             updateFontsFromTransform()
         } else if initialSize != .zero && bounds.size != .zero {
-            let scaleFactor = calculateScaleFactor()
-            let fontSize = baseFontSize * scaleFactor
-            let clampedSize = min(max(fontSize, baseFontSize * 0.5), baseFontSize * 3.0)
+            // Update fonts when size changes significantly
+            let sizeDelta = abs(bounds.width - initialSize.width) + abs(bounds.height - initialSize.height)
+            if sizeDelta > LayoutConstants.significantSizeChange {
+                let scaleFactor = calculateScaleFactor()
+                let fontSize = baseFontSize * scaleFactor
+                let clampedSize = min(max(fontSize, baseFontSize * LayoutConstants.minimumAllowedScale), baseFontSize * LayoutConstants.maximumScaleFactor)
 
-            locationLabel.font = currentFontStyle.font(size: clampedSize, weight: .medium)
+                locationLabel.font = currentFontStyle.font(size: clampedSize, weight: .medium)
+            }
         }
 
         if isSelected {

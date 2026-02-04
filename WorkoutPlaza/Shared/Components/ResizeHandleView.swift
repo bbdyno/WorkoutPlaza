@@ -13,8 +13,8 @@ class ResizeHandleView: UIView {
     let position: ResizeHandlePosition
     weak var parentView: UIView?
 
-    private let handleSize: CGFloat = 20
-    private let circleSize: CGFloat = 8
+    private let handleSize: CGFloat = LayoutConstants.resizeHandleSize
+    private let circleSize: CGFloat = LayoutConstants.resizeCircleSize
     private var panGesture: UIPanGestureRecognizer!
     private var initialParentFrame: CGRect = .zero
     private var initialTouchPoint: CGPoint = .zero
@@ -82,16 +82,16 @@ class ResizeHandleView: UIView {
             )
 
             var newFrame = initialParentFrame
-            let snapStep: CGFloat = 5.0
+            let snapStep: CGFloat = LayoutConstants.snapStep
 
             // Check if aspect ratio should be locked (for RouteMapView, TemplateGroupView, and TextPathWidget)
             let shouldLockAspectRatio = parentView is RouteMapView || parentView is TemplateGroupView || parentView is TextPathWidget
             let aspectRatio = initialParentFrame.width / initialParentFrame.height
 
             if shouldLockAspectRatio {
-                // Aspect Ratio Locked Resize
-                // We'll drive resize primarily by width for simplicity, or diagonal.
-                // Let's use the width change as the primary driver and snap it.
+                // Aspect ratio locked resize
+                // Drive resize primarily by width for simplicity, or diagonal.
+                // Use the width change as the primary driver and snap it.
                 
                 var rawNewWidth: CGFloat = initialParentFrame.width
                 
@@ -131,8 +131,8 @@ class ResizeHandleView: UIView {
                 }
                 
             } else {
-                // Free Resize with Snapping
-                // We snap the moving edges to the grid (relative to superview 0,0)
+                // Free resize with snapping
+                // Snap the moving edges to the grid (relative to superview origin)
                 
                 switch position {
                 case .topLeft:
@@ -182,11 +182,79 @@ class ResizeHandleView: UIView {
             }
 
             // Apply minimum size constraint
-            let minSize: CGFloat = 60
-            if newFrame.width >= minSize && newFrame.height >= minSize {
-                parentView.frame = newFrame
+            let minSize: CGFloat
+            if let selectable = parentView as? Selectable {
+                minSize = selectable.minimumSize
+            } else {
+                minSize = LayoutConstants.minimumWidgetSize
+            }
 
-                // Reposition handles after resize
+            // If already at minimum size and shrinking, don't update
+            let atMinHeight = parentView.frame.height <= minSize
+            let atMinWidth = parentView.frame.width <= minSize
+
+            let shrinkingHeight: Bool
+            let shrinkingWidth: Bool
+
+            switch position {
+            case .topLeft, .topRight:
+                shrinkingHeight = delta.y > 0  // dragging down shrinks
+            case .bottomLeft, .bottomRight:
+                shrinkingHeight = delta.y < 0  // dragging up shrinks
+            }
+
+            switch position {
+            case .topLeft, .bottomLeft:
+                shrinkingWidth = delta.x > 0  // dragging right shrinks
+            case .topRight, .bottomRight:
+                shrinkingWidth = delta.x < 0  // dragging left shrinks
+            }
+
+            // Stop updating if at min size and still shrinking in that direction
+            if (atMinHeight && shrinkingHeight) || (atMinWidth && shrinkingWidth) {
+                return
+            }
+
+            // Clamp and update
+            let clampedWidth = max(minSize, newFrame.width)
+            let clampedHeight = max(minSize, newFrame.height)
+
+            if clampedWidth != parentView.frame.width || clampedHeight != parentView.frame.height {
+                let finalFrame: CGRect
+
+                switch position {
+                case .topLeft:
+                    finalFrame = CGRect(
+                        x: initialParentFrame.maxX - clampedWidth,
+                        y: initialParentFrame.maxY - clampedHeight,
+                        width: clampedWidth,
+                        height: clampedHeight
+                    )
+                case .topRight:
+                    finalFrame = CGRect(
+                        x: initialParentFrame.minX,
+                        y: initialParentFrame.maxY - clampedHeight,
+                        width: clampedWidth,
+                        height: clampedHeight
+                    )
+                case .bottomLeft:
+                    finalFrame = CGRect(
+                        x: initialParentFrame.maxX - clampedWidth,
+                        y: initialParentFrame.minY,
+                        width: clampedWidth,
+                        height: clampedHeight
+                    )
+                case .bottomRight:
+                    finalFrame = CGRect(
+                        x: initialParentFrame.minX,
+                        y: initialParentFrame.minY,
+                        width: clampedWidth,
+                        height: clampedHeight
+                    )
+                }
+
+                parentView.frame = finalFrame
+
                 if let selectable = parentView as? Selectable {
                     selectable.positionResizeHandles()
                 }
@@ -218,7 +286,7 @@ class ResizeHandleView: UIView {
     // MARK: - Hit Testing
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         // Expand the hit area for better touch handling
-        let expandedBounds = bounds.insetBy(dx: -10, dy: -10)
+        let expandedBounds = bounds.insetBy(dx: -LayoutConstants.resizeHitAreaExpansion, dy: -LayoutConstants.resizeHitAreaExpansion)
         return expandedBounds.contains(point)
     }
 }

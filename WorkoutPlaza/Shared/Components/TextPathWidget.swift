@@ -116,9 +116,16 @@ class TextPathWidget: UIView, Selectable {
 
     /// 현재 스케일에 맞는 폰트 사이즈 계산
     private var currentFontSize: CGFloat {
-        guard initialSize.width > 0 else { return baseFontSize }
-        let scale = bounds.width / initialSize.width
-        return baseFontSize * scale
+        guard initialSize.width > 0 && initialSize.height > 0 else { return baseFontSize }
+
+        let widthScale = bounds.width / initialSize.width
+        let heightScale = bounds.height / initialSize.height
+
+        // Use the smaller scale factor to prevent text overflow
+        // This ensures text fits within the available space without causing extra padding
+        let minScale = min(widthScale, heightScale)
+
+        return baseFontSize * minScale
     }
 
     /// 현재 스케일에 맞는 폰트 (스타일 유지)
@@ -128,9 +135,15 @@ class TextPathWidget: UIView, Selectable {
 
     /// 현재 스케일에 맞는 글자 간격 계산
     private var currentLetterSpacing: CGFloat {
-        guard initialSize.width > 0 else { return letterSpacing }
-        let scale = bounds.width / initialSize.width
-        return letterSpacing * scale
+        guard initialSize.width > 0 && initialSize.height > 0 else { return letterSpacing }
+
+        let widthScale = bounds.width / initialSize.width
+        let heightScale = bounds.height / initialSize.height
+
+        // Use the smaller scale factor for consistent scaling
+        let minScale = min(widthScale, heightScale)
+
+        return letterSpacing * minScale
     }
 
     required init?(coder: NSCoder) {
