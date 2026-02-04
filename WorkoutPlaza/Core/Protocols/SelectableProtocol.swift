@@ -113,6 +113,7 @@ extension Selectable {
             let handle = ResizeHandleView(position: position)
             handle.parentView = self
             superview.addSubview(handle)
+            superview.bringSubviewToFront(handle)
             resizeHandles.append(handle)
         }
     }
@@ -147,6 +148,9 @@ extension Selectable {
 
             // 핸들도 위젯과 함께 회전
             handle.transform = CGAffineTransform(rotationAngle: rotation)
+
+            // 핸들을 항상 맨 앞으로
+            superview.bringSubviewToFront(handle)
         }
 
         // Update selection border
