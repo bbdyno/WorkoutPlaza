@@ -269,9 +269,20 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
     }
 
     func showSelectionState() {
+        showSelectionState(multiSelectMode: false)
+    }
+
+    func showSelectionState(multiSelectMode: Bool) {
         isSelected = true
-        createResizeHandles()
         createSelectionBorder()
+        updateSelectionBorder()
+
+        // In multi-select mode (group selection), don't show resize/rotation handles
+        if !multiSelectMode {
+            createResizeHandles()
+            positionResizeHandles()
+            bringSubviewsToFront()
+        }
     }
 
     func hideSelectionState() {

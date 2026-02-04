@@ -59,7 +59,7 @@ class LocationWidget: UIView, Selectable {
         return imageView
     }()
 
-    private let locationLabel: UILabel = {
+    let locationLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 18, weight: .medium)
         label.textColor = .label
