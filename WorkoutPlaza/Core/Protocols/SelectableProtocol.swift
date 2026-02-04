@@ -15,14 +15,19 @@ protocol Selectable: UIView {
     var itemIdentifier: String { get set }
     var resizeHandles: [ResizeHandleView] { get set }
     var selectionBorderLayer: CAShapeLayer? { get set }
+    var rotationIndicatorLayer: CAShapeLayer? { get set }
     var selectionDelegate: SelectionDelegate? { get set }
     var initialSize: CGSize { get set }
     var minimumSize: CGFloat { get }
+    var rotation: CGFloat { get set }
+    var isRotating: Bool { get set }
 
     func showSelectionState()
     func hideSelectionState()
     func applyColor(_ color: UIColor)
     func applyFont(_ fontStyle: FontStyle)
+    func showRotationIndicator()
+    func hideRotationIndicator()
 }
 
 // MARK: - Selection Delegate
@@ -35,6 +40,25 @@ protocol SelectionDelegate: AnyObject {
 extension Selectable {
     var minimumSize: CGFloat {
         return LayoutConstants.minimumWidgetSize
+    }
+
+    // Default storage for rotation (can be overridden by conforming types)
+    var rotation: CGFloat {
+        get {
+            return objc_getAssociatedObject(self, &AssociatedKeys.rotation) as? CGFloat ?? 0
+        }
+        set {
+            objc_setAssociatedObject(self, &AssociatedKeys.rotation, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+
+    var isRotating: Bool {
+        get {
+            return objc_getAssociatedObject(self, &AssociatedKeys.isRotating) as? Bool ?? false
+        }
+        set {
+            objc_setAssociatedObject(self, &AssociatedKeys.isRotating, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
     }
 
     func showSelectionState() {
@@ -122,6 +146,42 @@ extension Selectable {
             superview.bringSubviewToFront(handle)
         }
     }
+
+    func showRotationIndicator() {
+        guard rotationIndicatorLayer == nil else { return }
+
+        let indicatorLayer = CAShapeLayer()
+        let radius = min(bounds.width, bounds.height) / 2
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+
+        let circlePath = UIBezierPath(
+            arcCenter: center,
+            radius: radius,
+            startAngle: 0,
+            endAngle: 2 * .pi,
+            clockwise: true
+        )
+
+        indicatorLayer.path = circlePath.cgPath
+        indicatorLayer.strokeColor = UIColor.systemBlue.cgColor
+        indicatorLayer.fillColor = UIColor.clear.cgColor
+        indicatorLayer.lineWidth = 2
+        indicatorLayer.lineDashPattern = [4, 4]
+
+        layer.addSublayer(indicatorLayer)
+        rotationIndicatorLayer = indicatorLayer
+    }
+
+    func hideRotationIndicator() {
+        rotationIndicatorLayer?.removeFromSuperlayer()
+        rotationIndicatorLayer = nil
+    }
+}
+
+// MARK: - Associated Keys
+private struct AssociatedKeys {
+    static var rotation: UInt8 = 0
+    static var isRotating: UInt8 = 0
 }
 
 // MARK: - Resize Handle Position

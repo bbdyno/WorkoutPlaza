@@ -9,7 +9,7 @@ import UIKit
 import SnapKit
 
 class GymLogoWidget: UIView, Selectable {
-    
+
     // MARK: - Selectable Protocol
     var isSelected: Bool = false
     var currentColor: UIColor = .white { // Default to white as requested
@@ -21,8 +21,10 @@ class GymLogoWidget: UIView, Selectable {
     var itemIdentifier: String = UUID().uuidString
     var resizeHandles: [ResizeHandleView] = []
     var selectionBorderLayer: CAShapeLayer?
+    var rotationIndicatorLayer: CAShapeLayer?
     weak var selectionDelegate: SelectionDelegate?
-    
+    // rotation and isRotating are provided by Selectable protocol default implementation
+
     // Scaling
     var initialSize: CGSize = .zero
     private var initialCenter: CGPoint = .zero
