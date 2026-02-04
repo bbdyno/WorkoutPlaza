@@ -134,9 +134,12 @@ class SelectionManager {
 
         isMultiSelectMode = true
 
-        // If there's a current single selection, add it to multi-select
+        // If there's a current single selection, convert it to multi-select mode
         if let currentItem = currentlySelectedItem {
             selectedItemIdentifiers.insert(currentItem.itemIdentifier)
+            // Re-show selection state without bottom handles
+            currentItem.hideSelectionState()
+            currentItem.showSelectionState(multiSelectMode: true)
         }
 
         delegate?.selectionManager(self, didEnterMultiSelectMode: true)
@@ -169,9 +172,9 @@ class SelectionManager {
             item.hideSelectionState()
             delegate?.selectionManager(self, didDeselect: item)
         } else {
-            // Select
+            // Select - use multiSelectMode to hide bottom handles
             selectedItemIdentifiers.insert(item.itemIdentifier)
-            item.showSelectionState()
+            item.showSelectionState(multiSelectMode: true)
             delegate?.selectionManager(self, didSelect: item)
         }
 
@@ -190,7 +193,7 @@ class SelectionManager {
         for item in items {
             if !selectedItemIdentifiers.contains(item.itemIdentifier) {
                 selectedItemIdentifiers.insert(item.itemIdentifier)
-                item.showSelectionState()
+                item.showSelectionState(multiSelectMode: true)
             }
         }
 

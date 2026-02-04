@@ -220,7 +220,14 @@ class ResizeHandleView: UIView {
 
             // 비율 계산
             let aspectRatio = initialBounds.width / initialBounds.height
-            let minSize: CGFloat = selectable.minimumSize
+
+            // Get minimum size - use group's calculated minimum if it's a TemplateGroupView
+            let minSize: CGFloat
+            if let groupView = parentView as? TemplateGroupView {
+                minSize = groupView.minimumSize
+            } else {
+                minSize = selectable.minimumSize
+            }
 
             // 우하단 핸들 기준으로 크기 계산 (다른 핸들은 비활성화)
             var deltaSize: CGFloat = 0

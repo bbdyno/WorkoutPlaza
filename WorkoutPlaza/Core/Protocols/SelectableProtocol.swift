@@ -24,6 +24,7 @@ protocol Selectable: UIView {
     var isResizing: Bool { get set }
 
     func showSelectionState()
+    func showSelectionState(multiSelectMode: Bool)
     func hideSelectionState()
     func applyColor(_ color: UIColor)
     func applyFont(_ fontStyle: FontStyle)
@@ -72,11 +73,20 @@ extension Selectable {
     }
 
     func showSelectionState() {
+        showSelectionState(multiSelectMode: false)
+    }
+
+    func showSelectionState(multiSelectMode: Bool) {
         isSelected = true
         createSelectionBorder()
-        createResizeHandles()
-        positionResizeHandles()
-        bringSubviewsToFront()
+        updateSelectionBorder()
+
+        // In multi-select mode (group selection), don't show resize/rotation handles
+        if !multiSelectMode {
+            createResizeHandles()
+            positionResizeHandles()
+            bringSubviewsToFront()
+        }
     }
 
     func hideSelectionState() {
