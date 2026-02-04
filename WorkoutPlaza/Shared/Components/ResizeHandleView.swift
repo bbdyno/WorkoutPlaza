@@ -191,6 +191,11 @@ class ResizeHandleView: UIView {
             initialTopLeft = parentView.convert(CGPoint.zero, to: superview)
             selectable.isResizing = true
 
+            // TemplateGroupView인 경우 리사이즈 시작 알림
+            if let groupView = parentView as? TemplateGroupView {
+                groupView.beginResize()
+            }
+
             // initialSize가 설정 안 됐으면 현재 크기로 설정
             if let statWidget = parentView as? BaseStatWidget, statWidget.initialSize == .zero {
                 statWidget.initialSize = parentView.bounds.size
@@ -258,19 +263,29 @@ class ResizeHandleView: UIView {
             newWidth = round(newWidth / snapStep) * snapStep
             newHeight = newWidth / aspectRatio
 
-            // 최소 크기 재확인 - 둘 다 minSize 이상이 되도록
-            if newWidth < minSize {
-                newWidth = minSize
-                newHeight = minSize / aspectRatio
-            }
-            if newHeight < minSize {
-                newHeight = minSize
-                newWidth = minSize * aspectRatio
+            // 최소 크기 재확인
+            // TemplateGroupView의 경우 minSize는 최소 너비이므로 너비만 체크
+            // 비율을 유지하므로 너비가 최소값 이상이면 높이도 자동으로 충족됨
+            if let _ = parentView as? TemplateGroupView {
+                if newWidth < minSize {
+                    newWidth = minSize
+                    newHeight = newWidth / aspectRatio
+                }
+            } else {
+                // 일반 위젯은 둘 다 minSize 이상이 되도록
+                if newWidth < minSize {
+                    newWidth = minSize
+                    newHeight = minSize / aspectRatio
+                }
+                if newHeight < minSize {
+                    newHeight = minSize
+                    newWidth = minSize * aspectRatio
+                }
             }
 
             // 새 bounds 적용
             let newBounds = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
-
+            
             // 좌상단 고정을 위한 center 계산
             let halfWidth = newWidth / 2
             let halfHeight = newHeight / 2
@@ -307,6 +322,12 @@ class ResizeHandleView: UIView {
 
         case .ended, .cancelled:
             selectable.isResizing = false
+
+            // TemplateGroupView인 경우 리사이즈 종료 알림
+            if let groupView = parentView as? TemplateGroupView {
+                groupView.endResize()
+            }
+
             animateScale(to: 1.0)
 
         default:
