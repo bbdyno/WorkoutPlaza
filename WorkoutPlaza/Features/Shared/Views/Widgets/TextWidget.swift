@@ -5,13 +5,6 @@
 //  Created by bbdyno on 1/27/26.
 //
 
-//
-//  TextWidget.swift
-//  WorkoutPlaza
-//
-//  Created by bbdyno on 1/27/26.
-//
-
 import UIKit
 import SnapKit
 
@@ -45,8 +38,13 @@ class TextWidget: UIView, Selectable {
 
     // Font scaling properties
     var initialSize: CGSize = .zero
-    var baseFontSize: CGFloat = 20
+    var baseFontSize: CGFloat = LayoutConstants.baseFontSize
     var isGroupManaged: Bool = false  // Prevents auto font scaling when inside a group
+
+    // Minimum size for text widget - larger than other widgets for text readability
+    var minimumSize: CGFloat {
+        return LayoutConstants.textWidgetMinimumSize
+    }
 
     // Movement properties
     private var initialCenter: CGPoint = .zero
@@ -56,11 +54,11 @@ class TextWidget: UIView, Selectable {
         let label = UILabel()
         label.backgroundColor = .clear
         label.textColor = .label
-        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.font = .systemFont(ofSize: LayoutConstants.baseFontSize, weight: .bold)
         label.textAlignment = .center
         label.numberOfLines = 1
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.2
+        label.minimumScaleFactor = LayoutConstants.titleMinimumScaleFactor
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         label.setContentHuggingPriority(.defaultLow, for: .vertical)
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -83,11 +81,11 @@ class TextWidget: UIView, Selectable {
 
         addSubview(textLabel)
         textLabel.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(4)
+            make.edges.equalToSuperview().inset(2)
         }
 
         // Set default text
-        textLabel.text = "텍스트 입력"
+        textLabel.text = "Enter text"
     }
 
     private func setupGestures() {
@@ -112,9 +110,15 @@ class TextWidget: UIView, Selectable {
         isUserInteractionEnabled = true
     }
 
-    func configure(text: String = "텍스트 입력") {
+    func configure(text: String = "Enter text") {
         textLabel.text = text
-        initialSize = bounds.size
+
+        // Set initialSize to the current frame size for proper font scaling
+        // This ensures fonts are sized correctly relative to the widget's display size
+        if bounds.size != .zero {
+            initialSize = bounds.size
+        }
+
         updateFonts()
     }
 
@@ -141,8 +145,8 @@ class TextWidget: UIView, Selectable {
                 y: initialCenter.y + translation.y
             )
 
-            // Snap to 5pt grid
-            let snapStep: CGFloat = 5.0
+            // Snap to grid
+            let snapStep: CGFloat = LayoutConstants.snapStep
             let width = view.frame.width
             let height = view.frame.height
 
@@ -254,14 +258,17 @@ class TextWidget: UIView, Selectable {
 
         let widthScale = bounds.width / initialSize.width
         let heightScale = bounds.height / initialSize.height
-        let averageScale = (widthScale + heightScale) / 2.0
 
-        return min(max(averageScale, 0.2), 3.0)
+        // Use the smaller scale factor to prevent text overflow
+        // This ensures text fits within the available space without causing extra padding
+        let minScale = min(widthScale, heightScale)
+
+        return min(max(minScale, LayoutConstants.textWidgetMinimumScale), LayoutConstants.maximumScaleFactor)
     }
 
     /// Update fonts with a specific scale factor (used by group resize)
     func updateFontsWithScale(_ scale: CGFloat) {
-        let clampedScale = min(max(scale, 0.2), 3.0)
+        let clampedScale = min(max(scale, LayoutConstants.textWidgetMinimumScale), LayoutConstants.maximumScaleFactor)
         let fontSize = baseFontSize * clampedScale
         textLabel.font = currentFontStyle.font(size: fontSize, weight: .bold)
     }
@@ -278,17 +285,24 @@ class TextWidget: UIView, Selectable {
             return
         }
 
-        // Always update fonts when size changes
+        // Update fonts when size changes significantly
+        // This prevents excessive font updates during small resize adjustments
         if !transform.isIdentity {
             // Transform-based scaling (pinch gesture)
             updateFontsFromTransform()
         } else if initialSize != .zero && bounds.size != .zero {
-            // Frame-based scaling (resize handles)
-            let scaleFactor = calculateScaleFactor()
-            let fontSize = baseFontSize * scaleFactor
-            let clampedSize = min(max(fontSize, baseFontSize * 0.2), baseFontSize * 3.0)
+            let sizeDelta = abs(bounds.width - initialSize.width) + abs(bounds.height - initialSize.height)
+            if sizeDelta > LayoutConstants.significantSizeChange {
+                // Frame-based scaling (resize handles)
+                let scaleFactor = calculateScaleFactor()
+                let fontSize = baseFontSize * scaleFactor
+                let clampedSize = min(max(fontSize, baseFontSize * LayoutConstants.textWidgetMinimumScale), baseFontSize * LayoutConstants.maximumScaleFactor)
 
-            textLabel.font = currentFontStyle.font(size: clampedSize, weight: .bold)
+                textLabel.font = currentFontStyle.font(size: clampedSize, weight: .bold)
+
+                // Don't update initialSize here - let it be updated only in configure()
+                // This prevents font from jumping during resize
+            }
         }
 
         // Update selection border if selected

@@ -378,7 +378,8 @@ extension RunningDetailViewController {
             w.configure(text: "텍스트 입력")
             w.textDelegate = self
             widget = w
-            size = CGSize(width: 200, height: 60)
+            // Use a reasonable default size for text widget
+            size = CGSize(width: 120, height: 60)
 
         case .location:
             guard let firstLocation = data.route.first else {
@@ -490,7 +491,8 @@ extension RunningDetailViewController {
             w.configure(text: "텍스트 입력")
             w.textDelegate = self
             widget = w
-            size = CGSize(width: 200, height: 60)
+            // Use a reasonable default size for text widget
+            size = CGSize(width: 120, height: 60)
 
         case .location:
             guard let firstLocation = imported.routeLocations.first else {

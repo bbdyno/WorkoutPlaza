@@ -267,9 +267,11 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         case .text:
             let w = TextWidget()
-            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
             w.configure(text: "텍스트")
-            w.initialSize = widgetSize
+            // Use a reasonable default size for text widget
+            let defaultSize = CGSize(width: 100, height: 60)
+            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: defaultSize)
+            w.initialSize = defaultSize
             widget = w
 
         case .date:
