@@ -8,22 +8,78 @@
 import UIKit
 import SnapKit
 
+enum StatPeriod: Int, CaseIterable {
+    case week = 0
+    case month = 1
+    case year = 2
+
+    var displayName: String {
+        switch self {
+        case .week: return "주간"
+        case .month: return "월간"
+        case .year: return "연도"
+        }
+    }
+}
+
+enum StatSportType: Int, CaseIterable {
+    case running = 0
+    case climbing = 1
+
+    var displayName: String {
+        switch self {
+        case .running: return "러닝"
+        case .climbing: return "클라이밍"
+        }
+    }
+
+    var sportType: SportType {
+        switch self {
+        case .running: return .running
+        case .climbing: return .climbing
+        }
+    }
+}
+
 class StatisticsViewController: UIViewController {
-    
+
     // MARK: - Properties
-    
+
+    private var currentPeriod: StatPeriod = .week
+    private var currentSport: StatSportType = .running
+
     private var runningWorkouts: [WorkoutData] = []
     private var externalRunningWorkouts: [ExternalWorkout] = []
     private var climbingSessions: [ClimbingData] = []
-    
+
     // Calendar Data
     private var runningDates: Set<DateComponents> = []
     private var climbingDates: Set<DateComponents> = []
     private var workoutsByDate: [DateComponents: Set<WorkoutType>] = [:]
     private var selectedDate: DateComponents?
-    
+
     // MARK: - UI Components
-    
+
+    private let sportSegmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: StatSportType.allCases.map { $0.displayName })
+        control.selectedSegmentIndex = 0
+        control.backgroundColor = ColorSystem.cardBackground
+        control.selectedSegmentTintColor = ColorSystem.primaryBlue
+        control.setTitleTextAttributes([.foregroundColor: ColorSystem.mainText], for: .normal)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        return control
+    }()
+
+    private let periodSegmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: StatPeriod.allCases.map { $0.displayName })
+        control.selectedSegmentIndex = 0
+        control.backgroundColor = ColorSystem.cardBackground
+        control.selectedSegmentTintColor = ColorSystem.primaryBlue
+        control.setTitleTextAttributes([.foregroundColor: ColorSystem.mainText], for: .normal)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        return control
+    }()
+
     private lazy var collectionView: UICollectionView = {
         let layout = createCompositionalLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -31,6 +87,7 @@ class StatisticsViewController: UIViewController {
         cv.delegate = self
         cv.dataSource = self
         cv.register(StatsSummaryCell.self, forCellWithReuseIdentifier: StatsSummaryCell.identifier)
+        cv.register(RunnerTierCell.self, forCellWithReuseIdentifier: RunnerTierCell.identifier)
         cv.register(CalendarCell.self, forCellWithReuseIdentifier: CalendarCell.identifier)
         cv.register(RecentSessionCell.self, forCellWithReuseIdentifier: RecentSessionCell.identifier)
         cv.register(SectionHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: SectionHeaderView.identifier)
@@ -60,59 +117,136 @@ class StatisticsViewController: UIViewController {
         view.backgroundColor = ColorSystem.background
         navigationController?.navigationBar.prefersLargeTitles = true
         title = "Statistics"
-        
+
+        let topContainer = UIStackView(arrangedSubviews: [sportSegmentedControl, periodSegmentedControl])
+        topContainer.axis = .horizontal
+        topContainer.spacing = 12
+        topContainer.distribution = .fillEqually
+
+        view.addSubview(topContainer)
         view.addSubview(collectionView)
-        collectionView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+
+        topContainer.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(32)
         }
+
+        collectionView.snp.makeConstraints { make in
+            make.top.equalTo(topContainer.snp.bottom).offset(12)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+
+        sportSegmentedControl.addTarget(self, action: #selector(sportChanged), for: .valueChanged)
+        periodSegmentedControl.addTarget(self, action: #selector(periodChanged), for: .valueChanged)
     }
     
     private func createCompositionalLayout() -> UICollectionViewLayout {
-        return UICollectionViewCompositionalLayout { (sectionIndex, layoutEnvironment) -> NSCollectionLayoutSection? in
-            if sectionIndex == 0 {
-                // Summary Section: 2 columns
-                let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .absolute(120))
-                let item = NSCollectionLayoutItem(layoutSize: itemSize)
-                item.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
-                
-                let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(120))
-                let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-                
-                let section = NSCollectionLayoutSection(group: group)
-                section.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 16, bottom: 24, trailing: 16)
-                return section
-            } else if sectionIndex == 1 {
-                // Calendar Section
-                let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(400))
-                let item = NSCollectionLayoutItem(layoutSize: itemSize)
-                
-                let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(400))
-                let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
-                
-                let section = NSCollectionLayoutSection(group: group)
-                section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 24, trailing: 16)
-                return section
+        return UICollectionViewCompositionalLayout { [weak self] (sectionIndex, layoutEnvironment) -> NSCollectionLayoutSection? in
+            guard let self = self else { return nil }
+
+            if self.currentSport == .running {
+                if sectionIndex == 0 {
+                    // Runner Tier Section
+                    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(140))
+                    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+                    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(140))
+                    let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
+                    let section = NSCollectionLayoutSection(group: group)
+                    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 24, trailing: 16)
+                    return section
+                } else if sectionIndex == 1 {
+                    // Summary Section: 2 columns
+                    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .absolute(120))
+                    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+                    item.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+
+                    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(120))
+                    let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
+                    let section = NSCollectionLayoutSection(group: group)
+                    section.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 16, bottom: 24, trailing: 16)
+                    return section
+                } else if sectionIndex == 2 {
+                    // Calendar Section
+                    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(400))
+                    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+                    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(400))
+                    let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+
+                    let section = NSCollectionLayoutSection(group: group)
+                    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 24, trailing: 16)
+                    return section
+                } else {
+                    // Recent Sessions Section: List
+                    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(80))
+                    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+                    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(80))
+                    let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+
+                    let section = NSCollectionLayoutSection(group: group)
+                    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 16, trailing: 16)
+                    section.interGroupSpacing = 12
+
+                    let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
+                    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+                    section.boundarySupplementaryItems = [header]
+
+                    return section
+                }
             } else {
-                // Recent Sessions Section: List
-                let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(80))
-                let item = NSCollectionLayoutItem(layoutSize: itemSize)
-                
-                let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(80))
-                let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
-                
-                let section = NSCollectionLayoutSection(group: group)
-                section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 16, trailing: 16)
-                section.interGroupSpacing = 12
-                
-                let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
-                let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
-                section.boundarySupplementaryItems = [header]
-                
-                return section
+                if sectionIndex == 0 {
+                    // Calendar Section
+                    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(400))
+                    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+                    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(400))
+                    let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+
+                    let section = NSCollectionLayoutSection(group: group)
+                    section.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 16, bottom: 24, trailing: 16)
+                    return section
+                } else {
+                    // Recent Sessions Section: List
+                    let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(80))
+                    let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+                    let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(80))
+                    let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+
+                    let section = NSCollectionLayoutSection(group: group)
+                    section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 16, trailing: 16)
+                    section.interGroupSpacing = 12
+
+                    let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(44))
+                    let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize, elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
+                    section.boundarySupplementaryItems = [header]
+
+                    return section
+                }
             }
         }
     }
-    
+
+    @objc private func sportChanged() {
+        currentSport = StatSportType(rawValue: sportSegmentedControl.selectedSegmentIndex) ?? .running
+        updatePeriodControlColor()
+        collectionView.reloadData()
+    }
+
+    @objc private func periodChanged() {
+        currentPeriod = StatPeriod(rawValue: periodSegmentedControl.selectedSegmentIndex) ?? .week
+        collectionView.reloadData()
+    }
+
+    private func updatePeriodControlColor() {
+        periodSegmentedControl.selectedSegmentTintColor = currentSport.sportType.themeColor
+    }
+
     private func setupNotificationObservers() {
         NotificationCenter.default.addObserver(
             self,
@@ -182,34 +316,36 @@ class StatisticsViewController: UIViewController {
     private var filteredItems: [(type: SportType, data: Any, date: Date)] {
         guard let dateComponents = selectedDate,
               let date = Calendar.current.date(from: dateComponents) else { return [] }
-        
+
         let queryComponents = Calendar.current.dateComponents([.year, .month, .day], from: date)
-        
+
         var items: [(SportType, Any, Date)] = []
-        
-        // Filter Climbing
-        for session in climbingSessions {
-             let sessionDate = Calendar.current.dateComponents([.year, .month, .day], from: session.sessionDate)
-             if sessionDate == queryComponents {
-                 items.append((.climbing, session, session.sessionDate))
-             }
-        }
-        
-        // Filter Running
-        for workout in runningWorkouts {
-            let workoutDate = Calendar.current.dateComponents([.year, .month, .day], from: workout.startDate)
-            if workoutDate == queryComponents {
-                items.append((.running, workout, workout.startDate))
+
+        if currentSport == .running {
+            // Filter Running only
+            for workout in runningWorkouts {
+                let workoutDate = Calendar.current.dateComponents([.year, .month, .day], from: workout.startDate)
+                if workoutDate == queryComponents {
+                    items.append((.running, workout, workout.startDate))
+                }
+            }
+
+            for workout in externalRunningWorkouts {
+                let workoutDate = Calendar.current.dateComponents([.year, .month, .day], from: workout.workoutData.startDate)
+                if workoutDate == queryComponents {
+                    items.append((.running, workout, workout.workoutData.startDate))
+                }
+            }
+        } else {
+            // Filter Climbing only
+            for session in climbingSessions {
+                let sessionDate = Calendar.current.dateComponents([.year, .month, .day], from: session.sessionDate)
+                if sessionDate == queryComponents {
+                    items.append((.climbing, session, session.sessionDate))
+                }
             }
         }
-        
-        for workout in externalRunningWorkouts {
-            let workoutDate = Calendar.current.dateComponents([.year, .month, .day], from: workout.workoutData.startDate)
-            if workoutDate == queryComponents {
-                items.append((.running, workout, workout.workoutData.startDate))
-            }
-        }
-        
+
         return items.sorted(by: { $0.2 > $1.2 })
     }
 }
@@ -219,44 +355,89 @@ class StatisticsViewController: UIViewController {
 extension StatisticsViewController: UICollectionViewDataSource {
     
     func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return 3 // Summary, Calendar, Recent(Filtered)
+        return currentSport == .running ? 4 : 2 // Running: Tier, Summary, Calendar, Recent | Climbing: Calendar, Recent
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if section == 0 {
-            return 2 // Running, Climbing
-        } else if section == 1 {
-            return 1 // Calendar View
+        if currentSport == .running {
+            if section == 0 {
+                return 1 // Runner Tier
+            } else if section == 1 {
+                return 2 // Running, Climbing
+            } else if section == 2 {
+                return 1 // Calendar View
+            } else {
+                return max(1, filteredItems.count)
+            }
         } else {
-            return max(1, filteredItems.count) // Show empty state if needed, but simplified for now
+            if section == 0 {
+                return 1 // Calendar View
+            } else {
+                return max(1, filteredItems.count)
+            }
         }
     }
-    
+
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        if indexPath.section == 0 {
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StatsSummaryCell.identifier, for: indexPath) as! StatsSummaryCell
-            if indexPath.item == 0 {
+        if currentSport == .running {
+            if indexPath.section == 0 {
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RunnerTierCell.identifier, for: indexPath) as! RunnerTierCell
                 let totalDistance = (runningWorkouts.reduce(0) { $0 + $1.distance } + externalRunningWorkouts.reduce(0) { $0 + $1.workoutData.distance }) / 1000.0
-                cell.configure(title: "Running", value: String(format: "%.1f km", totalDistance), icon: "figure.run", color: ColorSystem.primaryBlue)
+                cell.configure(totalDistance: totalDistance)
+                return cell
+            } else if indexPath.section == 1 {
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StatsSummaryCell.identifier, for: indexPath) as! StatsSummaryCell
+                if indexPath.item == 0 {
+                    let totalDistance = (runningWorkouts.reduce(0) { $0 + $1.distance } + externalRunningWorkouts.reduce(0) { $0 + $1.workoutData.distance }) / 1000.0
+                    cell.configure(title: "Running", value: String(format: "%.1f km", totalDistance), icon: "figure.run", color: ColorSystem.primaryBlue)
+                } else {
+                    let totalRoutes = climbingSessions.reduce(0) { $0 + $1.totalRoutes }
+                    cell.configure(title: "Climbing", value: "\(totalRoutes) Routes", icon: "figure.climbing", color: ColorSystem.primaryGreen)
+                }
+                return cell
+            } else if indexPath.section == 2 {
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CalendarCell.identifier, for: indexPath) as! CalendarCell
+                cell.configure(delegate: self, selectedDate: selectedDate)
+                return cell
             } else {
-                let totalRoutes = climbingSessions.reduce(0) { $0 + $1.totalRoutes }
-                cell.configure(title: "Climbing", value: "\(totalRoutes) Routes", icon: "figure.climbing", color: ColorSystem.primaryGreen)
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecentSessionCell.identifier, for: indexPath) as! RecentSessionCell
+
+                if filteredItems.isEmpty {
+                    cell.configure(icon: "calendar", title: "No Workouts", subtitle: "Select a date with activity", date: Date(), color: .secondaryLabel)
+                } else {
+                    let item = filteredItems[indexPath.item]
+                    if let workout = item.data as? WorkoutData {
+                        cell.configure(
+                            icon: "figure.run",
+                            title: "Running",
+                            subtitle: String(format: "%.1fkm", workout.distance/1000),
+                            date: workout.startDate,
+                            color: ColorSystem.primaryBlue
+                        )
+                    } else if let externalWorkout = item.data as? ExternalWorkout {
+                        cell.configure(
+                            icon: "figure.run",
+                            title: "Running (Ext)",
+                            subtitle: String(format: "%.1fkm", externalWorkout.workoutData.distance/1000),
+                            date: externalWorkout.workoutData.startDate,
+                            color: ColorSystem.primaryBlue
+                        )
+                    }
+                }
+                return cell
             }
-            return cell
-        } else if indexPath.section == 1 {
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CalendarCell.identifier, for: indexPath) as! CalendarCell
-            cell.configure(delegate: self, selectedDate: selectedDate)
-            return cell
         } else {
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecentSessionCell.identifier, for: indexPath) as! RecentSessionCell
-            
-            if filteredItems.isEmpty {
-                 // Empty state placeholder reuse logic or simple check
-                 cell.configure(icon: "calendar", title: "No Workouts", subtitle: "Select a date with activity", date: Date(), color: .secondaryLabel)
+            if indexPath.section == 0 {
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CalendarCell.identifier, for: indexPath) as! CalendarCell
+                cell.configure(delegate: self, selectedDate: selectedDate)
+                return cell
             } else {
-                let item = filteredItems[indexPath.item]
-                switch item.type {
-                case .climbing:
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecentSessionCell.identifier, for: indexPath) as! RecentSessionCell
+
+                if filteredItems.isEmpty {
+                    cell.configure(icon: "calendar", title: "No Workouts", subtitle: "Select a date with activity", date: Date(), color: .secondaryLabel)
+                } else {
+                    let item = filteredItems[indexPath.item]
                     if let session = item.data as? ClimbingData {
                         cell.configure(
                             icon: "figure.climbing",
@@ -266,28 +447,9 @@ extension StatisticsViewController: UICollectionViewDataSource {
                             color: ColorSystem.primaryGreen
                         )
                     }
-                case .running:
-                    if let workout = item.data as? WorkoutData {
-                        cell.configure(
-                            icon: "figure.run",
-                            title: "Running",
-                            subtitle: String(format: "%.1fkm", workout.distance/1000),
-                            date: workout.startDate,
-                            color: .systemBlue
-                        )
-                    } else if let workout = item.data as? ExternalWorkout {
-                        cell.configure(
-                            icon: "figure.run",
-                            title: "Running (Ext)",
-                            subtitle: String(format: "%.1fkm", workout.workoutData.distance/1000),
-                            date: workout.workoutData.startDate,
-                            color: .systemBlue
-                        )
-                    }
-                default: break
                 }
+                return cell
             }
-            return cell
         }
     }
     
@@ -915,3 +1077,123 @@ class CustomCalendarDayCell: UICollectionViewCell {
         dotStackView.addArrangedSubview(dot)
     }
 }
+
+// MARK: - Runner Tier Cell
+
+class RunnerTierCell: UICollectionViewCell {
+    static let identifier = "RunnerTierCell"
+
+    private let tierLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 32, weight: .bold)
+        label.textColor = ColorSystem.mainText
+        return label
+    }()
+
+    private let tierTitleLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.textColor = ColorSystem.subText
+        return label
+    }()
+
+    private let emojiLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 48)
+        return label
+    }()
+
+    private let progressBarView: UIView = {
+        let view = UIView()
+        view.backgroundColor = ColorSystem.cardBackground
+        view.layer.cornerRadius = 8
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let progressFillView: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = 8
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let progressLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = ColorSystem.subText
+        return label
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func setupUI() {
+        backgroundColor = ColorSystem.cardBackground
+        layer.cornerRadius = 16
+        layer.cornerCurve = .continuous
+
+        addSubview(tierLabel)
+        addSubview(tierTitleLabel)
+        addSubview(emojiLabel)
+        addSubview(progressBarView)
+        progressBarView.addSubview(progressFillView)
+        addSubview(progressLabel)
+
+        emojiLabel.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-16)
+            make.centerY.equalToSuperview()
+        }
+
+        tierLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.top.equalToSuperview().offset(20)
+        }
+
+        tierTitleLabel.snp.makeConstraints { make in
+            make.leading.equalTo(tierLabel)
+            make.top.equalTo(tierLabel.snp.bottom).offset(4)
+        }
+
+        progressBarView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.bottom.equalToSuperview().offset(-16)
+            make.trailing.equalTo(emojiLabel.snp.leading).offset(-16)
+            make.height.equalTo(8)
+        }
+
+        progressFillView.snp.makeConstraints { make in
+            make.top.leading.bottom.equalToSuperview()
+        }
+
+        progressLabel.snp.makeConstraints { make in
+            make.top.equalTo(progressBarView.snp.bottom).offset(4)
+            make.leading.equalToSuperview().offset(16)
+        }
+    }
+
+    func configure(totalDistance: Double) {
+        let tier = RunnerTier.tier(for: totalDistance)
+        let progress = tier.progress(to: totalDistance)
+
+        tierLabel.text = tier.displayName
+        tierTitleLabel.text = "총 \(String(format: "%.1f", totalDistance))km"
+        emojiLabel.text = tier.emoji
+
+        progressFillView.backgroundColor = tier.themeColor
+        progressFillView.snp.updateConstraints { make in
+            make.width.equalTo(progressBarView.snp.width).multipliedBy(progress)
+        }
+
+        if let remaining = tier.remainingDistance(to: totalDistance) {
+            progressLabel.text = "다음 등급까지 \(String(format: "%.1f", remaining))km"
+        } else {
+            progressLabel.text = "최고 등급 달성!"
+        }
+    }
+}
+
