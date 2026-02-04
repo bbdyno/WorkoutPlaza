@@ -31,9 +31,11 @@ enum LayoutConstants {
     static let secondaryAlpha: CGFloat = 0.7
 
     // MARK: - Resize Handle
-    static let resizeHandleSize: CGFloat = 20
+    static let resizeHandleSize: CGFloat = 32
     static let resizeCircleSize: CGFloat = 8
     static let resizeHitAreaExpansion: CGFloat = 10
+    static let handleIconSize: CGFloat = 28       // 회전/크기조절 핸들의 원형 배경 크기
+    static let handleIconFontSize: CGFloat = 14   // 핸들 아이콘 폰트 크기
 
     // MARK: - Scale Factors
     static let minimumScaleFactor: CGFloat = 0.1

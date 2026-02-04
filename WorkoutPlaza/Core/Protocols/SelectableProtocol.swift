@@ -21,6 +21,7 @@ protocol Selectable: UIView {
     var minimumSize: CGFloat { get }
     var rotation: CGFloat { get set }
     var isRotating: Bool { get set }
+    var isResizing: Bool { get set }
 
     func showSelectionState()
     func hideSelectionState()
@@ -58,6 +59,15 @@ extension Selectable {
         }
         set {
             objc_setAssociatedObject(self, &AssociatedKeys.isRotating, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+
+    var isResizing: Bool {
+        get {
+            return objc_getAssociatedObject(self, &AssociatedKeys.isResizing) as? Bool ?? false
+        }
+        set {
+            objc_setAssociatedObject(self, &AssociatedKeys.isResizing, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
 
@@ -115,17 +125,28 @@ extension Selectable {
     }
 
     func positionResizeHandles() {
+        guard let superview = superview else { return }
+
+        // 회전된 뷰의 실제 모서리 위치를 계산 (bounds 기준으로 superview 좌표로 변환)
+        let topLeft = convert(CGPoint(x: bounds.minX, y: bounds.minY), to: superview)
+        let topRight = convert(CGPoint(x: bounds.maxX, y: bounds.minY), to: superview)
+        let bottomLeft = convert(CGPoint(x: bounds.minX, y: bounds.maxY), to: superview)
+        let bottomRight = convert(CGPoint(x: bounds.maxX, y: bounds.maxY), to: superview)
+
         for handle in resizeHandles {
             switch handle.position {
             case .topLeft:
-                handle.center = frame.origin
+                handle.center = topLeft
             case .topRight:
-                handle.center = CGPoint(x: frame.maxX, y: frame.minY)
+                handle.center = topRight
             case .bottomLeft:
-                handle.center = CGPoint(x: frame.minX, y: frame.maxY)
+                handle.center = bottomLeft
             case .bottomRight:
-                handle.center = CGPoint(x: frame.maxX, y: frame.maxY)
+                handle.center = bottomRight
             }
+
+            // 핸들도 위젯과 함께 회전
+            handle.transform = CGAffineTransform(rotationAngle: rotation)
         }
 
         // Update selection border
@@ -182,6 +203,7 @@ extension Selectable {
 private struct AssociatedKeys {
     static var rotation: UInt8 = 0
     static var isRotating: UInt8 = 0
+    static var isResizing: UInt8 = 0
 }
 
 // MARK: - Resize Handle Position
