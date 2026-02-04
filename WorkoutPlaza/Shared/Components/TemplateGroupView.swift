@@ -185,22 +185,17 @@ class TemplateGroupView: UIView, Selectable {
             // Store the frame in group coordinates for proper scaling
             originalItemFrames[item] = frameInGroup
 
-            // Store the widget's ACTUAL DISPLAYED font scale (considering auto-shrink from adjustsFontSizeToFitWidth)
+            // Store the widget's current font scale using its own calculateScaleFactor
+            // This is the scale that determines the widget's font size (bounds / initialSize)
             if let statWidget = item as? BaseStatWidget {
-                let displayedFontSize = getActualDisplayedFontSize(label: statWidget.valueLabel)
-                let baseFontSize = statWidget.baseFontSizes["value"] ?? LayoutConstants.valueFontSize
-                let currentScale = displayedFontSize / baseFontSize
-                originalWidgetFontScales[item] = currentScale
+                let scale = statWidget.calculateScaleFactor()
+                originalWidgetFontScales[item] = scale
             } else if let textWidget = item as? TextWidget {
-                let displayedFontSize = getActualDisplayedFontSize(label: textWidget.textLabel)
-                let baseFontSize = textWidget.baseFontSize
-                let currentScale = displayedFontSize / baseFontSize
-                originalWidgetFontScales[item] = currentScale
+                let scale = textWidget.calculateScaleFactor()
+                originalWidgetFontScales[item] = scale
             } else if let locationWidget = item as? LocationWidget {
-                let displayedFontSize = getActualDisplayedFontSize(label: locationWidget.locationLabel)
-                let baseFontSize = locationWidget.baseFontSize
-                let currentScale = displayedFontSize / baseFontSize
-                originalWidgetFontScales[item] = currentScale
+                let scale = locationWidget.calculateScaleFactor()
+                originalWidgetFontScales[item] = scale
             } else {
                 originalWidgetFontScales[item] = 1.0
             }
@@ -377,22 +372,55 @@ class TemplateGroupView: UIView, Selectable {
 
 
     // MARK: - Group Resize
+    private var isResizingGroup: Bool = false
+
     override var frame: CGRect {
         didSet {
-            if frame.size != oldValue.size {
+            if frame.size != oldValue.size && isResizingGroup {
                 updateItemPositionsAndSizes()
             }
-
-            // Check button removed
         }
     }
 
     override var bounds: CGRect {
         didSet {
-            if bounds.size != oldValue.size {
+            if bounds.size != oldValue.size && isResizingGroup {
                 updateItemPositionsAndSizes()
             }
         }
+    }
+
+    /// Sync originalGroupFrame with current state (capture actual item frames)
+    private func syncOriginalGroupFrame() {
+        guard bounds.width > 0 && bounds.height > 0 else { return }
+
+        // Capture actual current item frames (not calculated/scaled)
+        for item in groupedItems {
+            originalItemFrames[item] = item.frame
+        }
+
+        // Update originalGroupFrame to current bounds
+        originalGroupFrame = CGRect(origin: .zero, size: bounds.size)
+        initialSize = bounds.size
+    }
+
+    /// Call this when resize gesture begins
+    func beginResize() {
+        // Capture actual current state before starting resize
+        // This ensures we scale from the real current positions, not stale data
+        for item in groupedItems {
+            originalItemFrames[item] = item.frame
+        }
+        originalGroupFrame = CGRect(origin: .zero, size: bounds.size)
+
+        isResizingGroup = true
+    }
+
+    /// Call this when resize gesture ends
+    func endResize() {
+        isResizingGroup = false
+        // Sync originalGroupFrame to current bounds for next resize
+        syncOriginalGroupFrame()
     }
 
     private func updateItemPositionsAndSizes() {
@@ -400,8 +428,6 @@ class TemplateGroupView: UIView, Selectable {
 
         let scaleX = bounds.width / originalGroupFrame.width
         let scaleY = bounds.height / originalGroupFrame.height
-
-        // Group's scale factor (how much the group has scaled from its original size)
         let groupScale = (scaleX + scaleY) / 2.0
 
         // Update each item's position and size proportionally
@@ -413,20 +439,16 @@ class TemplateGroupView: UIView, Selectable {
 
             item.frame = CGRect(x: newX, y: newY, width: newWidth, height: newHeight)
 
-            // Get the widget's original font scale (when added to group)
-            // Then multiply by the group's scale to get the new font scale
-            // This preserves relative font size differences between widgets
             let originalFontScale = originalWidgetFontScales[item] ?? 1.0
-            let newFontScale = originalFontScale * groupScale
-
+            let finalFontScale = originalFontScale * groupScale
+            
             if let statWidget = item as? BaseStatWidget {
-                statWidget.updateFontsWithScale(newFontScale)
+                statWidget.updateFontsWithScale(finalFontScale)
             } else if let textWidget = item as? TextWidget {
-                textWidget.updateFontsWithScale(newFontScale)
+                textWidget.updateFontsWithScale(finalFontScale)
             } else if let locationWidget = item as? LocationWidget {
-                locationWidget.updateFontsWithScale(newFontScale)
+                locationWidget.updateFontsWithScale(finalFontScale)
             } else if let routeMap = item as? RouteMapView {
-                // Redraw route map
                 routeMap.layoutSubviews()
             }
         }
@@ -459,11 +481,13 @@ class TemplateGroupView: UIView, Selectable {
             maxMinScale = max(maxMinScale, minScale)
         }
 
-        // Return minimum group size based on the most restrictive widget
+        // Return minimum group WIDTH based on the most restrictive widget
+        // Since aspect ratio is maintained during resize, we only need to constrain width
+        // Height will be automatically correct due to aspect ratio
         let minWidth = originalGroupFrame.width * maxMinScale
-        let minHeight = originalGroupFrame.height * maxMinScale
 
-        return max(minWidth, minHeight, LayoutConstants.minimumWidgetSize)
+        let result = max(minWidth, LayoutConstants.minimumWidgetSize)
+        return result
     }
 
     // MARK: - Ungroup
@@ -511,15 +535,9 @@ class TemplateGroupView: UIView, Selectable {
             // Reset group-managed flag so widget handles its own font scaling again
             setGroupManaged(item, managed: false)
 
-            // Calculate the total font scale this widget had in the group
-            // totalScale = originalWidgetFontScale * groupScale
-            // We need: currentSize / initialSize = totalScale
-            // So: initialSize = currentSize / totalScale
             let originalFontScale = originalWidgetFontScales[item] ?? 1.0
             let totalFontScale = originalFontScale * groupScale
 
-            // Set initialSize so that the current font scale is preserved
-            // This ensures the widget's font doesn't reset when resized after ungrouping
             if totalFontScale > 0 {
                 let preservedInitialSize = CGSize(
                     width: itemSize.width / totalFontScale,
@@ -608,22 +626,13 @@ class TemplateGroupView: UIView, Selectable {
             frameInGroup = widget.frame
         }
 
-        // Store the widget's ACTUAL DISPLAYED font scale (considering auto-shrink)
+        // Store the widget's current font scale using its own calculateScaleFactor
         if let statWidget = widget as? BaseStatWidget {
-            let displayedFontSize = getActualDisplayedFontSize(label: statWidget.valueLabel)
-            let baseFontSize = statWidget.baseFontSizes["value"] ?? LayoutConstants.valueFontSize
-            let currentScale = displayedFontSize / baseFontSize
-            originalWidgetFontScales[widget] = currentScale
+            originalWidgetFontScales[widget] = statWidget.calculateScaleFactor()
         } else if let textWidget = widget as? TextWidget {
-            let displayedFontSize = getActualDisplayedFontSize(label: textWidget.textLabel)
-            let baseFontSize = textWidget.baseFontSize
-            let currentScale = displayedFontSize / baseFontSize
-            originalWidgetFontScales[widget] = currentScale
+            originalWidgetFontScales[widget] = textWidget.calculateScaleFactor()
         } else if let locationWidget = widget as? LocationWidget {
-            let displayedFontSize = getActualDisplayedFontSize(label: locationWidget.locationLabel)
-            let baseFontSize = locationWidget.baseFontSize
-            let currentScale = displayedFontSize / baseFontSize
-            originalWidgetFontScales[widget] = currentScale
+            originalWidgetFontScales[widget] = locationWidget.calculateScaleFactor()
         } else {
             originalWidgetFontScales[widget] = 1.0
         }
