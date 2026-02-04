@@ -22,8 +22,10 @@ class RouteMapView: UIView, Selectable {
     var itemIdentifier: String = UUID().uuidString
     var resizeHandles: [ResizeHandleView] = []
     var selectionBorderLayer: CAShapeLayer?
+    var rotationIndicatorLayer: CAShapeLayer?
     weak var selectionDelegate: SelectionDelegate?
     var initialSize: CGSize = .zero
+    // rotation and isRotating are provided by Selectable protocol default implementation
 
     // MARK: - Route Properties
     private var routeLocations: [CLLocation] = []

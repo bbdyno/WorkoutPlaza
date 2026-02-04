@@ -147,6 +147,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             static let canvasInitialHeight: CGFloat = 400
             
             static let watermarkInset: CGFloat = 16
+            static let watermarkSize: CGFloat = 40
+            static let watermarkAlpha: CGFloat = 0.3
             
             static let topToolbarTopOffset: CGFloat = 8
             static let topToolbarTrailingMargin: CGFloat = 16
@@ -283,13 +285,12 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         return label
     }()
     
-    lazy var watermarkLabel: UILabel = {
-        let label = UILabel()
-        label.text = "WorkoutPlaza"
-        label.font = UIFont.systemFont(ofSize: 12, weight: .bold)
-        label.textColor = UIColor.black.withAlphaComponent(0.3) // Initial color, will be updated dynamically
-        label.textAlignment = .right
-        return label
+    lazy var watermarkImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(named: "logo_white")
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = UIColor.black.withAlphaComponent(Constants.Layout.watermarkAlpha) // Initial tint, will be updated dynamically
+        return imageView
     }()
 
     // MARK: - Toolbars & Buttons
@@ -531,7 +532,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         contentView.addSubview(backgroundTemplateView)
         contentView.addSubview(backgroundImageView)
         contentView.addSubview(dimOverlay)
-        contentView.addSubview(watermarkLabel)
+        contentView.addSubview(watermarkImageView)
         contentView.addSubview(textPathDrawingOverlayView)
 
         view.addSubview(topRightToolbar)
@@ -591,9 +592,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             make.edges.equalToSuperview()
         }
         
-        watermarkLabel.snp.makeConstraints { make in
+        watermarkImageView.snp.makeConstraints { make in
             make.bottom.equalToSuperview().inset(Constants.Layout.watermarkInset)
             make.trailing.equalToSuperview().inset(Constants.Layout.watermarkInset)
+            make.width.equalTo(Constants.Layout.watermarkSize)
+            make.height.equalTo(Constants.Layout.watermarkSize)
         }
 
         textPathDrawingOverlayView.snp.makeConstraints { make in
@@ -1142,6 +1145,14 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 textColor = statWidget.currentColor.toHex()
             }
 
+            // Get rotation from Selectable widgets
+            let rotation: CGFloat
+            if let selectable = widget as? Selectable {
+                rotation = selectable.rotation
+            } else {
+                rotation = 0
+            }
+
             return SavedWidgetState(
                 identifier: identifier,
                 type: className,
@@ -1152,7 +1163,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 fontStyle: fontStyle,
                 textColor: textColor,
                 backgroundColor: widget.backgroundColor?.toHex(),
-                rotation: 0,
+                rotation: rotation,
                 zIndex: 0,
                 pathPoints: pathPoints,
                 workoutDate: workoutDate,
@@ -1319,7 +1330,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             
             // Restore properties
             widget.frame = savedWidget.frame
-            
+
             // Restore common properties
             if let statWidget = widget as? BaseStatWidget {
                 statWidget.initialSize = savedWidget.frame.size
@@ -1337,18 +1348,24 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                     routesWidget.applyFont(savedFont)
                 }
             }
-            
+
+            // Restore rotation for all Selectable widgets
+            if var selectable = widget as? Selectable {
+                selectable.rotation = savedWidget.rotation
+                widget.transform = CGAffineTransform(rotationAngle: savedWidget.rotation)
+            }
+
             if let routeMap = widget as? RouteMapView {
                 routeMap.initialSize = savedWidget.frame.size
             }
-            
+
             if let textWidget = widget as? TextWidget, let text = savedWidget.text {
                 textWidget.updateText(text)
                 if let colorHex = savedWidget.textColor, let color = UIColor(hex: colorHex) {
                     textWidget.applyColor(color)
                 }
             }
-            
+
             // Add to map
             restoredWidgetsMap[savedWidget.identifier] = widget
         }
@@ -1661,10 +1678,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             isBackgroundLight = true
         }
 
-        // Set watermark color based on background brightness
-        watermarkLabel.textColor = isBackgroundLight
-            ? UIColor.black.withAlphaComponent(0.3)
-            : UIColor.white.withAlphaComponent(0.3)
+        // Set watermark tint color based on background brightness
+        watermarkImageView.tintColor = isBackgroundLight
+            ? UIColor.black.withAlphaComponent(Constants.Layout.watermarkAlpha)
+            : UIColor.white.withAlphaComponent(Constants.Layout.watermarkAlpha)
     }
 
     private func useTemplate() {
@@ -2418,6 +2435,12 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 if var selectable = widget as? Selectable {
                     selectable.selectionDelegate = self
                     selectionManager.registerItem(selectable)
+
+                    // Apply rotation if available
+                    if let rotation = item.rotation {
+                        selectable.rotation = rotation
+                        widget.transform = CGAffineTransform(rotationAngle: rotation)
+                    }
                 }
             }
         }
@@ -2518,12 +2541,21 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             }
 
             if let widgetType = type {
+                // Get rotation from Selectable widget
+                let rotation: CGFloat?
+                if let selectable = widget as? Selectable {
+                    rotation = selectable.rotation != 0 ? selectable.rotation : nil
+                } else {
+                    rotation = nil
+                }
+
                 let item = TemplateManager.createRatioBasedItem(
                     type: widgetType,
                     frame: frame,
                     canvasSize: canvasSize,
                     color: color,
-                    font: font
+                    font: font,
+                    rotation: rotation
                 )
                 items.append(item)
             }

@@ -191,7 +191,8 @@ actor TemplateManager {
         frame: CGRect,
         canvasSize: CGSize,
         color: String? = nil,
-        font: String? = nil
+        font: String? = nil,
+        rotation: CGFloat? = nil
     ) -> WidgetItem {
         let positionRatio = WidgetItem.PositionRatio(
             x: frame.origin.x / canvasSize.width,
@@ -208,7 +209,8 @@ actor TemplateManager {
             positionRatio: positionRatio,
             sizeRatio: sizeRatio,
             color: color,
-            font: font
+            font: font,
+            rotation: rotation
         )
     }
 

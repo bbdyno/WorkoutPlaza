@@ -74,6 +74,9 @@ struct WidgetItem: Codable {
     let groupType: WidgetGroupType?
     let ownerName: String?  // For imported records
 
+    // Rotation (version 2.2+)
+    let rotation: CGFloat?  // Rotation in radians
+
     struct Position: Codable {
         let x: CGFloat
         let y: CGFloat
@@ -103,7 +106,8 @@ struct WidgetItem: Codable {
         font: String? = nil,
         groupId: String? = nil,
         groupType: WidgetGroupType? = nil,
-        ownerName: String? = nil
+        ownerName: String? = nil,
+        rotation: CGFloat? = nil
     ) {
         self.type = type
         self.positionRatio = positionRatio
@@ -113,6 +117,7 @@ struct WidgetItem: Codable {
         self.groupId = groupId
         self.groupType = groupType
         self.ownerName = ownerName
+        self.rotation = rotation
 
         // Legacy fields (will be calculated when needed)
         self.position = Position(x: 0, y: 0)
@@ -138,6 +143,7 @@ struct WidgetItem: Codable {
         self.groupId = groupId
         self.groupType = groupType
         self.ownerName = ownerName
+        self.rotation = nil
 
         // Ratio fields are nil for legacy templates
         self.positionRatio = nil
