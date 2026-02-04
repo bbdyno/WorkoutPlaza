@@ -42,7 +42,7 @@ class HomeDashboardViewController: UIViewController {
         return label
     }()
 
-    private let sportsStackView: UIStackView = {
+    private let recordsStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
         stack.spacing = 16
@@ -50,17 +50,33 @@ class HomeDashboardViewController: UIViewController {
         return stack
     }()
 
+    private let addWorkoutButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("+ 운동 추가", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        button.backgroundColor = ColorSystem.primaryBlue
+        button.setTitleColor(.white, for: .normal)
+        button.layer.cornerRadius = 16
+        button.layer.cornerCurve = .continuous
+        button.layer.shadowColor = ColorSystem.primaryBlue.cgColor
+        button.layer.shadowOpacity = 0.3
+        button.layer.shadowOffset = CGSize(width: 0, height: 4)
+        button.layer.shadowRadius = 8
+        return button
+    }()
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        setupSportCards()
+        loadRecentRecords()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        loadRecentRecords()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -102,178 +118,182 @@ class HomeDashboardViewController: UIViewController {
         contentStackView.addArrangedSubview(headerContainer)
         contentStackView.setCustomSpacing(40, after: headerContainer)
 
-        // Sports Section Header
+        // Recent Records Section Header
         let sectionLabel = UILabel()
-        sectionLabel.text = "운동 종목 선택"
+        sectionLabel.text = "최근 기록"
         sectionLabel.font = .systemFont(ofSize: 20, weight: .semibold)
         sectionLabel.textColor = ColorSystem.mainText
 
         contentStackView.addArrangedSubview(sectionLabel)
-        contentStackView.addArrangedSubview(sportsStackView)
+        contentStackView.addArrangedSubview(recordsStackView)
+
+        // Add Workout Button
+        addWorkoutButton.snp.makeConstraints { make in
+            make.height.equalTo(56)
+        }
+        addWorkoutButton.addTarget(self, action: #selector(addWorkoutTapped), for: .touchUpInside)
+
+        contentStackView.addArrangedSubview(addWorkoutButton)
+        contentStackView.setCustomSpacing(20, after: recordsStackView)
     }
 
-    private func setupSportCards() {
-        sportsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for sport in SportType.allCases {
-            let card = createSportCard(for: sport)
-            sportsStackView.addArrangedSubview(card)
-            card.snp.makeConstraints { make in
-                make.height.equalTo(140)
+    private func loadRecentRecords() {
+        recordsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        // Load recent workouts
+        let climbingSessions = ClimbingDataManager.shared.loadSessions()
+        let sessions = climbingSessions.sorted(by: { $0.sessionDate > $1.sessionDate }).prefix(5)
+
+        if sessions.isEmpty {
+            let placeholderView = createPlaceholderView()
+            recordsStackView.addArrangedSubview(placeholderView)
+        } else {
+            for session in sessions {
+                let recordView = createRecordView(for: session)
+                recordsStackView.addArrangedSubview(recordView)
+                recordView.snp.makeConstraints { make in
+                    make.height.equalTo(80)
+                }
             }
         }
     }
 
-    private func createSportCard(for sport: SportType) -> UIView {
-        let card = UIView()
-        // Modern Card Style
-        card.backgroundColor = ColorSystem.cardBackground
-        card.layer.cornerRadius = 24
-        card.layer.cornerCurve = .continuous
-        card.clipsToBounds = true
-        // card.layer.borderWidth = 1
-        // card.layer.borderColor = UIColor.white.withAlphaComponent(0.1).cgColor
+    private func createPlaceholderView() -> UIView {
+        let placeholder = UIView()
+        placeholder.backgroundColor = ColorSystem.cardBackground
+        placeholder.layer.cornerRadius = 16
+        placeholder.layer.cornerCurve = .continuous
 
-        // Subtle shadow
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.08
-        card.layer.shadowOffset = CGSize(width: 0, height: 2)
-        card.layer.shadowRadius = 12
+        let placeholderLabel = UILabel()
+        placeholderLabel.text = "아직 기록이 없습니다"
+        placeholderLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        placeholderLabel.textColor = ColorSystem.subText
+        placeholderLabel.textAlignment = .center
 
-        // Background Image
-        let backgroundImageView = UIImageView()
-        backgroundImageView.image = sport.backgroundImage
-        backgroundImageView.contentMode = .scaleAspectFill
-        backgroundImageView.clipsToBounds = true
-
-        card.addSubview(backgroundImageView)
-        backgroundImageView.snp.makeConstraints { make in
-            make.trailing.top.bottom.equalToSuperview()
-            make.width.equalTo(180)
-        }
-
-        // White Gradient Overlay
-        let gradientView = HorizontalGradientView()
-        gradientView.colors = [.white, .white,
-            .white.withAlphaComponent(0.8), .white.withAlphaComponent(0.0)]
-        gradientView.locations = [0.0, 0.6, 0.8, 1.0]
-        card.addSubview(gradientView)
-        gradientView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
-        // Icon Container
-        let iconContainer = UIView()
-        // Use sport color for container with low alpha
-        iconContainer.backgroundColor = sport.themeColor.withAlphaComponent(0.15)
-        iconContainer.layer.cornerRadius = 28
-
-        let iconView = UIImageView()
-        let config = UIImage.SymbolConfiguration(pointSize: 26, weight: .semibold)
-        iconView.image = UIImage(systemName: sport.iconName, withConfiguration: config)
-        iconView.tintColor = sport.themeColor
-        iconView.contentMode = .scaleAspectFit
-
-        iconContainer.addSubview(iconView)
-        iconView.snp.makeConstraints { make in
+        placeholder.addSubview(placeholderLabel)
+        placeholderLabel.snp.makeConstraints { make in
             make.center.equalToSuperview()
         }
 
-        // Labels
+        placeholder.snp.makeConstraints { make in
+            make.height.equalTo(100)
+        }
+
+        return placeholder
+    }
+
+    private func createRecordView(for session: ClimbingData) -> UIView {
+        let containerView = UIView()
+        containerView.backgroundColor = ColorSystem.cardBackground
+        containerView.layer.cornerRadius = 16
+        containerView.layer.cornerCurve = .continuous
+
+        let iconContainer = UIView()
+        iconContainer.backgroundColor = ColorSystem.primaryGreen.withAlphaComponent(0.15)
+        iconContainer.layer.cornerRadius = 20
+
+        let iconImageView = UIImageView()
+        iconImageView.image = UIImage(systemName: "figure.climbing")
+        iconImageView.tintColor = ColorSystem.primaryGreen
+        iconImageView.contentMode = .scaleAspectFit
+
         let titleLabel = UILabel()
-        titleLabel.text = sport.displayName
-        titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        titleLabel.text = session.gymName.isEmpty ? "클라이밍" : session.gymName
+        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
         titleLabel.textColor = ColorSystem.mainText
 
-        let descriptionLabel = UILabel()
-        descriptionLabel.text = getDescription(for: sport)
-        descriptionLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        descriptionLabel.textColor = ColorSystem.subText
-        descriptionLabel.numberOfLines = 2
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = "\(session.totalRoutes) 루트"
+        subtitleLabel.font = .systemFont(ofSize: 14)
+        subtitleLabel.textColor = ColorSystem.subText
 
-        // Arrow - Use a circle button look
-        let arrowContainer = UIView()
-        arrowContainer.backgroundColor = ColorSystem.background
-        arrowContainer.layer.cornerRadius = 16
+        let dateLabel = UILabel()
+        dateLabel.font = .systemFont(ofSize: 12)
+        dateLabel.textColor = ColorSystem.subText
 
-        let arrowView = UIImageView()
-        arrowView.image = UIImage(systemName: "arrow.right")
-        arrowView.tintColor = ColorSystem.mainText
-        arrowView.contentMode = .scaleAspectFit
-        
-        arrowContainer.addSubview(arrowView)
-        arrowView.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(14)
-        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M월 d일"
+        dateLabel.text = formatter.string(from: session.sessionDate)
 
-        // Layout
-        card.addSubview(iconContainer)
-        card.addSubview(titleLabel)
-        card.addSubview(descriptionLabel)
-        card.addSubview(arrowContainer)
+        containerView.addSubview(iconContainer)
+        iconContainer.addSubview(iconImageView)
+        containerView.addSubview(titleLabel)
+        containerView.addSubview(subtitleLabel)
+        containerView.addSubview(dateLabel)
 
         iconContainer.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(24)
+            make.leading.equalToSuperview().offset(16)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(56)
+            make.width.height.equalTo(40)
+        }
+
+        iconImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.equalTo(24)
         }
 
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconContainer.snp.trailing).offset(20)
-            make.top.equalTo(iconContainer.snp.top).offset(2)
-            make.trailing.equalTo(arrowContainer.snp.leading).offset(-16)
+            make.leading.equalTo(iconContainer.snp.trailing).offset(12)
+            make.top.equalTo(iconContainer.snp.top).offset(4)
         }
 
-        descriptionLabel.snp.makeConstraints { make in
+        subtitleLabel.snp.makeConstraints { make in
             make.leading.equalTo(titleLabel)
-            make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.trailing.equalTo(arrowContainer.snp.leading).offset(-16)
+            make.top.equalTo(titleLabel.snp.bottom).offset(2)
         }
 
-        arrowContainer.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-24)
+        dateLabel.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-16)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(32)
         }
 
-        // Tap Gesture
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(sportCardTapped(_:)))
-        card.addGestureRecognizer(tapGesture)
-        card.isUserInteractionEnabled = true
-        card.accessibilityIdentifier = sport.rawValue
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(recordTapped(_:)))
+        containerView.addGestureRecognizer(tapGesture)
+        containerView.isUserInteractionEnabled = true
+        containerView.tag = hashValue(for: session)
 
-        return card
+        return containerView
     }
 
-    private func getDescription(for sport: SportType) -> String {
-        switch sport {
-        case .running:
-            return "HealthKit 데이터 연동\n러닝 기록 시각화"
-        case .climbing:
-            return "볼더링, 리드 클라이밍\n루트 및 등반 기록"
-        }
+    private func hashValue(for session: ClimbingData) -> Int {
+        return session.sessionDate.hashValue
     }
 
     // MARK: - Actions
 
-    @objc private func sportCardTapped(_ gesture: UITapGestureRecognizer) {
-        guard let card = gesture.view,
-              let sportRawValue = card.accessibilityIdentifier,
-              let sport = SportType(rawValue: sportRawValue) else { return }
-
-        // Animate tap
-        UIView.animate(withDuration: 0.1, animations: {
-            card.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
-        }) { _ in
-            UIView.animate(withDuration: 0.1) {
-                card.transform = .identity
-            } completion: { _ in
-                self.navigateToSport(sport)
-            }
+    @objc private func addWorkoutTapped() {
+        let sportSelectorVC = SportSelectorSheetViewController()
+        sportSelectorVC.delegate = self
+        sportSelectorVC.modalPresentationStyle = .pageSheet
+        if let sheet = sportSelectorVC.sheetPresentationController {
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = true
         }
+        present(sportSelectorVC, animated: true)
     }
 
-    private func navigateToSport(_ sport: SportType) {
+    @objc private func recordTapped(_ gesture: UITapGestureRecognizer) {
+        let climbingSessions = ClimbingDataManager.shared.loadSessions()
+        let sessions = climbingSessions.sorted(by: { $0.sessionDate > $1.sessionDate })
+
+        guard let view = gesture.view,
+              let tag = view as? Int,
+              tag != 0 else { return }
+
+        let session = sessions.first { hashValue(for: $0) == tag }
+        guard let session = session else { return }
+
+        let detailVC = ClimbingDetailViewController()
+        detailVC.climbingData = session
+        let nav = UINavigationController(rootViewController: detailVC)
+        present(nav, animated: true)
+    }
+}
+
+// MARK: - SportSelectorSheetDelegate
+
+extension HomeDashboardViewController: SportSelectorSheetDelegate {
+    func sportSelectorDidSelect(_ sport: SportType) {
         switch sport {
         case .running:
             let workoutListVC = RunningListViewController()
@@ -304,4 +324,3 @@ extension HomeDashboardViewController: ClimbingInputDelegate {
         controller.navigationController?.pushViewController(detailVC, animated: true)
     }
 }
-

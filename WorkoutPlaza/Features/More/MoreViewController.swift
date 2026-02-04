@@ -45,6 +45,11 @@ class MoreViewController: UIViewController {
 
     private func setupData() {
         sections = [
+            Section(title: "러너 티어", items: [
+                MenuItem(title: "티어 시스템 안내", icon: "trophy.fill", action: { [weak self] in
+                    self?.showTierInfo()
+                })
+            ]),
             Section(title: "카드", items: [
                 MenuItem(title: "저장된 카드", icon: "square.stack.3d.forward.dottedline", action: { [weak self] in
                     self?.showSavedCards()
@@ -95,6 +100,11 @@ class MoreViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    private func showTierInfo() {
+        let tierInfoVC = TierInfoViewController()
+        navigationController?.pushViewController(tierInfoVC, animated: true)
+    }
 
     private func showSavedCards() {
         let savedCardsVC = SavedCardsViewController()

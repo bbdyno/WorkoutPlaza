@@ -20,7 +20,7 @@ class MainTabBarController: UITabBarController {
     // MARK: - Setup
 
     private func setupTabs() {
-        // Tab 1: Home (기록)
+        // Tab 1: Home (대시보드)
         let homeVC = HomeDashboardViewController()
         let homeNav = UINavigationController(rootViewController: homeVC)
         homeNav.navigationBar.prefersLargeTitles = true
