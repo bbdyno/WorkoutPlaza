@@ -123,8 +123,8 @@ class BaseStatWidget: UIView, Selectable {
         applyDisplayMode()
     }
 
-    private var textModeSize: CGSize = .zero
-    private var textModeInitialSize: CGSize = .zero
+    // 텍스트 모드의 기준 크기 (스케일 1.0일 때의 크기)
+    private var textModeBaseSize: CGSize = .zero
 
     private func applyDisplayMode() {
         // 토글 전 폰트 스케일 보존
@@ -138,8 +138,7 @@ class BaseStatWidget: UIView, Selectable {
             applyIconModeLayout(scale: clampedScale)
         }
         updateColors()
-        resizeToFitContent(preservingScale: scaleBeforeToggle)
-        // 토글 후 정확한 폰트·아이콘 크기 보장
+        resizeToFitContent(preservingScale: clampedScale)
         applyFontScale(clampedScale)
     }
 
@@ -193,33 +192,38 @@ class BaseStatWidget: UIView, Selectable {
 
     private func resizeToFitContent(preservingScale scale: CGFloat) {
         let padding = LayoutConstants.standardPadding
-        let clampedScale = min(max(scale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
 
         if displayMode == .text {
-            if textModeSize != .zero {
-                frame.size = textModeSize
-                initialSize = textModeInitialSize
+            // 텍스트 모드 기준 크기가 없으면 현재 initialSize를 기준으로 사용
+            if textModeBaseSize == .zero {
+                textModeBaseSize = initialSize
             }
+            // 텍스트 모드: 기준 크기 * 스케일로 프레임 설정
+            frame.size = CGSize(
+                width: textModeBaseSize.width * scale,
+                height: textModeBaseSize.height * scale
+            )
+            initialSize = textModeBaseSize
         } else {
-            if textModeSize == .zero {
-                textModeSize = frame.size
-                textModeInitialSize = initialSize
+            // 아이콘 모드로 처음 전환 시 텍스트 모드 기준 크기 저장
+            if textModeBaseSize == .zero {
+                textModeBaseSize = initialSize
             }
 
-            let iconSize = Self.baseIconSize * clampedScale
+            let iconSize = Self.baseIconSize * scale
             let valueWidth = valueLabel.intrinsicContentSize.width
             let unitWidth = unitLabel.intrinsicContentSize.width
             let neededWidth = padding + iconSize + 6 + valueWidth + 4 + unitWidth + padding
-            let newWidth = max(neededWidth, frame.width)
 
-            frame.size.width = newWidth
+            // 아이콘 모드에서 필요한 최소 너비 계산 (스케일 1.0 기준)
+            let baseNeededWidth = padding + Self.baseIconSize + 6 + (valueWidth / scale) + 4 + (unitWidth / scale) + padding
+            let baseWidth = max(baseNeededWidth, textModeBaseSize.width)
 
-            // initialSize를 역산하여 calculateScaleFactor()가 토글 전과 동일한 스케일을 반환하도록 설정
-            let safeScale = max(scale, 0.01)
-            initialSize = CGSize(
-                width: frame.size.width / safeScale,
-                height: frame.size.height / safeScale
+            frame.size = CGSize(
+                width: baseWidth * scale,
+                height: textModeBaseSize.height * scale
             )
+            initialSize = CGSize(width: baseWidth, height: textModeBaseSize.height)
         }
 
         if isSelected {
@@ -346,8 +350,11 @@ class BaseStatWidget: UIView, Selectable {
         let widthScale = bounds.width / initialSize.width
         let heightScale = bounds.height / initialSize.height
         let minScale = min(widthScale, heightScale)
+        let result = min(max(minScale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
 
-        return min(max(minScale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
+        print("   [calculateScaleFactor] bounds=\(bounds.size), initialSize=\(initialSize), widthScale=\(widthScale), heightScale=\(heightScale), minScale=\(minScale), result=\(result)")
+
+        return result
     }
 
     /// 외부에서 직접 스케일 지정하여 폰트 업데이트 (ResizeHandle에서 사용)
@@ -359,6 +366,7 @@ class BaseStatWidget: UIView, Selectable {
         }
 
         let clampedScale = min(max(scale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
+        print("📐 [updateFontsWithScale] requested=\(scale), clamped=\(clampedScale), bounds=\(bounds.size), initialSize=\(initialSize)")
         applyFontScale(clampedScale)
     }
 

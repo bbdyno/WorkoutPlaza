@@ -31,6 +31,8 @@ extension RunningDetailViewController {
             formatter.dateFormat = "yyyyMMddHHmmss"
             let dateStr = formatter.string(from: imported.originalData.startDate)
             return "imported_\(dateStr)"
+        } else if let external = externalWorkout {
+            return "external_\(external.id.uuidString)"
         }
         return "default"
     }
@@ -56,6 +58,16 @@ extension RunningDetailViewController {
                 workoutId: UUID().uuidString,
                 workoutTitle: title,
                 workoutDate: imported.originalData.startDate,
+                image: image
+            )
+        } else if let external = externalWorkout {
+            let distanceKm = external.workoutData.distance / 1000
+            let title = String(format: "러닝 - %.2fkm", distanceKm)
+            WorkoutCardManager.shared.createCard(
+                sportType: .running,
+                workoutId: external.id.uuidString,
+                workoutTitle: title,
+                workoutDate: external.workoutData.startDate,
                 image: image
             )
         }

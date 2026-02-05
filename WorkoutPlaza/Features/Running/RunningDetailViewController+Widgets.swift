@@ -15,11 +15,13 @@ extension RunningDetailViewController {
     // MARK: - Widget Configuration
 
     internal func configureWithWorkoutData() {
-        // Check workoutData first, then importedWorkoutData
+        // Check workoutData first, then importedWorkoutData, then externalWorkout
         if let data = workoutData {
             configureWithHealthKitData(data)
         } else if let imported = importedWorkoutData {
             configureWithImportedData(imported)
+        } else if let external = externalWorkout {
+            configureWithExternalWorkout(external)
         }
     }
 
@@ -83,6 +85,68 @@ extension RunningDetailViewController {
 
         // 기본 위젯 생성
         createDefaultWidgetsFromImported(imported)
+    }
+
+    private func configureWithExternalWorkout(_ external: ExternalWorkout) {
+        let data = external.workoutData
+
+        // GPS 경로 데이터가 있을 때만 경로 맵 뷰 추가
+        let routeLocations = data.route.map { point in
+            CLLocation(
+                coordinate: CLLocationCoordinate2D(latitude: point.lat, longitude: point.lon),
+                altitude: point.alt ?? 0,
+                horizontalAccuracy: 10,
+                verticalAccuracy: 10,
+                timestamp: point.timestamp ?? Date()
+            )
+        }
+
+        if !routeLocations.isEmpty {
+            let mapView = RouteMapView()
+            mapView.setRoute(routeLocations)
+            routeMapView = mapView
+
+            contentView.addSubview(mapView)
+            widgets.append(mapView)
+
+            let mapSize = mapView.calculateOptimalSize(maxDimension: 280)
+            let mapY: CGFloat = 70
+            let mapX = (view.bounds.width - mapSize.width) / 2
+            mapView.frame = CGRect(x: mapX, y: mapY, width: mapSize.width, height: mapSize.height)
+
+            mapView.selectionDelegate = self
+            selectionManager.registerItem(mapView)
+            mapView.initialSize = mapSize
+
+            if let savedColor = ColorPreferences.shared.loadColor(for: mapView.itemIdentifier) {
+                mapView.applyColor(savedColor)
+            }
+        }
+
+        // 기본 위젯 생성
+        createDefaultWidgetsFromExternal(external)
+    }
+
+    private func createDefaultWidgetsFromExternal(_ external: ExternalWorkout) {
+        let data = external.workoutData
+        let widgetSize = CGSize(width: 160, height: 80)
+        let hasRoute = !data.route.isEmpty
+        let startY: CGFloat = hasRoute ? 350 : 100
+
+        // 1. 거리 위젯
+        let distanceWidget = DistanceWidget()
+        distanceWidget.configure(distance: data.distance)
+        addWidget(distanceWidget, size: widgetSize, position: CGPoint(x: 30, y: startY))
+
+        // 2. 시간 위젯
+        let durationWidget = DurationWidget()
+        durationWidget.configure(duration: data.duration)
+        addWidget(durationWidget, size: widgetSize, position: CGPoint(x: 210, y: startY))
+
+        // 3. 페이스 위젯
+        let paceWidget = PaceWidget()
+        paceWidget.configure(pace: data.pace)
+        addWidget(paceWidget, size: widgetSize, position: CGPoint(x: 30, y: startY + 120))
     }
 
     private func createDefaultWidgetsFromImported(_ imported: ImportedWorkoutData) {
@@ -238,7 +302,7 @@ extension RunningDetailViewController {
     }
     
     internal func canAddWidget(_ type: SingleWidgetType) -> Bool {
-        let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? false
+        let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? (externalWorkout?.workoutData.route.isEmpty == false)
 
         switch type {
         case .routeMap:
@@ -270,10 +334,10 @@ extension RunningDetailViewController {
 
     @objc internal func showAddWidgetMenu() {
         // Check if we have any data
-        guard workoutData != nil || importedWorkoutData != nil else { return }
+        guard workoutData != nil || importedWorkoutData != nil || externalWorkout != nil else { return }
 
         let actionSheet = UIAlertController(title: "위젯 추가", message: nil, preferredStyle: .actionSheet)
-        let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? false
+        let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? (externalWorkout?.workoutData.route.isEmpty == false)
 
         // 1. Single Widgets
         for type in SingleWidgetType.allCases {
@@ -314,6 +378,8 @@ extension RunningDetailViewController {
             addSingleWidget(type, data: data)
         } else if let imported = importedWorkoutData {
             addSingleWidgetFromImported(type, imported: imported)
+        } else if let external = externalWorkout {
+            addSingleWidgetFromExternal(type, external: external)
         }
     }
     
@@ -547,7 +613,131 @@ extension RunningDetailViewController {
             }
         }
     }
-    
+
+    private func addSingleWidgetFromExternal(_ type: SingleWidgetType, external: ExternalWorkout) {
+        let data = external.workoutData
+        var widget: UIView?
+        var size = CGSize(width: 160, height: 80)
+
+        let routeLocations = data.route.map { point in
+            CLLocation(
+                coordinate: CLLocationCoordinate2D(latitude: point.lat, longitude: point.lon),
+                altitude: point.alt ?? 0,
+                horizontalAccuracy: 10,
+                verticalAccuracy: 10,
+                timestamp: point.timestamp ?? Date()
+            )
+        }
+        let hasRoute = !routeLocations.isEmpty
+
+        switch type {
+        case .routeMap:
+            guard hasRoute else {
+                let alert = UIAlertController(
+                    title: "경로 정보 없음",
+                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                present(alert, animated: true)
+                return
+            }
+
+            let mapView = RouteMapView()
+            mapView.setRoute(routeLocations)
+            routeMapView = mapView
+            widget = mapView
+            size = mapView.calculateOptimalSize(maxDimension: 250)
+
+        case .distance:
+            let w = DistanceWidget()
+            w.configure(distance: data.distance)
+            widget = w
+
+        case .duration:
+            let w = DurationWidget()
+            w.configure(duration: data.duration)
+            widget = w
+
+        case .pace:
+            let w = PaceWidget()
+            w.configure(pace: data.pace)
+            widget = w
+
+        case .speed:
+            let w = SpeedWidget()
+            w.configure(speed: data.avgSpeed)
+            widget = w
+
+        case .calories:
+            let w = CaloriesWidget()
+            w.configure(calories: data.calories)
+            widget = w
+
+        case .heartRate:
+            let w = HeartRateWidget()
+            w.configure(heartRate: data.avgHeartRate ?? 0)
+            widget = w
+
+        case .date:
+            let w = DateWidget()
+            w.configure(startDate: data.startDate)
+            widget = w
+
+        case .currentDateTime:
+            let w = CurrentDateTimeWidget()
+            w.configure(date: data.startDate)
+            widget = w
+            size = CGSize(width: 300, height: 80)
+
+        case .text:
+            let w = TextWidget()
+            w.configure(text: "텍스트 입력")
+            w.textDelegate = self
+            widget = w
+            size = CGSize(width: 120, height: 60)
+
+        case .location:
+            guard let firstLocation = routeLocations.first else {
+                let alert = UIAlertController(
+                    title: "위치 정보 없음",
+                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                present(alert, animated: true)
+                return
+            }
+
+            let w = LocationWidget()
+            widget = w
+            size = CGSize(width: 220, height: 50)
+
+            w.configure(location: firstLocation) { success in
+                if success {
+                    WPLog.info("Location widget configured successfully")
+                } else {
+                    WPLog.warning("Location widget configuration failed")
+                }
+            }
+        }
+
+        if let widget = widget {
+            let centerX = view.bounds.width / 2 - size.width / 2
+            let centerY = scrollView.contentOffset.y + view.bounds.height / 2 - size.height / 2
+
+            if let map = widget as? RouteMapView {
+                map.initialSize = size
+            }
+
+            addWidget(widget, size: size, position: CGPoint(x: centerX, y: centerY))
+
+            if let selectable = widget as? Selectable {
+                selectionManager.selectItem(selectable)
+            }
+        }
+    }
+
     // MARK: - Text Path Drawing
 
     @objc override internal func showTextPathInput() {
