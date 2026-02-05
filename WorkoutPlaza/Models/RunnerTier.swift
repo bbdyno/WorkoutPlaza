@@ -36,11 +36,11 @@ enum RunnerTier: String, Codable, CaseIterable {
     
     var themeColor: UIColor {
         switch self {
-        case .beginner: return ColorSystem.primaryBlue
-        case .runner: return UIColor(red: 45/255, green: 180/255, blue: 109/255, alpha: 1.0)
-        case .marathoner: return UIColor(red: 155/255, green: 89/255, blue: 182/255, alpha: 1.0)
-        case .elite: return UIColor(red: 255/255, green: 159/255, blue: 10/255, alpha: 1.0)
-        case .legend: return UIColor(red: 255/255, green: 215/255, blue: 0/255, alpha: 1.0)
+        case .beginner: return ColorSystem.tierBeginner
+        case .runner: return ColorSystem.tierRunner
+        case .marathoner: return ColorSystem.tierMarathoner
+        case .elite: return ColorSystem.tierElite
+        case .legend: return ColorSystem.tierLegend
         }
     }
     
