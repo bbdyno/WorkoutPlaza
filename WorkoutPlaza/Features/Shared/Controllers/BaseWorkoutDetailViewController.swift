@@ -1559,7 +1559,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Shared template menu logic - override in subclasses
     }
 
-    @objc func shareImage() {
+    @objc dynamic func shareImage() {
         // Hide UI elements that shouldn't be in the final image
         selectionManager.deselectAll()
         instructionLabel.isHidden = true
@@ -1577,7 +1577,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         }
     }
 
-    private func captureContentView() -> UIImage? {
+    func captureContentView() -> UIImage? {
         // Use current aspect ratio for export
         let targetSize = currentAspectRatio.exportSize
 
@@ -1602,7 +1602,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         return image
     }
 
-    private func presentShareSheet(image: UIImage) {
+    func presentShareSheet(image: UIImage) {
         // 카드 저장
         saveWorkoutCard(image: image)
 

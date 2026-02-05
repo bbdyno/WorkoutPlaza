@@ -911,6 +911,11 @@ extension StatisticsViewController: UICollectionViewDelegate {
                 detailVC.workoutData = workout
                 let nav = UINavigationController(rootViewController: detailVC)
                 present(nav, animated: true)
+            } else if let externalWorkout = item.data as? ExternalWorkout {
+                let detailVC = RunningDetailViewController()
+                detailVC.externalWorkout = externalWorkout
+                let nav = UINavigationController(rootViewController: detailVC)
+                present(nav, animated: true)
             }
         }
     }

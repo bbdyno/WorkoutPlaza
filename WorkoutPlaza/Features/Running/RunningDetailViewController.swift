@@ -14,11 +14,12 @@ import HealthKit
 class RunningDetailViewController: BaseWorkoutDetailViewController {
 
     // MARK: - Properties
-    
+
     // Data
     var workoutData: WorkoutData?
     var importedWorkoutData: ImportedWorkoutData?
-    
+    var externalWorkout: ExternalWorkout?
+
     var routeMapView: RouteMapView?
 
     // MARK: - Lifecycle
@@ -119,6 +120,102 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         }
     }
     
+    // MARK: - Share Options
+
+    override func shareImage() {
+        // Check if we have data to share as wplaza file
+        let canShareAsFile = workoutData != nil || externalWorkout != nil
+
+        if canShareAsFile {
+            showShareOptionsSheet()
+        } else {
+            // No workout data - just share the image
+            super.shareImage()
+        }
+    }
+
+    private func showShareOptionsSheet() {
+        let alert = UIAlertController(title: "공유", message: "공유 방식을 선택하세요", preferredStyle: .actionSheet)
+
+        // Share as image
+        alert.addAction(UIAlertAction(title: "이미지로 공유", style: .default) { [weak self] _ in
+            self?.shareAsImage()
+        })
+
+        // Share as wplaza file (only if we have HealthKit data)
+        if workoutData != nil {
+            alert.addAction(UIAlertAction(title: "운동 데이터 공유 (.wplaza)", style: .default) { [weak self] _ in
+                self?.shareAsWplazaFile(creatorName: nil)
+            })
+
+            alert.addAction(UIAlertAction(title: "이름과 함께 공유 (.wplaza)", style: .default) { [weak self] _ in
+                self?.showCreatorNameInputForShare()
+            })
+        }
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = shareImageButton
+            popover.sourceRect = shareImageButton.bounds
+        }
+
+        present(alert, animated: true)
+    }
+
+    private func shareAsImage() {
+        selectionManager.deselectAll()
+        instructionLabel.isHidden = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+
+            if let image = self.captureContentView() {
+                self.presentShareSheet(image: image)
+            }
+
+            self.instructionLabel.isHidden = false
+        }
+    }
+
+    private func shareAsWplazaFile(creatorName: String?) {
+        guard let data = workoutData else { return }
+
+        do {
+            let fileURL = try ShareManager.shared.exportWorkout(data, creatorName: creatorName)
+            ShareManager.shared.presentShareSheet(for: fileURL, from: self, sourceView: shareImageButton)
+        } catch {
+            let alert = UIAlertController(
+                title: "공유 실패",
+                message: error.localizedDescription,
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "확인", style: .default))
+            present(alert, animated: true)
+        }
+    }
+
+    private func showCreatorNameInputForShare() {
+        let alert = UIAlertController(
+            title: "이름 입력",
+            message: "공유할 때 표시될 이름을 입력하세요",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.placeholder = "이름"
+        }
+
+        alert.addAction(UIAlertAction(title: "공유", style: .default) { [weak self, weak alert] _ in
+            let name = alert?.textFields?.first?.text
+            self?.shareAsWplazaFile(creatorName: name)
+        })
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        present(alert, animated: true)
+    }
+
     // Logic specific to Running (HealthKit, GPS, etc)
     @objc func handleReceivedWorkoutInDetail(_ notification: Notification) {
         guard let shareableWorkout = notification.userInfo?["workout"] as? ShareableWorkout else { return }
@@ -312,9 +409,40 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         }
 
         // Handle Running-specific widgets
-        guard let data = workoutData else { return nil }
-        let widgetType = savedWidget.type
+        // Get data from workoutData, importedWorkoutData, or externalWorkout
+        let distance: Double
+        let duration: TimeInterval
+        let pace: Double
+        let avgSpeed: Double
+        let calories: Double
+        let avgHeartRate: Double
 
+        if let data = workoutData {
+            distance = data.distance
+            duration = data.duration
+            pace = data.pace
+            avgSpeed = data.avgSpeed
+            calories = data.calories
+            avgHeartRate = data.avgHeartRate
+        } else if let imported = importedWorkoutData {
+            distance = imported.originalData.distance
+            duration = imported.originalData.duration
+            pace = imported.originalData.pace
+            avgSpeed = imported.originalData.avgSpeed
+            calories = imported.originalData.calories
+            avgHeartRate = imported.originalData.avgHeartRate ?? 0
+        } else if let external = externalWorkout {
+            distance = external.workoutData.distance
+            duration = external.workoutData.duration
+            pace = external.workoutData.pace
+            avgSpeed = external.workoutData.avgSpeed
+            calories = external.workoutData.calories
+            avgHeartRate = external.workoutData.avgHeartRate ?? 0
+        } else {
+            return nil
+        }
+
+        let widgetType = savedWidget.type
         let widget: UIView?
 
         switch widgetType {
@@ -327,32 +455,32 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
         case "DistanceWidget":
             let w = DistanceWidget()
-            w.configure(distance: data.distance)
+            w.configure(distance: distance)
             widget = w
 
         case "DurationWidget":
             let w = DurationWidget()
-            w.configure(duration: data.duration)
+            w.configure(duration: duration)
             widget = w
 
         case "PaceWidget":
             let w = PaceWidget()
-            w.configure(pace: data.pace)
+            w.configure(pace: pace)
             widget = w
 
         case "SpeedWidget":
             let w = SpeedWidget()
-            w.configure(speed: data.avgSpeed)
+            w.configure(speed: avgSpeed)
             widget = w
 
         case "CaloriesWidget":
             let w = CaloriesWidget()
-            w.configure(calories: data.calories)
+            w.configure(calories: calories)
             widget = w
 
         case "HeartRateWidget":
             let w = HeartRateWidget()
-            w.configure(heartRate: data.avgHeartRate)
+            w.configure(heartRate: avgHeartRate)
             widget = w
 
         default:

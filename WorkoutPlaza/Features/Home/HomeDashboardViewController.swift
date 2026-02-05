@@ -659,16 +659,10 @@ class HomeDashboardViewController: UIViewController {
                 let nav = UINavigationController(rootViewController: detailVC)
                 present(nav, animated: true)
             } else if let externalWorkout = workout.data as? ExternalWorkout {
-                // For external workouts, create a minimal detail view or show alert
-                let alert = UIAlertController(
-                    title: "외부 러닝 기록",
-                    message: String(format: "거리: %.1f km\n시간: %@",
-                                  externalWorkout.workoutData.distance / 1000,
-                                  formatDuration(externalWorkout.workoutData.duration)),
-                    preferredStyle: .alert
-                )
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
-                present(alert, animated: true)
+                let detailVC = RunningDetailViewController()
+                detailVC.externalWorkout = externalWorkout
+                let nav = UINavigationController(rootViewController: detailVC)
+                present(nav, animated: true)
             }
         case .climbing:
             if let session = workout.data as? ClimbingData {
