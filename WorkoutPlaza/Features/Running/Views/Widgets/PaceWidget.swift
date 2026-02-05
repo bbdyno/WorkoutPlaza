@@ -16,6 +16,8 @@ import UIKit
 
 // MARK: - Pace Widget
 class PaceWidget: BaseStatWidget {
+    override var widgetIconName: String? { "speedometer" }
+
     func configure(pace: Double) {
         titleLabel.text = "평균 페이스"
         let minutes = Int(pace)

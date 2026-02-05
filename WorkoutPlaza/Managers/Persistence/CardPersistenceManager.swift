@@ -47,6 +47,7 @@ struct SavedWidgetState: Codable {
     let workoutDate: Date? // For DateWidget, CurrentDateTimeWidget
     let numericValue: Double? // For stat widgets (distance, duration, pace, etc.)
     let additionalText: String? // For LocationWidget, etc.
+    let displayMode: String? // WidgetDisplayMode rawValue (text, icon)
 }
 
 enum BackgroundType: String, Codable {

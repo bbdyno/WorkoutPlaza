@@ -13,7 +13,7 @@ import SnapKit
 class ClimbingDisciplineWidget: BaseStatWidget {
     private var discipline: ClimbingDiscipline = .bouldering
 
-    private let iconImageView: UIImageView = {
+    private let disciplineIconImageView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFit
         iv.tintColor = .white
@@ -34,8 +34,8 @@ class ClimbingDisciplineWidget: BaseStatWidget {
     }
 
     private func setupIcon() {
-        addSubview(iconImageView)
-        iconImageView.snp.makeConstraints { make in
+        addSubview(disciplineIconImageView)
+        disciplineIconImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
             make.centerY.equalTo(valueLabel)
             make.width.height.equalTo(24)
@@ -44,19 +44,19 @@ class ClimbingDisciplineWidget: BaseStatWidget {
         // Move valueLabel to the right of icon
         valueLabel.snp.remakeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.leading.equalTo(iconImageView.snp.trailing).offset(8)
+            make.leading.equalTo(disciplineIconImageView.snp.trailing).offset(8)
         }
     }
 
     func configure(discipline: ClimbingDiscipline) {
         self.discipline = discipline
         valueLabel.text = discipline.displayName
-        iconImageView.image = UIImage(systemName: discipline.iconName)
+        disciplineIconImageView.image = UIImage(systemName: discipline.iconName)
     }
 
     override func updateColors() {
         super.updateColors()
-        iconImageView.tintColor = currentColor
+        disciplineIconImageView.tintColor = currentColor
     }
 
     override func updateFonts() {
@@ -66,7 +66,7 @@ class ClimbingDisciplineWidget: BaseStatWidget {
         let scaleFactor = calculateScaleFactor()
         let iconSize = 24 * scaleFactor
 
-        iconImageView.snp.updateConstraints { make in
+        disciplineIconImageView.snp.updateConstraints { make in
             make.width.height.equalTo(iconSize)
         }
     }

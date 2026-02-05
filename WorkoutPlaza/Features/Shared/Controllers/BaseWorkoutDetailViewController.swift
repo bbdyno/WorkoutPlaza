@@ -1140,9 +1140,13 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 textColor = locationWidget.currentColor.toHex()
             }
 
-            // Stat widgets - save color
+            // Stat widgets - save color and display mode
+            var displayMode: String?
             if let statWidget = widget as? BaseStatWidget {
                 textColor = statWidget.currentColor.toHex()
+                if statWidget.widgetIconName != nil && statWidget.displayMode == .icon {
+                    displayMode = statWidget.displayMode.rawValue
+                }
             }
 
             // Get rotation from Selectable widgets
@@ -1168,7 +1172,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 pathPoints: pathPoints,
                 workoutDate: workoutDate,
                 numericValue: numericValue,
-                additionalText: additionalText
+                additionalText: additionalText,
+                displayMode: displayMode
             )
         }
         
@@ -1453,6 +1458,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             if let fontStyleRaw = savedState.fontStyle, let fontStyle = FontStyle(rawValue: fontStyleRaw) {
                 selectable.applyFont(fontStyle)
             }
+        }
+        if let statWidget = widget as? BaseStatWidget,
+           let modeRaw = savedState.displayMode,
+           let mode = WidgetDisplayMode(rawValue: modeRaw) {
+            statWidget.setDisplayMode(mode)
         }
     }
 

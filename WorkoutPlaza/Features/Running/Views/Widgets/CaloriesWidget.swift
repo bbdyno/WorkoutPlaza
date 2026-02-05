@@ -16,6 +16,8 @@ import UIKit
 
 // MARK: - Calories Widget
 class CaloriesWidget: BaseStatWidget {
+    override var widgetIconName: String? { "flame.fill" }
+
     func configure(calories: Double) {
         titleLabel.text = "칼로리"
         valueLabel.text = String(format: "%.0f", calories)

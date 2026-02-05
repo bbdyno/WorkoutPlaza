@@ -16,6 +16,8 @@ import UIKit
 
 // MARK: - Duration Widget
 class DurationWidget: BaseStatWidget {
+    override var widgetIconName: String? { "timer" }
+
     func configure(duration: TimeInterval) {
         titleLabel.text = "시간"
         

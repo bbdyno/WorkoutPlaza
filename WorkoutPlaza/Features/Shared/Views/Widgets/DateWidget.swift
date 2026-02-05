@@ -21,6 +21,8 @@ protocol DateWidgetDelegate: AnyObject {
 
 // MARK: - Date Widget
 class DateWidget: BaseStatWidget {
+    override var widgetIconName: String? { "calendar" }
+
     // Store configured date for persistence
     private(set) var configuredDate: Date?
 

@@ -17,7 +17,7 @@ import SnapKit
 
 // MARK: - Workout Type Widget
 class WorkoutTypeWidget: BaseStatWidget {
-    private let iconImageView: UIImageView = {
+    private let typeIconImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = .systemBlue
@@ -34,8 +34,8 @@ class WorkoutTypeWidget: BaseStatWidget {
     }
     
     private func setupIcon() {
-        addSubview(iconImageView)
-        iconImageView.snp.makeConstraints { make in
+        addSubview(typeIconImageView)
+        typeIconImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(12)
             make.centerY.equalTo(valueLabel)
             make.width.height.equalTo(32)
@@ -43,7 +43,7 @@ class WorkoutTypeWidget: BaseStatWidget {
         
         valueLabel.snp.remakeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.leading.equalTo(iconImageView.snp.trailing).offset(8)
+            make.leading.equalTo(typeIconImageView.snp.trailing).offset(8)
         }
     }
     
@@ -55,15 +55,15 @@ class WorkoutTypeWidget: BaseStatWidget {
         // 아이콘 설정
         switch workoutType {
         case "러닝":
-            iconImageView.image = UIImage(systemName: "figure.run")
+            typeIconImageView.image = UIImage(systemName: "figure.run")
         case "사이클링":
-            iconImageView.image = UIImage(systemName: "bicycle")
+            typeIconImageView.image = UIImage(systemName: "bicycle")
         case "걷기":
-            iconImageView.image = UIImage(systemName: "figure.walk")
+            typeIconImageView.image = UIImage(systemName: "figure.walk")
         case "하이킹":
-            iconImageView.image = UIImage(systemName: "figure.hiking")
+            typeIconImageView.image = UIImage(systemName: "figure.hiking")
         default:
-            iconImageView.image = UIImage(systemName: "figure.mixed.cardio")
+            typeIconImageView.image = UIImage(systemName: "figure.mixed.cardio")
         }
     }
 }
