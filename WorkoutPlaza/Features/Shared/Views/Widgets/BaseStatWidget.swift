@@ -8,6 +8,12 @@
 import UIKit
 import SnapKit
 
+// MARK: - Display Mode
+enum WidgetDisplayMode: String, Codable {
+    case text
+    case icon
+}
+
 // MARK: - Base Stat Widget
 class BaseStatWidget: UIView, Selectable {
 
@@ -37,6 +43,19 @@ class BaseStatWidget: UIView, Selectable {
 
     // Movement properties
     private var initialCenter: CGPoint = .zero
+
+    // MARK: - Display Mode
+    var displayMode: WidgetDisplayMode = .text
+
+    var widgetIconName: String? { nil }
+
+    let iconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .white
+        imageView.isHidden = true
+        return imageView
+    }()
 
     // MARK: - UI Components
     let titleLabel: UILabel = {
@@ -83,23 +102,128 @@ class BaseStatWidget: UIView, Selectable {
         backgroundColor = .clear
 
         addSubview(titleLabel)
+        addSubview(iconImageView)
         addSubview(valueLabel)
         addSubview(unitLabel)
 
-        titleLabel.snp.makeConstraints { make in
+        applyTextModeLayout()
+    }
+
+    // MARK: - Display Mode Toggle
+
+    func toggleDisplayMode() {
+        guard widgetIconName != nil else { return }
+        displayMode = (displayMode == .text) ? .icon : .text
+        applyDisplayMode()
+    }
+
+    func setDisplayMode(_ mode: WidgetDisplayMode) {
+        guard widgetIconName != nil else { return }
+        displayMode = mode
+        applyDisplayMode()
+    }
+
+    private var textModeSize: CGSize = .zero
+    private var textModeInitialSize: CGSize = .zero
+
+    private func applyDisplayMode() {
+        // 토글 전 폰트 스케일 보존
+        let scaleBeforeToggle = calculateScaleFactor()
+        let clampedScale = min(max(scaleBeforeToggle, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
+
+        switch displayMode {
+        case .text:
+            applyTextModeLayout()
+        case .icon:
+            applyIconModeLayout(scale: clampedScale)
+        }
+        updateColors()
+        resizeToFitContent(preservingScale: scaleBeforeToggle)
+        // 토글 후 정확한 폰트·아이콘 크기 보장
+        applyFontScale(clampedScale)
+    }
+
+    private func applyTextModeLayout() {
+        titleLabel.isHidden = false
+        iconImageView.isHidden = true
+
+        titleLabel.snp.remakeConstraints { make in
             make.top.equalToSuperview().offset(LayoutConstants.standardPadding)
             make.leading.trailing.equalToSuperview().inset(LayoutConstants.standardPadding)
         }
 
-        valueLabel.snp.makeConstraints { make in
+        valueLabel.snp.remakeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(4)
             make.leading.equalToSuperview().inset(LayoutConstants.standardPadding)
         }
 
-        unitLabel.snp.makeConstraints { make in
-            make.bottom.equalTo(valueLabel.snp.bottom).offset(-2)
+        unitLabel.snp.remakeConstraints { make in
+            make.lastBaseline.equalTo(valueLabel.snp.lastBaseline)
             make.leading.equalTo(valueLabel.snp.trailing).offset(4)
-            make.trailing.lessThanOrEqualToSuperview().inset(LayoutConstants.standardPadding)
+        }
+    }
+
+    private static let baseIconSize: CGFloat = 22
+
+    private func applyIconModeLayout(scale: CGFloat = 1.0) {
+        guard let iconName = widgetIconName else { return }
+
+        let iconSize = Self.baseIconSize * scale
+
+        titleLabel.isHidden = true
+        iconImageView.isHidden = false
+        iconImageView.image = UIImage(systemName: iconName)
+
+        iconImageView.snp.remakeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.leading.equalToSuperview().offset(LayoutConstants.standardPadding)
+            make.width.height.equalTo(iconSize)
+        }
+
+        valueLabel.snp.remakeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.leading.equalTo(iconImageView.snp.trailing).offset(6)
+        }
+
+        unitLabel.snp.remakeConstraints { make in
+            make.lastBaseline.equalTo(valueLabel.snp.lastBaseline)
+            make.leading.equalTo(valueLabel.snp.trailing).offset(4)
+        }
+    }
+
+    private func resizeToFitContent(preservingScale scale: CGFloat) {
+        let padding = LayoutConstants.standardPadding
+        let clampedScale = min(max(scale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
+
+        if displayMode == .text {
+            if textModeSize != .zero {
+                frame.size = textModeSize
+                initialSize = textModeInitialSize
+            }
+        } else {
+            if textModeSize == .zero {
+                textModeSize = frame.size
+                textModeInitialSize = initialSize
+            }
+
+            let iconSize = Self.baseIconSize * clampedScale
+            let valueWidth = valueLabel.intrinsicContentSize.width
+            let unitWidth = unitLabel.intrinsicContentSize.width
+            let neededWidth = padding + iconSize + 6 + valueWidth + 4 + unitWidth + padding
+            let newWidth = max(neededWidth, frame.width)
+
+            frame.size.width = newWidth
+
+            // initialSize를 역산하여 calculateScaleFactor()가 토글 전과 동일한 스케일을 반환하도록 설정
+            let safeScale = max(scale, 0.01)
+            initialSize = CGSize(
+                width: frame.size.width / safeScale,
+                height: frame.size.height / safeScale
+            )
+        }
+
+        if isSelected {
+            positionResizeHandles()
         }
     }
 
@@ -169,7 +293,11 @@ class BaseStatWidget: UIView, Selectable {
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
-        selectionDelegate?.itemWasSelected(self)
+        if isSelected && widgetIconName != nil {
+            toggleDisplayMode()
+        } else {
+            selectionDelegate?.itemWasSelected(self)
+        }
     }
 
     // MARK: - Selectable Methods
@@ -182,6 +310,7 @@ class BaseStatWidget: UIView, Selectable {
         valueLabel.textColor = currentColor
         titleLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
         unitLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+        iconImageView.tintColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
     }
 
     func updateFonts() {
@@ -241,6 +370,13 @@ class BaseStatWidget: UIView, Selectable {
         titleLabel.font = currentFontStyle.font(size: titleSize, weight: .medium)
         valueLabel.font = currentFontStyle.font(size: valueSize, weight: .bold)
         unitLabel.font = currentFontStyle.font(size: unitSize, weight: .regular)
+
+        // 아이콘 모드에서 아이콘 크기도 스케일에 맞게 조정
+        if displayMode == .icon {
+            iconImageView.snp.updateConstraints { make in
+                make.width.height.equalTo(Self.baseIconSize * scale)
+            }
+        }
     }
 
     // MARK: - Hit Testing

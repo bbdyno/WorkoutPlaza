@@ -16,6 +16,8 @@ import UIKit
 
 // MARK: - Distance Widget
 class DistanceWidget: BaseStatWidget {
+    override var widgetIconName: String? { "ruler" }
+
     func configure(distance: Double) {
         titleLabel.text = "거리"
         valueLabel.text = String(format: "%.2f", distance / 1000)
