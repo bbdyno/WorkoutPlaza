@@ -169,20 +169,7 @@ class GymStatsView: UIView {
         infoStack.addArrangedSubview(nameLabel)
         infoStack.addArrangedSubview(visitLabel)
 
-        // Right side: Success rate badge
-        let rateBadge = UIView()
-        rateBadge.backgroundColor = ColorSystem.primaryGreen.withAlphaComponent(0.15)
-        rateBadge.layer.cornerRadius = 8
 
-        let rateLabel = UILabel()
-        rateLabel.text = String(format: "%.0f%%", gymStat.successRate)
-        rateLabel.font = .systemFont(ofSize: 14, weight: .bold)
-        rateLabel.textColor = ColorSystem.primaryGreen
-
-        rateBadge.addSubview(rateLabel)
-        rateLabel.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10))
-        }
 
         // Difficulty bar with color dots
         let difficultyContainer = UIView()
@@ -227,17 +214,11 @@ class GymStatsView: UIView {
 
         // Layout
         container.addSubview(infoStack)
-        container.addSubview(rateBadge)
         container.addSubview(difficultyContainer)
 
         infoStack.snp.makeConstraints { make in
             make.top.leading.equalToSuperview()
-            make.trailing.lessThanOrEqualTo(rateBadge.snp.leading).offset(-12)
-        }
-
-        rateBadge.snp.makeConstraints { make in
             make.trailing.equalToSuperview()
-            make.centerY.equalTo(infoStack)
         }
 
         difficultyContainer.snp.makeConstraints { make in

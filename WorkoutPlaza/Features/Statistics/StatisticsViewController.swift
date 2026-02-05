@@ -416,7 +416,6 @@ class StatisticsViewController: UIViewController {
 
         switch currentPeriod {
         case .month:
-            // Days of the month (1, 9, 17, 25, 31 style labels)
             var data: [BarChartDataPoint] = []
             let daysInMonth = calendar.range(of: .day, in: .month, for: startDate)?.count ?? 31
 
@@ -428,6 +427,7 @@ class StatisticsViewController: UIViewController {
                 guard let dayDate = calendar.date(from: components) else { continue }
 
                 var dayDistance: Double = 0
+                var dayWorkouts: [(type: String, data: Any, distance: Double)] = []
 
                 for workout in runningWorkouts {
                     let workoutDay = calendar.component(.day, from: workout.startDate)
@@ -435,6 +435,7 @@ class StatisticsViewController: UIViewController {
                     let workoutYear = calendar.component(.year, from: workout.startDate)
                     if workoutDay == day && workoutMonth == selectedMonth && workoutYear == selectedYear {
                         dayDistance += workout.distance / 1000
+                        dayWorkouts.append(("internal", workout, workout.distance / 1000))
                     }
                 }
 
@@ -444,19 +445,18 @@ class StatisticsViewController: UIViewController {
                     let workoutYear = calendar.component(.year, from: workout.workoutData.startDate)
                     if workoutDay == day && workoutMonth == selectedMonth && workoutYear == selectedYear {
                         dayDistance += workout.workoutData.distance / 1000
+                        dayWorkouts.append(("external", workout, workout.workoutData.distance / 1000))
                     }
                 }
 
-                // Only show labels for certain days
                 let label = (day == 1 || day % 8 == 1 || day == daysInMonth) ? "\(day)" : ""
-                data.append(BarChartDataPoint(label: label, value: dayDistance, color: ColorSystem.primaryBlue))
+                let workoutData: Any? = dayWorkouts.isEmpty ? nil : dayWorkouts
+                data.append(BarChartDataPoint(label: label, value: dayDistance, color: ColorSystem.primaryBlue, workoutData: workoutData))
             }
             return data
 
         case .year:
-            // 12 months
             var data: [BarChartDataPoint] = []
-            let monthLabels = ["1월", "3월", "5월", "7월", "9월", "11월"]
 
             for month in 1...12 {
                 var components = DateComponents()
@@ -467,45 +467,60 @@ class StatisticsViewController: UIViewController {
                       let nextMonth = calendar.date(byAdding: .month, value: 1, to: monthStart) else { continue }
 
                 var monthDistance: Double = 0
+                var monthDuration: TimeInterval = 0
+                var monthCount = 0
 
                 for workout in runningWorkouts {
                     if workout.startDate >= monthStart && workout.startDate < nextMonth {
                         monthDistance += workout.distance / 1000
+                        monthDuration += workout.duration
+                        monthCount += 1
                     }
                 }
 
                 for workout in externalRunningWorkouts {
                     if workout.workoutData.startDate >= monthStart && workout.workoutData.startDate < nextMonth {
                         monthDistance += workout.workoutData.distance / 1000
+                        monthDuration += workout.workoutData.duration
+                        monthCount += 1
                     }
                 }
 
                 let label = (month % 2 == 1) ? "\(month)월" : ""
-                data.append(BarChartDataPoint(label: label, value: monthDistance, color: ColorSystem.primaryBlue))
+                let workoutData: Any? = monthCount > 0 ? [
+                    "distance": monthDistance,
+                    "duration": monthDuration,
+                    "count": monthCount,
+                    "month": month
+                ] : nil
+                data.append(BarChartDataPoint(label: label, value: monthDistance, color: ColorSystem.primaryBlue, workoutData: workoutData))
             }
             return data
 
         case .all:
-            // Years
             var data: [BarChartDataPoint] = []
             let years = getAvailableYears()
 
             for year in years {
                 var yearDistance: Double = 0
+                var yearWorkouts: [(type: String, data: Any, distance: Double)] = []
 
                 for workout in runningWorkouts {
                     if calendar.component(.year, from: workout.startDate) == year {
                         yearDistance += workout.distance / 1000
+                        yearWorkouts.append(("internal", workout, workout.distance / 1000))
                     }
                 }
 
                 for workout in externalRunningWorkouts {
                     if calendar.component(.year, from: workout.workoutData.startDate) == year {
                         yearDistance += workout.workoutData.distance / 1000
+                        yearWorkouts.append(("external", workout, workout.workoutData.distance / 1000))
                     }
                 }
 
-                data.append(BarChartDataPoint(label: "\(year)", value: yearDistance, color: ColorSystem.primaryBlue))
+                let workoutData: Any? = yearWorkouts.isEmpty ? nil : yearWorkouts
+                data.append(BarChartDataPoint(label: "\(year)", value: yearDistance, color: ColorSystem.primaryBlue, workoutData: workoutData))
             }
             return data
         }
@@ -696,7 +711,7 @@ class StatisticsViewController: UIViewController {
         return [
             StatsSummaryItem(title: "완등", value: "\(sentRoutes)", icon: "checkmark.circle", color: ColorSystem.primaryGreen),
             StatsSummaryItem(title: "시도", value: "\(totalRoutes)", icon: "figure.climbing", color: ColorSystem.primaryGreen),
-            StatsSummaryItem(title: "성공률", value: String(format: "%.0f%%", successRate), icon: "percent", color: ColorSystem.primaryGreen),
+            StatsSummaryItem(title: "성공률", value: String(format: "%.0f", successRate), icon: "percent", color: ColorSystem.primaryGreen),
             StatsSummaryItem(title: "방문", value: "\(totalVisits)회", icon: "location", color: ColorSystem.primaryGreen)
         ]
     }
@@ -856,7 +871,7 @@ extension StatisticsViewController: UICollectionViewDataSource {
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ClimbingStatsCell.identifier, for: indexPath) as! ClimbingStatsCell
                 let stats = computeClimbingStatsData()
                 let gymStats = computeGymStats()
-                cell.configure(stats: stats, gymStats: gymStats, delegate: self)
+                cell.configure(stats: stats, gymStats: gymStats, delegate: self, sessions: climbingSessions)
                 return cell
             }
         case 1:
@@ -1912,15 +1927,21 @@ class GraphChartCell: UICollectionViewCell {
 
     func configure(title: String, data: [BarChartDataPoint], unit: String) {
         titleLabel.text = title
-        chartView.configure(with: data, showValues: true) { value in
-            if value >= 100 {
-                return String(format: "%.0f", value)
-            } else if value >= 10 {
-                return String(format: "%.1f", value)
-            } else {
-                return String(format: "%.1f", value)
-            }
-        }
+        chartView.configure(
+            with: data,
+            showValues: true,
+            valueFormatter: { value in
+                if value >= 100 {
+                    return String(format: "%.0f", value)
+                } else if value >= 10 {
+                    return String(format: "%.1f", value)
+                } else {
+                    return String(format: "%.1f", value)
+                }
+            },
+            onBarTapped: nil,
+            onFloatingViewDismiss: nil
+        )
     }
 }
 
@@ -2049,15 +2070,16 @@ class RunningStatsCell: UICollectionViewCell {
 
     private var gradientLayer: CAGradientLayer?
 
-    // Sport Segment
-    private let sportSegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: StatSportType.allCases.map { $0.displayName })
-        control.selectedSegmentIndex = 0
-        control.backgroundColor = ColorSystem.divider
-        control.selectedSegmentTintColor = ColorSystem.primaryBlue
-        control.setTitleTextAttributes([.foregroundColor: ColorSystem.mainText], for: .normal)
-        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
-        return control
+    // Sport Picker Button (Dropdown)
+    private lazy var sportPickerButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        button.setTitleColor(.white, for: .normal)
+        button.layer.cornerRadius = 16
+        button.layer.cornerCurve = .continuous
+        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16)
+        button.showsMenuAsPrimaryAction = true
+        return button
     }()
 
     // Period Segment
@@ -2163,6 +2185,8 @@ class RunningStatsCell: UICollectionViewCell {
 
     private let chartView = BarChartView()
 
+    private var floatingView: UIView?
+
     // Summary Grid
     private let summaryGridStack: UIStackView = {
         let stack = UIStackView()
@@ -2188,9 +2212,8 @@ class RunningStatsCell: UICollectionViewCell {
         contentView.layer.cornerRadius = 16
         contentView.layer.cornerCurve = .continuous
 
-        // Sport Segment
-        contentView.addSubview(sportSegmentedControl)
-        sportSegmentedControl.addTarget(self, action: #selector(sportChanged), for: .valueChanged)
+        // Sport Picker Button
+        contentView.addSubview(sportPickerButton)
 
         // Period Segment
         contentView.addSubview(periodSegmentedControl)
@@ -2221,14 +2244,14 @@ class RunningStatsCell: UICollectionViewCell {
         contentView.addSubview(summaryGridStack)
 
         // Constraints
-        sportSegmentedControl.snp.makeConstraints { make in
+        sportPickerButton.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(16)
-            make.leading.trailing.equalToSuperview().inset(16)
+            make.leading.equalToSuperview().inset(16)
             make.height.equalTo(32)
         }
 
         periodSegmentedControl.snp.makeConstraints { make in
-            make.top.equalTo(sportSegmentedControl.snp.bottom).offset(12)
+            make.top.equalTo(sportPickerButton.snp.bottom).offset(12)
             make.leading.trailing.equalToSuperview().inset(16)
             make.height.equalTo(32)
         }
@@ -2307,6 +2330,11 @@ class RunningStatsCell: UICollectionViewCell {
         }
     }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        dismissFloatingView()
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
         gradientLayer?.frame = tierCardView.bounds
@@ -2324,6 +2352,8 @@ class RunningStatsCell: UICollectionViewCell {
         self.currentPeriod = period
         self.currentYear = year
         self.currentMonth = month
+
+        updateSportPickerMenu(selectedSport: .running)
 
         periodSegmentedControl.selectedSegmentIndex = period.rawValue
 
@@ -2366,9 +2396,33 @@ class RunningStatsCell: UICollectionViewCell {
 
         // Chart
         chartTitleLabel.text = period == .month ? "일별 거리 (km)" : period == .year ? "월별 거리 (km)" : "연도별 거리 (km)"
-        chartView.configure(with: chartData, showValues: true) { value in
-            String(format: "%.1f", value)
-        }
+        chartView.configure(
+            with: chartData,
+            showValues: true,
+            valueFormatter: { value in
+                String(format: "%.1f", value)
+            },
+            onBarTapped: { [weak self] index, workoutData in
+                guard let self = self else { return }
+
+                if currentPeriod == .year {
+                    if let monthlyStats = workoutData as? [String: Any] {
+                        self.showFloatingMonthlyStats(stats: monthlyStats)
+                    } else {
+                        self.dismissFloatingView()
+                    }
+                } else {
+                    if let workouts = workoutData as? [(type: String, data: Any, distance: Double)] {
+                        self.showFloatingWorkouts(workouts: workouts)
+                    } else {
+                        self.dismissFloatingView()
+                    }
+                }
+            },
+            onFloatingViewDismiss: { [weak self] in
+                self?.dismissFloatingView()
+            }
+        )
 
         // Summary grid
         summaryGridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -2429,12 +2483,253 @@ class RunningStatsCell: UICollectionViewCell {
         return card
     }
 
-    @objc private func sportChanged() {
-        guard let sport = StatSportType(rawValue: sportSegmentedControl.selectedSegmentIndex) else { return }
-        let color = sport.sportType.themeColor
-        sportSegmentedControl.selectedSegmentTintColor = color
-        periodSegmentedControl.selectedSegmentTintColor = color
-        delegate?.handleSportChanged(sport)
+    private func showFloatingWorkouts(workouts: [(type: String, data: Any, distance: Double)]) {
+        dismissFloatingView()
+
+        let container = UIView()
+        container.backgroundColor = UIColor.black.withAlphaComponent(0.85)
+        container.layer.cornerRadius = 12
+        container.layer.cornerCurve = .continuous
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 8
+        stack.alignment = .fill
+
+        for workout in workouts {
+            let row = createWorkoutRow(type: workout.type, data: workout.data)
+            stack.addArrangedSubview(row)
+        }
+
+        container.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(16)
+        }
+
+        contentView.addSubview(container)
+        container.snp.makeConstraints { make in
+            make.centerX.equalTo(chartView)
+            make.top.equalTo(chartView).offset(40)
+            make.width.lessThanOrEqualToSuperview().offset(-32)
+        }
+
+        floatingView = container
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissFloatingView))
+        container.addGestureRecognizer(tapGesture)
+
+        contentView.isUserInteractionEnabled = true
+        let bgTapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissFloatingView))
+        contentView.addGestureRecognizer(bgTapGesture)
+    }
+
+    private func showFloatingMonthlyStats(stats: [String: Any]) {
+        dismissFloatingView()
+
+        guard let distance = stats["distance"] as? Double,
+              let duration = stats["duration"] as? TimeInterval,
+              let count = stats["count"] as? Int,
+              let month = stats["month"] as? Int else { return }
+
+        let container = UIView()
+        container.backgroundColor = UIColor.black.withAlphaComponent(0.85)
+        container.layer.cornerRadius = 12
+        container.layer.cornerCurve = .continuous
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.alignment = .fill
+
+        let countLabel = createStatRow(icon: "figure.run", title: "러닝 횟수", value: "\(count)회")
+        let distanceLabel = createStatRow(icon: "arrow.left.and.right", title: "총 거리", value: String(format: "%.1f km", distance))
+        let timeLabel = createStatRow(icon: "clock", title: "총 시간", value: formatDuration(duration))
+
+        stack.addArrangedSubview(countLabel)
+        stack.addArrangedSubview(distanceLabel)
+        stack.addArrangedSubview(timeLabel)
+
+        container.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(20)
+        }
+
+        contentView.addSubview(container)
+        container.snp.makeConstraints { make in
+            make.centerX.equalTo(chartView)
+            make.top.equalTo(chartView).offset(40)
+            make.width.lessThanOrEqualToSuperview().offset(-32)
+        }
+
+        floatingView = container
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissFloatingView))
+        container.addGestureRecognizer(tapGesture)
+
+        contentView.isUserInteractionEnabled = true
+        let bgTapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissFloatingView))
+        contentView.addGestureRecognizer(bgTapGesture)
+    }
+
+    private func createStatRow(icon: String, title: String, value: String) -> UIView {
+        let row = UIView()
+        row.backgroundColor = UIColor.white.withAlphaComponent(0.1)
+        row.layer.cornerRadius = 8
+
+        let iconView = UIImageView()
+        iconView.image = UIImage(systemName: icon)
+        iconView.tintColor = .white
+        iconView.contentMode = .scaleAspectFit
+
+        let titleLabel = UILabel()
+        titleLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        titleLabel.textColor = UIColor.white.withAlphaComponent(0.8)
+
+        let valueLabel = UILabel()
+        valueLabel.font = .systemFont(ofSize: 18, weight: .semibold)
+        valueLabel.textColor = .white
+
+        titleLabel.text = title
+        valueLabel.text = value
+
+        row.addSubview(iconView)
+        row.addSubview(titleLabel)
+        row.addSubview(valueLabel)
+
+        iconView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(28)
+        }
+
+        titleLabel.snp.makeConstraints { make in
+            make.leading.equalTo(iconView.snp.trailing).offset(12)
+            make.centerY.equalTo(valueLabel.snp.top).offset(-4)
+        }
+
+        valueLabel.snp.makeConstraints { make in
+            make.leading.equalTo(iconView.snp.trailing).offset(12)
+            make.top.equalTo(titleLabel.snp.bottom).offset(2)
+            make.trailing.equalToSuperview().offset(-16)
+            make.bottom.lessThanOrEqualToSuperview().offset(-8)
+        }
+
+        return row
+    }
+
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let hours = Int(duration) / 3600
+        let minutes = (Int(duration) % 3600) / 60
+        let seconds = Int(duration) % 60
+
+        if hours > 0 {
+            return String(format: "%d시간 %02d분", hours, minutes)
+        } else {
+            return String(format: "%d분 %02d초", minutes, seconds)
+        }
+    }
+
+    private func createWorkoutRow(type: String, data: Any) -> UIView {
+        let row = UIView()
+        row.backgroundColor = UIColor.white.withAlphaComponent(0.1)
+        row.layer.cornerRadius = 8
+
+        let iconView = UIImageView()
+        iconView.image = UIImage(systemName: "figure.run")
+        iconView.tintColor = .white
+        iconView.contentMode = .scaleAspectFit
+
+        let distanceLabel = UILabel()
+        let timeLabel = UILabel()
+        let paceLabel = UILabel()
+
+        distanceLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        distanceLabel.textColor = .white
+
+        timeLabel.font = .systemFont(ofSize: 12)
+        timeLabel.textColor = UIColor.white.withAlphaComponent(0.8)
+
+        paceLabel.font = .systemFont(ofSize: 12)
+        paceLabel.textColor = UIColor.white.withAlphaComponent(0.8)
+
+        let textStack = UIStackView(arrangedSubviews: [distanceLabel, timeLabel, paceLabel])
+        textStack.axis = .vertical
+        textStack.spacing = 2
+
+        row.addSubview(iconView)
+        row.addSubview(textStack)
+
+        iconView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(24)
+        }
+
+        textStack.snp.makeConstraints { make in
+            make.leading.equalTo(iconView.snp.trailing).offset(12)
+            make.trailing.equalToSuperview().offset(-12)
+            make.centerY.equalToSuperview()
+        }
+
+        if type == "internal", let workout = data as? WorkoutData {
+            let distanceKm = workout.distance / 1000
+            distanceLabel.text = String(format: "%.1f km", distanceKm)
+
+            let hours = Int(workout.duration) / 3600
+            let minutes = (Int(workout.duration) % 3600) / 60
+            let seconds = Int(workout.duration) % 60
+            if hours > 0 {
+                timeLabel.text = String(format: "%d:%02d:%02d", hours, minutes, seconds)
+            } else {
+                timeLabel.text = String(format: "%d:%02d", minutes, seconds)
+            }
+
+            let avgPace = distanceKm > 0 ? (workout.duration / 60) / distanceKm : 0
+            let paceMinutes = Int(avgPace)
+            let paceSeconds = Int((avgPace - Double(paceMinutes)) * 60)
+            paceLabel.text = String(format: "%d'%02d\"/km", paceMinutes, paceSeconds)
+        } else if type == "external", let workout = data as? ExternalWorkout {
+            let distanceKm = workout.workoutData.distance / 1000
+            distanceLabel.text = String(format: "%.1f km", distanceKm)
+
+            let hours = Int(workout.workoutData.duration) / 3600
+            let minutes = (Int(workout.workoutData.duration) % 3600) / 60
+            let seconds = Int(workout.workoutData.duration) % 60
+            if hours > 0 {
+                timeLabel.text = String(format: "%d:%02d:%02d", hours, minutes, seconds)
+            } else {
+                timeLabel.text = String(format: "%d:%02d", minutes, seconds)
+            }
+
+            let avgPace = distanceKm > 0 ? (workout.workoutData.duration / 60) / distanceKm : 0
+            let paceMinutes = Int(avgPace)
+            let paceSeconds = Int((avgPace - Double(paceMinutes)) * 60)
+            paceLabel.text = String(format: "%d'%02d\"/km", paceMinutes, paceSeconds)
+        }
+
+        return row
+    }
+
+    @objc private func dismissFloatingView() {
+        floatingView?.removeFromSuperview()
+        floatingView = nil
+    }
+
+    private func updateSportPickerMenu(selectedSport: StatSportType) {
+        let actions = StatSportType.allCases.map { sport in
+            UIAction(
+                title: sport.displayName,
+                state: sport == selectedSport ? .on : .off
+            ) { [weak self] _ in
+                guard let self = self else { return }
+                self.updateSportPickerMenu(selectedSport: sport)
+                self.periodSegmentedControl.selectedSegmentTintColor = sport.sportType.themeColor
+                self.delegate?.handleSportChanged(sport)
+            }
+        }
+        sportPickerButton.menu = UIMenu(children: actions)
+        sportPickerButton.setTitle("\(selectedSport.displayName) ▾", for: .normal)
+        sportPickerButton.backgroundColor = selectedSport.sportType.themeColor
     }
 
     @objc private func periodChanged() {
@@ -2490,6 +2785,7 @@ class RunningStatsCell: UICollectionViewCell {
 
 protocol ClimbingStatsCellDelegate: AnyObject {
     func handleSportChanged(_ sport: StatSportType)
+    func handlePeriodChanged(_ period: StatPeriod)
 }
 
 // MARK: - Climbing Stats Cell
@@ -2499,16 +2795,66 @@ class ClimbingStatsCell: UICollectionViewCell {
 
     weak var delegate: ClimbingStatsCellDelegate?
 
-    // Sport Segment
-    private let sportSegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: StatSportType.allCases.map { $0.displayName })
-        control.selectedSegmentIndex = 1
+    // Sport Picker Button (Dropdown)
+    private lazy var sportPickerButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        button.setTitleColor(.white, for: .normal)
+        button.layer.cornerRadius = 16
+        button.layer.cornerCurve = .continuous
+        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16)
+        button.showsMenuAsPrimaryAction = true
+        return button
+    }()
+
+    // Period Segment
+    private let periodSegmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["월별", "연도별", "전체"])
+        control.selectedSegmentIndex = 0
         control.backgroundColor = ColorSystem.divider
         control.selectedSegmentTintColor = ColorSystem.primaryGreen
         control.setTitleTextAttributes([.foregroundColor: ColorSystem.mainText], for: .normal)
         control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
         return control
     }()
+
+    // Period Navigation
+    private let periodNavigationView: UIView = {
+        let view = UIView()
+        return view
+    }()
+
+    private let prevButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        button.tintColor = ColorSystem.mainText
+        return button
+    }()
+
+    private let nextButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "chevron.right"), for: .normal)
+        button.tintColor = ColorSystem.mainText
+        return button
+    }()
+
+    private let periodLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14, weight: .semibold)
+        label.textColor = ColorSystem.mainText
+        label.textAlignment = .center
+        return label
+    }()
+
+    // Chart View
+    private let chartTitleLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.textColor = ColorSystem.mainText
+        return label
+    }()
+
+    private let chartView = BarChartView()
 
     // Summary Grid
     private let summaryGridStack: UIStackView = {
@@ -2522,6 +2868,11 @@ class ClimbingStatsCell: UICollectionViewCell {
     // Gym Stats
     private let gymStatsView = GymStatsView()
 
+    private var currentPeriod: StatPeriod = .month
+    private var currentMonth: Int = Calendar.current.component(.month, from: Date())
+    private var currentYear: Int = Calendar.current.component(.year, from: Date())
+    private var floatingView: UIView?
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -2534,20 +2885,73 @@ class ClimbingStatsCell: UICollectionViewCell {
         contentView.layer.cornerRadius = 16
         contentView.layer.cornerCurve = .continuous
 
-        contentView.addSubview(sportSegmentedControl)
-        sportSegmentedControl.addTarget(self, action: #selector(sportChanged), for: .valueChanged)
+        // Sport Picker Button
+        contentView.addSubview(sportPickerButton)
+
+        // Period Segment
+        contentView.addSubview(periodSegmentedControl)
+        periodSegmentedControl.addTarget(self, action: #selector(periodChanged), for: .valueChanged)
+
+        periodNavigationView.addSubview(prevButton)
+        periodNavigationView.addSubview(periodLabel)
+        periodNavigationView.addSubview(nextButton)
+        prevButton.addTarget(self, action: #selector(prevTapped), for: .touchUpInside)
+        nextButton.addTarget(self, action: #selector(nextTapped), for: .touchUpInside)
+
+        contentView.addSubview(chartTitleLabel)
+        contentView.addSubview(chartView)
+        contentView.addSubview(periodNavigationView)
 
         contentView.addSubview(summaryGridStack)
         contentView.addSubview(gymStatsView)
 
-        sportSegmentedControl.snp.makeConstraints { make in
+        sportPickerButton.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(16)
+            make.leading.equalToSuperview().inset(16)
+            make.height.equalTo(32)
+        }
+
+        periodSegmentedControl.snp.makeConstraints { make in
+            make.top.equalTo(sportPickerButton.snp.bottom).offset(12)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(28)
+        }
+
+        periodNavigationView.snp.makeConstraints { make in
+            make.top.equalTo(periodSegmentedControl.snp.bottom).offset(8)
             make.leading.trailing.equalToSuperview().inset(16)
             make.height.equalTo(32)
         }
 
+        prevButton.snp.makeConstraints { make in
+            make.leading.top.bottom.equalToSuperview()
+            make.width.equalTo(40)
+        }
+
+        periodLabel.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.equalTo(prevButton.snp.trailing).offset(8)
+            make.trailing.equalTo(nextButton.snp.leading).offset(-8)
+        }
+
+        nextButton.snp.makeConstraints { make in
+            make.trailing.top.bottom.equalToSuperview()
+            make.width.equalTo(40)
+        }
+
+        chartTitleLabel.snp.makeConstraints { make in
+            make.top.equalTo(periodNavigationView.snp.bottom).offset(12)
+            make.leading.trailing.equalToSuperview().inset(16)
+        }
+
+        chartView.snp.makeConstraints { make in
+            make.top.equalTo(chartTitleLabel.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(160)
+        }
+
         summaryGridStack.snp.makeConstraints { make in
-            make.top.equalTo(sportSegmentedControl.snp.bottom).offset(16)
+            make.top.equalTo(chartView.snp.bottom).offset(16)
             make.leading.trailing.equalToSuperview().inset(16)
             make.height.equalTo(80)
         }
@@ -2562,9 +2966,23 @@ class ClimbingStatsCell: UICollectionViewCell {
     func configure(
         stats: StatisticsViewController.ClimbingStatsData,
         gymStats: [GymStatData],
-        delegate: ClimbingStatsCellDelegate
+        delegate: ClimbingStatsCellDelegate,
+        sessions: [ClimbingData]
     ) {
         self.delegate = delegate
+
+        updateSportPickerMenu(selectedSport: .climbing)
+
+        let calendar = Calendar.current
+        let now = Date()
+        currentYear = calendar.component(.year, from: now)
+        currentMonth = calendar.component(.month, from: now)
+        currentPeriod = .month
+        periodSegmentedControl.selectedSegmentIndex = 0
+
+        updatePeriodLabel()
+        updateButtonStates()
+        updateChart(sessions: sessions)
 
         // Summary grid
         summaryGridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -2572,7 +2990,7 @@ class ClimbingStatsCell: UICollectionViewCell {
         let summaryItems = [
             ("완등", "\(stats.sentRoutes)", "checkmark.circle", ColorSystem.primaryGreen),
             ("시도", "\(stats.totalRoutes)", "figure.climbing", ColorSystem.primaryGreen),
-            ("성공률", String(format: "%.0f%%", stats.successRate), "percent", ColorSystem.primaryGreen),
+            ("성공률", String(format: "%.0f", stats.successRate), "percent", ColorSystem.primaryGreen),
             ("방문", "\(stats.visitCount)회", "location", ColorSystem.primaryGreen)
         ]
 
@@ -2583,6 +3001,161 @@ class ClimbingStatsCell: UICollectionViewCell {
 
         // Gym stats
         gymStatsView.configure(with: gymStats)
+    }
+
+    private func updatePeriodLabel() {
+        switch currentPeriod {
+        case .month:
+            periodLabel.text = "\(currentYear)년 \(currentMonth)월"
+        case .year:
+            periodLabel.text = "\(currentYear)년"
+        case .all:
+            periodLabel.text = "전체"
+        }
+    }
+
+    private func updateChart(sessions: [ClimbingData]) {
+        let chartData = computeClimbingChartData(sessions: sessions)
+
+        switch currentPeriod {
+        case .month:
+            chartTitleLabel.text = "일별 완등 수"
+        case .year:
+            chartTitleLabel.text = "월별 완등 수"
+        case .all:
+            chartTitleLabel.text = "연도별 완등 수"
+        }
+
+        chartView.configure(
+            with: chartData,
+            showValues: true,
+            valueFormatter: { value in
+                String(format: "%.0f", value)
+            },
+            onBarTapped: { [weak self] index, workoutData in
+                guard let self = self, let data = workoutData as? [String: Any] else { return }
+                self.showFloatingClimbingStats(data: data)
+            },
+            onFloatingViewDismiss: { [weak self] in
+                self?.dismissFloatingView()
+            }
+        )
+    }
+
+    private func computeClimbingChartData(sessions: [ClimbingData]) -> [BarChartDataPoint] {
+        let calendar = Calendar.current
+        let (startDate, endDate) = getDateRange(for: currentPeriod, offset: 0)
+
+        switch currentPeriod {
+        case .month:
+            var data: [BarChartDataPoint] = []
+            let daysInMonth = calendar.range(of: .day, in: .month, for: startDate)?.count ?? 31
+
+            for day in 1...daysInMonth {
+                var components = calendar.dateComponents([.year, .month], from: startDate)
+                components.day = day
+                guard let dayDate = calendar.date(from: components) else { continue }
+
+                var dayRoutes = 0
+                var daySessions: [ClimbingData] = []
+
+                for session in sessions {
+                    if calendar.isDate(session.sessionDate, inSameDayAs: dayDate) {
+                        dayRoutes += session.sentRoutes
+                        daySessions.append(session)
+                    }
+                }
+
+                let label = (day == 1 || day % 7 == 1 || day == daysInMonth) ? "\(day)" : ""
+                let workoutData: Any? = daySessions.isEmpty ? nil : ["type": "daily", "sessions": daySessions, "date": dayDate]
+                data.append(BarChartDataPoint(label: label, value: Double(dayRoutes), color: ColorSystem.primaryGreen, workoutData: workoutData))
+            }
+            return data
+
+        case .year:
+            var data: [BarChartDataPoint] = []
+
+            for month in 1...12 {
+                var components = DateComponents()
+                components.year = currentYear
+                components.month = month
+                components.day = 1
+                guard let monthStart = calendar.date(from: components),
+                      let nextMonth = calendar.date(byAdding: .month, value: 1, to: monthStart) else { continue }
+
+                var monthRoutes = 0
+                var monthSessions: [ClimbingData] = []
+
+                for session in sessions {
+                    if session.sessionDate >= monthStart && session.sessionDate < nextMonth {
+                        monthRoutes += session.sentRoutes
+                        monthSessions.append(session)
+                    }
+                }
+
+                let label = (month % 2 == 1) ? "\(month)월" : ""
+                let workoutData: Any? = monthSessions.isEmpty ? nil : ["type": "monthly", "sessions": monthSessions, "month": month]
+                data.append(BarChartDataPoint(label: label, value: Double(monthRoutes), color: ColorSystem.primaryGreen, workoutData: workoutData))
+            }
+            return data
+
+        case .all:
+            var data: [BarChartDataPoint] = []
+            let years = sessions.map { calendar.component(.year, from: $0.sessionDate) }
+            let uniqueYears = Set(years).sorted()
+
+            for year in uniqueYears {
+                var yearRoutes = 0
+                var yearSessions: [ClimbingData] = []
+
+                for session in sessions {
+                    if calendar.component(.year, from: session.sessionDate) == year {
+                        yearRoutes += session.sentRoutes
+                        yearSessions.append(session)
+                    }
+                }
+
+                let workoutData: Any? = yearSessions.isEmpty ? nil : ["type": "yearly", "sessions": yearSessions, "year": year]
+                data.append(BarChartDataPoint(label: "\(year)", value: Double(yearRoutes), color: ColorSystem.primaryGreen, workoutData: workoutData))
+            }
+            return data
+        }
+    }
+
+    private func getDateRange(for period: StatPeriod, offset: Int) -> (Date, Date) {
+        let calendar = Calendar.current
+        let now = Date()
+
+        switch period {
+        case .month:
+            var targetMonth = currentMonth + offset
+            var targetYear = currentYear
+
+            while targetMonth < 1 {
+                targetMonth += 12
+                targetYear -= 1
+            }
+
+            while targetMonth > 12 {
+                targetMonth -= 12
+                targetYear += 1
+            }
+
+            var components = DateComponents(year: targetYear, month: targetMonth, day: 1)
+            guard let startDate = calendar.date(from: components) else { return (now, now) }
+            guard let endDate = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startDate) else { return (now, now) }
+            return (startDate, endDate)
+
+        case .year:
+            let targetYear = currentYear + offset
+            var components = DateComponents(year: targetYear, month: 1, day: 1)
+            guard let startDate = calendar.date(from: components) else { return (now, now) }
+            guard let endDate = calendar.date(byAdding: DateComponents(year: 1, day: -1), to: startDate) else { return (now, now) }
+            return (startDate, endDate)
+
+        case .all:
+            return (calendar.date(from: DateComponents(year: 1900, month: 1, day: 1))!, now)
+        }
     }
 
     private func createSummaryCard(title: String, value: String, icon: String, color: UIColor) -> UIView {
@@ -2628,11 +3201,188 @@ class ClimbingStatsCell: UICollectionViewCell {
         return card
     }
 
-    @objc private func sportChanged() {
-        guard let sport = StatSportType(rawValue: sportSegmentedControl.selectedSegmentIndex) else { return }
-        let color = sport.sportType.themeColor
-        sportSegmentedControl.selectedSegmentTintColor = color
-        delegate?.handleSportChanged(sport)
+    @objc private func periodChanged() {
+        guard let period = StatPeriod(rawValue: periodSegmentedControl.selectedSegmentIndex) else { return }
+        currentPeriod = period
+        delegate?.handlePeriodChanged(period)
+    }
+
+    @objc private func prevTapped() {
+        switch currentPeriod {
+        case .month:
+            currentMonth -= 1
+            if currentMonth < 1 {
+                currentMonth = 12
+                currentYear -= 1
+            }
+        case .year:
+            currentYear -= 1
+        case .all:
+            break
+        }
+        updatePeriodLabel()
+        updateButtonStates()
+        delegate?.handlePeriodChanged(currentPeriod)
+    }
+
+    @objc private func nextTapped() {
+        let calendar = Calendar.current
+        let now = Date()
+        let maxYear = calendar.component(.year, from: now)
+        let maxMonth = calendar.component(.month, from: now)
+
+        switch currentPeriod {
+        case .month:
+            if currentYear == maxYear && currentMonth >= maxMonth {
+                return
+            }
+            currentMonth += 1
+            if currentMonth > 12 {
+                currentMonth = 1
+                currentYear += 1
+            }
+        case .year:
+            if currentYear >= maxYear {
+                return
+            }
+            currentYear += 1
+        case .all:
+            break
+        }
+        updatePeriodLabel()
+        updateButtonStates()
+        delegate?.handlePeriodChanged(currentPeriod)
+    }
+
+    private func updateButtonStates() {
+        let calendar = Calendar.current
+        let now = Date()
+        let maxYear = calendar.component(.year, from: now)
+        let maxMonth = calendar.component(.month, from: now)
+
+        switch currentPeriod {
+        case .month:
+            prevButton.isEnabled = true
+            nextButton.isEnabled = !(currentYear == maxYear && currentMonth >= maxMonth)
+        case .year:
+            prevButton.isEnabled = true
+            nextButton.isEnabled = currentYear < maxYear
+        case .all:
+            prevButton.isEnabled = false
+            nextButton.isEnabled = false
+        }
+    }
+
+    private func updateSportPickerMenu(selectedSport: StatSportType) {
+        let actions = StatSportType.allCases.map { sport in
+            UIAction(
+                title: sport.displayName,
+                state: sport == selectedSport ? .on : .off
+            ) { [weak self] _ in
+                guard let self = self else { return }
+                self.updateSportPickerMenu(selectedSport: sport)
+                self.periodSegmentedControl.selectedSegmentTintColor = sport.sportType.themeColor
+                self.delegate?.handleSportChanged(sport)
+            }
+        }
+        sportPickerButton.menu = UIMenu(children: actions)
+        sportPickerButton.setTitle("\(selectedSport.displayName) ▾", for: .normal)
+        sportPickerButton.backgroundColor = selectedSport.sportType.themeColor
+    }
+
+    @objc private func dismissFloatingView() {
+        floatingView?.removeFromSuperview()
+        floatingView = nil
+    }
+
+    private func showFloatingClimbingStats(data: [String: Any]) {
+        dismissFloatingView()
+
+        guard let type = data["type"] as? String,
+              let sessions = data["sessions"] as? [ClimbingData] else { return }
+
+        let container = UIView()
+        container.backgroundColor = UIColor.black.withAlphaComponent(0.85)
+        container.layer.cornerRadius = 12
+        container.layer.cornerCurve = .continuous
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 8
+        stack.alignment = .fill
+
+        let countLabel = createStatRow(icon: "figure.climbing", title: "완등 수", value: "\(sessions.count)")
+        let routesLabel = createStatRow(icon: "checkmark.circle", title: "총 완등", value: "\(sessions.reduce(0) { $0 + $1.sentRoutes })")
+        
+        stack.addArrangedSubview(countLabel)
+        stack.addArrangedSubview(routesLabel)
+
+        container.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(20)
+        }
+
+        contentView.addSubview(container)
+        container.snp.makeConstraints { make in
+            make.centerX.equalTo(chartView)
+            make.top.equalTo(chartView).offset(40)
+            make.width.lessThanOrEqualToSuperview().offset(-32)
+        }
+
+        floatingView = container
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissFloatingView))
+        container.addGestureRecognizer(tapGesture)
+
+        contentView.isUserInteractionEnabled = true
+        let bgTapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissFloatingView))
+        contentView.addGestureRecognizer(bgTapGesture)
+    }
+
+    private func createStatRow(icon: String, title: String, value: String) -> UIView {
+        let row = UIView()
+        row.backgroundColor = UIColor.white.withAlphaComponent(0.1)
+        row.layer.cornerRadius = 8
+
+        let iconView = UIImageView()
+        iconView.image = UIImage(systemName: icon)
+        iconView.tintColor = .white
+        iconView.contentMode = .scaleAspectFit
+
+        let titleLabel = UILabel()
+        titleLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        titleLabel.textColor = UIColor.white.withAlphaComponent(0.8)
+
+        let valueLabel = UILabel()
+        valueLabel.font = .systemFont(ofSize: 18, weight: .semibold)
+        valueLabel.textColor = .white
+
+        titleLabel.text = title
+        valueLabel.text = value
+
+        row.addSubview(iconView)
+        row.addSubview(titleLabel)
+        row.addSubview(valueLabel)
+
+        iconView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(28)
+        }
+
+        titleLabel.snp.makeConstraints { make in
+            make.leading.equalTo(iconView.snp.trailing).offset(12)
+            make.centerY.equalTo(valueLabel.snp.top).offset(-4)
+        }
+
+        valueLabel.snp.makeConstraints { make in
+            make.leading.equalTo(iconView.snp.trailing).offset(12)
+            make.top.equalTo(titleLabel.snp.bottom).offset(2)
+            make.trailing.equalToSuperview().offset(-16)
+            make.bottom.lessThanOrEqualToSuperview().offset(-8)
+        }
+
+        return row
     }
 }
 
