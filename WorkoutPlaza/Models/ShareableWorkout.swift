@@ -64,6 +64,7 @@ struct ExportableWorkoutData: Codable {
     let avgSpeed: Double       // km/h
     let calories: Double       // kcal
     let route: [RoutePoint]    // GPS 좌표
+    let avgHeartRate: Double?  // bpm (이전 데이터 호환을 위해 optional)
 
     init(
         type: String,
@@ -74,7 +75,8 @@ struct ExportableWorkoutData: Codable {
         pace: Double,
         avgSpeed: Double,
         calories: Double,
-        route: [RoutePoint]
+        route: [RoutePoint],
+        avgHeartRate: Double? = nil
     ) {
         self.type = type
         self.distance = distance
@@ -85,6 +87,7 @@ struct ExportableWorkoutData: Codable {
         self.avgSpeed = avgSpeed
         self.calories = calories
         self.route = route
+        self.avgHeartRate = avgHeartRate
     }
 
     // Initialize from WorkoutData
@@ -98,6 +101,7 @@ struct ExportableWorkoutData: Codable {
         self.avgSpeed = workoutData.avgSpeed
         self.calories = workoutData.calories
         self.route = workoutData.route.map { RoutePoint(from: $0) }
+        self.avgHeartRate = workoutData.avgHeartRate > 0 ? workoutData.avgHeartRate : nil
     }
 }
 
@@ -193,6 +197,7 @@ enum ImportField: String, CaseIterable, Codable {
     case pace = "페이스"
     case speed = "속도"
     case calories = "칼로리"
+    case heartRate = "심박수"
     case date = "날짜"
     case route = "경로"
 
@@ -203,6 +208,7 @@ enum ImportField: String, CaseIterable, Codable {
         case .pace: return "speedometer"
         case .speed: return "gauge"
         case .calories: return "flame"
+        case .heartRate: return "heart.fill"
         case .date: return "calendar"
         case .route: return "map"
         }

@@ -2524,6 +2524,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             else if widget is PaceWidget { type = .pace }
             else if widget is SpeedWidget { type = .speed }
             else if widget is CaloriesWidget { type = .calories }
+            else if widget is HeartRateWidget { type = .heartRate }
             else if widget is DateWidget { type = .date }
             else if widget is TextWidget { type = .text }
             else if widget is LocationWidget { type = .location }

@@ -170,4 +170,12 @@ struct WorkoutData {
         }
         return 0
     }
+
+    var avgHeartRate: Double {
+        if let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate),
+           let avgQuantity = workout.statistics(for: heartRateType)?.averageQuantity() {
+            return avgQuantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+        }
+        return 0
+    }
 }

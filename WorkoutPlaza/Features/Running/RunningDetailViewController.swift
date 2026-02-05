@@ -225,6 +225,14 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             applyItemStyles(to: w, item: item)
             widget = w
 
+        case .heartRate:
+            let w = HeartRateWidget()
+            w.configure(heartRate: data.avgHeartRate)
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
         case .date:
             let w = DateWidget()
             w.configure(startDate: data.startDate)
@@ -340,6 +348,11 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         case "CaloriesWidget":
             let w = CaloriesWidget()
             w.configure(calories: data.calories)
+            widget = w
+
+        case "HeartRateWidget":
+            let w = HeartRateWidget()
+            w.configure(heartRate: data.avgHeartRate)
             widget = w
 
         default:

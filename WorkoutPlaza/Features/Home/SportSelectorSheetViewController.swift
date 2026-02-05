@@ -155,15 +155,15 @@ class SportSelectorSheetViewController: UIViewController {
               let sportRawValue = card.accessibilityIdentifier,
               let sport = SportType(rawValue: sportRawValue) else { return }
 
-        delegate?.sportSelectorDidSelect(sport)
-
         UIView.animate(withDuration: 0.1, animations: {
             card.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
         }) { _ in
             UIView.animate(withDuration: 0.1) {
                 card.transform = .identity
             } completion: { _ in
-                self.dismiss(animated: true)
+                self.dismiss(animated: true) {
+                    self.delegate?.sportSelectorDidSelect(sport)
+                }
             }
         }
     }
