@@ -428,7 +428,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             currentDateTimeWidgets.append(w)
             widget = w
 
-        case .composite, .routeMap, .distance, .duration, .pace, .speed, .calories, .location:
+        case .composite, .routeMap, .distance, .duration, .pace, .speed, .calories, .heartRate, .location:
             return nil
         }
 

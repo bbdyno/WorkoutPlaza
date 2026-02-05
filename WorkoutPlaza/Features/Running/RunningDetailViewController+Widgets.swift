@@ -230,6 +230,7 @@ extension RunningDetailViewController {
         case pace = "페이스"
         case speed = "속도"
         case calories = "칼로리"
+        case heartRate = "심박수"
         case date = "날짜"
         case currentDateTime = "현재 날짜 및 시간"
         case text = "텍스트"
@@ -253,6 +254,8 @@ extension RunningDetailViewController {
             return !widgets.contains(where: { $0 is SpeedWidget })
         case .calories:
             return !widgets.contains(where: { $0 is CaloriesWidget })
+        case .heartRate:
+            return !widgets.contains(where: { $0 is HeartRateWidget })
         case .date:
             return !widgets.contains(where: { $0 is DateWidget })
         case .currentDateTime:
@@ -360,6 +363,11 @@ extension RunningDetailViewController {
         case .calories:
             let w = CaloriesWidget()
             w.configure(calories: data.calories)
+            widget = w
+
+        case .heartRate:
+            let w = HeartRateWidget()
+            w.configure(heartRate: data.avgHeartRate)
             widget = w
 
         case .date:
@@ -473,6 +481,11 @@ extension RunningDetailViewController {
         case .calories:
             let w = CaloriesWidget()
             w.configure(calories: data.calories)
+            widget = w
+
+        case .heartRate:
+            let w = HeartRateWidget()
+            w.configure(heartRate: data.avgHeartRate ?? 0)
             widget = w
 
         case .date:
@@ -843,11 +856,24 @@ extension RunningDetailViewController {
             importedWidgets.append(w)
         }
 
+        // Add heart rate widget if selected
+        if importedData.selectedFields.contains(.heartRate) {
+            let w = HeartRateWidget()
+            w.configure(heartRate: originalData.avgHeartRate ?? 0)
+            w.frame = CGRect(x: startX + widgetSize.width + spacing, y: currentY, width: widgetSize.width, height: widgetSize.height)
+            w.initialSize = widgetSize
+            contentView.addSubview(w)
+            w.selectionDelegate = self
+            importedWidgets.append(w)
+        }
+
+        currentY += widgetSize.height + spacing
+
         // Add date widget if selected
         if importedData.selectedFields.contains(.date) {
             let w = DateWidget()
             w.configure(startDate: originalData.startDate)
-            w.frame = CGRect(x: startX + widgetSize.width + spacing, y: currentY, width: widgetSize.width, height: widgetSize.height)
+            w.frame = CGRect(x: startX, y: currentY, width: widgetSize.width, height: widgetSize.height)
             w.initialSize = widgetSize
             contentView.addSubview(w)
             w.selectionDelegate = self
@@ -965,6 +991,11 @@ extension RunningDetailViewController {
             } else if widget is CaloriesWidget && importedData.selectedFields.contains(.calories) {
                 let w = CaloriesWidget()
                 w.configure(calories: originalData.calories)
+                newWidget = w
+                shouldAdd = true
+            } else if widget is HeartRateWidget && importedData.selectedFields.contains(.heartRate) {
+                let w = HeartRateWidget()
+                w.configure(heartRate: originalData.avgHeartRate ?? 0)
                 newWidget = w
                 shouldAdd = true
             } else if widget is DateWidget && importedData.selectedFields.contains(.date) {

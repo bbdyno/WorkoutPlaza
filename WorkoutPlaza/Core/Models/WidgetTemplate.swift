@@ -159,6 +159,7 @@ enum WidgetType: String, Codable, CaseIterable {
     case pace = "Pace"
     case speed = "Speed"
     case calories = "Calories"
+    case heartRate = "HeartRate"
     case date = "Date"
     case text = "Text"
     case location = "Location"
@@ -180,6 +181,7 @@ enum WidgetType: String, Codable, CaseIterable {
         case .pace: return "페이스"
         case .speed: return "속도"
         case .calories: return "칼로리"
+        case .heartRate: return "심박수"
         case .date: return "날짜"
         case .text: return "텍스트"
         case .location: return "위치"
@@ -201,6 +203,7 @@ enum WidgetType: String, Codable, CaseIterable {
         case .pace: return "speedometer"
         case .speed: return "gauge.high"
         case .calories: return "flame"
+        case .heartRate: return "heart.fill"
         case .date: return "calendar"
         case .text: return "textformat"
         case .location: return "location"
@@ -216,7 +219,7 @@ enum WidgetType: String, Codable, CaseIterable {
 
     var supportedSports: [SportType] {
         switch self {
-        case .routeMap, .distance, .duration, .pace, .speed, .calories, .location:
+        case .routeMap, .distance, .duration, .pace, .speed, .calories, .heartRate, .location:
             return [.running]
         case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo:
             return [.climbing]
