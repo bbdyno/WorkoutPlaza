@@ -35,19 +35,27 @@ class HomeDashboardViewController: UIViewController {
         return stack
     }()
 
-    private let headerLabel: UILabel = {
-        let label = UILabel()
-        label.text = "WorkoutPlaza"
-        label.font = .systemFont(ofSize: 34, weight: .bold)
-        label.textColor = ColorSystem.mainText
-        return label
+    private let logoContainerView = UIView()
+
+    private let logoGradientLayer: CAGradientLayer = ColorSystem.brandGradientLayer()
+
+    private let logoMaskImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(named: "logo_white")
+        imageView.contentMode = .scaleAspectFit
+        return imageView
     }()
+
+    private let subtitleContainerView = UIView()
+
+    private let subtitleGradientLayer: CAGradientLayer = ColorSystem.brandGradientLayer()
 
     private let subtitleLabel: UILabel = {
         let label = UILabel()
         label.text = "운동 기록을 사진으로 만들어보세요"
         label.font = .systemFont(ofSize: 16)
-        label.textColor = ColorSystem.subText
+        label.textColor = .black
+        label.textAlignment = .center
         return label
     }()
 
@@ -192,6 +200,10 @@ class HomeDashboardViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         tierGradientLayer?.frame = tierCardView.bounds
+        logoGradientLayer.frame = logoContainerView.bounds
+        logoMaskImageView.frame = logoContainerView.bounds
+        subtitleGradientLayer.frame = subtitleContainerView.bounds
+        subtitleLabel.frame = subtitleContainerView.bounds
     }
 
     // MARK: - Setup
@@ -213,15 +225,25 @@ class HomeDashboardViewController: UIViewController {
 
         // Header Section
         let headerContainer = UIView()
-        headerContainer.addSubview(headerLabel)
-        headerContainer.addSubview(subtitleLabel)
 
-        headerLabel.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
+        logoContainerView.layer.addSublayer(logoGradientLayer)
+        logoContainerView.mask = logoMaskImageView
+
+        subtitleContainerView.layer.addSublayer(subtitleGradientLayer)
+        subtitleContainerView.mask = subtitleLabel
+
+        headerContainer.addSubview(logoContainerView)
+        headerContainer.addSubview(subtitleContainerView)
+
+        logoContainerView.snp.makeConstraints { make in
+            make.top.equalToSuperview()
+            make.centerX.equalToSuperview()
+            make.height.equalTo(36)
+            make.width.equalTo(150)
         }
 
-        subtitleLabel.snp.makeConstraints { make in
-            make.top.equalTo(headerLabel.snp.bottom).offset(8)
+        subtitleContainerView.snp.makeConstraints { make in
+            make.top.equalTo(logoContainerView.snp.bottom).offset(8)
             make.leading.trailing.bottom.equalToSuperview()
         }
 
