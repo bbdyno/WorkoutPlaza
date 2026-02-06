@@ -368,7 +368,7 @@ class StatisticsViewController: UIViewController {
 
     // MARK: - Running Statistics
 
-    private func computeRunningChartData() -> [BarChartDataPoint] {
+    private func computeRunningChartData(barColor: UIColor = ColorSystem.primaryBlue) -> [BarChartDataPoint] {
         let (startDate, endDate) = getSelectedDateRange()
         let calendar = Calendar.current
 
@@ -409,7 +409,7 @@ class StatisticsViewController: UIViewController {
 
                 let label = (day == 1 || day % 8 == 1 || day == daysInMonth) ? "\(day)" : ""
                 let workoutData: Any? = dayWorkouts.isEmpty ? nil : dayWorkouts
-                data.append(BarChartDataPoint(label: label, value: dayDistance, color: ColorSystem.primaryBlue, workoutData: workoutData))
+                data.append(BarChartDataPoint(label: label, value: dayDistance, color: barColor, workoutData: workoutData))
             }
             return data
 
@@ -451,7 +451,7 @@ class StatisticsViewController: UIViewController {
                     "count": monthCount,
                     "month": month
                 ] : nil
-                data.append(BarChartDataPoint(label: label, value: monthDistance, color: ColorSystem.primaryBlue, workoutData: workoutData))
+                data.append(BarChartDataPoint(label: label, value: monthDistance, color: barColor, workoutData: workoutData))
             }
             return data
 
@@ -478,7 +478,7 @@ class StatisticsViewController: UIViewController {
                 }
 
                 let workoutData: Any? = yearWorkouts.isEmpty ? nil : yearWorkouts
-                data.append(BarChartDataPoint(label: "\(year)", value: yearDistance, color: ColorSystem.primaryBlue, workoutData: workoutData))
+                data.append(BarChartDataPoint(label: "\(year)", value: yearDistance, color: barColor, workoutData: workoutData))
             }
             return data
         }
@@ -521,7 +521,7 @@ class StatisticsViewController: UIViewController {
         return RunningStatsData(totalDistance: distanceKm, runCount: runCount, avgPace: avgPace, totalTime: totalTime)
     }
 
-    private func computeRunningSummary() -> [StatsSummaryItem] {
+    private func computeRunningSummary(tierColor: UIColor = ColorSystem.primaryBlue) -> [StatsSummaryItem] {
         let (startDate, endDate) = getDateRange(for: currentPeriod, offset: currentPeriodOffset)
 
         var totalDistance: Double = 0
@@ -558,10 +558,10 @@ class StatisticsViewController: UIViewController {
         let paceString = String(format: "%d'%02d\"", paceMinutes, paceSeconds)
 
         return [
-            StatsSummaryItem(title: "거리", value: String(format: "%.1f km", distanceKm), icon: "arrow.left.and.right", color: ColorSystem.primaryBlue),
-            StatsSummaryItem(title: "시간", value: durationString, icon: "clock", color: ColorSystem.primaryBlue),
-            StatsSummaryItem(title: "평균 페이스", value: paceString, icon: "speedometer", color: ColorSystem.primaryBlue),
-            StatsSummaryItem(title: "횟수", value: "\(totalWorkouts)회", icon: "flame", color: ColorSystem.primaryBlue)
+            StatsSummaryItem(title: "거리", value: String(format: "%.1f km", distanceKm), icon: "arrow.left.and.right", color: tierColor),
+            StatsSummaryItem(title: "시간", value: durationString, icon: "clock", color: tierColor),
+            StatsSummaryItem(title: "평균 페이스", value: paceString, icon: "speedometer", color: tierColor),
+            StatsSummaryItem(title: "횟수", value: "\(totalWorkouts)회", icon: "flame", color: tierColor)
         ]
     }
 
@@ -799,7 +799,8 @@ extension StatisticsViewController: UICollectionViewDataSource {
             if currentSport == .running {
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RunningStatsCell.identifier, for: indexPath) as! RunningStatsCell
                 let stats = computeRunningStatsData()
-                let chartData = computeRunningChartData()
+                let tier = RunnerTier.tier(for: stats.totalDistance)
+                let chartData = computeRunningChartData(barColor: tier.themeColor)
                 cell.configure(
                     period: currentPeriod,
                     year: selectedYear,

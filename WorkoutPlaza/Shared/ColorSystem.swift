@@ -19,6 +19,15 @@ enum ColorSystem {
     /// Primary Green (Climbing): 성취감과 자연을 상징하는 민트 그린
     static let primaryGreen = UIColor(red: 45/255, green: 180/255, blue: 109/255, alpha: 1.0)
 
+    // MARK: - Common Control Tint
+
+    /// 공통 컨트롤 틴트: 다크 그레이 (세그먼트 컨트롤, 피커 등)
+    static let controlTint = UIColor { traitCollection in
+        traitCollection.userInterfaceStyle == .dark
+            ? UIColor(red: 99/255, green: 99/255, blue: 102/255, alpha: 1.0)   // Dark: 밝은 그레이
+            : UIColor(red: 44/255, green: 44/255, blue: 46/255, alpha: 1.0)    // Light: #2C2C2E
+    }
+
     // MARK: - Interface & Typography
 
     /// Background: 매우 밝은 그레이 (라이트) / 진한 검정 (다크)

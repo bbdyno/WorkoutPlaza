@@ -28,7 +28,7 @@ class StatsControlCell: UICollectionViewCell {
         let control = UISegmentedControl(items: StatSportType.allCases.map { $0.displayName })
         control.selectedSegmentIndex = 0
         control.backgroundColor = ColorSystem.divider
-        control.selectedSegmentTintColor = ColorSystem.primaryBlue
+        control.selectedSegmentTintColor = ColorSystem.controlTint
         control.setTitleTextAttributes([.foregroundColor: ColorSystem.mainText], for: .normal)
         control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
         return control
@@ -60,7 +60,7 @@ class StatsControlCell: UICollectionViewCell {
         let control = UISegmentedControl(items: StatPeriod.allCases.map { $0.displayName })
         control.selectedSegmentIndex = 0
         control.backgroundColor = ColorSystem.divider
-        control.selectedSegmentTintColor = ColorSystem.primaryBlue
+        control.selectedSegmentTintColor = ColorSystem.controlTint
         control.setTitleTextAttributes([.foregroundColor: ColorSystem.mainText], for: .normal)
         control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
         return control
@@ -129,16 +129,10 @@ class StatsControlCell: UICollectionViewCell {
         nextButton.isEnabled = canGoNext
         nextButton.alpha = canGoNext ? 1.0 : 0.3
 
-        let color = sport.sportType.themeColor
-        sportSegmentedControl.selectedSegmentTintColor = color
-        periodSegmentedControl.selectedSegmentTintColor = color
     }
 
     @objc private func sportChanged() {
         guard let sport = StatSportType(rawValue: sportSegmentedControl.selectedSegmentIndex) else { return }
-        let color = sport.sportType.themeColor
-        sportSegmentedControl.selectedSegmentTintColor = color
-        periodSegmentedControl.selectedSegmentTintColor = color
         delegate?.statsControlCell(self, didChangeSport: sport)
     }
 
