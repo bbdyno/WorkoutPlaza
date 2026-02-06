@@ -84,9 +84,8 @@ class MoreViewController: UIViewController {
 
     private func setupUI() {
         view.backgroundColor = ColorSystem.background
-        navigationItem.largeTitleDisplayMode = .automatic // Modern large title
+        navigationController?.navigationBar.prefersLargeTitles = false
         title = "더보기"
-        navigationController?.navigationBar.prefersLargeTitles = true
 
         tableView.delegate = self
         tableView.dataSource = self
@@ -221,16 +220,14 @@ extension MoreViewController: UITableViewDataSource {
         var config = cell.defaultContentConfiguration()
         config.text = item.title
         config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
-        config.textProperties.color = .label
-        
         config.image = UIImage(systemName: item.icon)
-        
-        // Icon coloring based on section or item could be nice
+
         if item.title.contains("삭제") || item.title.contains("초기화") {
-            config.imageProperties.tintColor = .systemRed
             config.textProperties.color = .systemRed
+            config.imageProperties.tintColor = .systemRed
         } else {
-            config.imageProperties.tintColor = .systemBlue // Or app theme color
+            config.textProperties.color = ColorSystem.mainText
+            config.imageProperties.tintColor = ColorSystem.mainText
         }
         
         cell.contentConfiguration = config
