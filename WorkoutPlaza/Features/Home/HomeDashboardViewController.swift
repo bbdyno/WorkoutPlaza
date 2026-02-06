@@ -17,6 +17,8 @@ class HomeDashboardViewController: UIViewController {
     private var climbingSessions: [ClimbingData] = []
     private var combinedRecentWorkouts: [(sportType: SportType, data: Any, date: Date)] = []
 
+    private let previewRecordCount = 2
+
     // MARK: - UI Components
 
     private let scrollView: UIScrollView = {
@@ -150,11 +152,23 @@ class HomeDashboardViewController: UIViewController {
         return button
     }()
 
-    // Weekly summary labels
-    private let runningWeeklyValueLabel = UILabel()
-    private let runningWeeklySubtitleLabel = UILabel()
-    private let climbingWeeklyValueLabel = UILabel()
-    private let climbingWeeklySubtitleLabel = UILabel()
+    // Weekly summary labels - Running
+    private let runningWeeklyDistanceLabel = UILabel()
+    private let runningWeeklyCountLabel = UILabel()
+    private let runningWeeklyTimeLabel = UILabel()
+
+    // Weekly summary labels - Climbing
+    private let climbingWeeklyRoutesLabel = UILabel()
+    private let climbingWeeklyVisitLabel = UILabel()
+    private let climbingWeeklySentLabel = UILabel()
+
+    // Recent records toggle
+    private let recordsToggleButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        button.setTitleColor(ColorSystem.subText, for: .normal)
+        return button
+    }()
 
     // MARK: - Lifecycle
 
@@ -234,18 +248,33 @@ class HomeDashboardViewController: UIViewController {
         setupWeeklySummaryCards()
         contentStackView.addArrangedSubview(weeklySummaryStack)
         weeklySummaryStack.snp.makeConstraints { make in
-            make.height.equalTo(100)
+            make.height.equalTo(116)
         }
         contentStackView.setCustomSpacing(24, after: weeklySummaryStack)
 
         // Recent Records Section Header
+        let sectionHeaderView = UIView()
+
         let sectionLabel = UILabel()
         sectionLabel.text = "최근 기록"
         sectionLabel.font = .systemFont(ofSize: 20, weight: .semibold)
         sectionLabel.textColor = ColorSystem.mainText
 
-        contentStackView.addArrangedSubview(sectionLabel)
-        contentStackView.setCustomSpacing(12, after: sectionLabel)
+        sectionHeaderView.addSubview(sectionLabel)
+        sectionHeaderView.addSubview(recordsToggleButton)
+
+        sectionLabel.snp.makeConstraints { make in
+            make.leading.top.bottom.equalToSuperview()
+        }
+
+        recordsToggleButton.snp.makeConstraints { make in
+            make.trailing.centerY.equalToSuperview()
+        }
+
+        recordsToggleButton.addTarget(self, action: #selector(showAllRecords), for: .touchUpInside)
+
+        contentStackView.addArrangedSubview(sectionHeaderView)
+        contentStackView.setCustomSpacing(12, after: sectionHeaderView)
         contentStackView.addArrangedSubview(recordsStackView)
 
         // Add Workout Button
@@ -302,89 +331,111 @@ class HomeDashboardViewController: UIViewController {
 
     private func setupWeeklySummaryCards() {
         // Running Card
-        let runningIconContainer = UIView()
-        runningIconContainer.backgroundColor = ColorSystem.primaryBlue.withAlphaComponent(0.15)
-        runningIconContainer.layer.cornerRadius = 16
+        let runningHeader = UIStackView()
+        runningHeader.axis = .horizontal
+        runningHeader.spacing = 6
+        runningHeader.alignment = .center
 
         let runningIcon = UIImageView()
         runningIcon.image = UIImage(systemName: "figure.run")
-        runningIcon.tintColor = ColorSystem.primaryBlue
+        runningIcon.tintColor = ColorSystem.controlTint
         runningIcon.contentMode = .scaleAspectFit
+        runningIcon.snp.makeConstraints { make in make.width.height.equalTo(16) }
 
-        runningWeeklyValueLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        runningWeeklyValueLabel.textColor = ColorSystem.mainText
-        runningWeeklyValueLabel.text = "0 km"
+        let runningTitleLabel = UILabel()
+        runningTitleLabel.text = "러닝"
+        runningTitleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        runningTitleLabel.textColor = ColorSystem.subText
 
-        runningWeeklySubtitleLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        runningWeeklySubtitleLabel.textColor = ColorSystem.subText
-        runningWeeklySubtitleLabel.text = "러닝"
+        runningHeader.addArrangedSubview(runningIcon)
+        runningHeader.addArrangedSubview(runningTitleLabel)
 
-        runningWeeklyCard.addSubview(runningIconContainer)
-        runningIconContainer.addSubview(runningIcon)
-        runningWeeklyCard.addSubview(runningWeeklyValueLabel)
-        runningWeeklyCard.addSubview(runningWeeklySubtitleLabel)
+        runningWeeklyDistanceLabel.font = .systemFont(ofSize: 28, weight: .heavy)
+        runningWeeklyDistanceLabel.textColor = ColorSystem.mainText
+        runningWeeklyDistanceLabel.text = "0.0 km"
 
-        runningIconContainer.snp.makeConstraints { make in
-            make.leading.top.equalToSuperview().offset(16)
-            make.width.height.equalTo(32)
+        runningWeeklyCountLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        runningWeeklyCountLabel.textColor = ColorSystem.subText
+        runningWeeklyCountLabel.text = "0회"
+
+        runningWeeklyTimeLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        runningWeeklyTimeLabel.textColor = ColorSystem.subText
+        runningWeeklyTimeLabel.text = "0분"
+
+        let runningDetailStack = UIStackView(arrangedSubviews: [runningWeeklyCountLabel, runningWeeklyTimeLabel])
+        runningDetailStack.axis = .horizontal
+        runningDetailStack.spacing = 8
+
+        runningWeeklyCard.addSubview(runningHeader)
+        runningWeeklyCard.addSubview(runningWeeklyDistanceLabel)
+        runningWeeklyCard.addSubview(runningDetailStack)
+
+        runningHeader.snp.makeConstraints { make in
+            make.leading.top.equalToSuperview().offset(14)
         }
 
-        runningIcon.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(18)
+        runningWeeklyDistanceLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(14)
+            make.top.equalTo(runningHeader.snp.bottom).offset(8)
         }
 
-        runningWeeklyValueLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.bottom.equalTo(runningWeeklySubtitleLabel.snp.top).offset(-2)
-        }
-
-        runningWeeklySubtitleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.bottom.equalToSuperview().offset(-16)
+        runningDetailStack.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(14)
+            make.bottom.equalToSuperview().offset(-14)
         }
 
         // Climbing Card
-        let climbingIconContainer = UIView()
-        climbingIconContainer.backgroundColor = ColorSystem.primaryGreen.withAlphaComponent(0.15)
-        climbingIconContainer.layer.cornerRadius = 16
+        let climbingHeader = UIStackView()
+        climbingHeader.axis = .horizontal
+        climbingHeader.spacing = 6
+        climbingHeader.alignment = .center
 
         let climbingIcon = UIImageView()
         climbingIcon.image = UIImage(systemName: "figure.climbing")
-        climbingIcon.tintColor = ColorSystem.primaryGreen
+        climbingIcon.tintColor = ColorSystem.controlTint
         climbingIcon.contentMode = .scaleAspectFit
+        climbingIcon.snp.makeConstraints { make in make.width.height.equalTo(16) }
 
-        climbingWeeklyValueLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        climbingWeeklyValueLabel.textColor = ColorSystem.mainText
-        climbingWeeklyValueLabel.text = "0 회"
+        let climbingTitleLabel = UILabel()
+        climbingTitleLabel.text = "클라이밍"
+        climbingTitleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        climbingTitleLabel.textColor = ColorSystem.subText
 
-        climbingWeeklySubtitleLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        climbingWeeklySubtitleLabel.textColor = ColorSystem.subText
-        climbingWeeklySubtitleLabel.text = "클라이밍"
+        climbingHeader.addArrangedSubview(climbingIcon)
+        climbingHeader.addArrangedSubview(climbingTitleLabel)
 
-        climbingWeeklyCard.addSubview(climbingIconContainer)
-        climbingIconContainer.addSubview(climbingIcon)
-        climbingWeeklyCard.addSubview(climbingWeeklyValueLabel)
-        climbingWeeklyCard.addSubview(climbingWeeklySubtitleLabel)
+        climbingWeeklyRoutesLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        climbingWeeklyRoutesLabel.textColor = ColorSystem.mainText
+        climbingWeeklyRoutesLabel.text = "0 루트"
 
-        climbingIconContainer.snp.makeConstraints { make in
-            make.leading.top.equalToSuperview().offset(16)
-            make.width.height.equalTo(32)
+        climbingWeeklyVisitLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        climbingWeeklyVisitLabel.textColor = ColorSystem.subText
+        climbingWeeklyVisitLabel.text = "0회 방문"
+
+        climbingWeeklySentLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        climbingWeeklySentLabel.textColor = ColorSystem.subText
+        climbingWeeklySentLabel.text = "완등 0"
+
+        let climbingDetailStack = UIStackView(arrangedSubviews: [climbingWeeklyVisitLabel, climbingWeeklySentLabel])
+        climbingDetailStack.axis = .horizontal
+        climbingDetailStack.spacing = 8
+
+        climbingWeeklyCard.addSubview(climbingHeader)
+        climbingWeeklyCard.addSubview(climbingWeeklyRoutesLabel)
+        climbingWeeklyCard.addSubview(climbingDetailStack)
+
+        climbingHeader.snp.makeConstraints { make in
+            make.leading.top.equalToSuperview().offset(14)
         }
 
-        climbingIcon.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(18)
+        climbingWeeklyRoutesLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(14)
+            make.top.equalTo(climbingHeader.snp.bottom).offset(8)
         }
 
-        climbingWeeklyValueLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.bottom.equalTo(climbingWeeklySubtitleLabel.snp.top).offset(-2)
-        }
-
-        climbingWeeklySubtitleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.bottom.equalToSuperview().offset(-16)
+        climbingDetailStack.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(14)
+            make.bottom.equalToSuperview().offset(-14)
         }
 
         weeklySummaryStack.addArrangedSubview(runningWeeklyCard)
@@ -456,28 +507,49 @@ class HomeDashboardViewController: UIViewController {
         let now = Date()
         guard let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) else { return }
 
-        // Calculate weekly running distance
+        // Running stats
         var weeklyRunningDistance: Double = 0
+        var weeklyRunningDuration: TimeInterval = 0
+        var weeklyRunningCount = 0
 
         for workout in runningWorkouts {
             if workout.startDate >= weekStart {
                 weeklyRunningDistance += workout.distance
+                weeklyRunningDuration += workout.duration
+                weeklyRunningCount += 1
             }
         }
 
         for workout in externalRunningWorkouts {
             if workout.workoutData.startDate >= weekStart {
                 weeklyRunningDistance += workout.workoutData.distance
+                weeklyRunningDuration += workout.workoutData.duration
+                weeklyRunningCount += 1
             }
         }
 
         let distanceKm = weeklyRunningDistance / 1000.0
-        runningWeeklyValueLabel.text = String(format: "%.1f km", distanceKm)
+        runningWeeklyDistanceLabel.text = String(format: "%.1f km", distanceKm)
+        runningWeeklyCountLabel.text = "\(weeklyRunningCount)회"
 
-        // Calculate weekly climbing sessions
+        let totalMinutes = Int(weeklyRunningDuration) / 60
+        if totalMinutes >= 60 {
+            let hours = totalMinutes / 60
+            let mins = totalMinutes % 60
+            runningWeeklyTimeLabel.text = "\(hours)시간 \(mins)분"
+        } else {
+            runningWeeklyTimeLabel.text = "\(totalMinutes)분"
+        }
+
+        // Climbing stats
         let weeklyClimbingSessions = climbingSessions.filter { $0.sessionDate >= weekStart }
         let weeklyRoutes = weeklyClimbingSessions.reduce(0) { $0 + $1.totalRoutes }
-        climbingWeeklyValueLabel.text = "\(weeklyRoutes) 루트"
+        let weeklySent = weeklyClimbingSessions.reduce(0) { $0 + $1.sentRoutes }
+        let weeklyVisits = weeklyClimbingSessions.count
+
+        climbingWeeklyRoutesLabel.text = "\(weeklyRoutes) 루트"
+        climbingWeeklyVisitLabel.text = "\(weeklyVisits)회 방문"
+        climbingWeeklySentLabel.text = "완등 \(weeklySent)"
     }
 
     private func updateRecentRecords() {
@@ -498,19 +570,26 @@ class HomeDashboardViewController: UIViewController {
             combinedRecentWorkouts.append((sportType: .climbing, data: session, date: session.sessionDate))
         }
 
-        // Sort by date descending and take first 5
         combinedRecentWorkouts.sort { $0.date > $1.date }
-        let recentWorkouts = combinedRecentWorkouts.prefix(5)
 
-        if recentWorkouts.isEmpty {
+        // Show "더보기" only when 3+
+        let hasMore = combinedRecentWorkouts.count > previewRecordCount
+        recordsToggleButton.isHidden = !hasMore
+        if hasMore {
+            recordsToggleButton.setTitle("더보기", for: .normal)
+        }
+
+        let previewWorkouts = Array(combinedRecentWorkouts.prefix(previewRecordCount))
+
+        if combinedRecentWorkouts.isEmpty {
             let placeholderView = createPlaceholderView()
             recordsStackView.addArrangedSubview(placeholderView)
         } else {
-            for (index, workout) in recentWorkouts.enumerated() {
+            for (index, workout) in previewWorkouts.enumerated() {
                 let recordView = createRecordView(for: workout, index: index)
                 recordsStackView.addArrangedSubview(recordView)
                 recordView.snp.makeConstraints { make in
-                    make.height.equalTo(80)
+                    make.height.equalTo(64)
                 }
             }
         }
@@ -543,27 +622,21 @@ class HomeDashboardViewController: UIViewController {
     private func createRecordView(for workout: (sportType: SportType, data: Any, date: Date), index: Int) -> UIView {
         let containerView = UIView()
         containerView.backgroundColor = ColorSystem.cardBackground
-        containerView.layer.cornerRadius = 16
+        containerView.layer.cornerRadius = 14
         containerView.layer.cornerCurve = .continuous
 
-        let themeColor = workout.sportType.themeColor
-        let iconName = workout.sportType.iconName
-
-        let iconContainer = UIView()
-        iconContainer.backgroundColor = themeColor.withAlphaComponent(0.15)
-        iconContainer.layer.cornerRadius = 20
-
         let iconImageView = UIImageView()
-        iconImageView.image = UIImage(systemName: iconName)
-        iconImageView.tintColor = themeColor
+        let iconConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        iconImageView.image = UIImage(systemName: workout.sportType.iconName, withConfiguration: iconConfig)
+        iconImageView.tintColor = ColorSystem.controlTint
         iconImageView.contentMode = .scaleAspectFit
 
         let titleLabel = UILabel()
-        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         titleLabel.textColor = ColorSystem.mainText
 
         let subtitleLabel = UILabel()
-        subtitleLabel.font = .systemFont(ofSize: 14)
+        subtitleLabel.font = .systemFont(ofSize: 13)
         subtitleLabel.textColor = ColorSystem.subText
 
         let dateLabel = UILabel()
@@ -591,26 +664,20 @@ class HomeDashboardViewController: UIViewController {
         formatter.dateFormat = "M월 d일"
         dateLabel.text = formatter.string(from: workout.date)
 
-        containerView.addSubview(iconContainer)
-        iconContainer.addSubview(iconImageView)
+        containerView.addSubview(iconImageView)
         containerView.addSubview(titleLabel)
         containerView.addSubview(subtitleLabel)
         containerView.addSubview(dateLabel)
 
-        iconContainer.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(40)
-        }
-
         iconImageView.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(24)
+            make.leading.equalToSuperview().offset(14)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(20)
         }
 
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconContainer.snp.trailing).offset(12)
-            make.top.equalTo(iconContainer.snp.top).offset(4)
+            make.leading.equalTo(iconImageView.snp.trailing).offset(10)
+            make.top.equalToSuperview().offset(14)
         }
 
         subtitleLabel.snp.makeConstraints { make in
@@ -619,7 +686,7 @@ class HomeDashboardViewController: UIViewController {
         }
 
         dateLabel.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
+            make.trailing.equalToSuperview().offset(-14)
             make.centerY.equalToSuperview()
         }
 
@@ -633,12 +700,27 @@ class HomeDashboardViewController: UIViewController {
 
     // MARK: - Actions
 
+    @objc private func showAllRecords() {
+        let sheetVC = RecentRecordsSheetViewController()
+        sheetVC.workouts = combinedRecentWorkouts
+        sheetVC.delegate = self
+        sheetVC.modalPresentationStyle = .pageSheet
+        if let sheet = sheetVC.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(sheetVC, animated: true)
+    }
+
     @objc private func addWorkoutTapped() {
         let sportSelectorVC = SportSelectorSheetViewController()
         sportSelectorVC.delegate = self
         sportSelectorVC.modalPresentationStyle = .pageSheet
         if let sheet = sportSelectorVC.sheetPresentationController {
-            sheet.detents = [.medium()]
+            let customDetent = UISheetPresentationController.Detent.custom { _ in
+                return 240
+            }
+            sheet.detents = [customDetent]
             sheet.prefersGrabberVisible = true
         }
         present(sportSelectorVC, animated: true)
@@ -719,5 +801,36 @@ extension HomeDashboardViewController: ClimbingInputDelegate {
         let detailVC = ClimbingDetailViewController()
         detailVC.climbingData = session
         controller.navigationController?.pushViewController(detailVC, animated: true)
+    }
+}
+
+// MARK: - RecentRecordsSheetDelegate
+
+extension HomeDashboardViewController: RecentRecordsSheetDelegate {
+    func recentRecordsSheet(_ sheet: RecentRecordsSheetViewController, didSelectWorkoutAt index: Int) {
+        guard index < combinedRecentWorkouts.count else { return }
+        let workout = combinedRecentWorkouts[index]
+
+        switch workout.sportType {
+        case .running:
+            if let healthKitWorkout = workout.data as? WorkoutData {
+                let detailVC = RunningDetailViewController()
+                detailVC.workoutData = healthKitWorkout
+                let nav = UINavigationController(rootViewController: detailVC)
+                present(nav, animated: true)
+            } else if let externalWorkout = workout.data as? ExternalWorkout {
+                let detailVC = RunningDetailViewController()
+                detailVC.externalWorkout = externalWorkout
+                let nav = UINavigationController(rootViewController: detailVC)
+                present(nav, animated: true)
+            }
+        case .climbing:
+            if let session = workout.data as? ClimbingData {
+                let detailVC = ClimbingDetailViewController()
+                detailVC.climbingData = session
+                let nav = UINavigationController(rootViewController: detailVC)
+                present(nav, animated: true)
+            }
+        }
     }
 }

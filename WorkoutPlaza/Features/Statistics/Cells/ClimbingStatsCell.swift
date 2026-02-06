@@ -39,7 +39,7 @@ class ClimbingStatsCell: UICollectionViewCell {
         let control = UISegmentedControl(items: ["월별", "연도별", "전체"])
         control.selectedSegmentIndex = 0
         control.backgroundColor = ColorSystem.divider
-        control.selectedSegmentTintColor = ColorSystem.primaryGreen
+        control.selectedSegmentTintColor = ColorSystem.controlTint
         control.setTitleTextAttributes([.foregroundColor: ColorSystem.mainText], for: .normal)
         control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
         return control
@@ -508,13 +508,12 @@ class ClimbingStatsCell: UICollectionViewCell {
             ) { [weak self] _ in
                 guard let self = self else { return }
                 self.updateSportPickerMenu(selectedSport: sport)
-                self.periodSegmentedControl.selectedSegmentTintColor = sport.sportType.themeColor
                 self.delegate?.handleSportChanged(sport)
             }
         }
         sportPickerButton.menu = UIMenu(children: actions)
         sportPickerButton.setTitle("\(selectedSport.displayName) ▾", for: .normal)
-        sportPickerButton.backgroundColor = selectedSport.sportType.themeColor
+        sportPickerButton.backgroundColor = ColorSystem.controlTint
     }
 
     @objc private func dismissFloatingView() {

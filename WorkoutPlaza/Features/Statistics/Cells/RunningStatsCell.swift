@@ -42,7 +42,7 @@ class RunningStatsCell: UICollectionViewCell {
         let control = UISegmentedControl(items: StatPeriod.allCases.map { $0.displayName })
         control.selectedSegmentIndex = 0
         control.backgroundColor = ColorSystem.divider
-        control.selectedSegmentTintColor = ColorSystem.primaryBlue
+        control.selectedSegmentTintColor = ColorSystem.controlTint
         control.setTitleTextAttributes([.foregroundColor: ColorSystem.mainText], for: .normal)
         control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
         return control
@@ -382,11 +382,12 @@ class RunningStatsCell: UICollectionViewCell {
         // Summary grid
         summaryGridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
+        let tierColor = tier.themeColor
         let summaryItems = [
-            ("거리", String(format: "%.1f km", stats.totalDistance), "arrow.left.and.right", ColorSystem.primaryBlue),
-            ("시간", stats.totalTime, "clock", ColorSystem.primaryBlue),
-            ("페이스", stats.avgPace, "speedometer", ColorSystem.primaryBlue),
-            ("횟수", "\(stats.runCount)회", "flame", ColorSystem.primaryBlue)
+            ("거리", String(format: "%.1f km", stats.totalDistance), "arrow.left.and.right", tierColor),
+            ("시간", stats.totalTime, "clock", tierColor),
+            ("페이스", stats.avgPace, "speedometer", tierColor),
+            ("횟수", "\(stats.runCount)회", "flame", tierColor)
         ]
 
         for item in summaryItems {
@@ -680,13 +681,12 @@ class RunningStatsCell: UICollectionViewCell {
             ) { [weak self] _ in
                 guard let self = self else { return }
                 self.updateSportPickerMenu(selectedSport: sport)
-                self.periodSegmentedControl.selectedSegmentTintColor = sport.sportType.themeColor
                 self.delegate?.handleSportChanged(sport)
             }
         }
         sportPickerButton.menu = UIMenu(children: actions)
         sportPickerButton.setTitle("\(selectedSport.displayName) ▾", for: .normal)
-        sportPickerButton.backgroundColor = selectedSport.sportType.themeColor
+        sportPickerButton.backgroundColor = ColorSystem.controlTint
     }
 
     @objc private func periodChanged() {
