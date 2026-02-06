@@ -400,6 +400,12 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
                 selectable.applyFont(fontStyle)
             }
         }
+        // Restore display mode (text/icon)
+        if let statWidget = widget as? BaseStatWidget,
+           let modeRaw = savedState.displayMode,
+           let mode = WidgetDisplayMode(rawValue: modeRaw) {
+            statWidget.setDisplayMode(mode)
+        }
     }
 
     override func createWidgetFromSavedState(_ savedWidget: SavedWidgetState) -> UIView? {
