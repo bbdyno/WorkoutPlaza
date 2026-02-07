@@ -74,6 +74,11 @@ class MoreViewController: UIViewController {
                     self?.rateApp()
                 })
             ]),
+            Section(title: "개발자", items: [
+                MenuItem(title: "개발자 설정", icon: "wrench.and.screwdriver", action: { [weak self] in
+                    self?.showDeveloperSettings()
+                })
+            ]),
             Section(title: nil, items: [
                 MenuItem(title: "오픈소스 라이선스", icon: "doc.text", action: { [weak self] in
                     self?.showLicenses()
@@ -160,6 +165,11 @@ class MoreViewController: UIViewController {
     private func rateApp() {
         // TODO: Add App Store URL
         showToast("앱스토어 출시 후 이용 가능합니다")
+    }
+
+    private func showDeveloperSettings() {
+        let devSettingsVC = DeveloperSettingsViewController()
+        navigationController?.pushViewController(devSettingsVC, animated: true)
     }
 
     private func showLicenses() {

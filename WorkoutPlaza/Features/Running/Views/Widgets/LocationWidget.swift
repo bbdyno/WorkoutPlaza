@@ -241,6 +241,7 @@ class LocationWidget: UIView, Selectable {
     }
 
     @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+        guard DevSettings.shared.isPinchToResizeEnabled else { return }
         guard let view = gesture.view else { return }
 
         if gesture.state == .began || gesture.state == .changed {
