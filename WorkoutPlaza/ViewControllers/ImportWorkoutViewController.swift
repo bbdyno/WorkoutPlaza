@@ -24,7 +24,6 @@ class ImportWorkoutViewController: UIViewController {
 
     private var selectedFields: Set<ImportField> = Set(ImportField.allCases)
     private var ownerName: String = ""
-    private var useCurrentLayout: Bool = false
 
     // MARK: - UI Components
     private let scrollView = UIScrollView()
@@ -116,38 +115,7 @@ class ImportWorkoutViewController: UIViewController {
 
     private var fieldCheckboxes: [ImportField: UISwitch] = [:]
 
-    private let layoutOptionLabel: UILabel = {
-        let label = UILabel()
-        label.text = "레이아웃 옵션"
-        label.font = .systemFont(ofSize: 15, weight: .bold)
-        label.textColor = ColorSystem.mainText
-        return label
-    }()
 
-    private let useCurrentLayoutSwitch: UISwitch = {
-        let toggle = UISwitch()
-        toggle.isOn = false
-        toggle.onTintColor = ColorSystem.primaryGreen
-        return toggle
-    }()
-
-    private let useCurrentLayoutLabel: UILabel = {
-        let label = UILabel()
-        label.text = "현재 템플릿과 동일하게 가져오기"
-        label.font = .systemFont(ofSize: 16)
-        label.textColor = ColorSystem.mainText
-        label.numberOfLines = 0
-        return label
-    }()
-
-    private let layoutDescriptionLabel: UILabel = {
-        let label = UILabel()
-        label.text = "활성화하면 현재 화면의 위젯 배치와 동일한 위치, 크기로 가져옵니다."
-        label.font = .systemFont(ofSize: 12)
-        label.textColor = ColorSystem.subText
-        label.numberOfLines = 0
-        return label
-    }()
 
     // Template option
     private var useIncludedTemplate: Bool = false
@@ -203,7 +171,6 @@ class ImportWorkoutViewController: UIViewController {
 
     // Containers for conditional display
     private var ownerNameContainer: UIView?
-    private var layoutContainer: UIView?
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -284,41 +251,6 @@ class ImportWorkoutViewController: UIViewController {
 
         setupFieldCheckboxes()
         contentStackView.addArrangedSubview(fieldsContainer)
-
-        // Add layout option section - ONLY for attachToExisting mode
-        if importMode == .attachToExisting {
-            contentStackView.addArrangedSubview(layoutOptionLabel)
-
-            let container = createSectionContainer()
-            let layoutStack = UIStackView()
-            layoutStack.axis = .vertical
-            layoutStack.spacing = 8
-
-            let toggleRow = UIView()
-            toggleRow.addSubview(useCurrentLayoutLabel)
-            toggleRow.addSubview(useCurrentLayoutSwitch)
-
-            useCurrentLayoutLabel.snp.makeConstraints { make in
-                make.leading.top.bottom.equalToSuperview()
-                make.trailing.lessThanOrEqualTo(useCurrentLayoutSwitch.snp.leading).offset(-12)
-            }
-
-            useCurrentLayoutSwitch.snp.makeConstraints { make in
-                make.trailing.centerY.equalToSuperview()
-            }
-
-            layoutStack.addArrangedSubview(toggleRow)
-            layoutStack.addArrangedSubview(layoutDescriptionLabel)
-
-            container.addSubview(layoutStack)
-            layoutStack.snp.makeConstraints { make in
-                make.edges.equalToSuperview().inset(12)
-            }
-
-            useCurrentLayoutSwitch.addTarget(self, action: #selector(layoutToggleChanged), for: .valueChanged)
-            contentStackView.addArrangedSubview(container)
-            layoutContainer = container
-        }
 
         // Add template section if template is included
         if let template = shareableWorkout?.template {
@@ -523,7 +455,6 @@ class ImportWorkoutViewController: UIViewController {
             ownerName: finalOwnerName,
             originalData: workout.workout,
             selectedFields: selectedFields,
-            useCurrentLayout: useCurrentLayout,
             selectedTemplate: selectedTemplate
         )
 
@@ -534,10 +465,6 @@ class ImportWorkoutViewController: UIViewController {
     @objc private func ownerNameChanged() {
         ownerName = ownerNameTextField.text ?? ""
         updatePreview()
-    }
-
-    @objc private func layoutToggleChanged(_ sender: UISwitch) {
-        useCurrentLayout = sender.isOn
     }
 
     @objc private func templateToggleChanged(_ sender: UISwitch) {
