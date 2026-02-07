@@ -90,28 +90,6 @@ class ImportWorkoutViewController: UIViewController {
         return stack
     }()
 
-    private let previewHeaderLabel: UILabel = {
-        let label = UILabel()
-        label.text = "미리보기"
-        label.font = .systemFont(ofSize: 15, weight: .bold)
-        label.textColor = ColorSystem.mainText
-        return label
-    }()
-
-    private let previewContainerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = ColorSystem.cardBackground
-        view.layer.cornerRadius = 12
-        return view
-    }()
-
-    private let previewStackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 8
-        stack.alignment = .fill
-        return stack
-    }()
 
     private var fieldCheckboxes: [ImportField: UISwitch] = [:]
 
@@ -324,16 +302,6 @@ class ImportWorkoutViewController: UIViewController {
             contentStackView.addArrangedSubview(templateContainer)
         }
 
-        // Add preview section
-        contentStackView.addArrangedSubview(previewHeaderLabel)
-
-        previewContainerView.addSubview(previewStackView)
-        previewStackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(16)
-        }
-
-        contentStackView.addArrangedSubview(previewContainerView)
-
         // Dismiss keyboard on tap
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tapGesture.cancelsTouchesInView = false
@@ -367,7 +335,7 @@ class ImportWorkoutViewController: UIViewController {
         let container = UIView()
 
         let iconImageView = UIImageView(image: UIImage(systemName: field.icon))
-        iconImageView.tintColor = ColorSystem.primaryGreen
+        iconImageView.tintColor = ColorSystem.controlTint
         iconImageView.contentMode = .scaleAspectFit
 
         let label = UILabel()
@@ -377,7 +345,7 @@ class ImportWorkoutViewController: UIViewController {
 
         let toggle = UISwitch()
         toggle.isOn = true
-        toggle.onTintColor = ColorSystem.primaryGreen
+        toggle.onTintColor = ColorSystem.controlTint
         toggle.tag = ImportField.allCases.firstIndex(of: field) ?? 0
         toggle.addTarget(self, action: #selector(fieldToggleChanged(_:)), for: .valueChanged)
 
@@ -413,21 +381,24 @@ class ImportWorkoutViewController: UIViewController {
     private func configureWithWorkout() {
         guard let workout = shareableWorkout else { return }
 
-        // Set header text based on mode
-        let creatorName = workout.creator?.name ?? "알 수 없음"
-        if importMode == .createNew {
-            headerLabel.text = "\(workout.workout.type) 기록"
-        } else {
-            headerLabel.text = "\(creatorName)님의 \(workout.workout.type) 기록"
-        }
-
         // Pre-fill owner name (only for attachToExisting mode)
         if importMode == .attachToExisting, let creator = workout.creator?.name {
             ownerNameTextField.text = creator
             ownerName = creator
         }
 
-        updatePreview()
+        updateHeaderLabel()
+    }
+
+    private func updateHeaderLabel() {
+        guard let workout = shareableWorkout else { return }
+
+        if importMode == .createNew {
+            headerLabel.text = "\(workout.workout.type) 기록"
+        } else {
+            let displayName = ownerName.isEmpty ? "알 수 없음" : ownerName
+            headerLabel.text = "\(displayName)님의 \(workout.workout.type) 기록"
+        }
     }
 
     // MARK: - Actions
@@ -464,7 +435,7 @@ class ImportWorkoutViewController: UIViewController {
 
     @objc private func ownerNameChanged() {
         ownerName = ownerNameTextField.text ?? ""
-        updatePreview()
+        updateHeaderLabel()
     }
 
     @objc private func templateToggleChanged(_ sender: UISwitch) {
@@ -480,110 +451,11 @@ class ImportWorkoutViewController: UIViewController {
             selectedFields.remove(field)
         }
 
-        updatePreview()
         updateImportButtonState()
     }
 
     @objc private func dismissKeyboard() {
         view.endEditing(true)
-    }
-
-    // MARK: - Preview
-    private func updatePreview() {
-        guard let workout = shareableWorkout else { return }
-
-        // Clear existing preview
-        previewStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-
-        // Owner name label - only for attachToExisting mode
-        if importMode == .attachToExisting {
-            let ownerLabel = UILabel()
-            let displayOwnerName = ownerName.isEmpty ? (workout.creator?.name ?? "알 수 없음") : ownerName
-            ownerLabel.text = "\(displayOwnerName)의 기록"
-            ownerLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-            ownerLabel.textColor = ColorSystem.warning
-            previewStackView.addArrangedSubview(ownerLabel)
-        }
-
-        // Selected fields preview
-        let data = workout.workout
-
-        if selectedFields.contains(.distance) {
-            addPreviewRow(title: "거리", value: String(format: "%.2f km", data.distance / 1000))
-        }
-
-        if selectedFields.contains(.duration) {
-            let minutes = Int(data.duration) / 60
-            let seconds = Int(data.duration) % 60
-            addPreviewRow(title: "시간", value: String(format: "%02d:%02d", minutes, seconds))
-        }
-
-        if selectedFields.contains(.pace) {
-            let paceMinutes = Int(data.pace)
-            let paceSeconds = Int((data.pace - Double(paceMinutes)) * 60)
-            addPreviewRow(title: "페이스", value: String(format: "%d'%02d\"/km", paceMinutes, paceSeconds))
-        }
-
-        if selectedFields.contains(.speed) {
-            addPreviewRow(title: "속도", value: String(format: "%.1f km/h", data.avgSpeed))
-        }
-
-        if selectedFields.contains(.calories) {
-            addPreviewRow(title: "칼로리", value: String(format: "%.0f kcal", data.calories))
-        }
-
-        if selectedFields.contains(.date) {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy.MM.dd HH:mm"
-            addPreviewRow(title: "날짜", value: formatter.string(from: data.startDate))
-        }
-
-        if selectedFields.contains(.route) && !data.route.isEmpty {
-            addPreviewRow(title: "경로", value: "\(data.route.count)개 포인트")
-        }
-
-        // Empty state
-        if selectedFields.isEmpty {
-            let emptyLabel = UILabel()
-            emptyLabel.text = "선택된 데이터가 없습니다"
-            emptyLabel.font = .systemFont(ofSize: 14)
-            emptyLabel.textColor = ColorSystem.subText
-            emptyLabel.textAlignment = .center
-            previewStackView.addArrangedSubview(emptyLabel)
-        }
-    }
-
-    private func addPreviewRow(title: String, value: String) {
-        let container = UIView()
-
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = .systemFont(ofSize: 14)
-        titleLabel.textColor = ColorSystem.subText
-
-        let valueLabel = UILabel()
-        valueLabel.text = value
-        valueLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        valueLabel.textColor = ColorSystem.mainText
-        valueLabel.textAlignment = .right
-
-        container.addSubview(titleLabel)
-        container.addSubview(valueLabel)
-
-        titleLabel.snp.makeConstraints { make in
-            make.leading.centerY.equalToSuperview()
-        }
-
-        valueLabel.snp.makeConstraints { make in
-            make.trailing.centerY.equalToSuperview()
-            make.leading.greaterThanOrEqualTo(titleLabel.snp.trailing).offset(8)
-        }
-
-        container.snp.makeConstraints { make in
-            make.height.equalTo(28)
-        }
-
-        previewStackView.addArrangedSubview(container)
     }
 
     private func updateImportButtonState() {
