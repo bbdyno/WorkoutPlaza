@@ -44,6 +44,7 @@ enum LayoutConstants {
     static let minimumAllowedScale: CGFloat = 0.65      // 0.5 → 0.65
     static let textWidgetMinimumScale: CGFloat = 0.35   // 0.2 → 0.35
     static let groupManagedMinimumScale: CGFloat = 0.3  // 그룹 관리 시 더 작게 축소 허용
+    static let groupManagedMinimumWidgetSize: CGFloat = 20  // 그룹 내 위젯 최소 크기
 
     // MARK: - Size Thresholds
     static let significantSizeChange: CGFloat = 5

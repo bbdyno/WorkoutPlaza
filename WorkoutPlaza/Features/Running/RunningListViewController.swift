@@ -453,8 +453,7 @@ extension RunningListViewController: UITableViewDelegate, UITableViewDataSource 
             let importedData = ImportedWorkoutData(
                 ownerName: externalWorkout.creatorName ?? "",
                 originalData: externalWorkout.workoutData,
-                selectedFields: Set(ImportField.allCases),
-                useCurrentLayout: false
+                selectedFields: Set(ImportField.allCases)
             )
             detailVC.workoutData = nil
             detailVC.importedWorkoutData = importedData

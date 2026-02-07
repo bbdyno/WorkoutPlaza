@@ -475,16 +475,11 @@ class TemplateGroupView: UIView, Selectable {
 
         var maxMinScale: CGFloat = 0
 
-        for (item, originalFrame) in originalItemFrames {
+        for (_, originalFrame) in originalItemFrames {
             guard originalFrame.width > 0 && originalFrame.height > 0 else { continue }
 
-            // Get widget's minimum size
-            let widgetMinSize: CGFloat
-            if let selectable = item as? Selectable {
-                widgetMinSize = selectable.minimumSize
-            } else {
-                widgetMinSize = LayoutConstants.minimumWidgetSize
-            }
+            // 그룹 내 위젯은 독립 위젯보다 훨씬 작아질 수 있음
+            let widgetMinSize: CGFloat = LayoutConstants.groupManagedMinimumWidgetSize
 
             // Calculate minimum scale needed for this widget
             let minScaleX = widgetMinSize / originalFrame.width
@@ -495,11 +490,9 @@ class TemplateGroupView: UIView, Selectable {
         }
 
         // Return minimum group WIDTH based on the most restrictive widget
-        // Since aspect ratio is maintained during resize, we only need to constrain width
-        // Height will be automatically correct due to aspect ratio
         let minWidth = originalGroupFrame.width * maxMinScale
 
-        let result = max(minWidth, LayoutConstants.minimumWidgetSize)
+        let result = max(minWidth, LayoutConstants.groupManagedMinimumWidgetSize)
         return result
     }
 
