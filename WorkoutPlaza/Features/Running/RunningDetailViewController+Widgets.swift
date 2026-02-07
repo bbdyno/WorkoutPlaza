@@ -373,7 +373,7 @@ extension RunningDetailViewController {
         present(actionSheet, animated: true)
     }
 
-    private func addSingleWidgetFromAvailableData(_ type: SingleWidgetType) {
+    internal func addSingleWidgetFromAvailableData(_ type: SingleWidgetType) {
         if let data = workoutData {
             addSingleWidget(type, data: data)
         } else if let imported = importedWorkoutData {
@@ -1070,6 +1070,9 @@ extension RunningDetailViewController {
             importedWidgets.append(w)
         }
 
+        // Fit all imported widgets within canvas bounds
+        fitImportedWidgetsToCanvas(importedWidgets, canvasSize: canvasSize, margin: margin)
+
         return importedWidgets
     }
 
@@ -1279,9 +1282,44 @@ extension RunningDetailViewController {
             }
         }
 
+        // Fit all imported widgets within canvas bounds
+        fitImportedWidgetsToCanvas(importedWidgets, canvasSize: canvasSize, margin: margin)
+
         return importedWidgets
     }
     
+    // MARK: - Canvas Fitting
+
+    /// 가져온 위젯들이 캔버스를 벗어나면 일괄 축소하여 캔버스 내에 수용
+    private func fitImportedWidgetsToCanvas(_ importedWidgets: [UIView], canvasSize: CGSize, margin: CGFloat) {
+        guard !importedWidgets.isEmpty else { return }
+
+        let totalBounds = importedWidgets.reduce(CGRect.null) { $0.union($1.frame) }
+        let needsFitX = totalBounds.maxX > canvasSize.width - margin
+        let needsFitY = totalBounds.maxY > canvasSize.height - margin
+
+        guard needsFitX || needsFitY else { return }
+
+        let fitScaleX = (canvasSize.width - margin * 2) / totalBounds.width
+        let fitScaleY = (canvasSize.height - margin * 2) / totalBounds.height
+        let fitScale = min(fitScaleX, fitScaleY, 1.0)
+
+        guard fitScale < 1.0 else { return }
+
+        for widget in importedWidgets {
+            widget.frame = CGRect(
+                x: margin + (widget.frame.minX - totalBounds.minX) * fitScale,
+                y: margin + (widget.frame.minY - totalBounds.minY) * fitScale,
+                width: widget.frame.width * fitScale,
+                height: widget.frame.height * fitScale
+            )
+            // initialSize는 원본 크기를 유지 (덮어쓰지 않음)
+            // → calculateScaleFactor()가 정확한 축소 비율을 반환하도록 함
+            // RouteMapView만 initialSize 업데이트 (폰트 스케일링 불필요)
+            (widget as? RouteMapView)?.initialSize = widget.frame.size
+        }
+    }
+
     // MARK: - Background Customization
     @objc override internal func changeTemplate() {
         let actionSheet = UIAlertController(title: "배경 옵션", message: nil, preferredStyle: .actionSheet)

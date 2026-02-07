@@ -149,6 +149,58 @@ class ImportWorkoutViewController: UIViewController {
         return label
     }()
 
+    // Template option
+    private var useIncludedTemplate: Bool = false
+
+    private let templateSectionLabel: UILabel = {
+        let label = UILabel()
+        label.text = "포함된 템플릿"
+        label.font = .systemFont(ofSize: 15, weight: .bold)
+        label.textColor = ColorSystem.mainText
+        return label
+    }()
+
+    private let templatePreviewCanvas: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 8
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let templateNameInfoLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.textColor = ColorSystem.mainText
+        return label
+    }()
+
+    private let useTemplateSwitch: UISwitch = {
+        let toggle = UISwitch()
+        toggle.isOn = false
+        toggle.onTintColor = ColorSystem.primaryGreen
+        return toggle
+    }()
+
+    private let useTemplateLabel: UILabel = {
+        let label = UILabel()
+        label.text = "이 템플릿으로 가져오기"
+        label.font = .systemFont(ofSize: 16)
+        label.textColor = ColorSystem.mainText
+        label.numberOfLines = 0
+        return label
+    }()
+
+    private let templateIncompatibleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "이 템플릿은 최신 버전의 앱이 필요합니다."
+        label.font = .systemFont(ofSize: 12)
+        label.textColor = .systemRed
+        label.numberOfLines = 0
+        label.isHidden = true
+        return label
+    }()
+
     // Containers for conditional display
     private var ownerNameContainer: UIView?
     private var layoutContainer: UIView?
@@ -266,6 +318,78 @@ class ImportWorkoutViewController: UIViewController {
             useCurrentLayoutSwitch.addTarget(self, action: #selector(layoutToggleChanged), for: .valueChanged)
             contentStackView.addArrangedSubview(container)
             layoutContainer = container
+        }
+
+        // Add template section if template is included
+        if let template = shareableWorkout?.template {
+            contentStackView.addArrangedSubview(templateSectionLabel)
+
+            let templateContainer = createSectionContainer()
+            let templateStack = UIStackView()
+            templateStack.axis = .vertical
+            templateStack.spacing = 12
+
+            // Template name
+            templateNameInfoLabel.text = "\(template.name) - \(template.description)"
+            templateStack.addArrangedSubview(templateNameInfoLabel)
+
+            // Mini canvas preview
+            let canvasWrapper = UIView()
+            canvasWrapper.addSubview(templatePreviewCanvas)
+
+            let templateCanvasSize: CGSize
+            if let tcs = template.canvasSize {
+                templateCanvasSize = CGSize(width: tcs.width, height: tcs.height)
+            } else {
+                templateCanvasSize = CGSize(width: 414, height: 700)
+            }
+
+            let previewWidth: CGFloat = 140
+            let aspectRatio = templateCanvasSize.height / templateCanvasSize.width
+            let previewHeight = previewWidth * aspectRatio
+
+            templatePreviewCanvas.snp.makeConstraints { make in
+                make.centerX.top.bottom.equalToSuperview()
+                make.width.equalTo(previewWidth)
+                make.height.equalTo(previewHeight)
+            }
+            templateStack.addArrangedSubview(canvasWrapper)
+
+            // Render widget placeholders in the canvas
+            DispatchQueue.main.async { [weak self] in
+                self?.renderTemplatePreviewWidgets(template: template, canvasSize: CGSize(width: previewWidth, height: previewHeight))
+            }
+
+            // Toggle row
+            let toggleRow = UIView()
+            toggleRow.addSubview(useTemplateLabel)
+            toggleRow.addSubview(useTemplateSwitch)
+
+            useTemplateLabel.snp.makeConstraints { make in
+                make.leading.top.bottom.equalToSuperview()
+                make.trailing.lessThanOrEqualTo(useTemplateSwitch.snp.leading).offset(-12)
+            }
+
+            useTemplateSwitch.snp.makeConstraints { make in
+                make.trailing.centerY.equalToSuperview()
+            }
+
+            templateStack.addArrangedSubview(toggleRow)
+
+            // Incompatible label
+            if !template.isCompatible {
+                templateIncompatibleLabel.isHidden = false
+                useTemplateSwitch.isEnabled = false
+                templateStack.addArrangedSubview(templateIncompatibleLabel)
+            }
+
+            useTemplateSwitch.addTarget(self, action: #selector(templateToggleChanged), for: .valueChanged)
+
+            templateContainer.addSubview(templateStack)
+            templateStack.snp.makeConstraints { make in
+                make.edges.equalToSuperview().inset(12)
+            }
+            contentStackView.addArrangedSubview(templateContainer)
         }
 
         // Add preview section
@@ -391,12 +515,16 @@ class ImportWorkoutViewController: UIViewController {
             finalOwnerName = ownerName.isEmpty ? (workout.creator?.name ?? "알 수 없음") : ownerName
         }
 
+        // Determine selected template
+        let selectedTemplate: WidgetTemplate? = useIncludedTemplate ? workout.template : nil
+
         // Create imported workout data
         let importedData = ImportedWorkoutData(
             ownerName: finalOwnerName,
             originalData: workout.workout,
             selectedFields: selectedFields,
-            useCurrentLayout: useCurrentLayout
+            useCurrentLayout: useCurrentLayout,
+            selectedTemplate: selectedTemplate
         )
 
         delegate?.importWorkoutViewController(self, didImport: importedData, mode: importMode, attachTo: attachToWorkout)
@@ -410,6 +538,10 @@ class ImportWorkoutViewController: UIViewController {
 
     @objc private func layoutToggleChanged(_ sender: UISwitch) {
         useCurrentLayout = sender.isOn
+    }
+
+    @objc private func templateToggleChanged(_ sender: UISwitch) {
+        useIncludedTemplate = sender.isOn
     }
 
     @objc private func fieldToggleChanged(_ sender: UISwitch) {
@@ -529,5 +661,41 @@ class ImportWorkoutViewController: UIViewController {
 
     private func updateImportButtonState() {
         navigationItem.rightBarButtonItem?.isEnabled = !selectedFields.isEmpty
+    }
+
+    // MARK: - Template Preview Rendering
+
+    private func renderTemplatePreviewWidgets(template: WidgetTemplate, canvasSize: CGSize) {
+        let templateCanvasSize: CGSize
+        if let tcs = template.canvasSize {
+            templateCanvasSize = CGSize(width: tcs.width, height: tcs.height)
+        } else {
+            templateCanvasSize = CGSize(width: 414, height: 700)
+        }
+
+        for item in template.items {
+            let frame = TemplateManager.absoluteFrame(from: item, canvasSize: canvasSize, templateCanvasSize: templateCanvasSize)
+
+            let placeholder = UIView(frame: frame)
+            placeholder.backgroundColor = ColorSystem.primaryGreen.withAlphaComponent(0.15)
+            placeholder.layer.cornerRadius = 4
+            placeholder.layer.borderWidth = 1
+            placeholder.layer.borderColor = ColorSystem.primaryGreen.withAlphaComponent(0.3).cgColor
+
+            let iconView = UIImageView(image: UIImage(systemName: item.type.iconName))
+            iconView.tintColor = ColorSystem.primaryGreen.withAlphaComponent(0.6)
+            iconView.contentMode = .scaleAspectFit
+            placeholder.addSubview(iconView)
+
+            let iconSize = min(frame.width, frame.height) * 0.4
+            iconView.frame = CGRect(
+                x: (frame.width - iconSize) / 2,
+                y: (frame.height - iconSize) / 2,
+                width: iconSize,
+                height: iconSize
+            )
+
+            templatePreviewCanvas.addSubview(placeholder)
+        }
     }
 }

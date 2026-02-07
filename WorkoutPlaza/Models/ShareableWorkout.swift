@@ -163,6 +163,7 @@ enum ShareError: LocalizedError {
     case fileNotFound
     case encodingFailed
     case decodingFailed
+    case templateVersionMismatch
 
     var errorDescription: String? {
         switch self {
@@ -186,6 +187,8 @@ enum ShareError: LocalizedError {
             return "데이터 인코딩에 실패했습니다."
         case .decodingFailed:
             return "데이터 디코딩에 실패했습니다."
+        case .templateVersionMismatch:
+            return "포함된 템플릿이 현재 앱 버전과 호환되지 않습니다. 앱을 업데이트해주세요."
         }
     }
 }

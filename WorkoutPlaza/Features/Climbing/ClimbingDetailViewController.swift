@@ -71,47 +71,69 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
     
     // MARK: - Actions
     
-    override func showAddWidgetMenuBase() {
-        showAddWidgetMenu() // Specific implementation
-    }
-    
-    override func showTemplateMenu() {
-        // Climbing specific templates
-         let alert = UIAlertController(title: "레이아웃 템플릿", message: "위젯 배치를 선택하세요", preferredStyle: .actionSheet)
+    override func getToolSheetItems() -> (templates: [ToolSheetItem], widgets: [ToolSheetItem], templateActions: [ToolSheetHeaderAction]) {
+        // Templates
+        var templateItems: [ToolSheetItem] = []
 
-        Task {
-            // Get climbing templates
-            let templates = await TemplateManager.shared.getTemplates(for: .climbing)
-
-            await MainActor.run {
-                for template in templates {
-                    alert.addAction(UIAlertAction(title: template.name, style: .default) { [weak self] _ in
-                        self?.applyWidgetTemplate(template)
-                    })
+        let builtInTemplates = WidgetTemplate.climbingTemplates
+        for template in builtInTemplates {
+            let compatible = template.isCompatible
+            templateItems.append(ToolSheetItem(
+                title: template.name,
+                description: compatible ? template.description : "업데이트 필요",
+                iconName: "rectangle.3.group",
+                isEnabled: compatible,
+                previewProvider: template.thumbnailProvider(widgetFactory: { [weak self] item, frame in
+                    self?.createWidget(for: item, frame: frame)
+                }),
+                action: { [weak self] in
+                    self?.showTemplatePreview(template)
                 }
-
-                // Import template
-                alert.addAction(UIAlertAction(title: "📥 템플릿 가져오기", style: .default) { [weak self] _ in
-                    self?.importTemplate()
-                })
-
-                // Export current layout
-                alert.addAction(UIAlertAction(title: "📤 현재 레이아웃 내보내기", style: .default) { [weak self] _ in
-                    self?.exportCurrentLayout()
-                })
-
-                alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-
-                if let popover = alert.popoverPresentationController {
-                    popover.sourceView = layoutTemplateButton
-                    popover.sourceRect = layoutTemplateButton.bounds
-                }
-
-                present(alert, animated: true)
-            }
+            ))
         }
+
+        // Import / Export as header actions
+        let templateActions: [ToolSheetHeaderAction] = [
+            ToolSheetHeaderAction(title: "가져오기", iconName: "square.and.arrow.down") { [weak self] in
+                self?.importTemplate()
+            },
+            ToolSheetHeaderAction(title: "내보내기", iconName: "square.and.arrow.up") { [weak self] in
+                self?.exportCurrentLayout()
+            }
+        ]
+
+        // Widgets
+        var widgetItems: [ToolSheetItem] = []
+
+        let climbingWidgets: [(String, WidgetType)] = [
+            ("클라이밍짐", .climbingGym),
+            ("암장 로고", .gymLogo),
+            ("종목", .climbingDiscipline),
+            ("세션 기록", .climbingSession),
+            ("완등 현황", .climbingRoutesByColor),
+            ("텍스트", .text),
+            ("날짜", .date)
+        ]
+
+        for (name, type) in climbingWidgets {
+            let added = !canAddWidget(type)
+
+            widgetItems.append(ToolSheetItem(
+                title: type.displayName,
+                description: name,
+                iconName: type.iconName,
+                isEnabled: !added,
+                isAdded: added,
+                previewProvider: type.previewProvider,
+                action: { [weak self] in
+                    self?.addNewWidget(type: type)
+                }
+            ))
+        }
+
+        return (templateItems, widgetItems, templateActions)
     }
-    
+
     override func doneButtonTapped() {
          saveCurrentDesign { [weak self] success in
             if success {

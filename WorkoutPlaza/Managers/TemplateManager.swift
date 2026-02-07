@@ -53,7 +53,7 @@ actor TemplateManager {
 
     // MARK: - Save Custom Template
     func saveCustomTemplate(_ template: WidgetTemplate) async throws {
-        let fileURL = templatesDirectoryURL.appendingPathComponent("\(template.id).json")
+        let fileURL = templatesDirectoryURL.appendingPathComponent("\(template.id).wptemplate")
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -72,7 +72,7 @@ actor TemplateManager {
 
     // MARK: - Delete Custom Template
     func deleteCustomTemplate(_ template: WidgetTemplate) async throws {
-        let fileURL = templatesDirectoryURL.appendingPathComponent("\(template.id).json")
+        let fileURL = templatesDirectoryURL.appendingPathComponent("\(template.id).wptemplate")
 
         if FileManager.default.fileExists(atPath: fileURL.path) {
             try await Task.detached(priority: .utility) {
@@ -95,7 +95,7 @@ actor TemplateManager {
                 return []
             }
 
-            for fileURL in files where fileURL.pathExtension == "json" {
+            for fileURL in files where fileURL.pathExtension == "wptemplate" || fileURL.pathExtension == "json" {
                 do {
                     let data = try Data(contentsOf: fileURL)
                     let decoder = JSONDecoder()
@@ -122,7 +122,7 @@ actor TemplateManager {
 
         // Create temporary file
         let tempDirectory = FileManager.default.temporaryDirectory
-        let fileName = "\(template.name.replacingOccurrences(of: " ", with: "_")).json"
+        let fileName = "\(template.name.replacingOccurrences(of: " ", with: "_")).wptemplate"
         let fileURL = tempDirectory.appendingPathComponent(fileName)
 
         try data.write(to: fileURL)

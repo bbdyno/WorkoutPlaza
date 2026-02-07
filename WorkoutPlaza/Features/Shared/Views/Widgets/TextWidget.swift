@@ -254,13 +254,15 @@ class TextWidget: UIView, Selectable {
         // Use the smaller scale factor to prevent text overflow
         // This ensures text fits within the available space without causing extra padding
         let minScale = min(widthScale, heightScale)
+        let lowerBound = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.textWidgetMinimumScale
 
-        return min(max(minScale, LayoutConstants.textWidgetMinimumScale), LayoutConstants.maximumScaleFactor)
+        return min(max(minScale, lowerBound), LayoutConstants.maximumScaleFactor)
     }
 
     /// Update fonts with a specific scale factor (used by group resize)
     func updateFontsWithScale(_ scale: CGFloat) {
-        let clampedScale = min(max(scale, LayoutConstants.textWidgetMinimumScale), LayoutConstants.maximumScaleFactor)
+        let minScale = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.textWidgetMinimumScale
+        let clampedScale = min(max(scale, minScale), LayoutConstants.maximumScaleFactor)
         let fontSize = baseFontSize * clampedScale
         textLabel.font = currentFontStyle.font(size: fontSize, weight: .bold)
     }

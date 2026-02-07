@@ -21,19 +21,22 @@ struct ImportedWorkoutData {
     let selectedFields: Set<ImportField>
     let importedAt: Date
     let useCurrentLayout: Bool  // If true, match current template layout
+    let selectedTemplate: WidgetTemplate?  // Template from imported file
 
     init(
         ownerName: String,
         originalData: ExportableWorkoutData,
         selectedFields: Set<ImportField>,
         importedAt: Date = Date(),
-        useCurrentLayout: Bool = false
+        useCurrentLayout: Bool = false,
+        selectedTemplate: WidgetTemplate? = nil
     ) {
         self.ownerName = ownerName
         self.originalData = originalData
         self.selectedFields = selectedFields
         self.importedAt = importedAt
         self.useCurrentLayout = useCurrentLayout
+        self.selectedTemplate = selectedTemplate
     }
 
     // MARK: - Computed Properties

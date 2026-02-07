@@ -350,7 +350,8 @@ class BaseStatWidget: UIView, Selectable {
         let widthScale = bounds.width / initialSize.width
         let heightScale = bounds.height / initialSize.height
         let minScale = min(widthScale, heightScale)
-        let result = min(max(minScale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
+        let lowerBound = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.minimumAllowedScale
+        let result = min(max(minScale, lowerBound), LayoutConstants.maximumScaleFactor)
 
         print("   [calculateScaleFactor] bounds=\(bounds.size), initialSize=\(initialSize), widthScale=\(widthScale), heightScale=\(heightScale), minScale=\(minScale), result=\(result)")
 
@@ -365,7 +366,8 @@ class BaseStatWidget: UIView, Selectable {
             baseFontSizes["unit"] = LayoutConstants.unitFontSize
         }
 
-        let clampedScale = min(max(scale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
+        let minScale = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.minimumAllowedScale
+        let clampedScale = min(max(scale, minScale), LayoutConstants.maximumScaleFactor)
         print("📐 [updateFontsWithScale] requested=\(scale), clamped=\(clampedScale), bounds=\(bounds.size), initialSize=\(initialSize)")
         applyFontScale(clampedScale)
     }

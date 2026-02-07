@@ -1552,11 +1552,28 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     // Abstract method to be overridden
     @objc func showAddWidgetMenuBase() {
-        // Subclasses should implement
+        let (_, widgets, _) = getToolSheetItems()
+        guard !widgets.isEmpty else { return }
+
+        let sections = [ToolSheetSection(title: "위젯 추가", items: widgets)]
+        let sheetVC = ToolSheetViewController(sections: sections)
+        sheetVC.modalPresentationStyle = .pageSheet
+        present(sheetVC, animated: true)
     }
-    
+
     @objc func showTemplateMenu() {
-        // Shared template menu logic - override in subclasses
+        let (templates, _, templateActions) = getToolSheetItems()
+        guard !templates.isEmpty else { return }
+
+        let sections = [ToolSheetSection(title: "레이아웃 템플릿", items: templates, headerActions: templateActions)]
+        let sheetVC = ToolSheetViewController(sections: sections)
+        sheetVC.modalPresentationStyle = .pageSheet
+        present(sheetVC, animated: true)
+    }
+
+    /// Override in subclasses to provide sport-specific templates and widgets.
+    func getToolSheetItems() -> (templates: [ToolSheetItem], widgets: [ToolSheetItem], templateActions: [ToolSheetHeaderAction]) {
+        return ([], [], [])
     }
 
     @objc dynamic func shareImage() {
@@ -2371,6 +2388,20 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     // MARK: - Template Management
 
+    func showTemplatePreview(_ template: WidgetTemplate) {
+        let previewVC = TemplatePreviewViewController(
+            template: template,
+            widgetFactory: { [weak self] item, frame in
+                self?.createWidget(for: item, frame: frame)
+            },
+            onApply: { [weak self] in
+                self?.applyWidgetTemplate(template)
+            }
+        )
+        previewVC.modalPresentationStyle = .pageSheet
+        present(previewVC, animated: true)
+    }
+
     /// Override in subclasses to create workout-specific widgets
     func createWidget(for item: WidgetItem, frame: CGRect) -> UIView? {
         // Override in subclasses to handle workout-specific widget types
@@ -2461,7 +2492,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     @objc dynamic func importTemplate() {
         documentPickerPurpose = .templateImport
-        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [.json])
+        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [.json, .data])
         documentPicker.delegate = self
         documentPicker.allowsMultipleSelection = false
         present(documentPicker, animated: true)
@@ -2493,6 +2524,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             guard let name = alert.textFields?[0].text, !name.isEmpty else { return }
             let description = alert.textFields?[1].text ?? ""
 
+            let currentAppVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+
             let template = WidgetTemplate(
                 name: name,
                 description: description,
@@ -2500,7 +2533,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 items: items,
                 canvasSize: WidgetTemplate.CanvasSize(width: canvasSize.width, height: canvasSize.height),
                 backgroundImageAspectRatio: backgroundImageAspectRatio,
-                backgroundTransform: backgroundTransformData
+                backgroundTransform: backgroundTransformData,
+                minimumAppVersion: currentAppVersion
             )
 
             do {
@@ -3307,16 +3341,7 @@ extension BaseWorkoutDetailViewController: UIDocumentPickerDelegate {
             do {
                 let template = try await TemplateManager.shared.importTemplate(from: fileURL)
                 await MainActor.run {
-                    let alert = UIAlertController(
-                        title: "템플릿 가져오기 성공",
-                        message: "'\(template.name)' 템플릿을 적용하시겠습니까?",
-                        preferredStyle: .alert
-                    )
-                    alert.addAction(UIAlertAction(title: "적용", style: .default) { [weak self] _ in
-                        self?.applyWidgetTemplate(template)
-                    })
-                    alert.addAction(UIAlertAction(title: "나중에", style: .cancel))
-                    present(alert, animated: true)
+                    showTemplatePreview(template)
                 }
             } catch {
                 await MainActor.run {

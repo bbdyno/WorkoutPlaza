@@ -45,65 +45,88 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
     override func setupNavigationButtons() {
         super.setupNavigationButtons()
         title = "러닝 기록"
-
-        // Add import button to navigation bar
-        let importButton = UIBarButtonItem(
-            image: UIImage(systemName: "person.badge.plus"),
-            style: .plain,
-            target: self,
-            action: #selector(showImportOthersRecordMenu)
-        )
-        navigationItem.rightBarButtonItems = [
-            navigationItem.rightBarButtonItem!,
-            importButton
-        ]
     }
-    
+
     // MARK: - Actions
     
-    override func showAddWidgetMenuBase() {
-        showAddWidgetMenu() // Call the specific implementation
-    }
-    
-    override func showTemplateMenu() {
-        super.showTemplateMenu() // Base implementation or specific override
-        // Assuming base has the shared logic, or we specifically implement here if dependent on Running data
-        // For now, we'll keep the specific implementation in extension if it relies on Running templates
-         let alert = UIAlertController(title: "레이아웃 템플릿", message: "위젯 배치를 선택하세요", preferredStyle: .actionSheet)
+    override func getToolSheetItems() -> (templates: [ToolSheetItem], widgets: [ToolSheetItem], templateActions: [ToolSheetHeaderAction]) {
+        // Templates
+        var templateItems: [ToolSheetItem] = []
 
-        Task {
-            // Get running templates
-            let templates = await TemplateManager.shared.getTemplates(for: .running)
-
-            await MainActor.run {
-                for template in templates {
-                    alert.addAction(UIAlertAction(title: template.name, style: .default) { [weak self] _ in
-                        self?.applyWidgetTemplate(template)
-                    })
+        let builtInTemplates = WidgetTemplate.runningTemplates
+        for template in builtInTemplates {
+            let compatible = template.isCompatible
+            templateItems.append(ToolSheetItem(
+                title: template.name,
+                description: compatible ? template.description : "업데이트 필요",
+                iconName: "rectangle.3.group",
+                isEnabled: compatible,
+                previewProvider: template.thumbnailProvider(widgetFactory: { [weak self] item, frame in
+                    self?.createWidget(for: item, frame: frame)
+                }),
+                action: { [weak self] in
+                    self?.showTemplatePreview(template)
                 }
-
-                // Import template
-                alert.addAction(UIAlertAction(title: "📥 템플릿 가져오기", style: .default) { [weak self] _ in
-                    self?.importTemplate()
-                })
-
-                // Export current layout
-                alert.addAction(UIAlertAction(title: "📤 현재 레이아웃 내보내기", style: .default) { [weak self] _ in
-                    self?.exportCurrentLayout()
-                })
-
-                alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-
-                if let popover = alert.popoverPresentationController {
-                    popover.sourceView = layoutTemplateButton
-                    popover.sourceRect = layoutTemplateButton.bounds
-                }
-
-                present(alert, animated: true)
-            }
+            ))
         }
+
+        // Import / Export as header actions
+        let templateActions: [ToolSheetHeaderAction] = [
+            ToolSheetHeaderAction(title: "가져오기", iconName: "square.and.arrow.down") { [weak self] in
+                self?.importTemplate()
+            },
+            ToolSheetHeaderAction(title: "내보내기", iconName: "square.and.arrow.up") { [weak self] in
+                self?.exportCurrentLayout()
+            }
+        ]
+
+        // Widgets
+        var widgetItems: [ToolSheetItem] = []
+        let hasData = workoutData != nil || importedWorkoutData != nil || externalWorkout != nil
+        let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? (externalWorkout?.workoutData.route.isEmpty == false)
+
+        for type in SingleWidgetType.allCases {
+            let added = !canAddWidget(type)
+            let enabled: Bool
+            if !hasData {
+                enabled = false
+            } else if (type == .routeMap || type == .location) && !hasRoute {
+                enabled = false
+            } else {
+                enabled = !added
+            }
+
+            let widgetType: WidgetType
+            switch type {
+            case .routeMap: widgetType = .routeMap
+            case .distance: widgetType = .distance
+            case .duration: widgetType = .duration
+            case .pace: widgetType = .pace
+            case .speed: widgetType = .speed
+            case .calories: widgetType = .calories
+            case .heartRate: widgetType = .heartRate
+            case .date: widgetType = .date
+            case .currentDateTime: widgetType = .currentDateTime
+            case .text: widgetType = .text
+            case .location: widgetType = .location
+            }
+
+            widgetItems.append(ToolSheetItem(
+                title: widgetType.displayName,
+                description: type.rawValue,
+                iconName: widgetType.iconName,
+                isEnabled: enabled,
+                isAdded: added,
+                previewProvider: widgetType.previewProvider,
+                action: { [weak self] in
+                    self?.addSingleWidgetFromAvailableData(type)
+                }
+            ))
+        }
+
+        return (templateItems, widgetItems, templateActions)
     }
-    
+
     // Override other actions as needed or rely on Base if generic enough
     override func doneButtonTapped() {
         saveCurrentDesign { [weak self] success in
@@ -222,7 +245,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         showImportOptionsSheet(for: shareableWorkout)
     }
 
-    @objc private func showImportOthersRecordMenu() {
+    @objc func showImportOthersRecordMenu() {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.init(filenameExtension: "wplaza")!])
         picker.delegate = self
         picker.allowsMultipleSelection = false
