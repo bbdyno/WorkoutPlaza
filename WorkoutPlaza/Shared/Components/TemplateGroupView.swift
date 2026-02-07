@@ -246,6 +246,7 @@ class TemplateGroupView: UIView, Selectable {
     private let snapStep: CGFloat = 5.0
 
     @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+        guard DevSettings.shared.isPinchToResizeEnabled else { return }
         guard let view = gesture.view else { return }
 
         switch gesture.state {

@@ -169,8 +169,9 @@ class GymLogoWidget: UIView, Selectable {
     }
     
     @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+        guard DevSettings.shared.isPinchToResizeEnabled else { return }
         guard let view = gesture.view else { return }
-        
+
         switch gesture.state {
         case .began:
             if initialSize == .zero {
