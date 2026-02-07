@@ -1557,18 +1557,29 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         let sections = [ToolSheetSection(title: "위젯 추가", items: widgets)]
         let sheetVC = ToolSheetViewController(sections: sections)
-        sheetVC.modalPresentationStyle = .pageSheet
-        present(sheetVC, animated: true)
+        sheetVC.title = "위젯 추가"
+        presentAsSheet(sheetVC)
     }
 
     @objc func showTemplateMenu() {
         let (templates, _, templateActions) = getToolSheetItems()
         guard !templates.isEmpty else { return }
 
-        let sections = [ToolSheetSection(title: "레이아웃 템플릿", items: templates, headerActions: templateActions)]
-        let sheetVC = ToolSheetViewController(sections: sections)
-        sheetVC.modalPresentationStyle = .pageSheet
-        present(sheetVC, animated: true)
+        let sections = [ToolSheetSection(title: "레이아웃 템플릿", items: templates)]
+        let sheetVC = ToolSheetViewController(sections: sections, toolbarActions: templateActions)
+        sheetVC.title = "레이아웃 템플릿"
+        presentAsSheet(sheetVC)
+    }
+
+    private func presentAsSheet(_ viewController: UIViewController) {
+        let nav = UINavigationController(rootViewController: viewController)
+        nav.modalPresentationStyle = .pageSheet
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = true
+        }
+        present(nav, animated: true)
     }
 
     /// Override in subclasses to provide sport-specific templates and widgets.
@@ -2398,8 +2409,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 self?.applyWidgetTemplate(template)
             }
         )
-        previewVC.modalPresentationStyle = .pageSheet
-        present(previewVC, animated: true)
+        previewVC.title = template.name
+        presentAsSheet(previewVC)
     }
 
     /// Override in subclasses to create workout-specific widgets

@@ -69,12 +69,14 @@ class ToolSheetViewController: UIViewController {
     // MARK: - Properties
 
     private var sections: [ToolSheetSection] = []
+    private var toolbarActions: [ToolSheetHeaderAction] = []
     private var collectionView: UICollectionView!
 
     // MARK: - Lifecycle
 
-    init(sections: [ToolSheetSection]) {
+    init(sections: [ToolSheetSection], toolbarActions: [ToolSheetHeaderAction] = []) {
         self.sections = sections
+        self.toolbarActions = toolbarActions
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -84,19 +86,46 @@ class ToolSheetViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupSheet()
+        setupNavigationBar()
         setupCollectionView()
     }
 
     // MARK: - Setup
 
-    private func setupSheet() {
+    private func setupNavigationBar() {
         view.backgroundColor = .systemBackground
 
-        if let sheet = sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
-            sheet.prefersScrollingExpandsWhenScrolledToEdge = true
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "닫기",
+            style: .done,
+            target: self,
+            action: #selector(closeTapped)
+        )
+
+        if !toolbarActions.isEmpty {
+            navigationItem.leftBarButtonItems = toolbarActions.enumerated().map { index, action in
+                let button = UIBarButtonItem(
+                    title: action.title,
+                    image: UIImage(systemName: action.iconName),
+                    target: self,
+                    action: #selector(toolbarActionTapped(_:))
+                )
+                button.tag = index
+                return button
+            }
+        }
+    }
+
+    @objc private func closeTapped() {
+        dismiss(animated: true)
+    }
+
+    @objc private func toolbarActionTapped(_ sender: UIBarButtonItem) {
+        let index = sender.tag
+        guard index < toolbarActions.count else { return }
+        let action = toolbarActions[index].action
+        dismiss(animated: true) {
+            action()
         }
     }
 
@@ -115,7 +144,7 @@ class ToolSheetViewController: UIViewController {
         view.addSubview(collectionView)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -185,11 +214,7 @@ extension ToolSheetViewController: UICollectionViewDataSource {
             for: indexPath
         ) as! ToolSheetHeaderView
         let section = sections[indexPath.section]
-        header.configure(title: section.title, actions: section.headerActions) { [weak self] action in
-            self?.dismiss(animated: true) {
-                action()
-            }
-        }
+        header.configure(title: section.title)
         return header
     }
 }
@@ -462,35 +487,16 @@ private class ToolSheetHeaderView: UICollectionReusableView {
         return label
     }()
 
-    private let buttonStack: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .horizontal
-        stack.spacing = 8
-        stack.alignment = .center
-        return stack
-    }()
-
-    private var actionClosures: [() -> Void] = []
-    private var dismissHandler: ((@escaping () -> Void) -> Void)?
-
     override init(frame: CGRect) {
         super.init(frame: frame)
         addSubview(titleLabel)
-        addSubview(buttonStack)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        buttonStack.translatesAutoresizingMaskIntoConstraints = false
-
-        titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        buttonStack.setContentHuggingPriority(.required, for: .horizontal)
 
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
             titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8),
             titleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -4),
-
-            buttonStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
-            buttonStack.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
-            buttonStack.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 8)
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4)
         ])
     }
 
@@ -498,48 +504,7 @@ private class ToolSheetHeaderView: UICollectionReusableView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        buttonStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        actionClosures.removeAll()
-        dismissHandler = nil
-    }
-
-    func configure(title: String, actions: [ToolSheetHeaderAction], dismissHandler: @escaping (@escaping () -> Void) -> Void) {
+    func configure(title: String) {
         titleLabel.text = title
-        self.dismissHandler = dismissHandler
-
-        buttonStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        actionClosures.removeAll()
-
-        for (index, action) in actions.enumerated() {
-            actionClosures.append(action.action)
-
-            var config = UIButton.Configuration.plain()
-            config.image = UIImage(systemName: action.iconName)?.withConfiguration(
-                UIImage.SymbolConfiguration(pointSize: 11, weight: .medium)
-            )
-            config.title = action.title
-            config.baseForegroundColor = .label
-            config.imagePadding = 3
-            config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6)
-            config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 11)
-
-            let button = UIButton(configuration: config)
-            button.titleLabel?.font = .systemFont(ofSize: 12, weight: .medium)
-            button.tag = index
-            button.addTarget(self, action: #selector(headerButtonTapped(_:)), for: .touchUpInside)
-            button.layer.cornerRadius = 6
-            button.layer.borderWidth = 0.5
-            button.layer.borderColor = UIColor.separator.cgColor
-            buttonStack.addArrangedSubview(button)
-        }
-    }
-
-    @objc private func headerButtonTapped(_ sender: UIButton) {
-        let index = sender.tag
-        guard index < actionClosures.count else { return }
-        let action = actionClosures[index]
-        dismissHandler?(action)
     }
 }

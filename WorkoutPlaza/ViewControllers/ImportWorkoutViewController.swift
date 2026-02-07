@@ -22,8 +22,14 @@ class ImportWorkoutViewController: UIViewController {
     var attachToWorkout: WorkoutData?
     weak var delegate: ImportWorkoutViewControllerDelegate?
 
+    /// Widget factory closure injected from the detail VC for template preview
+    var widgetFactory: ((WidgetItem, CGRect) -> UIView?)?
+    /// Available built-in templates for selection
+    var availableTemplates: [WidgetTemplate] = []
+
     private var selectedFields: Set<ImportField> = Set(ImportField.allCases)
     private var ownerName: String = ""
+    private var selectedTemplate: WidgetTemplate?
 
     // MARK: - UI Components
     private let scrollView = UIScrollView()
@@ -95,56 +101,44 @@ class ImportWorkoutViewController: UIViewController {
 
 
 
-    // Template option
-    private var useIncludedTemplate: Bool = false
-
     private let templateSectionLabel: UILabel = {
         let label = UILabel()
-        label.text = "포함된 템플릿"
+        label.text = "템플릿 선택"
         label.font = .systemFont(ofSize: 15, weight: .bold)
         label.textColor = ColorSystem.mainText
         return label
     }()
 
-    private let templatePreviewCanvas: UIView = {
-        let view = UIView()
-        view.backgroundColor = .white
-        view.layer.cornerRadius = 8
-        view.clipsToBounds = true
-        return view
-    }()
-
-    private let templateNameInfoLabel: UILabel = {
+    private let selectedTemplateNameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14, weight: .medium)
-        label.textColor = ColorSystem.mainText
-        return label
-    }()
-
-    private let useTemplateSwitch: UISwitch = {
-        let toggle = UISwitch()
-        toggle.isOn = false
-        toggle.onTintColor = ColorSystem.primaryGreen
-        return toggle
-    }()
-
-    private let useTemplateLabel: UILabel = {
-        let label = UILabel()
-        label.text = "이 템플릿으로 가져오기"
+        label.text = "기본 레이아웃"
         label.font = .systemFont(ofSize: 16)
         label.textColor = ColorSystem.mainText
+        return label
+    }()
+
+    private let selectedTemplateDescLabel: UILabel = {
+        let label = UILabel()
+        label.text = "템플릿 없이 기본 배치로 가져옵니다"
+        label.font = .systemFont(ofSize: 13)
+        label.textColor = ColorSystem.subText
         label.numberOfLines = 0
         return label
     }()
 
-    private let templateIncompatibleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "이 템플릿은 최신 버전의 앱이 필요합니다."
-        label.font = .systemFont(ofSize: 12)
-        label.textColor = .systemRed
-        label.numberOfLines = 0
-        label.isHidden = true
-        return label
+    private let templateChevronImageView: UIImageView = {
+        let iv = UIImageView(image: UIImage(systemName: "chevron.right"))
+        iv.tintColor = ColorSystem.subText
+        iv.contentMode = .scaleAspectFit
+        return iv
+    }()
+
+    private let clearTemplateButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        button.tintColor = ColorSystem.subText
+        button.isHidden = true
+        return button
     }()
 
     // Containers for conditional display
@@ -230,76 +224,61 @@ class ImportWorkoutViewController: UIViewController {
         setupFieldCheckboxes()
         contentStackView.addArrangedSubview(fieldsContainer)
 
-        // Add template section if template is included
-        if let template = shareableWorkout?.template {
+        // Add template section (always shown when we have available templates or included template)
+        let hasIncludedTemplate = shareableWorkout?.template != nil
+        let hasAvailableTemplates = !availableTemplates.isEmpty
+        if hasIncludedTemplate || hasAvailableTemplates {
             contentStackView.addArrangedSubview(templateSectionLabel)
 
             let templateContainer = createSectionContainer()
-            let templateStack = UIStackView()
-            templateStack.axis = .vertical
-            templateStack.spacing = 12
+            let templateRow = UIView()
 
-            // Template name
-            templateNameInfoLabel.text = "\(template.name) - \(template.description)"
-            templateStack.addArrangedSubview(templateNameInfoLabel)
+            templateRow.addSubview(selectedTemplateNameLabel)
+            templateRow.addSubview(selectedTemplateDescLabel)
+            templateRow.addSubview(templateChevronImageView)
+            templateRow.addSubview(clearTemplateButton)
 
-            // Mini canvas preview
-            let canvasWrapper = UIView()
-            canvasWrapper.addSubview(templatePreviewCanvas)
-
-            let templateCanvasSize: CGSize
-            if let tcs = template.canvasSize {
-                templateCanvasSize = CGSize(width: tcs.width, height: tcs.height)
-            } else {
-                templateCanvasSize = CGSize(width: 414, height: 700)
+            selectedTemplateNameLabel.snp.makeConstraints { make in
+                make.top.equalToSuperview().inset(4)
+                make.leading.equalToSuperview()
+                make.trailing.lessThanOrEqualTo(clearTemplateButton.snp.leading).offset(-8)
             }
 
-            let previewWidth: CGFloat = 140
-            let aspectRatio = templateCanvasSize.height / templateCanvasSize.width
-            let previewHeight = previewWidth * aspectRatio
-
-            templatePreviewCanvas.snp.makeConstraints { make in
-                make.centerX.top.bottom.equalToSuperview()
-                make.width.equalTo(previewWidth)
-                make.height.equalTo(previewHeight)
-            }
-            templateStack.addArrangedSubview(canvasWrapper)
-
-            // Render widget placeholders in the canvas
-            DispatchQueue.main.async { [weak self] in
-                self?.renderTemplatePreviewWidgets(template: template, canvasSize: CGSize(width: previewWidth, height: previewHeight))
+            selectedTemplateDescLabel.snp.makeConstraints { make in
+                make.top.equalTo(selectedTemplateNameLabel.snp.bottom).offset(2)
+                make.leading.equalToSuperview()
+                make.trailing.lessThanOrEqualTo(templateChevronImageView.snp.leading).offset(-8)
+                make.bottom.equalToSuperview().inset(4)
             }
 
-            // Toggle row
-            let toggleRow = UIView()
-            toggleRow.addSubview(useTemplateLabel)
-            toggleRow.addSubview(useTemplateSwitch)
-
-            useTemplateLabel.snp.makeConstraints { make in
-                make.leading.top.bottom.equalToSuperview()
-                make.trailing.lessThanOrEqualTo(useTemplateSwitch.snp.leading).offset(-12)
+            templateChevronImageView.snp.makeConstraints { make in
+                make.trailing.equalToSuperview()
+                make.centerY.equalToSuperview()
+                make.width.height.equalTo(16)
             }
 
-            useTemplateSwitch.snp.makeConstraints { make in
-                make.trailing.centerY.equalToSuperview()
+            clearTemplateButton.snp.makeConstraints { make in
+                make.trailing.equalTo(templateChevronImageView.snp.leading).offset(-4)
+                make.centerY.equalTo(selectedTemplateNameLabel)
+                make.width.height.equalTo(20)
             }
 
-            templateStack.addArrangedSubview(toggleRow)
-
-            // Incompatible label
-            if !template.isCompatible {
-                templateIncompatibleLabel.isHidden = false
-                useTemplateSwitch.isEnabled = false
-                templateStack.addArrangedSubview(templateIncompatibleLabel)
-            }
-
-            useTemplateSwitch.addTarget(self, action: #selector(templateToggleChanged), for: .valueChanged)
-
-            templateContainer.addSubview(templateStack)
-            templateStack.snp.makeConstraints { make in
+            templateContainer.addSubview(templateRow)
+            templateRow.snp.makeConstraints { make in
                 make.edges.equalToSuperview().inset(12)
             }
+
+            let tapGestureTemplate = UITapGestureRecognizer(target: self, action: #selector(templateSelectionTapped))
+            templateContainer.addGestureRecognizer(tapGestureTemplate)
+
+            clearTemplateButton.addTarget(self, action: #selector(clearTemplateTapped), for: .touchUpInside)
+
             contentStackView.addArrangedSubview(templateContainer)
+
+            // If included template exists, pre-select it
+            if let included = shareableWorkout?.template, included.isCompatible {
+                selectTemplate(included)
+            }
         }
 
         // Dismiss keyboard on tap
@@ -418,9 +397,6 @@ class ImportWorkoutViewController: UIViewController {
             finalOwnerName = ownerName.isEmpty ? (workout.creator?.name ?? "알 수 없음") : ownerName
         }
 
-        // Determine selected template
-        let selectedTemplate: WidgetTemplate? = useIncludedTemplate ? workout.template : nil
-
         // Create imported workout data
         let importedData = ImportedWorkoutData(
             ownerName: finalOwnerName,
@@ -438,8 +414,13 @@ class ImportWorkoutViewController: UIViewController {
         updateHeaderLabel()
     }
 
-    @objc private func templateToggleChanged(_ sender: UISwitch) {
-        useIncludedTemplate = sender.isOn
+    @objc private func templateSelectionTapped() {
+        showTemplateSelectionSheet()
+    }
+
+    @objc private func clearTemplateTapped() {
+        selectedTemplate = nil
+        updateTemplateSelectionUI()
     }
 
     @objc private func fieldToggleChanged(_ sender: UISwitch) {
@@ -462,9 +443,79 @@ class ImportWorkoutViewController: UIViewController {
         navigationItem.rightBarButtonItem?.isEnabled = !selectedFields.isEmpty
     }
 
-    // MARK: - Template Preview Rendering
+    // MARK: - Template Selection
 
-    private func renderTemplatePreviewWidgets(template: WidgetTemplate, canvasSize: CGSize) {
+    private func selectTemplate(_ template: WidgetTemplate) {
+        selectedTemplate = template
+        updateTemplateSelectionUI()
+    }
+
+    private func updateTemplateSelectionUI() {
+        if let template = selectedTemplate {
+            selectedTemplateNameLabel.text = template.name
+            selectedTemplateDescLabel.text = template.description
+            clearTemplateButton.isHidden = false
+        } else {
+            selectedTemplateNameLabel.text = "기본 레이아웃"
+            selectedTemplateDescLabel.text = "템플릿 없이 기본 배치로 가져옵니다"
+            clearTemplateButton.isHidden = true
+        }
+    }
+
+    private func showTemplateSelectionSheet() {
+        var templateItems: [ToolSheetItem] = []
+
+        // Add included template if available
+        if let included = shareableWorkout?.template, included.isCompatible {
+            templateItems.append(ToolSheetItem(
+                id: "included_\(included.name)",
+                title: "📎 \(included.name)",
+                description: "포함된 템플릿",
+                iconName: "doc.badge.arrow.up",
+                previewProvider: widgetFactory != nil ? { [weak self] in
+                    self?.createTemplatePreview(for: included) ?? UIView()
+                } : nil,
+                action: { [weak self] in
+                    self?.selectTemplate(included)
+                }
+            ))
+        }
+
+        // Add built-in templates
+        for template in availableTemplates {
+            templateItems.append(ToolSheetItem(
+                id: template.name,
+                title: template.name,
+                description: template.description,
+                iconName: "rectangle.3.group",
+                previewProvider: widgetFactory != nil ? { [weak self] in
+                    self?.createTemplatePreview(for: template) ?? UIView()
+                } : nil,
+                action: { [weak self] in
+                    self?.selectTemplate(template)
+                }
+            ))
+        }
+
+        guard !templateItems.isEmpty else { return }
+
+        let sections = [ToolSheetSection(title: "템플릿", items: templateItems)]
+        let sheetVC = ToolSheetViewController(sections: sections)
+        sheetVC.title = "템플릿 선택"
+
+        let nav = UINavigationController(rootViewController: sheetVC)
+        nav.modalPresentationStyle = .pageSheet
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = true
+        }
+        present(nav, animated: true)
+    }
+
+    private func createTemplatePreview(for template: WidgetTemplate) -> UIView? {
+        guard let factory = widgetFactory else { return nil }
+
         let templateCanvasSize: CGSize
         if let tcs = template.canvasSize {
             templateCanvasSize = CGSize(width: tcs.width, height: tcs.height)
@@ -472,29 +523,19 @@ class ImportWorkoutViewController: UIViewController {
             templateCanvasSize = CGSize(width: 414, height: 700)
         }
 
+        let previewSize = CGSize(width: 120, height: 120 * (templateCanvasSize.height / templateCanvasSize.width))
+        let container = UIView(frame: CGRect(origin: .zero, size: previewSize))
+        container.backgroundColor = .white
+        container.clipsToBounds = true
+
         for item in template.items {
-            let frame = TemplateManager.absoluteFrame(from: item, canvasSize: canvasSize, templateCanvasSize: templateCanvasSize)
-
-            let placeholder = UIView(frame: frame)
-            placeholder.backgroundColor = ColorSystem.primaryGreen.withAlphaComponent(0.15)
-            placeholder.layer.cornerRadius = 4
-            placeholder.layer.borderWidth = 1
-            placeholder.layer.borderColor = ColorSystem.primaryGreen.withAlphaComponent(0.3).cgColor
-
-            let iconView = UIImageView(image: UIImage(systemName: item.type.iconName))
-            iconView.tintColor = ColorSystem.primaryGreen.withAlphaComponent(0.6)
-            iconView.contentMode = .scaleAspectFit
-            placeholder.addSubview(iconView)
-
-            let iconSize = min(frame.width, frame.height) * 0.4
-            iconView.frame = CGRect(
-                x: (frame.width - iconSize) / 2,
-                y: (frame.height - iconSize) / 2,
-                width: iconSize,
-                height: iconSize
-            )
-
-            templatePreviewCanvas.addSubview(placeholder)
+            let frame = TemplateManager.absoluteFrame(from: item, canvasSize: previewSize, templateCanvasSize: templateCanvasSize)
+            if let widget = factory(item, frame) {
+                widget.isUserInteractionEnabled = false
+                container.addSubview(widget)
+            }
         }
+
+        return container
     }
 }
