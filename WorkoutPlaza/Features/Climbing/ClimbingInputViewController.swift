@@ -11,6 +11,7 @@ import SnapKit
 protocol ClimbingInputDelegate: AnyObject {
     func climbingInputDidSave(_ controller: ClimbingInputViewController)
     func climbingInput(_ controller: ClimbingInputViewController, didRequestCardFor session: ClimbingData)
+    func climbingInputDidRequestCardCreation(_ controller: ClimbingInputViewController, session: ClimbingData)
 }
 
 class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
@@ -379,24 +380,9 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
 
         // Sessions already saved above (grouped by discipline)
 
-        // 카드 생성 여부 묻기
-        let alert = UIAlertController(
-            title: "저장 완료",
-            message: "클라이밍 기록이 저장되었습니다.\n공유용 카드를 만들까요?",
-            preferredStyle: .alert
-        )
-
-        alert.addAction(UIAlertAction(title: "카드 만들기", style: .default) { [weak self] _ in
-            guard let self = self else { return }
-            self.delegate?.climbingInput(self, didRequestCardFor: climbingData)
-        })
-
-        alert.addAction(UIAlertAction(title: "나중에", style: .cancel) { [weak self] _ in
-            guard let self = self else { return }
-            self.delegate?.climbingInputDidSave(self)
-        })
-
-        present(alert, animated: true)
+        // Dismiss 후에 delegate를 통해 알림 요청
+        delegate?.climbingInputDidRequestCardCreation(self, session: climbingData)
+        dismiss(animated: true)
     }
 
     private func getGymParams() -> (name: String, logoData: Data?) {

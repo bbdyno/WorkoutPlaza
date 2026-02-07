@@ -681,6 +681,33 @@ extension HomeDashboardViewController: ClimbingInputDelegate {
         detailVC.climbingData = session
         controller.navigationController?.pushViewController(detailVC, animated: true)
     }
+
+    func climbingInputDidRequestCardCreation(_ controller: ClimbingInputViewController, session: ClimbingData) {
+        controller.dismiss(animated: true) { [weak self] in
+            guard let self = self else { return }
+            self.showCardCreationAlert(for: session)
+        }
+    }
+
+    private func showCardCreationAlert(for session: ClimbingData) {
+        let alert = UIAlertController(
+            title: "저장 완료",
+            message: "클라이밍 기록이 저장되었습니다.\n공유용 카드를 만들까요?",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "카드 만들기", style: .default) { [weak self] _ in
+            guard let self = self else { return }
+            let detailVC = ClimbingDetailViewController()
+            detailVC.climbingData = session
+            let nav = UINavigationController(rootViewController: detailVC)
+            self.present(nav, animated: true)
+        })
+
+        alert.addAction(UIAlertAction(title: "나중에", style: .cancel))
+
+        present(alert, animated: true)
+    }
 }
 
 // MARK: - RecentRecordsSheetDelegate

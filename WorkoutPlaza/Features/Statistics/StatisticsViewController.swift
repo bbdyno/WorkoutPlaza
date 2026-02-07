@@ -150,9 +150,11 @@ class StatisticsViewController: UIViewController {
 
     // Called from cells
     func handleSportChanged(_ sport: StatSportType) {
+        let scrollOffset = collectionView.contentOffset
         currentSport = sport
         collectionView.setCollectionViewLayout(createCompositionalLayout(), animated: false)
         collectionView.reloadSections(IndexSet(integer: 0))
+        collectionView.contentOffset = scrollOffset
     }
 
     func handlePeriodChanged(_ period: StatPeriod) {
@@ -694,14 +696,28 @@ class StatisticsViewController: UIViewController {
     private func computeGymStats() -> [GymStatData] {
         let (startDate, endDate) = getDateRange(for: currentPeriod, offset: currentPeriodOffset)
 
-        // Group sessions by gym
+        // Group sessions by gym brand name
         var gymSessions: [String: [ClimbingData]] = [:]
 
         for session in climbingSessions {
             if session.sessionDate >= startDate && session.sessionDate <= endDate {
                 let gymName = session.gymName.isEmpty ? "암장" : session.gymName
-                gymSessions[gymName, default: []].append(session)
+                // Try to get gym data and use brand name for grouping
+                if let gym = ClimbingGymManager.shared.findGym(byName: gymName) {
+                    let brandName = gym.gymBrandName
+                    WPLog.debug("Session gym: \(gymName) -> Brand: \(brandName), gym.displayName: \(gym.displayName)")
+                    gymSessions[brandName, default: []].append(session)
+                } else {
+                    // Fallback to gymName if no gym data found
+                    WPLog.debug("Session gym: \(gymName) -> No gym found, using gymName")
+                    gymSessions[gymName, default: []].append(session)
+                }
             }
+        }
+
+        WPLog.info("Gym stats computed: \(gymSessions.count) unique gym groups")
+        for (key, sessions) in gymSessions {
+            WPLog.debug("  - \(key): \(sessions.count) sessions")
         }
 
         // Calculate stats for each gym

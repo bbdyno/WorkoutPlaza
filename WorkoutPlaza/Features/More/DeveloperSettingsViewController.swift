@@ -32,6 +32,7 @@ class DeveloperSettingsViewController: UIViewController {
     }
 
     private var sections: [Section] = []
+    private var actionSections: [(title: String, action: () -> Void)] = []
 
     // MARK: - Lifecycle
 
@@ -53,6 +54,35 @@ class DeveloperSettingsViewController: UIViewController {
                 )
             ])
         ]
+
+        actionSections = [
+            (title: "암장 구조 마이그레이션 재실행", action: { [weak self] in
+                self?.runMigration()
+            })
+        ]
+    }
+
+    private func runMigration() {
+        let alert = UIAlertController(
+            title: "마이그레이션 재실행",
+            message: "암장 구조를 다시 마이그레이션하시겠습니까?",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: "실행", style: .destructive) { _ in
+            ClimbingGymManager.shared.forceMigrateGymStructure()
+
+            let successAlert = UIAlertController(
+                title: "완료",
+                message: "마이그레이션이 완료되었습니다. 앱을 다시 시작하면 적용됩니다.",
+                preferredStyle: .alert
+            )
+            successAlert.addAction(UIAlertAction(title: "확인", style: .default))
+            self.present(successAlert, animated: true)
+        })
+
+        present(alert, animated: true)
     }
 
     private func setupUI() {
@@ -75,35 +105,58 @@ class DeveloperSettingsViewController: UIViewController {
 
 extension DeveloperSettingsViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return sections.count
+        return sections.count + 1
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return sections[section].items.count
+        if section < sections.count {
+            return sections[section].items.count
+        } else {
+            return actionSections.count
+        }
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return sections[section].title
+        if section < sections.count {
+            return sections[section].title
+        } else {
+            return "데이터"
+        }
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let item = sections[indexPath.section].items[indexPath.row]
 
-        var config = cell.defaultContentConfiguration()
-        config.text = item.title
-        config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
-        config.textProperties.color = ColorSystem.mainText
-        cell.contentConfiguration = config
+        if indexPath.section < sections.count {
+            let item = sections[indexPath.section].items[indexPath.row]
 
-        let toggle = UISwitch()
-        toggle.isOn = item.isOn()
-        toggle.tag = indexPath.row
-        toggle.onTintColor = ColorSystem.primaryGreen
-        toggle.addTarget(self, action: #selector(switchToggled(_:)), for: .valueChanged)
-        cell.accessoryView = toggle
+            var config = cell.defaultContentConfiguration()
+            config.text = item.title
+            config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
+            config.textProperties.color = ColorSystem.mainText
+            cell.contentConfiguration = config
 
-        cell.selectionStyle = .none
+            let toggle = UISwitch()
+            toggle.isOn = item.isOn()
+            toggle.tag = indexPath.row
+            toggle.onTintColor = ColorSystem.primaryGreen
+            toggle.addTarget(self, action: #selector(switchToggled(_:)), for: .valueChanged)
+            cell.accessoryView = toggle
+
+            cell.selectionStyle = .none
+        } else {
+            let action = actionSections[indexPath.row]
+
+            var config = cell.defaultContentConfiguration()
+            config.text = action.title
+            config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
+            config.textProperties.color = ColorSystem.primaryGreen
+            cell.contentConfiguration = config
+
+            cell.selectionStyle = .default
+            cell.accessoryType = .disclosureIndicator
+        }
+
         cell.backgroundColor = .secondarySystemGroupedBackground
 
         return cell
@@ -118,4 +171,13 @@ extension DeveloperSettingsViewController: UITableViewDataSource {
 
 // MARK: - UITableViewDelegate
 
-extension DeveloperSettingsViewController: UITableViewDelegate {}
+extension DeveloperSettingsViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+
+        if indexPath.section >= sections.count {
+            let action = actionSections[indexPath.row]
+            action.action()
+        }
+    }
+}

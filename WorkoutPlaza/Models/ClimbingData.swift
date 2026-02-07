@@ -29,6 +29,7 @@ struct ClimbingGym: Codable, Identifiable, Equatable {
 
     struct GymMetadata: Codable, Equatable {
         var region: String?      // 지역 (예: "Seoul")
+        var brand: String?       // 암장명 (예: "서울숲클라이밍")
         var branch: String?      // 지점 (예: "구로점")
         var remoteId: String?    // Remote Config ID
         var lastUpdated: Date?   // 마지막 업데이트
@@ -86,6 +87,19 @@ struct ClimbingGym: Codable, Identifiable, Equatable {
             .joined()
         return "gym_logo_\(normalized)"
     }
+
+    // 암장명만 추출 (예: "서울숲클라이밍")
+    var gymBrandName: String {
+        metadata?.brand ?? name
+    }
+
+    // 표시용 이름 (암장명 + 지점명)
+    var displayName: String {
+        if let brand = metadata?.brand, let branch = metadata?.branch {
+            return "\(brand) \(branch)"
+        }
+        return name
+    }
 }
 
 // MARK: - Climbing Gym Manager
@@ -97,6 +111,7 @@ class ClimbingGymManager {
 
     private init() {
         migrateOldGymsIfNeeded()
+        migrateGymStructureIfNeeded()
     }
 
     // MARK: - Presets
@@ -198,6 +213,184 @@ class ClimbingGymManager {
         WPLog.warning("ClimbingGym migration: Old format detected, clearing for safety")
         userDefaults.removeObject(forKey: storageKey)
         userDefaults.set(true, forKey: migrationKey)
+    }
+
+    func migrateGymStructureIfNeeded() {
+        let migrationKey = "climbingGyms_structure_migrated"
+        guard !userDefaults.bool(forKey: migrationKey) else {
+            WPLog.debug("Gym structure migration already completed")
+            return
+        }
+
+        WPLog.info("Starting gym structure migration...")
+
+        // 1. Load all custom gyms
+        var customGyms = loadGyms()
+        WPLog.info("Loaded \(customGyms.count) custom gyms for migration")
+
+        // 2. Group gyms by brand name to find duplicates
+        var brandGroups: [String: [ClimbingGym]] = [:]
+
+        for gym in customGyms {
+            let brandName = parseBrandName(from: gym.name)
+            WPLog.debug("Gym: \(gym.name) -> Brand: \(brandName)")
+            brandGroups[brandName, default: []].append(gym)
+        }
+
+        WPLog.info("Found \(brandGroups.count) brand groups")
+
+        // 3. Process each brand group
+        var updatedGyms: [ClimbingGym] = []
+
+        for (brandName, gyms) in brandGroups {
+            WPLog.info("Processing brand group: \(brandName) with \(gyms.count) gyms")
+            
+            if gyms.count == 1 {
+                // Single gym - just add metadata
+                var gym = gyms[0]
+                if gym.metadata == nil {
+                    gym.metadata = ClimbingGym.GymMetadata(brand: brandName, branch: nil)
+                    WPLog.debug("Updated gym \(gym.name) with brand: \(brandName), branch: nil")
+                    updatedGyms.append(gym)
+                } else {
+                    WPLog.debug("Gym \(gym.name) already has metadata, skipping")
+                    updatedGyms.append(gym)
+                }
+            } else {
+                // Multiple gyms with same brand - merge
+                // Find the primary gym (usually the one with shortest name or first created)
+                let primaryGym = gyms.min { $0.name.count < $1.name.count } ?? gyms[0]
+                WPLog.debug("Primary gym: \(primaryGym.name)")
+
+                for gym in gyms {
+                    var updatedGym = gym
+                    if gym.id == primaryGym.id {
+                        // Primary gym - set brand without branch
+                        updatedGym.metadata = ClimbingGym.GymMetadata(brand: brandName, branch: nil)
+                        WPLog.debug("Updated primary gym \(gym.name) with brand: \(brandName), branch: nil")
+                    } else {
+                        // Branch gym - set brand and extract branch name
+                        let branchName = gym.name.replacingOccurrences(of: brandName, with: "").trimmingCharacters(in: .whitespaces)
+                        updatedGym.metadata = ClimbingGym.GymMetadata(brand: brandName, branch: branchName.isEmpty ? nil : branchName)
+                        WPLog.debug("Updated branch gym \(gym.name) with brand: \(brandName), branch: \(branchName)")
+                    }
+                    updatedGyms.append(updatedGym)
+                }
+            }
+        }
+
+        // 4. Save updated gyms
+        WPLog.info("Saving \(updatedGyms.count) updated gyms")
+        saveGyms(updatedGyms)
+
+        // 5. Update session data to use correct gym names
+        migrateSessionGymNames()
+
+        userDefaults.set(true, forKey: migrationKey)
+        WPLog.info("Gym structure migration completed")
+    }
+
+    func forceMigrateGymStructure() {
+        // Reset migration flag and run migration
+        userDefaults.removeObject(forKey: "climbingGyms_structure_migrated")
+        migrateGymStructureIfNeeded()
+    }
+
+    private func parseBrandName(from name: String) -> String {
+        // Common patterns:
+        // - "서울숲클라이밍 구로점" -> "서울숲클라이밍"
+        // - "더클라이밍 강남" -> "더클라이밍"
+        // - "더클라이밍홀딩스 강남점" -> "더클라이밍홀딩스"
+        // - "더클라이밍 강남" -> "더클라이밍"
+
+        let commonSuffixes = ["점", "지점", "센터", "클라이밍", "홀딩스"]
+
+        var result = name
+
+        // Try removing common suffixes
+        for suffix in commonSuffixes {
+            if result.hasSuffix(suffix) && result.count > suffix.count {
+                let base = String(result.dropLast(suffix.count)).trimmingCharacters(in: .whitespaces)
+                if !base.isEmpty {
+                    WPLog.debug("  - Removed suffix '\(suffix)' from '\(result)' -> '\(base)'")
+                    result = base
+                }
+            }
+        }
+
+        // Also check for patterns like "서울숲클라이밍 구로점" or "더클라이밍 강남"
+        let parts = result.split(separator: " ").map { String($0) }
+        if parts.count >= 2 {
+            let firstPart = parts[0]
+            // Check if second part is a location indicator
+            let locationIndicators = ["강남", "구로", "홍대", "건대", "송파", "마포", "종로", "용산", "강서", "강동", "서초", "동작", "관악", "은평", "노원", "도봉", "중랑", "성동", "광진", "양천", "영등포", "금천", "동대문"]
+            if locationIndicators.contains(parts[1]) {
+                WPLog.debug("  - Detected location indicator '\(parts[1])' in '\(name)', returning '\(firstPart)'")
+                return firstPart
+            }
+        }
+
+        WPLog.debug("  - Final brand name for '\(name)': '\(result)'")
+        return result
+    }
+
+    private func migrateSessionGymNames() {
+        let sessionsKey = "savedClimbingSessions"
+
+        guard let data = userDefaults.data(forKey: sessionsKey),
+              var sessions = try? JSONDecoder().decode([ClimbingData].self, from: data) else {
+            WPLog.warning("No climbing sessions found for migration")
+            return
+        }
+
+        WPLog.info("Found \(sessions.count) sessions for gym name migration")
+
+        var sessionsUpdated = false
+        var updateCount = 0
+
+        for i in 0..<sessions.count {
+            var session = sessions[i]
+            let gymName = session.gymName
+
+            // Find the gym
+            if let gym = findGym(byName: gymName) {
+                WPLog.debug("Session gym '\(gymName)' found in gym manager")
+                WPLog.debug("  - Gym metadata: brand=\(gym.metadata?.brand ?? "nil"), branch=\(gym.metadata?.branch ?? "nil")")
+                // If gym has metadata with brand, update to use brand name
+                if let brand = gym.metadata?.brand {
+                    let branch = gym.metadata?.branch
+                    let newGymName: String
+                    if let branch = branch {
+                        newGymName = "\(brand) \(branch)"
+                    } else {
+                        newGymName = brand
+                    }
+
+                    if session.gymName != newGymName {
+                        session.gymName = newGymName
+                        sessions[i] = session
+                        sessionsUpdated = true
+                        updateCount += 1
+                        WPLog.debug("Updated session gym name: \(gymName) -> \(newGymName)")
+                    } else {
+                        WPLog.debug("Session gym name already matches: \(gymName)")
+                    }
+                } else {
+                    WPLog.debug("Gym has no brand metadata, keeping original name")
+                }
+            } else {
+                WPLog.debug("Session gym '\(gymName)' not found in gym manager")
+            }
+        }
+
+        if sessionsUpdated {
+            if let encoded = try? JSONEncoder().encode(sessions) {
+                userDefaults.set(encoded, forKey: sessionsKey)
+                WPLog.info("Session gym names migrated successfully: \(updateCount) sessions updated")
+            }
+        } else {
+            WPLog.info("No session gym names needed updating")
+        }
     }
 
     // MARK: - Helper Methods

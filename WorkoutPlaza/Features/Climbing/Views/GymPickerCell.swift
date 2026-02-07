@@ -108,7 +108,7 @@ class GymPickerCell: UITableViewCell {
 //        logoImageView.image = UIImage(systemName: "building.2.fill")
 //        logoImageView.tintColor = .secondaryLabel
 
-        nameLabel.text = gym.name
+        nameLabel.text = gym.displayName
         infoLabel.text = "\(gym.gradeColors.count)개 난이도 색상"
         checkmarkImageView.isHidden = !isSelected
 
