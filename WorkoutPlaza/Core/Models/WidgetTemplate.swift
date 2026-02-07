@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreLocation
 
 // MARK: - Widget Template Models
 
@@ -24,6 +25,15 @@ struct WidgetTemplate: Codable {
     let backgroundImageAspectRatio: CGFloat?
     let backgroundTransform: BackgroundTransformData?
 
+    // Minimum app version required to use this template
+    let minimumAppVersion: String?
+
+    var isCompatible: Bool {
+        guard let minVersion = minimumAppVersion else { return true }
+        let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+        return current.compare(minVersion, options: .numeric) != .orderedAscending
+    }
+
     init(
         id: String = UUID().uuidString,
         name: String,
@@ -33,7 +43,8 @@ struct WidgetTemplate: Codable {
         items: [WidgetItem],
         canvasSize: CanvasSize? = nil,
         backgroundImageAspectRatio: CGFloat? = nil,
-        backgroundTransform: BackgroundTransformData? = nil
+        backgroundTransform: BackgroundTransformData? = nil,
+        minimumAppVersion: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -44,11 +55,40 @@ struct WidgetTemplate: Codable {
         self.canvasSize = canvasSize
         self.backgroundImageAspectRatio = backgroundImageAspectRatio
         self.backgroundTransform = backgroundTransform
+        self.minimumAppVersion = minimumAppVersion
     }
 
     struct CanvasSize: Codable {
         let width: CGFloat
         let height: CGFloat
+    }
+
+    /// Creates a closure that produces a miniature preview of this template's layout.
+    func thumbnailProvider(widgetFactory: @escaping (WidgetItem, CGRect) -> UIView?) -> (() -> UIView) {
+        return { [self] in
+            let canvasView = UIView()
+            canvasView.backgroundColor = .white
+            canvasView.clipsToBounds = true
+            canvasView.layer.cornerRadius = 4
+
+            let previewWidth: CGFloat = 100
+            let cs = self.canvasSize ?? CanvasSize(width: 414, height: 700)
+            let aspect = cs.height / cs.width
+            let previewHeight = previewWidth * aspect
+            canvasView.frame = CGRect(origin: .zero, size: CGSize(width: previewWidth, height: previewHeight))
+
+            let templateCanvasSize = CGSize(width: cs.width, height: cs.height)
+            let targetSize = canvasView.bounds.size
+
+            for item in self.items {
+                let frame = TemplateManager.absoluteFrame(from: item, canvasSize: targetSize, templateCanvasSize: templateCanvasSize)
+                if let widget = widgetFactory(item, frame) {
+                    widget.isUserInteractionEnabled = false
+                    canvasView.addSubview(widget)
+                }
+            }
+            return canvasView
+        }
     }
 }
 
@@ -185,7 +225,7 @@ enum WidgetType: String, Codable, CaseIterable {
         case .date: return "날짜"
         case .text: return "텍스트"
         case .location: return "위치"
-        case .currentDateTime: return "현재 시각"
+        case .currentDateTime: return "날짜시간"
         case .composite: return "복합"
         case .climbingGym: return "클라이밍짐"
         case .climbingDiscipline: return "종목"
@@ -225,6 +265,129 @@ enum WidgetType: String, Codable, CaseIterable {
             return [.climbing]
         case .date, .text, .composite, .currentDateTime:
             return SportType.allCases
+        }
+    }
+
+    /// 샘플 데이터로 실제 위젯을 렌더링하는 미리보기 클로저. nil이면 아이콘 모드 유지.
+    var previewProvider: (() -> UIView)? {
+        let size = CGSize(width: 140, height: 56)
+        switch self {
+        case .distance:
+            return {
+                let w = DistanceWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(distance: 5230)
+                return w
+            }
+        case .duration:
+            return {
+                let w = DurationWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(duration: 1860)
+                return w
+            }
+        case .pace:
+            return {
+                let w = PaceWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(pace: 5.42)
+                return w
+            }
+        case .speed:
+            return {
+                let w = SpeedWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(speed: 11.2)
+                return w
+            }
+        case .calories:
+            return {
+                let w = CaloriesWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(calories: 320)
+                return w
+            }
+        case .heartRate:
+            return {
+                let w = HeartRateWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(heartRate: 155)
+                return w
+            }
+        case .date:
+            return {
+                let w = DateWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(startDate: Date())
+                w.titleLabel.isHidden = true
+                return w
+            }
+        case .currentDateTime:
+            return {
+                let w = CurrentDateTimeWidget()
+                w.frame = CGRect(origin: .zero, size: CGSize(width: 160, height: 56))
+                w.configure(date: Date())
+                w.titleLabel.isHidden = true
+                return w
+            }
+        case .text:
+            return {
+                let w = TextWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(text: "텍스트")
+                return w
+            }
+        case .climbingGym:
+            return {
+                let w = ClimbingGymWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(gymName: "더클라임")
+                return w
+            }
+        case .climbingDiscipline:
+            return {
+                let w = ClimbingDisciplineWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(discipline: .bouldering)
+                return w
+            }
+        case .climbingSession:
+            return {
+                let w = ClimbingSessionWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(sent: 8, total: 12)
+                return w
+            }
+        case .routeMap:
+            return {
+                let w = RouteMapView(frame: CGRect(origin: .zero, size: CGSize(width: 80, height: 56)))
+                // 샘플 GPS: 구불구불한 경로
+                let baseLat = 37.5665
+                let baseLon = 126.9780
+                let sampleLocations: [CLLocation] = [
+                    CLLocation(latitude: baseLat, longitude: baseLon),
+                    CLLocation(latitude: baseLat + 0.001, longitude: baseLon + 0.0005),
+                    CLLocation(latitude: baseLat + 0.0015, longitude: baseLon + 0.0015),
+                    CLLocation(latitude: baseLat + 0.0025, longitude: baseLon + 0.001),
+                    CLLocation(latitude: baseLat + 0.003, longitude: baseLon + 0.002),
+                    CLLocation(latitude: baseLat + 0.004, longitude: baseLon + 0.0015),
+                    CLLocation(latitude: baseLat + 0.0045, longitude: baseLon + 0.0025),
+                    CLLocation(latitude: baseLat + 0.005, longitude: baseLon + 0.002),
+                    CLLocation(latitude: baseLat + 0.006, longitude: baseLon + 0.003),
+                    CLLocation(latitude: baseLat + 0.0065, longitude: baseLon + 0.0025),
+                    CLLocation(latitude: baseLat + 0.007, longitude: baseLon + 0.0035),
+                ]
+                w.setRoute(sampleLocations)
+                return w
+            }
+        case .location:
+            return {
+                let w = LocationWidget(frame: CGRect(origin: .zero, size: size))
+                w.configure(withText: "서울특별시")
+                return w
+            }
+        case .composite, .climbingRoutesByColor, .gymLogo:
+            return nil
         }
     }
 }

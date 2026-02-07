@@ -185,6 +185,10 @@ class TemplateGroupView: UIView, Selectable {
             // Store the frame in group coordinates for proper scaling
             originalItemFrames[item] = frameInGroup
 
+            // Mark widget as group-managed BEFORE calculating scale
+            // so that calculateScaleFactor uses the lower minimum (0.3)
+            setGroupManaged(item, managed: true)
+
             // Store the widget's current font scale using its own calculateScaleFactor
             // This is the scale that determines the widget's font size (bounds / initialSize)
             if let statWidget = item as? BaseStatWidget {
@@ -199,9 +203,6 @@ class TemplateGroupView: UIView, Selectable {
             } else {
                 originalWidgetFontScales[item] = 1.0
             }
-
-            // Mark widget as group-managed to prevent auto font scaling
-            setGroupManaged(item, managed: true)
 
             // Add to group
             addSubview(item)
@@ -281,6 +282,7 @@ class TemplateGroupView: UIView, Selectable {
         switch gesture.state {
         case .began:
             initialPinchBounds = view.bounds
+            beginResize()
 
         case .changed:
             let scale = gesture.scale
@@ -311,9 +313,8 @@ class TemplateGroupView: UIView, Selectable {
             view.bounds = CGRect(x: 0, y: 0, width: snappedWidth, height: snappedHeight)
             view.center = CGPoint(x: snappedCenterX, y: snappedCenterY)
 
-        case .ended:
-            // Update initial size for future scaling
-            initialSize = bounds.size
+        case .ended, .cancelled:
+            endResize()
 
         default:
             break
@@ -418,6 +419,18 @@ class TemplateGroupView: UIView, Selectable {
 
     /// Call this when resize gesture ends
     func endResize() {
+        // Accumulate font scales BEFORE syncing (need original group frame for scale calc)
+        if originalGroupFrame.width > 0 && originalGroupFrame.height > 0 {
+            let scaleX = bounds.width / originalGroupFrame.width
+            let scaleY = bounds.height / originalGroupFrame.height
+            let groupScale = (scaleX + scaleY) / 2.0
+
+            for item in groupedItems {
+                let prevScale = originalWidgetFontScales[item] ?? 1.0
+                originalWidgetFontScales[item] = prevScale * groupScale
+            }
+        }
+
         isResizingGroup = false
         // Sync originalGroupFrame to current bounds for next resize
         syncOriginalGroupFrame()

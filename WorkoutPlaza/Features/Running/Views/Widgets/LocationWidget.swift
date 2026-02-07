@@ -320,13 +320,15 @@ class LocationWidget: UIView, Selectable {
         // Use the smaller scale factor to prevent text overflow
         // This ensures text fits within the available space without causing extra padding
         let minScale = min(widthScale, heightScale)
+        let lowerBound = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.minimumAllowedScale
 
-        return min(max(minScale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
+        return min(max(minScale, lowerBound), LayoutConstants.maximumScaleFactor)
     }
 
     /// Update fonts with a specific scale factor (used by group resize)
     func updateFontsWithScale(_ scale: CGFloat) {
-        let clampedScale = min(max(scale, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
+        let minScale = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.minimumAllowedScale
+        let clampedScale = min(max(scale, minScale), LayoutConstants.maximumScaleFactor)
         let fontSize = baseFontSize * clampedScale
         locationLabel.font = currentFontStyle.font(size: fontSize, weight: .medium)
 

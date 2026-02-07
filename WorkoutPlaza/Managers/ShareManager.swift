@@ -169,6 +169,11 @@ class ShareManager {
             }
         }
 
+        // Validate template version compatibility
+        if let template = workout.template, !template.isCompatible {
+            return .failure(.templateVersionMismatch)
+        }
+
         return .success(())
     }
 
