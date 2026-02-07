@@ -839,6 +839,10 @@ extension RunningDetailViewController {
         importVC.importMode = .attachToExisting
         importVC.attachToWorkout = workoutData
         importVC.delegate = self
+        importVC.availableTemplates = WidgetTemplate.runningTemplates
+        importVC.widgetFactory = { [weak self] item, frame in
+            self?.createWidget(for: item, frame: frame)
+        }
 
         let navController = UINavigationController(rootViewController: importVC)
         present(navController, animated: true)
@@ -846,9 +850,12 @@ extension RunningDetailViewController {
     
     internal func addImportedWorkoutGroup(_ importedData: ImportedWorkoutData) {
         var importedWidgets: [UIView] = []
-        let originalData = importedData.originalData
 
-        importedWidgets = createImportedWidgetsWithDefaultLayout(importedData)
+        if let template = importedData.selectedTemplate {
+            importedWidgets = createImportedWidgetsWithTemplate(importedData, template: template)
+        } else {
+            importedWidgets = createImportedWidgetsWithDefaultLayout(importedData)
+        }
 
         // Create group from imported widgets if we have more than one
         guard importedWidgets.count > 1 else {
@@ -1100,6 +1107,67 @@ extension RunningDetailViewController {
             // RouteMapView만 initialSize 업데이트 (폰트 스케일링 불필요)
             (widget as? RouteMapView)?.initialSize = widget.frame.size
         }
+    }
+
+    // MARK: - Template-based Import
+
+    private func createImportedWidgetsWithTemplate(_ importedData: ImportedWorkoutData, template: WidgetTemplate) -> [UIView] {
+        var importedWidgets: [UIView] = []
+
+        let canvasSize = contentView.bounds.size
+        let templateCanvasSize: CGSize
+        if let tcs = template.canvasSize {
+            templateCanvasSize = CGSize(width: tcs.width, height: tcs.height)
+        } else {
+            templateCanvasSize = CGSize(width: 414, height: 700)
+        }
+
+        // Find starting Y position below existing content
+        let margin: CGFloat = 20
+        let spacing: CGFloat = 10
+        var startY: CGFloat = 80
+        for widget in widgets {
+            startY = max(startY, widget.frame.maxY + spacing)
+        }
+        for group in templateGroups {
+            startY = max(startY, group.frame.maxY + spacing)
+        }
+        if let routeMap = routeMapView {
+            startY = max(startY, routeMap.frame.maxY + spacing)
+        }
+
+        // Add owner name label above template widgets
+        if !importedData.ownerName.isEmpty {
+            let ownerWidget = TextWidget()
+            ownerWidget.configure(text: "\(importedData.ownerName)의 기록")
+            ownerWidget.applyColor(.systemOrange)
+            ownerWidget.textDelegate = self
+            let ownerSize = CGSize(width: 200, height: 40)
+            ownerWidget.frame = CGRect(x: margin, y: startY, width: ownerSize.width, height: ownerSize.height)
+            ownerWidget.initialSize = ownerSize
+            contentView.addSubview(ownerWidget)
+            ownerWidget.selectionDelegate = self
+            importedWidgets.append(ownerWidget)
+            startY += ownerSize.height + spacing
+        }
+
+        // Create widgets from template items at offset Y
+        for item in template.items {
+            let frame = TemplateManager.absoluteFrame(from: item, canvasSize: canvasSize, templateCanvasSize: templateCanvasSize)
+            let offsetFrame = CGRect(x: frame.origin.x, y: frame.origin.y + startY, width: frame.width, height: frame.height)
+            if let widget = createWidget(for: item, frame: offsetFrame) {
+                contentView.addSubview(widget)
+                if let selectable = widget as? Selectable {
+                    selectable.selectionDelegate = self
+                }
+                importedWidgets.append(widget)
+            }
+        }
+
+        // Fit within canvas
+        fitImportedWidgetsToCanvas(importedWidgets, canvasSize: canvasSize, margin: margin)
+
+        return importedWidgets
     }
 
     // MARK: - Background Customization

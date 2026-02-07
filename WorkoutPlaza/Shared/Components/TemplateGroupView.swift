@@ -69,17 +69,6 @@ class TemplateGroupView: UIView, Selectable {
 
     private var overlayLayer: CAShapeLayer?
 
-    private let ownerLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .systemOrange
-        label.textAlignment = .center
-        label.backgroundColor = UIColor.white.withAlphaComponent(0.9)
-        label.layer.cornerRadius = 8
-        label.layer.masksToBounds = true
-        label.isHidden = true
-        return label
-    }()
 
 
 
@@ -101,8 +90,6 @@ class TemplateGroupView: UIView, Selectable {
 
         setupView()
         addItemsToGroup()
-
-        setupOwnerLabel()
         setupGestures()
     }
 
@@ -117,11 +104,6 @@ class TemplateGroupView: UIView, Selectable {
 
         if let owner = ownerName {
             self.groupLabel = "\(owner)의 기록"
-            ownerLabel.text = "  \(groupLabel)  "
-            ownerLabel.textColor = groupType.borderColor
-            ownerLabel.isHidden = false
-        } else {
-            ownerLabel.isHidden = true
         }
 
 
@@ -134,19 +116,6 @@ class TemplateGroupView: UIView, Selectable {
         // No stroke by default - only shown during selection
     }
 
-    private func setupOwnerLabel() {
-        addSubview(ownerLabel)
-
-        if let owner = ownerName {
-            ownerLabel.text = "  \(owner)의 기록  "
-            ownerLabel.textColor = groupType.borderColor
-            ownerLabel.isHidden = false
-            ownerLabel.frame = CGRect(x: 8, y: -24, width: 120, height: 20)
-            ownerLabel.sizeToFit()
-            ownerLabel.frame.size.height = 20
-            ownerLabel.frame.size.width += 16
-        }
-    }
 
     // MARK: - Setup
     private func setupView() {
@@ -737,10 +706,6 @@ class TemplateGroupView: UIView, Selectable {
         // Update overlay path
         overlayLayer?.path = UIBezierPath(rect: bounds).cgPath
 
-        // Update owner label position
-        if !ownerLabel.isHidden {
-            ownerLabel.frame.origin = CGPoint(x: 8, y: -24)
-        }
     }
 
     /// Check if a widget can be added to this group based on type compatibility

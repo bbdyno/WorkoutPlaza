@@ -139,11 +139,12 @@ class TemplatePreviewViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .systemBackground
 
-        if let sheet = sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
-            sheet.prefersScrollingExpandsWhenScrolledToEdge = true
-        }
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "닫기",
+            style: .done,
+            target: self,
+            action: #selector(closeTapped)
+        )
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentStackView)
@@ -290,6 +291,10 @@ class TemplatePreviewViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    @objc private func closeTapped() {
+        dismiss(animated: true)
+    }
 
     @objc private func applyTapped() {
         dismiss(animated: true) { [weak self] in
