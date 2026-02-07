@@ -14,68 +14,60 @@ enum ColorSystem {
     // MARK: - Core Brand Colors
 
     /// Primary Blue (Running): 청량하고 에너지 넘치는 블루
-    static let primaryBlue = UIColor(red: 0/255, green: 122/255, blue: 204/255, alpha: 1.0)
+    static var primaryBlue: UIColor {
+        WorkoutPlazaAsset.primaryBlue.color
+    }
 
     /// Primary Green (Climbing): 성취감과 자연을 상징하는 민트 그린
-    static let primaryGreen = UIColor(red: 45/255, green: 180/255, blue: 109/255, alpha: 1.0)
+    static var primaryGreen: UIColor {
+        WorkoutPlazaAsset.primaryGreen.color
+    }
 
     // MARK: - Common Control Tint
 
     /// 공통 컨트롤 틴트: 다크 그레이 (세그먼트 컨트롤, 피커 등)
-    static let controlTint = UIColor { traitCollection in
-        traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 99/255, green: 99/255, blue: 102/255, alpha: 1.0)   // Dark: 밝은 그레이
-            : UIColor(red: 44/255, green: 44/255, blue: 46/255, alpha: 1.0)    // Light: #2C2C2E
+    static var controlTint: UIColor {
+        WorkoutPlazaAsset.controlTint.color
     }
 
     // MARK: - Interface & Typography
 
     /// Background: 매우 밝은 그레이 (라이트) / 진한 검정 (다크)
-    static let background = UIColor { traitCollection in
-        traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 18/255, green: 18/255, blue: 18/255, alpha: 1.0)  // Dark: 진한 검정
-            : UIColor(red: 248/255, green: 249/255, blue: 250/255, alpha: 1.0)  // Light: 밝은 그레이
+    static var background: UIColor {
+        WorkoutPlazaAsset.background.color
     }
 
     /// Main Text: 가독성을 위한 짙은 차콜 (라이트) / 밝은 화이트 (다크)
-    static let mainText = UIColor { traitCollection in
-        traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 255/255, green: 255/255, blue: 255/255, alpha: 1.0)  // Dark: 화이트
-            : UIColor(red: 26/255, green: 28/255, blue: 30/255, alpha: 1.0)  // Light: 차콜
+    static var mainText: UIColor {
+        WorkoutPlazaAsset.mainText.color
     }
 
     /// Sub Text: 날짜, 단위, 설명용 그레이
-    static let subText = UIColor { traitCollection in
-        traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 142/255, green: 142/255, blue: 147/255, alpha: 1.0)  // Dark: 중간 그레이
-            : UIColor(red: 108/255, green: 117/255, blue: 125/255, alpha: 1.0)  // Light: 진한 그레이
+    static var subText: UIColor {
+        WorkoutPlazaAsset.subText.color
     }
 
     /// Divider/Border: 매우 연한 경계선
-    static let divider = UIColor { traitCollection in
-        traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 58/255, green: 58/255, blue: 60/255, alpha: 1.0)  // Dark: 진한 그레이
-            : UIColor(red: 233/255, green: 236/255, blue: 239/255, alpha: 1.0)  // Light: 연한 그레이
+    static var divider: UIColor {
+        WorkoutPlazaAsset.divider.color
     }
 
     /// Card Background: 순수 화이트 (라이트) / 진한 그레이 (다크)
-    static let cardBackground = UIColor { traitCollection in
-        traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 28/255, green: 28/255, blue: 30/255, alpha: 1.0)  // Dark: 진한 그레이
-            : UIColor.white  // Light: 화이트
+    static var cardBackground: UIColor {
+        WorkoutPlazaAsset.cardBackground.color
     }
 
     /// Card Background Highlight: 선택/강조 상태의 카드 배경
-    static let cardBackgroundHighlight = UIColor { traitCollection in
-        traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 38/255, green: 38/255, blue: 40/255, alpha: 1.0)  // Dark: 약간 더 밝은 그레이
-            : UIColor(red: 245/255, green: 245/255, blue: 245/255, alpha: 1.0)  // Light: 약간 어두운 그레이
+    static var cardBackgroundHighlight: UIColor {
+        WorkoutPlazaAsset.cardBackgroundHighlight.color
     }
 
     // MARK: - Shadow Colors
 
     /// Card Shadow: Blue 색상이 미세하게 섞인 그림자
-    static let cardShadow = UIColor(red: 0/255, green: 122/255, blue: 204/255, alpha: 0.05)
+    static var cardShadow: UIColor {
+        WorkoutPlazaAsset.cardShadow.color
+    }
 
     /// Standard Shadow: 일반 그림자
     static let standardShadow = UIColor.black.withAlphaComponent(0.1)
@@ -125,16 +117,24 @@ enum ColorSystem {
     // MARK: - Semantic Colors
 
     /// Success: 성공, 완료 상태
-    static let success = primaryGreen
+    static var success: UIColor {
+        primaryGreen
+    }
 
     /// Warning: 경고, 주의 상태
-    static let warning = UIColor(red: 255/255, green: 193/255, blue: 7/255, alpha: 1.0)
+    static var warning: UIColor {
+        WorkoutPlazaAsset.warning.color
+    }
 
     /// Error: 에러, 위험 상태
-    static let error = UIColor(red: 220/255, green: 53/255, blue: 69/255, alpha: 1.0)
+    static var error: UIColor {
+        WorkoutPlazaAsset.error.color
+    }
 
     /// Info: 정보, 안내
-    static let info = primaryBlue
+    static var info: UIColor {
+        primaryBlue
+    }
 
 }
 
