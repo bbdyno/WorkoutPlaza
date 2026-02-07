@@ -136,42 +136,6 @@ enum ColorSystem {
     /// Info: 정보, 안내
     static let info = primaryBlue
 
-    // MARK: - Tier Colors
-
-    /// Beginner Tier: 파란색 (primaryBlue와 동일)
-    static let tierBeginner = primaryBlue
-
-    /// Runner Tier: 그린
-    static let tierRunner = UIColor(red: 45/255, green: 180/255, blue: 109/255, alpha: 1.0)
-
-    /// Marathoner Tier: 퍼플
-    static let tierMarathoner = UIColor(red: 155/255, green: 89/255, blue: 182/255, alpha: 1.0)
-
-    /// Elite Tier: 오렌지
-    static let tierElite = UIColor(red: 255/255, green: 159/255, blue: 10/255, alpha: 1.0)
-
-    /// Legend Tier: 골드
-    static let tierLegend = UIColor(red: 255/255, green: 215/255, blue: 0/255, alpha: 1.0)
-
-    /// Tier Gradient Layer 생성 함수
-    /// - Parameter tier: 러너 티어
-    /// - Returns: 티어 색상 기반 그라디언트 레이어
-    static func tierGradientLayer(for tier: RunnerTier) -> CAGradientLayer {
-        let gradientLayer = CAGradientLayer()
-        let baseColor = tier.themeColor
-
-        // 티어 색상의 밝은 버전과 어두운 버전으로 그라디언트 생성
-        let lighterColor = baseColor.withAlphaComponent(0.8)
-        let darkerColor = baseColor
-
-        gradientLayer.colors = [
-            lighterColor.cgColor,
-            darkerColor.cgColor
-        ]
-        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
-        gradientLayer.endPoint = CGPoint(x: 1, y: 1)
-        return gradientLayer
-    }
 }
 
 // MARK: - UIColor Extension

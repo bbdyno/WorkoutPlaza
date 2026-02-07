@@ -59,59 +59,6 @@ class HomeDashboardViewController: UIViewController {
         return label
     }()
 
-    // Tier Card
-    private let tierCardView: UIView = {
-        let view = UIView()
-        view.layer.cornerRadius = 20
-        view.layer.cornerCurve = .continuous
-        view.clipsToBounds = true
-        return view
-    }()
-
-    private var tierGradientLayer: CAGradientLayer?
-
-    private let tierEmojiLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 48)
-        return label
-    }()
-
-    private let tierNameLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 24, weight: .bold)
-        label.textColor = .white
-        return label
-    }()
-
-    private let tierDistanceLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 14, weight: .medium)
-        label.textColor = .white.withAlphaComponent(0.9)
-        return label
-    }()
-
-    private let tierProgressBar: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.3)
-        view.layer.cornerRadius = 4
-        view.clipsToBounds = true
-        return view
-    }()
-
-    private let tierProgressFill: UIView = {
-        let view = UIView()
-        view.backgroundColor = .white
-        view.layer.cornerRadius = 4
-        return view
-    }()
-
-    private let tierProgressLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .white.withAlphaComponent(0.8)
-        return label
-    }()
-
     // Weekly Summary
     private let weeklySummaryStack: UIStackView = {
         let stack = UIStackView()
@@ -199,7 +146,6 @@ class HomeDashboardViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        tierGradientLayer?.frame = tierCardView.bounds
         logoGradientLayer.frame = logoContainerView.bounds
         logoMaskImageView.frame = logoContainerView.bounds
         subtitleGradientLayer.frame = subtitleContainerView.bounds
@@ -250,14 +196,6 @@ class HomeDashboardViewController: UIViewController {
         contentStackView.addArrangedSubview(headerContainer)
         contentStackView.setCustomSpacing(24, after: headerContainer)
 
-        // Tier Card Section
-        setupTierCard()
-        contentStackView.addArrangedSubview(tierCardView)
-        tierCardView.snp.makeConstraints { make in
-            make.height.equalTo(140)
-        }
-        contentStackView.setCustomSpacing(24, after: tierCardView)
-
         // Weekly Summary Section
         let weeklySectionLabel = UILabel()
         weeklySectionLabel.text = "이번 주"
@@ -307,48 +245,6 @@ class HomeDashboardViewController: UIViewController {
 
         contentStackView.addArrangedSubview(addWorkoutButton)
         contentStackView.setCustomSpacing(20, after: recordsStackView)
-    }
-
-    private func setupTierCard() {
-        // Setup tier card content
-        tierCardView.addSubview(tierEmojiLabel)
-        tierCardView.addSubview(tierNameLabel)
-        tierCardView.addSubview(tierDistanceLabel)
-        tierCardView.addSubview(tierProgressBar)
-        tierProgressBar.addSubview(tierProgressFill)
-        tierCardView.addSubview(tierProgressLabel)
-
-        tierEmojiLabel.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-20)
-            make.centerY.equalToSuperview()
-        }
-
-        tierNameLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(20)
-            make.top.equalToSuperview().offset(20)
-        }
-
-        tierDistanceLabel.snp.makeConstraints { make in
-            make.leading.equalTo(tierNameLabel)
-            make.top.equalTo(tierNameLabel.snp.bottom).offset(4)
-        }
-
-        tierProgressBar.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(20)
-            make.trailing.equalTo(tierEmojiLabel.snp.leading).offset(-20)
-            make.bottom.equalToSuperview().offset(-36)
-            make.height.equalTo(8)
-        }
-
-        tierProgressFill.snp.makeConstraints { make in
-            make.top.leading.bottom.equalToSuperview()
-            make.width.equalTo(0)
-        }
-
-        tierProgressLabel.snp.makeConstraints { make in
-            make.leading.equalTo(tierProgressBar)
-            make.top.equalTo(tierProgressBar.snp.bottom).offset(8)
-        }
     }
 
     private func setupWeeklySummaryCards() {
@@ -479,48 +375,9 @@ class HomeDashboardViewController: UIViewController {
             self.runningWorkouts = workouts.filter { $0.workoutType == "러닝" }
 
             DispatchQueue.main.async {
-                self.updateTierCard()
                 self.updateWeeklySummary()
                 self.updateRecentRecords()
             }
-        }
-    }
-
-    private func updateTierCard() {
-        // Calculate total running distance
-        let healthKitDistance = runningWorkouts.reduce(0) { $0 + $1.distance } / 1000.0
-        let externalDistance = externalRunningWorkouts.reduce(0) { $0 + $1.workoutData.distance } / 1000.0
-        let totalDistance = healthKitDistance + externalDistance
-
-        let tier = RunnerTier.tier(for: totalDistance)
-        let progress = tier.progress(to: totalDistance)
-
-        // Update UI
-        tierEmojiLabel.text = tier.emoji
-        tierNameLabel.text = tier.displayName
-        tierDistanceLabel.text = String(format: "총 %.1f km", totalDistance)
-
-        if let remaining = tier.remainingDistance(to: totalDistance) {
-            tierProgressLabel.text = String(format: "다음 등급까지 %.1f km", remaining)
-        } else {
-            tierProgressLabel.text = "최고 등급 달성!"
-        }
-
-        // Update gradient
-        tierGradientLayer?.removeFromSuperlayer()
-        let gradient = ColorSystem.tierGradientLayer(for: tier)
-        gradient.frame = tierCardView.bounds
-        tierCardView.layer.insertSublayer(gradient, at: 0)
-        tierGradientLayer = gradient
-
-        // Animate progress bar
-        tierProgressFill.snp.remakeConstraints { make in
-            make.top.leading.bottom.equalToSuperview()
-            make.width.equalToSuperview().multipliedBy(progress)
-        }
-
-        UIView.animate(withDuration: 0.3) {
-            self.tierProgressBar.layoutIfNeeded()
         }
     }
 

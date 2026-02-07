@@ -799,8 +799,7 @@ extension StatisticsViewController: UICollectionViewDataSource {
             if currentSport == .running {
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RunningStatsCell.identifier, for: indexPath) as! RunningStatsCell
                 let stats = computeRunningStatsData()
-                let tier = RunnerTier.tier(for: stats.totalDistance)
-                let chartData = computeRunningChartData(barColor: tier.themeColor)
+                let chartData = computeRunningChartData(barColor: ColorSystem.primaryGreen)
                 cell.configure(
                     period: currentPeriod,
                     year: selectedYear,

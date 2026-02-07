@@ -23,8 +23,6 @@ class RunningStatsCell: UICollectionViewCell {
 
     weak var delegate: RunningStatsCellDelegate?
 
-    private var gradientLayer: CAGradientLayer?
-
     // Sport Picker Button (Dropdown)
     private lazy var sportPickerButton: UIButton = {
         let button = UIButton(type: .system)
@@ -76,57 +74,6 @@ class RunningStatsCell: UICollectionViewCell {
         label.font = .systemFont(ofSize: 16, weight: .semibold)
         label.textColor = ColorSystem.mainText
         label.textAlignment = .center
-        return label
-    }()
-
-    // Tier Card
-    private let tierCardView: UIView = {
-        let view = UIView()
-        view.layer.cornerRadius = 16
-        view.layer.cornerCurve = .continuous
-        view.clipsToBounds = true
-        return view
-    }()
-
-    private let tierEmojiLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 40)
-        return label
-    }()
-
-    private let tierNameLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .bold)
-        label.textColor = .white
-        return label
-    }()
-
-    private let tierDistanceLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 14, weight: .medium)
-        label.textColor = .white.withAlphaComponent(0.9)
-        return label
-    }()
-
-    private let tierProgressBar: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.3)
-        view.layer.cornerRadius = 4
-        view.clipsToBounds = true
-        return view
-    }()
-
-    private let tierProgressFill: UIView = {
-        let view = UIView()
-        view.backgroundColor = .white
-        view.layer.cornerRadius = 4
-        return view
-    }()
-
-    private let tierProgressLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 11, weight: .medium)
-        label.textColor = .white.withAlphaComponent(0.8)
         return label
     }()
 
@@ -182,15 +129,6 @@ class RunningStatsCell: UICollectionViewCell {
         prevButton.addTarget(self, action: #selector(prevTapped), for: .touchUpInside)
         nextButton.addTarget(self, action: #selector(nextTapped), for: .touchUpInside)
 
-        // Tier Card
-        contentView.addSubview(tierCardView)
-        tierCardView.addSubview(tierEmojiLabel)
-        tierCardView.addSubview(tierNameLabel)
-        tierCardView.addSubview(tierDistanceLabel)
-        tierCardView.addSubview(tierProgressBar)
-        tierProgressBar.addSubview(tierProgressFill)
-        tierCardView.addSubview(tierProgressLabel)
-
         // Chart
         contentView.addSubview(chartTitleLabel)
         contentView.addSubview(chartView)
@@ -228,46 +166,8 @@ class RunningStatsCell: UICollectionViewCell {
             make.width.greaterThanOrEqualTo(120)
         }
 
-        tierCardView.snp.makeConstraints { make in
-            make.top.equalTo(datePickerStack.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(100)
-        }
-
-        tierEmojiLabel.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalToSuperview()
-        }
-
-        tierNameLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.top.equalToSuperview().offset(16)
-        }
-
-        tierDistanceLabel.snp.makeConstraints { make in
-            make.leading.equalTo(tierNameLabel)
-            make.top.equalTo(tierNameLabel.snp.bottom).offset(2)
-        }
-
-        tierProgressBar.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.trailing.equalTo(tierEmojiLabel.snp.leading).offset(-16)
-            make.bottom.equalToSuperview().offset(-24)
-            make.height.equalTo(6)
-        }
-
-        tierProgressFill.snp.makeConstraints { make in
-            make.top.leading.bottom.equalToSuperview()
-            make.width.equalTo(0)
-        }
-
-        tierProgressLabel.snp.makeConstraints { make in
-            make.leading.equalTo(tierProgressBar)
-            make.top.equalTo(tierProgressBar.snp.bottom).offset(4)
-        }
-
         chartTitleLabel.snp.makeConstraints { make in
-            make.top.equalTo(tierCardView.snp.bottom).offset(20)
+            make.top.equalTo(datePickerStack.snp.bottom).offset(20)
             make.leading.equalToSuperview().offset(16)
         }
 
@@ -292,7 +192,6 @@ class RunningStatsCell: UICollectionViewCell {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        gradientLayer?.frame = tierCardView.bounds
     }
 
     func configure(
@@ -320,33 +219,6 @@ class RunningStatsCell: UICollectionViewCell {
             dateLabel.text = "\(year)년"
         case .all:
             dateLabel.text = "전체"
-        }
-
-        // Update tier card
-        let tier = RunnerTier.tier(for: stats.totalDistance)
-        let progress = tier.progress(to: stats.totalDistance)
-
-        tierEmojiLabel.text = tier.emoji
-        tierNameLabel.text = tier.displayName
-        tierDistanceLabel.text = String(format: "총 %.1f km", stats.totalDistance)
-
-        if let remaining = tier.remainingDistance(to: stats.totalDistance) {
-            tierProgressLabel.text = String(format: "다음 등급까지 %.1f km", remaining)
-        } else {
-            tierProgressLabel.text = "최고 등급 달성!"
-        }
-
-        // Update gradient
-        gradientLayer?.removeFromSuperlayer()
-        let gradient = ColorSystem.tierGradientLayer(for: tier)
-        gradient.frame = tierCardView.bounds
-        tierCardView.layer.insertSublayer(gradient, at: 0)
-        gradientLayer = gradient
-
-        // Animate progress bar
-        tierProgressFill.snp.remakeConstraints { make in
-            make.top.leading.bottom.equalToSuperview()
-            make.width.equalToSuperview().multipliedBy(max(progress, 0.01))
         }
 
         // Chart
@@ -382,12 +254,12 @@ class RunningStatsCell: UICollectionViewCell {
         // Summary grid
         summaryGridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        let tierColor = tier.themeColor
+        let accentColor = ColorSystem.primaryGreen
         let summaryItems = [
-            ("거리", String(format: "%.1f km", stats.totalDistance), "arrow.left.and.right", tierColor),
-            ("시간", stats.totalTime, "clock", tierColor),
-            ("페이스", stats.avgPace, "speedometer", tierColor),
-            ("횟수", "\(stats.runCount)회", "flame", tierColor)
+            ("거리", String(format: "%.1f km", stats.totalDistance), "arrow.left.and.right", accentColor),
+            ("시간", stats.totalTime, "clock", accentColor),
+            ("페이스", stats.avgPace, "speedometer", accentColor),
+            ("횟수", "\(stats.runCount)회", "flame", accentColor)
         ]
 
         for item in summaryItems {
