@@ -341,6 +341,9 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         if !boulderingRoutes.isEmpty {
             let boulderingData = ClimbingData(
                 gymName: gymParams.name,
+                gymId: gymParams.id,
+                gymBranch: gymParams.branch,
+                gymRegion: gymParams.region,
                 discipline: .bouldering,
                 routes: boulderingRoutes,
                 sessionDate: Date()
@@ -352,6 +355,9 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         if !leadRoutes.isEmpty {
             let leadData = ClimbingData(
                 gymName: gymParams.name,
+                gymId: gymParams.id,
+                gymBranch: gymParams.branch,
+                gymRegion: gymParams.region,
                 discipline: .leadEndurance,
                 routes: leadRoutes,
                 sessionDate: Date()
@@ -361,8 +367,8 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
 
         // Use the first session for card creation
         let climbingData = !boulderingRoutes.isEmpty ?
-            ClimbingData(gymName: gymParams.name, discipline: .bouldering, routes: boulderingRoutes, sessionDate: Date()) :
-            ClimbingData(gymName: gymParams.name, discipline: .leadEndurance, routes: leadRoutes, sessionDate: Date())
+            ClimbingData(gymName: gymParams.name, gymId: gymParams.id, gymBranch: gymParams.branch, gymRegion: gymParams.region, discipline: .bouldering, routes: boulderingRoutes, sessionDate: Date()) :
+            ClimbingData(gymName: gymParams.name, gymId: gymParams.id, gymBranch: gymParams.branch, gymRegion: gymParams.region, discipline: .leadEndurance, routes: leadRoutes, sessionDate: Date())
 
         // Save custom gym if it's a new custom gym
         if isCustomGym && !gymParams.name.isEmpty {
@@ -385,11 +391,11 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         dismiss(animated: true)
     }
 
-    private func getGymParams() -> (name: String, logoData: Data?) {
+    private func getGymParams() -> (name: String, id: String?, branch: String?, region: String?, logoData: Data?) {
         if let gym = selectedGym {
-            return (gym.name, nil) // Preset uses name-based logo lookup usually
+            return (gym.name, gym.id, gym.metadata?.branch, gym.metadata?.region, nil)
         }
-        return (customGymName, nil) // Custom gyms don't use logo images
+        return (customGymName, nil, nil, nil, nil)
     }
 
     @objc private func customGymNameChanged(_ textField: UITextField) {

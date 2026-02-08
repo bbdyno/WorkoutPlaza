@@ -105,7 +105,7 @@ class ClimbingSessionCell: UIView {
     }
     
     func configure(with session: ClimbingData) {
-        titleLabel.text = session.gymName
+        titleLabel.text = session.gymDisplayName
         disciplineLabel.text = session.discipline.displayName
         routesLabel.text = "\(session.sentRoutes)/\(session.totalRoutes) 완등"
         if let highestGrade = session.highestGradeSent {

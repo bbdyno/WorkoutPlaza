@@ -534,7 +534,8 @@ class HomeDashboardViewController: UIViewController {
             }
         case .climbing:
             if let session = workout.data as? ClimbingData {
-                titleLabel.text = session.gymName.isEmpty ? "클라이밍" : session.gymName
+                let gymDisplayName = session.gymDisplayName
+                titleLabel.text = gymDisplayName.isEmpty ? "클라이밍" : gymDisplayName
                 subtitleLabel.text = "\(session.totalRoutes) 루트"
             }
         }
