@@ -188,7 +188,7 @@ class StatisticsViewController: UIViewController {
 
     // MARK: - Data Loading
 
-    private func refreshData() {
+    func refreshData() {
         // Reset Date Data
         runningDates.removeAll()
         climbingDates.removeAll()
@@ -701,17 +701,9 @@ class StatisticsViewController: UIViewController {
 
         for session in climbingSessions {
             if session.sessionDate >= startDate && session.sessionDate <= endDate {
-                let gymName = session.gymName.isEmpty ? "암장" : session.gymName
-                // Try to get gym data and use brand name for grouping
-                if let gym = ClimbingGymManager.shared.findGym(byName: gymName) {
-                    let brandName = gym.gymBrandName
-                    WPLog.debug("Session gym: \(gymName) -> Brand: \(brandName), gym.displayName: \(gym.displayName)")
-                    gymSessions[brandName, default: []].append(session)
-                } else {
-                    // Fallback to gymName if no gym data found
-                    WPLog.debug("Session gym: \(gymName) -> No gym found, using gymName")
-                    gymSessions[gymName, default: []].append(session)
-                }
+                // gymName is brand name (e.g. "더클라임"), use it for grouping
+                let brandName = session.gymName.isEmpty ? "암장" : session.gymName
+                gymSessions[brandName, default: []].append(session)
             }
         }
 
@@ -873,9 +865,10 @@ extension StatisticsViewController: UICollectionViewDataSource {
                     color: ColorSystem.primaryBlue
                 )
             } else if let session = item.data as? ClimbingData {
+                let displayName = session.gymDisplayName.isEmpty ? "클라이밍" : session.gymDisplayName
                 cell.configure(
                     icon: "figure.climbing",
-                    title: session.gymName.isEmpty ? "클라이밍" : session.gymName,
+                    title: displayName,
                     subtitle: "\(session.sentRoutes) 완등",
                     date: session.sessionDate,
                     color: ColorSystem.primaryGreen
@@ -934,6 +927,50 @@ extension StatisticsViewController: UICollectionViewDelegate {
                 present(nav, animated: true)
             }
         }
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard indexPath.section == 3 else { return nil }
+
+        let items = filteredItems
+        guard indexPath.item < items.count else { return nil }
+
+        let item = items[indexPath.item]
+
+        // Only allow deletion for climbing sessions
+        guard item.type == .climbing else { return nil }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            guard let self = self else { return nil }
+
+            let deleteAction = UIAction(title: "삭제", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+                self.deleteItem(at: indexPath, item: item)
+            }
+
+            return UIMenu(title: "", children: [deleteAction])
+        }
+    }
+
+    private func deleteItem(at indexPath: IndexPath, item: (type: SportType, data: Any, date: Date)) {
+        guard item.type == .climbing else { return }
+        guard let session = item.data as? ClimbingData else { return }
+
+        let alert = UIAlertController(
+            title: "기록 삭제",
+            message: "이 클라이밍 기록을 삭제하시겠습니까?",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { [weak self] _ in
+            guard let self = self else { return }
+
+            ClimbingDataManager.shared.deleteSession(id: session.id)
+            self.refreshData()
+        })
+
+        present(alert, animated: true)
     }
 }
 

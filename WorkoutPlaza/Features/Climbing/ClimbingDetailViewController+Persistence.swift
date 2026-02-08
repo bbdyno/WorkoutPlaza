@@ -22,7 +22,7 @@ extension ClimbingDetailViewController {
 
     override func saveWorkoutCard(image: UIImage) {
         if let data = climbingData {
-            let title = "\(data.gymName) - \(data.discipline)"
+            let title = "\(data.gymDisplayName) - \(data.discipline)"
             WorkoutCardManager.shared.createCard(
                 sportType: .climbing,
                 workoutId: getWorkoutId(),

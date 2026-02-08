@@ -345,10 +345,7 @@ class ClimbingGymRemoteConfigManager {
             isBuiltIn: true,
             metadata: ClimbingGym.GymMetadata(
                 region: remote.metadata?.region,
-                brand: remote.metadata?.brand ?? remote.name,
-                branch: remote.metadata?.branch,
-                remoteId: remote.id,
-                lastUpdated: Date()
+                branch: remote.metadata?.branch
             )
         )
     }
@@ -420,6 +417,5 @@ class ClimbingGymRemoteConfigManager {
         let region: String?
         let brand: String?
         let branch: String?
-        let website: String?
     }
 }

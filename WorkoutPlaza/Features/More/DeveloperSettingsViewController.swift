@@ -70,12 +70,47 @@ class DeveloperSettingsViewController: UIViewController {
         )
 
         alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-        alert.addAction(UIAlertAction(title: "실행", style: .destructive) { _ in
-            ClimbingGymManager.shared.forceMigrateGymStructure()
+        alert.addAction(UIAlertAction(title: "실행", style: .destructive) { [weak self] _ in
+            guard let self = self else { return }
+
+            WPLog.info("=== Force migrating gym structure ===")
+
+            // Reset migration flag
+            UserDefaults.standard.removeObject(forKey: "climbingGyms_structure_migrated")
+            UserDefaults.standard.synchronize()
+            WPLog.debug("Migration flag reset")
+
+            // Run migration
+            ClimbingGymManager.shared.migrateGymStructureIfNeeded()
+
+            WPLog.debug("Migration completed, reloading all gyms")
+
+            // Reload gyms to verify
+            let allGyms = ClimbingGymManager.shared.getAllGyms()
+            WPLog.info("Total gyms after migration: \(allGyms.count)")
+            for gym in allGyms {
+                WPLog.debug("  - Gym: name=\(gym.name), displayName=\(gym.displayName), branch=\(gym.metadata?.branch ?? "nil")")
+            }
+
+            // Check sessions
+            let sessions = ClimbingDataManager.shared.loadSessions()
+            WPLog.info("Total sessions: \(sessions.count)")
+            for session in sessions.prefix(5) {
+                WPLog.debug("  - Session: gymName=\(session.gymName), gymId=\(session.gymId ?? "nil"), branch=\(session.gymBranch ?? "nil"), display=\(session.gymDisplayName)")
+            }
+
+            // Refresh data to update UI
+            if let tabBarController = self.tabBarController,
+               let navigationController = tabBarController.selectedViewController as? UINavigationController,
+               let statisticsVC = navigationController.viewControllers.first as? StatisticsViewController {
+                statisticsVC.refreshData()
+            }
+
+            WPLog.info("=== Migration process completed ===")
 
             let successAlert = UIAlertController(
                 title: "완료",
-                message: "마이그레이션이 완료되었습니다. 앱을 다시 시작하면 적용됩니다.",
+                message: "마이그레이션이 완료되었습니다. 기록을 다시 확인해주세요.",
                 preferredStyle: .alert
             )
             successAlert.addAction(UIAlertAction(title: "확인", style: .default))

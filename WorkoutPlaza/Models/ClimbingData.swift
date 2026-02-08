@@ -28,11 +28,8 @@ struct ClimbingGym: Codable, Identifiable, Equatable {
     }
 
     struct GymMetadata: Codable, Equatable {
-        var region: String?      // 지역 (예: "Seoul")
-        var brand: String?       // 암장명 (예: "서울숲클라이밍")
+        var region: String?      // 지역 (예: "서울")
         var branch: String?      // 지점 (예: "구로점")
-        var remoteId: String?    // Remote Config ID
-        var lastUpdated: Date?   // 마지막 업데이트
     }
 
     init(
@@ -88,15 +85,15 @@ struct ClimbingGym: Codable, Identifiable, Equatable {
         return "gym_logo_\(normalized)"
     }
 
-    // 암장명만 추출 (예: "서울숲클라이밍")
+    // 암장명
     var gymBrandName: String {
-        metadata?.brand ?? name
+        name
     }
 
     // 표시용 이름 (암장명 + 지점명)
     var displayName: String {
-        if let brand = metadata?.brand, let branch = metadata?.branch {
-            return "\(brand) \(branch)"
+        if let branch = metadata?.branch {
+            return "\(gymBrandName) \(branch)"
         }
         return name
     }
@@ -175,7 +172,8 @@ class ClimbingGymManager {
     func findGym(byName name: String) -> ClimbingGym? {
         // defined gyms (presets) + saved gyms
         let allGyms = presets + loadGyms()
-        return allGyms.first { $0.name.lowercased() == name.lowercased() }
+        let lowered = name.lowercased()
+        return allGyms.first { $0.name.lowercased() == lowered || $0.displayName.lowercased() == lowered }
     }
 
     func findOrCreateGym(name: String) -> ClimbingGym {
@@ -206,10 +204,6 @@ class ClimbingGymManager {
             return
         }
 
-        // Old data exists but can't decode with new format
-        // This is expected - old format had different structure
-        // For safety, we'll clear old data and mark as migrated
-        // Users will need to re-add custom gyms (safer than risking data corruption)
         WPLog.warning("ClimbingGym migration: Old format detected, clearing for safety")
         userDefaults.removeObject(forKey: storageKey)
         userDefaults.set(true, forKey: migrationKey)
@@ -249,7 +243,7 @@ class ClimbingGymManager {
                 // Single gym - just add metadata
                 var gym = gyms[0]
                 if gym.metadata == nil {
-                    gym.metadata = ClimbingGym.GymMetadata(brand: brandName, branch: nil)
+                    gym.metadata = ClimbingGym.GymMetadata(region: nil, branch: nil)
                     WPLog.debug("Updated gym \(gym.name) with brand: \(brandName), branch: nil")
                     updatedGyms.append(gym)
                 } else {
@@ -257,21 +251,17 @@ class ClimbingGymManager {
                     updatedGyms.append(gym)
                 }
             } else {
-                // Multiple gyms with same brand - merge
-                // Find the primary gym (usually the one with shortest name or first created)
                 let primaryGym = gyms.min { $0.name.count < $1.name.count } ?? gyms[0]
                 WPLog.debug("Primary gym: \(primaryGym.name)")
 
                 for gym in gyms {
                     var updatedGym = gym
                     if gym.id == primaryGym.id {
-                        // Primary gym - set brand without branch
-                        updatedGym.metadata = ClimbingGym.GymMetadata(brand: brandName, branch: nil)
+                        updatedGym.metadata = ClimbingGym.GymMetadata(region: nil, branch: nil)
                         WPLog.debug("Updated primary gym \(gym.name) with brand: \(brandName), branch: nil")
                     } else {
-                        // Branch gym - set brand and extract branch name
                         let branchName = gym.name.replacingOccurrences(of: brandName, with: "").trimmingCharacters(in: .whitespaces)
-                        updatedGym.metadata = ClimbingGym.GymMetadata(brand: brandName, branch: branchName.isEmpty ? nil : branchName)
+                        updatedGym.metadata = ClimbingGym.GymMetadata(region: nil, branch: branchName.isEmpty ? nil : branchName)
                         WPLog.debug("Updated branch gym \(gym.name) with brand: \(brandName), branch: \(branchName)")
                     }
                     updatedGyms.append(updatedGym)
@@ -279,31 +269,24 @@ class ClimbingGymManager {
             }
         }
 
-        // 4. Save updated gyms
         WPLog.info("Saving \(updatedGyms.count) updated gyms")
         saveGyms(updatedGyms)
 
-        // 5. Update session data to use correct gym names
-        migrateSessionGymNames()
+        migrateSessionMetadata()
 
         userDefaults.set(true, forKey: migrationKey)
         WPLog.info("Gym structure migration completed")
     }
 
     func forceMigrateGymStructure() {
-        // Reset migration flag and run migration
+        // Reset migration flags and run migration
         userDefaults.removeObject(forKey: "climbingGyms_structure_migrated")
+        userDefaults.removeObject(forKey: "climbingGyms_session_metadata_migration_done")
         migrateGymStructureIfNeeded()
     }
 
     private func parseBrandName(from name: String) -> String {
-        // Common patterns:
-        // - "서울숲클라이밍 구로점" -> "서울숲클라이밍"
-        // - "더클라이밍 강남" -> "더클라이밍"
-        // - "더클라이밍홀딩스 강남점" -> "더클라이밍홀딩스"
-        // - "더클라이밍 강남" -> "더클라이밍"
-
-        let commonSuffixes = ["점", "지점", "센터", "클라이밍", "홀딩스"]
+        let commonSuffixes = ["점", "지점", "센터", "클라이밍"]
 
         var result = name
 
@@ -318,7 +301,7 @@ class ClimbingGymManager {
             }
         }
 
-        // Also check for patterns like "서울숲클라이밍 구로점" or "더클라이밍 강남"
+        // Also check for patterns like "서울숲클라이밍 구로점" or "더클라임 강남"
         let parts = result.split(separator: " ").map { String($0) }
         if parts.count >= 2 {
             let firstPart = parts[0]
@@ -334,63 +317,86 @@ class ClimbingGymManager {
         return result
     }
 
-    private func migrateSessionGymNames() {
+    private func migrateSessionMetadata() {
+        let migrationKey = "climbingGyms_session_metadata_migration_done"
+        guard !userDefaults.bool(forKey: migrationKey) else { return }
+
         let sessionsKey = "savedClimbingSessions"
 
         guard let data = userDefaults.data(forKey: sessionsKey),
               var sessions = try? JSONDecoder().decode([ClimbingData].self, from: data) else {
-            WPLog.warning("No climbing sessions found for migration")
+            WPLog.warning("No climbing sessions found for metadata migration")
+            userDefaults.set(true, forKey: migrationKey)
             return
         }
 
-        WPLog.info("Found \(sessions.count) sessions for gym name migration")
+        // custom + remote + preset 모두 포함
+        let allGyms = getAllGyms()
+        WPLog.info("Session metadata migration: \(sessions.count) sessions, \(allGyms.count) gyms available")
 
         var sessionsUpdated = false
         var updateCount = 0
 
         for i in 0..<sessions.count {
             var session = sessions[i]
-            let gymName = session.gymName
+            var changed = false
 
-            // Find the gym
-            if let gym = findGym(byName: gymName) {
-                WPLog.debug("Session gym '\(gymName)' found in gym manager")
-                WPLog.debug("  - Gym metadata: brand=\(gym.metadata?.brand ?? "nil"), branch=\(gym.metadata?.branch ?? "nil")")
-                // If gym has metadata with brand, update to use brand name
-                if let brand = gym.metadata?.brand {
-                    let branch = gym.metadata?.branch
-                    let newGymName: String
-                    if let branch = branch {
-                        newGymName = "\(brand) \(branch)"
-                    } else {
-                        newGymName = brand
-                    }
+            // 이미 metadata가 있으면 스킵
+            if session.gymId != nil && session.gymBranch != nil {
+                continue
+            }
 
-                    if session.gymName != newGymName {
-                        session.gymName = newGymName
-                        sessions[i] = session
-                        sessionsUpdated = true
-                        updateCount += 1
-                        WPLog.debug("Updated session gym name: \(gymName) -> \(newGymName)")
-                    } else {
-                        WPLog.debug("Session gym name already matches: \(gymName)")
-                    }
-                } else {
-                    WPLog.debug("Gym has no brand metadata, keeping original name")
+            let name = session.gymName.lowercased().trimmingCharacters(in: .whitespaces)
+
+            // 1) gym.name 매칭 (브랜드명)
+            // 2) gym.displayName 매칭 (이전 마이그레이션에서 displayName으로 변경된 경우)
+            // 3) gym.id 매칭
+            let matchedGym = allGyms.first(where: { $0.id == session.gymId })
+                ?? allGyms.first(where: { $0.displayName.lowercased() == name })
+                ?? allGyms.first(where: { $0.name.lowercased() == name })
+
+            if let gym = matchedGym {
+                // gymName을 brand name(gym.name)으로 정규화
+                if session.gymName != gym.name {
+                    WPLog.debug("  Normalizing gymName: '\(session.gymName)' -> '\(gym.name)'")
+                    session.gymName = gym.name
+                    changed = true
+                }
+
+                if session.gymId == nil {
+                    session.gymId = gym.id
+                    changed = true
+                }
+                if session.gymBranch == nil, let branch = gym.metadata?.branch {
+                    session.gymBranch = branch
+                    changed = true
+                }
+                if session.gymRegion == nil, let region = gym.metadata?.region {
+                    session.gymRegion = region
+                    changed = true
+                }
+
+                if changed {
+                    sessions[i] = session
+                    sessionsUpdated = true
+                    updateCount += 1
+                    WPLog.debug("Session metadata migrated: display='\(session.gymDisplayName)', id=\(gym.id), branch=\(gym.metadata?.branch ?? "nil"), region=\(gym.metadata?.region ?? "nil")")
                 }
             } else {
-                WPLog.debug("Session gym '\(gymName)' not found in gym manager")
+                WPLog.debug("No gym match for session gymName='\(session.gymName)'")
             }
         }
 
         if sessionsUpdated {
             if let encoded = try? JSONEncoder().encode(sessions) {
                 userDefaults.set(encoded, forKey: sessionsKey)
-                WPLog.info("Session gym names migrated successfully: \(updateCount) sessions updated")
+                WPLog.info("Session metadata migration completed: \(updateCount)/\(sessions.count) sessions updated")
             }
         } else {
-            WPLog.info("No session gym names needed updating")
+            WPLog.info("Session metadata migration: no sessions needed updating")
         }
+
+        userDefaults.set(true, forKey: migrationKey)
     }
 
     // MARK: - Helper Methods
@@ -507,7 +513,10 @@ struct ClimbingRoute: Codable, Identifiable {
 
 struct ClimbingData: SportDataProtocol, Codable {
     let id: String
-    var gymName: String
+    var gymName: String              // 암장 브랜드명 (예: "더클라임")
+    var gymId: String?               // gym 고유 식별자 (예: "the_climb_gangnam")
+    var gymBranch: String?           // 지점명 (예: "강남점")
+    var gymRegion: String?           // 지역 (예: "서울")
     var discipline: ClimbingDiscipline
     var routes: [ClimbingRoute]
     var sessionDate: Date
@@ -519,9 +528,20 @@ struct ClimbingData: SportDataProtocol, Codable {
     var date: Date { sessionDate }
     var duration: TimeInterval? { sessionDuration }
 
+    /// 표시용 이름 (암장명 + 지점명)
+    var gymDisplayName: String {
+        if let branch = gymBranch {
+            return "\(gymName) \(branch)"
+        }
+        return gymName
+    }
+
     init(
         id: String = UUID().uuidString,
         gymName: String,
+        gymId: String? = nil,
+        gymBranch: String? = nil,
+        gymRegion: String? = nil,
         discipline: ClimbingDiscipline,
         routes: [ClimbingRoute] = [],
         sessionDate: Date = Date(),
@@ -530,6 +550,9 @@ struct ClimbingData: SportDataProtocol, Codable {
     ) {
         self.id = id
         self.gymName = gymName
+        self.gymId = gymId
+        self.gymBranch = gymBranch
+        self.gymRegion = gymRegion
         self.discipline = discipline
         self.routes = routes
         self.sessionDate = sessionDate
@@ -586,6 +609,9 @@ struct ExportableClimbingData: ExportableSportData {
     let sportType: SportType = .climbing
     let id: String
     let gymName: String
+    let gymId: String?
+    let gymBranch: String?
+    let gymRegion: String?
     let discipline: ClimbingDiscipline
     let routes: [ClimbingRoute]
     let sessionDate: Date
@@ -595,6 +621,9 @@ struct ExportableClimbingData: ExportableSportData {
     init(from climbingData: ClimbingData) {
         self.id = climbingData.id
         self.gymName = climbingData.gymName
+        self.gymId = climbingData.gymId
+        self.gymBranch = climbingData.gymBranch
+        self.gymRegion = climbingData.gymRegion
         self.discipline = climbingData.discipline
         self.routes = climbingData.routes
         self.sessionDate = climbingData.sessionDate
@@ -606,6 +635,9 @@ struct ExportableClimbingData: ExportableSportData {
         ClimbingData(
             id: id,
             gymName: gymName,
+            gymId: gymId,
+            gymBranch: gymBranch,
+            gymRegion: gymRegion,
             discipline: discipline,
             routes: routes,
             sessionDate: sessionDate,

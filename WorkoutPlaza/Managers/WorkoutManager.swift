@@ -52,6 +52,7 @@ class WorkoutManager {
                 self?.fetchRoute(for: workout) { route in
                     // GPS 경로 유무와 관계없이 모든 운동을 포함
                     let workoutData = WorkoutData(
+                        id: workout.uuid,
                         workout: workout,
                         route: route
                     )
@@ -108,6 +109,7 @@ class WorkoutManager {
 
 // MARK: - 데이터 모델
 struct WorkoutData {
+    let id: UUID
     let workout: HKWorkout
     let route: [CLLocation]
 

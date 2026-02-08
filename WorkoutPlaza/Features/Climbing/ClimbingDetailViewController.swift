@@ -59,7 +59,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         // Climbing widgets might need different default sizes
         
         let gymWidget = ClimbingGymWidget()
-        gymWidget.configure(gymName: data.gymName)
+        gymWidget.configure(gymName: data.gymName, displayName: data.gymDisplayName)
         addWidget(gymWidget, size: gymWidget.idealSize, position: CGPoint(x: 30, y: 100))
         
         let sessionWidget = ClimbingSessionWidget()
@@ -227,7 +227,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         switch type {
         case .climbingGym:
             let w = ClimbingGymWidget()
-            w.configure(gymName: data.gymName)
+            w.configure(gymName: data.gymName, displayName: data.gymDisplayName)
             let gymSize = w.idealSize
             w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: gymSize)
             w.initialSize = gymSize
@@ -368,7 +368,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         switch item.type {
         case .climbingGym:
             let w = ClimbingGymWidget()
-            w.configure(gymName: data.gymName)
+            w.configure(gymName: data.gymName, displayName: data.gymDisplayName)
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
@@ -478,7 +478,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         switch widgetType {
         case "ClimbingGymWidget":
             let w = ClimbingGymWidget()
-            w.configure(gymName: data.gymName)
+            w.configure(gymName: data.gymName, displayName: data.gymDisplayName)
             widget = w
 
         case "ClimbingSessionWidget":

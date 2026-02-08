@@ -45,11 +45,12 @@ class ClimbingGymWidget: BaseStatWidget {
         }
     }
 
-    func configure(gymName: String, logoImageName: String? = nil) {
+    func configure(gymName: String, displayName: String? = nil, logoImageName: String? = nil) {
         self.gymName = gymName
         self.gym = ClimbingGymManager.shared.findGym(byName: gymName)
 
-        valueLabel.text = gymName
+        // Use provided displayName or fall back to gym's displayName
+        valueLabel.text = displayName ?? gym?.displayName ?? gymName
 
         // Load logo using ClimbingGymLogoManager
         if let gym = self.gym {
