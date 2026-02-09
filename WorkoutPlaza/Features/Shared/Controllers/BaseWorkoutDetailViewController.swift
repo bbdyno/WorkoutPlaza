@@ -123,6 +123,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     private enum Constants {
         static let canvasBackgroundColor = UIColor.white
         static let canvasBorderColor = UIColor(white: 0.9, alpha: 1.0).cgColor
+        static let centerGuideColor = ColorSystem.primaryGreen.withAlphaComponent(0.85)
+        static let centerGuideThickness: CGFloat = 1
+        static let centerSnapThreshold: CGFloat = 10
+        static let centerGuideDisplayDuration: TimeInterval = 0.7
 
         static let toolbarBackgroundColor = UIColor.white.withAlphaComponent(0.95)
         static let multiSelectToolbarBackgroundColor = UIColor.white.withAlphaComponent(0.98)
@@ -177,6 +181,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     var previousCanvasSize: CGSize = .zero
     var currentAspectRatio: AspectRatio = .portrait4_5 // Default 4:5
     var hasUnsavedChanges: Bool = false
+    private var centerGuideHideWorkItem: DispatchWorkItem?
 
     // Background State
     var backgroundTransform: BackgroundTransform?
@@ -367,6 +372,24 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         return label
     }()
 
+    lazy var verticalCenterGuideView: UIView = {
+        let view = UIView()
+        view.backgroundColor = Constants.centerGuideColor
+        view.alpha = 0
+        view.isHidden = true
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+
+    lazy var horizontalCenterGuideView: UIView = {
+        let view = UIView()
+        view.backgroundColor = Constants.centerGuideColor
+        view.alpha = 0
+        view.isHidden = true
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+
     // Text Path Drawing Overlay
     lazy var textPathDrawingOverlayView: UIView = {
         let view = UIView()
@@ -447,7 +470,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         setupMultiSelectToolbarConfig() // Renamed to avoid confusion with constraints setup if any
 
         // Add observer for widget move notification
-        NotificationCenter.default.addObserver(self, selector: #selector(handleWidgetDidMove), name: .widgetDidMove, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleWidgetDidMove(_:)), name: .widgetDidMove, object: nil)
 
         // Initial button state
         aspectRatioButton.setTitle(currentAspectRatio.displayName, for: .normal)
@@ -493,6 +516,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
     
     deinit {
+        centerGuideHideWorkItem?.cancel()
         NotificationCenter.default.removeObserver(self)
     }
     
@@ -534,6 +558,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         contentView.addSubview(dimOverlay)
         contentView.addSubview(watermarkImageView)
         contentView.addSubview(textPathDrawingOverlayView)
+        contentView.addSubview(verticalCenterGuideView)
+        contentView.addSubview(horizontalCenterGuideView)
 
         view.addSubview(topRightToolbar)
         view.addSubview(bottomFloatingToolbar)
@@ -601,6 +627,18 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         textPathDrawingOverlayView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
+        }
+
+        verticalCenterGuideView.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.centerX.equalToSuperview()
+            make.width.equalTo(Constants.centerGuideThickness)
+        }
+
+        horizontalCenterGuideView.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            make.centerY.equalToSuperview()
+            make.height.equalTo(Constants.centerGuideThickness)
         }
 
         topRightToolbar.snp.makeConstraints { make in
@@ -2820,8 +2858,110 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
     
     // MARK: - Notifications
-    @objc func handleWidgetDidMove() {
+    @objc func handleWidgetDidMove(_ notification: Notification) {
         hasUnsavedChanges = true
+
+        guard let movedView = (notification.object as? UIView) ?? (selectionManager.currentlySelectedItem as? UIView),
+              movedView.superview === contentView else { return }
+
+        let phaseRaw = notification.userInfo?[WidgetMoveNotificationUserInfoKey.phase] as? String
+        let phase = WidgetMovePhase(rawValue: phaseRaw ?? WidgetMovePhase.ended.rawValue) ?? .ended
+        applyCenterStickySnap(to: movedView, phase: phase)
+    }
+
+    private func applyCenterStickySnap(to movedView: UIView, phase: WidgetMovePhase) {
+        let canvasCenter = CGPoint(x: contentView.bounds.midX, y: contentView.bounds.midY)
+        var snappedCenter = movedView.center
+
+        let shouldSnapToVertical = abs(movedView.center.x - canvasCenter.x) <= Constants.centerSnapThreshold
+        let shouldSnapToHorizontal = abs(movedView.center.y - canvasCenter.y) <= Constants.centerSnapThreshold
+
+        if shouldSnapToVertical {
+            snappedCenter.x = canvasCenter.x
+        }
+
+        if shouldSnapToHorizontal {
+            snappedCenter.y = canvasCenter.y
+        }
+
+        if snappedCenter != movedView.center {
+            movedView.center = snappedCenter
+
+            if let selectable = movedView as? Selectable, selectable.isSelected {
+                selectable.positionResizeHandles()
+            }
+        }
+
+        updateCenterGuides(
+            showVertical: shouldSnapToVertical,
+            showHorizontal: shouldSnapToHorizontal,
+            phase: phase
+        )
+    }
+
+    private func updateCenterGuides(showVertical: Bool, showHorizontal: Bool, phase: WidgetMovePhase) {
+        centerGuideHideWorkItem?.cancel()
+        centerGuideHideWorkItem = nil
+
+        setCenterGuide(verticalCenterGuideView, visible: showVertical, animated: true)
+        setCenterGuide(horizontalCenterGuideView, visible: showHorizontal, animated: true)
+
+        guard phase == .ended else { return }
+
+        if showVertical || showHorizontal {
+            scheduleCenterGuideHide(after: Constants.centerGuideDisplayDuration)
+        }
+    }
+
+    private func scheduleCenterGuideHide(after delay: TimeInterval) {
+        centerGuideHideWorkItem?.cancel()
+
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.hideCenterGuides(animated: true)
+        }
+
+        centerGuideHideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+    }
+
+    private func hideCenterGuides(animated: Bool) {
+        setCenterGuide(verticalCenterGuideView, visible: false, animated: animated)
+        setCenterGuide(horizontalCenterGuideView, visible: false, animated: animated)
+    }
+
+    private func setCenterGuide(_ guideView: UIView, visible: Bool, animated: Bool) {
+        if visible && !guideView.isHidden && guideView.alpha >= 0.99 {
+            return
+        }
+
+        if !visible && guideView.isHidden {
+            return
+        }
+
+        if visible {
+            contentView.bringSubviewToFront(guideView)
+            if guideView.isHidden {
+                guideView.alpha = 0
+                guideView.isHidden = false
+            }
+        }
+
+        let animations = {
+            guideView.alpha = visible ? 1 : 0
+        }
+
+        let completion: (Bool) -> Void = { _ in
+            if !visible {
+                guideView.isHidden = true
+            }
+        }
+
+        if animated {
+            UIView.animate(withDuration: 0.12, delay: 0, options: [.beginFromCurrentState, .curveEaseOut], animations: animations, completion: completion)
+        } else {
+            animations()
+            completion(true)
+        }
     }
     
     
@@ -3533,4 +3673,3 @@ extension BaseWorkoutDetailViewController {
         present(alert, animated: true)
     }
 }
-
