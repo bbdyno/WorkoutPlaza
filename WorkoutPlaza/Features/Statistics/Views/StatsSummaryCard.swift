@@ -29,7 +29,7 @@ class StatsSummaryCard: UIView {
     private let countLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 22, weight: .bold)
-        label.text = "0회"
+        label.text = WorkoutPlazaStrings.Statistics.Summary.count(0)
         return label
     }()
     

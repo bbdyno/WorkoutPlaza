@@ -15,7 +15,7 @@ enum WidgetDisplayMode: String, Codable {
 }
 
 // MARK: - Base Stat Widget
-class BaseStatWidget: UIView, Selectable {
+class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
 
     // MARK: - Selectable Properties
     var isSelected: Bool = false
@@ -46,6 +46,7 @@ class BaseStatWidget: UIView, Selectable {
 
     // MARK: - Display Mode
     var displayMode: WidgetDisplayMode = .text
+    private(set) var contentAlignment: WidgetContentAlignment = .left
 
     var widgetIconName: String? { nil }
 
@@ -107,6 +108,7 @@ class BaseStatWidget: UIView, Selectable {
         addSubview(unitLabel)
 
         applyTextModeLayout()
+        applyContentAlignment(contentAlignment)
     }
 
     // MARK: - Display Mode Toggle
@@ -140,6 +142,7 @@ class BaseStatWidget: UIView, Selectable {
         updateColors()
         resizeToFitContent(preservingScale: clampedScale)
         applyFontScale(clampedScale)
+        applyContentAlignment(contentAlignment)
     }
 
     private func applyTextModeLayout() {
@@ -353,6 +356,64 @@ class BaseStatWidget: UIView, Selectable {
         updateFonts()
     }
 
+    func applyContentAlignment(_ alignment: WidgetContentAlignment) {
+        contentAlignment = alignment
+        titleLabel.textAlignment = alignment.textAlignment
+        valueLabel.textAlignment = alignment.textAlignment
+        unitLabel.textAlignment = alignment.textAlignment
+
+        setNeedsLayout()
+    }
+
+    var alignmentSubjectViews: [UIView] {
+        var views: [UIView] = [valueLabel]
+        if !unitLabel.isHidden, !(unitLabel.text ?? "").isEmpty {
+            views.append(unitLabel)
+        }
+        if !iconImageView.isHidden {
+            views.insert(iconImageView, at: 0)
+        }
+        return views
+    }
+
+    var contentAlignmentPadding: CGFloat {
+        LayoutConstants.standardPadding
+    }
+
+    private func applyAlignmentLayout() {
+        let views = alignmentSubjectViews.filter { !$0.isHidden }
+        views.forEach { $0.transform = .identity }
+
+        guard !views.isEmpty else { return }
+
+        let contentBounds = views.map(\.frame).reduce(CGRect.null) { partialResult, frame in
+            partialResult.union(frame)
+        }
+        guard !contentBounds.isNull else { return }
+
+        let minX = contentAlignmentPadding
+        let maxX = max(minX, bounds.width - contentAlignmentPadding - contentBounds.width)
+
+        let requestedX: CGFloat
+        switch contentAlignment {
+        case .left:
+            requestedX = minX
+        case .center:
+            requestedX = (bounds.width - contentBounds.width) / 2
+        case .right:
+            requestedX = maxX
+        }
+
+        let targetX = min(max(requestedX, minX), maxX)
+        let deltaX = targetX - contentBounds.minX
+
+        guard abs(deltaX) > 0.1 else { return }
+
+        views.forEach { view in
+            view.transform = CGAffineTransform(translationX: deltaX, y: 0)
+        }
+    }
+
     func calculateScaleFactor() -> CGFloat {
         guard initialSize.width > 0 && initialSize.height > 0 else {
             return 1.0
@@ -414,6 +475,8 @@ class BaseStatWidget: UIView, Selectable {
     // MARK: - Layout
     override func layoutSubviews() {
         super.layoutSubviews()
+
+        applyAlignmentLayout()
 
         // 리사이즈 중이 아니고, 그룹 관리도 아닐 때만 선택 핸들 업데이트
         if isSelected && !isResizing {

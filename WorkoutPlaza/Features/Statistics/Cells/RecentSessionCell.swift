@@ -74,9 +74,6 @@ class RecentSessionCell: UICollectionViewCell {
         iconContainer.backgroundColor = color
         titleLabel.text = title
         subtitleLabel.text = subtitle
-
-        let formatter = DateFormatter()
-        formatter.setLocalizedDateFormatFromTemplate("MMMd")
-        dateLabel.text = formatter.string(from: date)
+        dateLabel.text = StatisticsFormatter.monthDayText(from: date)
     }
 }

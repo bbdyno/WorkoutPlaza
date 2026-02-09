@@ -422,6 +422,11 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             if let fontStyleRaw = savedState.fontStyle, let fontStyle = FontStyle(rawValue: fontStyleRaw) {
                 selectable.applyFont(fontStyle)
             }
+            if let alignmentRaw = savedState.contentAlignment,
+               let alignment = WidgetContentAlignment(rawValue: alignmentRaw),
+               let alignableWidget = widget as? WidgetContentAlignable {
+                alignableWidget.applyContentAlignment(alignment)
+            }
         }
         // Restore display mode (text/icon)
         if let statWidget = widget as? BaseStatWidget,

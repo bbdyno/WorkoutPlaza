@@ -10,7 +10,7 @@ import CoreLocation
 import SnapKit
 
 // MARK: - Location Widget
-class LocationWidget: UIView, Selectable {
+class LocationWidget: UIView, Selectable, WidgetContentAlignable {
 
     // MARK: - Selectable Properties
     var isSelected: Bool = false
@@ -30,6 +30,7 @@ class LocationWidget: UIView, Selectable {
     var rotationIndicatorLayer: CAShapeLayer?
     weak var selectionDelegate: SelectionDelegate?
     // rotation and isRotating are provided by Selectable protocol default implementation
+    private(set) var contentAlignment: WidgetContentAlignment = .left
 
     // Font scaling properties
     var initialSize: CGSize = .zero
@@ -288,6 +289,18 @@ class LocationWidget: UIView, Selectable {
     }
 
     // MARK: - Selectable Methods
+    func applyContentAlignment(_ alignment: WidgetContentAlignment) {
+        contentAlignment = alignment
+        locationLabel.textAlignment = alignment.textAlignment
+
+        switch alignment {
+        case .left, .center:
+            containerStack.semanticContentAttribute = .forceLeftToRight
+        case .right:
+            containerStack.semanticContentAttribute = .forceRightToLeft
+        }
+    }
+
     func applyColor(_ color: UIColor) {
         currentColor = color
         updateColors()

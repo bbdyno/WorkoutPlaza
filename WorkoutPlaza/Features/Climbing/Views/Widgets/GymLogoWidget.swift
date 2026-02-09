@@ -8,7 +8,7 @@
 import UIKit
 import SnapKit
 
-class GymLogoWidget: UIView, Selectable {
+class GymLogoWidget: UIView, Selectable, WidgetContentAlignable {
 
     // MARK: - Selectable Protocol
     var isSelected: Bool = false
@@ -24,6 +24,7 @@ class GymLogoWidget: UIView, Selectable {
     var rotationIndicatorLayer: CAShapeLayer?
     weak var selectionDelegate: SelectionDelegate?
     // rotation and isRotating are provided by Selectable protocol default implementation
+    private(set) var contentAlignment: WidgetContentAlignment = .center
 
     // Scaling
     var initialSize: CGSize = .zero
@@ -230,6 +231,20 @@ class GymLogoWidget: UIView, Selectable {
     func applyFont(_ fontStyle: FontStyle) {
         currentFontStyle = fontStyle
         updateFonts()
+    }
+
+    func applyContentAlignment(_ alignment: WidgetContentAlignment) {
+        contentAlignment = alignment
+        branchLabel.textAlignment = alignment.textAlignment
+
+        switch alignment {
+        case .left:
+            stackView.alignment = .leading
+        case .center:
+            stackView.alignment = .center
+        case .right:
+            stackView.alignment = .trailing
+        }
     }
     
     func updateColors() {

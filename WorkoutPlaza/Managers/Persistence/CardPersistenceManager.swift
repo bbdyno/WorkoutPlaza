@@ -48,6 +48,7 @@ struct SavedWidgetState: Codable {
     let numericValue: Double? // For stat widgets (distance, duration, pace, etc.)
     let additionalText: String? // For LocationWidget, etc.
     let displayMode: String? // WidgetDisplayMode rawValue (text, icon)
+    let contentAlignment: String? // WidgetContentAlignment rawValue (left, center, right)
 }
 
 enum BackgroundType: String, Codable {
