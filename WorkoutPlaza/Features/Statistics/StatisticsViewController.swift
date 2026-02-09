@@ -30,13 +30,6 @@ class StatisticsViewController: UIViewController {
     private var workoutsByDate: [DateComponents: Set<WorkoutType>] = [:]
     private var selectedDate: DateComponents?
 
-    private let selectedDateHeaderFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = .autoupdatingCurrent
-        formatter.setLocalizedDateFormatFromTemplate("MMMd")
-        return formatter
-    }()
-
     // MARK: - UI Components
 
     private lazy var collectionView: UICollectionView = {
@@ -890,8 +883,9 @@ extension StatisticsViewController: UICollectionViewDataSource {
 
         // Section 3 is the selected date workouts
         if indexPath.section == 3 {
-            if let selectedDate = selectedDate, let date = Calendar.current.date(from: selectedDate) {
-                header.titleLabel.text = selectedDateHeaderFormatter.string(from: date)
+            if let selectedDate = selectedDate,
+               let headerDateText = StatisticsFormatter.selectedDateHeaderText(from: selectedDate) {
+                header.titleLabel.text = headerDateText
             } else {
                 header.titleLabel.text = WorkoutPlazaStrings.Statistics.Date.Select.hint
             }

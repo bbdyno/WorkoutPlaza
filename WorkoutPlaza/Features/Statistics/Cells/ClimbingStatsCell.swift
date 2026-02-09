@@ -231,14 +231,11 @@ class ClimbingStatsCell: UICollectionViewCell {
     }
 
     private func updatePeriodLabel() {
-        switch currentPeriod {
-        case .month:
-            periodLabel.text = WorkoutFormatter.stripGroupingSeparators(from: WorkoutPlazaStrings.Statistics.Year.Month.label(currentYear, currentMonth))
-        case .year:
-            periodLabel.text = WorkoutFormatter.stripGroupingSeparators(from: WorkoutPlazaStrings.Statistics.Year.label(currentYear))
-        case .all:
-            periodLabel.text = WorkoutPlazaStrings.Statistics.Period.all
-        }
+        periodLabel.text = StatisticsFormatter.periodLabel(
+            for: currentPeriod,
+            year: currentYear,
+            month: currentMonth
+        )
     }
 
     private func updateChart(sessions: [ClimbingData]) {
