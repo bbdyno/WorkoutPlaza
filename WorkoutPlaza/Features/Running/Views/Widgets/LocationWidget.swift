@@ -232,8 +232,18 @@ class LocationWidget: UIView, Selectable {
                 positionResizeHandles()
             }
 
+            NotificationCenter.default.post(
+                name: .widgetDidMove,
+                object: self,
+                userInfo: [WidgetMoveNotificationUserInfoKey.phase: WidgetMovePhase.changed.rawValue]
+            )
+
         case .ended, .cancelled:
-            NotificationCenter.default.post(name: .widgetDidMove, object: nil)
+            NotificationCenter.default.post(
+                name: .widgetDidMove,
+                object: self,
+                userInfo: [WidgetMoveNotificationUserInfoKey.phase: WidgetMovePhase.ended.rawValue]
+            )
 
         default:
             break

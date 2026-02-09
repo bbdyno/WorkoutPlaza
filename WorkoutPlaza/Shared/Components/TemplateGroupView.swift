@@ -333,8 +333,18 @@ class TemplateGroupView: UIView, Selectable {
                 positionResizeHandles()
             }
 
+            NotificationCenter.default.post(
+                name: .widgetDidMove,
+                object: self,
+                userInfo: [WidgetMoveNotificationUserInfoKey.phase: WidgetMovePhase.changed.rawValue]
+            )
+
         case .ended, .cancelled:
-            break
+            NotificationCenter.default.post(
+                name: .widgetDidMove,
+                object: self,
+                userInfo: [WidgetMoveNotificationUserInfoKey.phase: WidgetMovePhase.ended.rawValue]
+            )
 
         default:
             break

@@ -18,3 +18,12 @@ import Foundation
 extension Notification.Name {
     static let widgetDidMove = Notification.Name("widgetDidMove")
 }
+
+enum WidgetMovePhase: String {
+    case changed
+    case ended
+}
+
+enum WidgetMoveNotificationUserInfoKey {
+    static let phase = "phase"
+}
