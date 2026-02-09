@@ -19,7 +19,7 @@ class PaceWidget: BaseStatWidget {
     override var widgetIconName: String? { "speedometer" }
 
     func configure(pace: Double) {
-        titleLabel.text = "평균 페이스"
+        titleLabel.text = WorkoutPlazaStrings.Widget.Title.Avg.pace
         let minutes = Int(pace)
         let seconds = Int((pace - Double(minutes)) * 60)
         valueLabel.text = String(format: "%d:%02d", minutes, seconds)

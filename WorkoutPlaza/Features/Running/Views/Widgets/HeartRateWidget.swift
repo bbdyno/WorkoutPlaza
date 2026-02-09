@@ -12,7 +12,7 @@ class HeartRateWidget: BaseStatWidget {
     override var widgetIconName: String? { "heart.fill" }
 
     func configure(heartRate: Double) {
-        titleLabel.text = "평균 심박수"
+        titleLabel.text = WorkoutPlazaStrings.Widget.Title.Avg.Heart.rate
         valueLabel.text = String(format: "%.0f", heartRate)
         unitLabel.text = "bpm"
     }

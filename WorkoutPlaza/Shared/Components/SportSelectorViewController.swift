@@ -20,7 +20,7 @@ class SportSelectorViewController: UIViewController {
 
     private let headerLabel: UILabel = {
         let label = UILabel()
-        label.text = "운동 기록 만들기"
+        label.text = WorkoutPlazaStrings.Sport.Selector.header
         label.font = .systemFont(ofSize: 28, weight: .bold)
         label.textColor = .label
         label.textAlignment = .center
@@ -29,7 +29,7 @@ class SportSelectorViewController: UIViewController {
 
     private let subtitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "기록할 운동을 선택하세요"
+        label.text = WorkoutPlazaStrings.Sport.Selector.subtitle
         label.font = .systemFont(ofSize: 16)
         label.textColor = .secondaryLabel
         label.textAlignment = .center
@@ -167,9 +167,9 @@ class SportSelectorViewController: UIViewController {
     private func getDescription(for sport: SportType) -> String {
         switch sport {
         case .running:
-            return "러닝, 걷기, 하이킹 등\nHealthKit에서 데이터를 가져옵니다"
+            return WorkoutPlazaStrings.Sport.Running.description
         case .climbing:
-            return "볼더링, 리드 클라이밍\n직접 기록을 입력합니다"
+            return WorkoutPlazaStrings.Sport.Climbing.description
         }
     }
 

@@ -25,7 +25,7 @@ class MainTabBarController: UITabBarController {
         let homeNav = UINavigationController(rootViewController: homeVC)
         homeNav.navigationBar.prefersLargeTitles = true
         homeNav.tabBarItem = UITabBarItem(
-            title: "홈",
+            title: NSLocalizedString("tab.home", comment: ""),
             image: UIImage(systemName: "house"),
             selectedImage: UIImage(systemName: "house.fill")
         )
@@ -35,7 +35,7 @@ class MainTabBarController: UITabBarController {
         let statsNav = UINavigationController(rootViewController: statsVC)
         statsNav.navigationBar.prefersLargeTitles = true
         statsNav.tabBarItem = UITabBarItem(
-            title: "통계",
+            title: NSLocalizedString("tab.statistics", comment: ""),
             image: UIImage(systemName: "chart.bar"),
             selectedImage: UIImage(systemName: "chart.bar.fill")
         )
@@ -45,7 +45,7 @@ class MainTabBarController: UITabBarController {
         let moreNav = UINavigationController(rootViewController: moreVC)
         moreNav.navigationBar.prefersLargeTitles = true
         moreNav.tabBarItem = UITabBarItem(
-            title: "더보기",
+            title: NSLocalizedString("tab.more", comment: ""),
             image: UIImage(systemName: "ellipsis.circle"),
             selectedImage: UIImage(systemName: "ellipsis.circle.fill")
         )

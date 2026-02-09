@@ -22,7 +22,7 @@ class SportSelectorSheetViewController: UIViewController {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "운동 종목 선택"
+        label.text = WorkoutPlazaStrings.Sport.Selector.Sheet.title
         label.font = .systemFont(ofSize: 18, weight: .bold)
         label.textColor = ColorSystem.mainText
         label.textAlignment = .center

@@ -89,7 +89,7 @@ let project = Project(
                 ]
             ]),
             sources: ["WorkoutPlaza/**/*.swift"],
-            resources: [
+             resources: [
                 "WorkoutPlaza/Assets.xcassets",
                 "WorkoutPlaza/Base.lproj/**",
                 "WorkoutPlaza/Fonts/**",

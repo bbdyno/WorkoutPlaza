@@ -114,7 +114,7 @@ class RunningWorkoutCell: UIView {
     }
     
     func configure(with workout: WorkoutData) {
-        titleLabel.text = workout.workoutType
+        titleLabel.text = workout.workoutTypeDisplayName
         
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
@@ -123,7 +123,7 @@ class RunningWorkoutCell: UIView {
         distanceLabel.text = String(format: "%.2f km", workout.distance / 1000)
         
         let minutes = Int(workout.duration) / 60
-        durationLabel.text = "\(minutes)분"
+        durationLabel.text = WorkoutPlazaStrings.Duration.minutes(minutes)
         
         if workout.distance > 0 {
             let pace = (workout.duration / 60) / (workout.distance / 1000)

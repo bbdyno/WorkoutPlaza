@@ -1,8 +1,6 @@
 /*
   Localizable.strings
   WorkoutPlaza - Korean
-
-  Created by Tuist on 2026-01-27.
 */
 
 // Common
@@ -21,9 +19,430 @@
 // Workout Types
 "workout.running" = "러닝";
 "workout.climbing" = "클라이밍";
+"workout.cycling" = "사이클링";
+"workout.walking" = "걷기";
+"workout.hiking" = "하이킹";
+"workout.generic" = "운동";
 
 // Permissions
 "permission.health.share" = "운동 기록과 경로를 확인하기 위해 HealthKit 데이터 접근이 필요합니다.";
 "permission.health.update" = "운동 기록을 업데이트하기 위해 HealthKit 데이터 접근이 필요합니다.";
 "permission.photo.library" = "배경 이미지를 선택하고 운동 기록 이미지를 저장하기 위해 사진 라이브러리 접근 권한이 필요합니다.";
 "permission.photo.add" = "운동 기록 이미지를 앨범에 저장하기 위해 사진 라이브러리 접근 권한이 필요합니다.";
+
+// Toast Messages
+"toast.aspect.ratio" = "화면 비율: %@";
+"toast.layout.reset" = "레이아웃이 초기화되었습니다";
+"toast.feature.coming.soon" = "기능 준비 중입니다";
+"toast.appstore.required" = "앱스토어 출시 후 이용 가능합니다";
+
+// Alert Titles
+"alert.cancel.title" = "작업 취소";
+"alert.save.completed" = "저장 완료";
+"alert.save.failed" = "저장 실패";
+"alert.background.select" = "배경 선택";
+"alert.background.options" = "배경 옵션";
+"alert.template.save" = "템플릿 저장";
+"alert.font.style" = "폰트 스타일 선택";
+"alert.import.failed" = "가져오기 실패";
+"alert.share" = "공유";
+"alert.widget.add" = "위젯 추가";
+"alert.error" = "오류";
+"alert.date.select" = "날짜 선택";
+
+// Alert Messages
+"alert.unsaved.changes" = "변경사항이 저장되지 않을 수 있습니다. 나가시겠습니까?";
+"alert.image.saved" = "이미지가 앨범에 저장되었습니다";
+"alert.template.save.prompt" = "템플릿 이름과 설명을 입력하세요";
+"alert.import.error" = "오류: %@";
+"alert.select.share.method" = "공유 방식을 선택하세요";
+"alert.card.design.saved" = "카드 디자인이 저장되었습니다.";
+"alert.card.design.save.error" = "디자인을 저장하는 중 오류가 발생했습니다.";
+
+// Button Titles
+"button.close" = "닫기";
+"button.done" = "완료";
+"button.apply" = "적용";
+"button.cancel" = "취소";
+"button.exit" = "나가기";
+"button.add.workout" = "+ 운동 추가";
+"button.show.more" = "더보기";
+
+// Widget Names
+"widget.route.map" = "경로 맵";
+"widget.distance" = "거리";
+"widget.duration" = "시간";
+"widget.pace" = "페이스";
+"widget.speed" = "속도";
+"widget.calories" = "칼로리";
+"widget.heart.rate" = "심박수";
+"widget.date" = "날짜";
+"widget.text" = "텍스트";
+"widget.location" = "위치";
+"widget.current.datetime" = "날짜시간";
+"widget.composite" = "복합";
+"widget.climbing.gym" = "클라이밍짐";
+"widget.climbing.discipline" = "종목";
+"widget.climbing.session" = "세션 기록";
+"widget.climbing.routes.by.color" = "완등 현황";
+"widget.gym.logo" = "암장 로고";
+
+// Widget Title Labels (실제 위젯 내부 타이틀)
+"widget.title.avg.pace" = "평균 페이스";
+"widget.title.avg.speed" = "평균 속도";
+"widget.title.avg.heart.rate" = "평균 심박수";
+"widget.title.workout.type" = "운동 종류";
+"widget.title.workout.datetime" = "운동 일시";
+"widget.unit.sent" = "완등";
+
+// Template Names
+"template.default.running" = "기본 러닝";
+"template.default.running.description" = "경로 + 거리 + 시간 + 페이스";
+"template.detailed.stats" = "상세 통계";
+"template.detailed.stats.description" = "경로 + 거리 + 시간 + 페이스 + 속도 + 칼로리";
+"template.minimal" = "미니멀";
+"template.minimal.description" = "경로 + 거리 + 시간";
+"template.default.climbing" = "기본 클라이밍";
+"template.default.climbing.description" = "짐 + 종목 + 세션 기록";
+"template.detailed.climbing" = "상세 클라이밍";
+"template.detailed.climbing.description" = "짐 + 종목 + 세션 + 완등 현황";
+
+// Sheet Titles
+"sheet.widget.add" = "위젯 추가";
+"sheet.layout.templates" = "레이아웃 템플릿";
+
+// UI Labels
+"ui.drag.widgets.instruction" = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요";
+"ui.color" = "색상";
+"ui.font" = "폰트";
+"ui.size" = "크기";
+"ui.mode" = "모드";
+"ui.font.default" = "기본";
+"ui.font.thin" = "얇게";
+"ui.font.rounded" = "둥글게";
+"ui.font.bold" = "굵게";
+
+// Font Names
+"font.system" = "System";
+
+// Statㅏㄹ 것istics
+"statistics.period.month" = "월별";
+"statistics.period.year" = "연도별";
+"statistics.period.all" = "전체";
+"statistics.chart.daily" = "일별 거리 (km)";
+"statistics.chart.monthly" = "월별 거리 (km)";
+"statistics.chart.yearly" = "연도별 거리 (km)";
+"statistics.running.count" = "러닝 횟수";
+"statistics.total.distance" = "총 거리";
+"statistics.total.time" = "총 시간";
+"statistics.sent.routes" = "완등";
+"statistics.total.routes" = "시도";
+"statistics.success.rate" = "성공률";
+"statistics.visits" = "방문";
+"statistics.sent.count" = "완등 수";
+"statistics.total.sent" = "총 완등";
+"statistics.chart.daily.sent" = "일별 완등 수";
+"statistics.chart.monthly.sent" = "월별 완등 수";
+"statistics.chart.yearly.sent" = "연도별 완등 수";
+
+// Home
+"home.description" = "운동 기록을 사진으로 만들어보세요";
+"home.this.week" = "이번 주";
+"home.recent.records" = "최근 기록";
+
+// Common values
+"zero.times" = "0회";
+"zero.minutes" = "0분";
+"zero.routes" = "0 루트";
+"zero.visits" = "0회 방문";
+"sent.zero" = "완등 0";
+
+// Climbing
+"climbing.record.title" = "클라이밍 기록";
+"climbing.title" = "클라이밍";
+"climbing.template.update.required" = "업데이트 필요";
+"climbing.import" = "가져오기";
+"climbing.export" = "내보내기";
+"climbing.text.input" = "텍스트 입력";
+"climbing.routes.section" = "루트 기록";
+"climbing.gym.select.hint" = "암장을 선택하면 기록을 시작할 수 있습니다";
+"climbing.gym.label" = "암장";
+"climbing.gym.custom" = "사용자 지정";
+"climbing.gym.name.placeholder" = "암장 이름 입력";
+"climbing.add.route" = "+ 루트 추가";
+"climbing.create.record" = "기록 생성";
+"climbing.error.gym.name" = "암장 이름을 입력하거나 선택해주세요.";
+"climbing.error.min.route" = "최소 하나의 루트를 기록해주세요.";
+"climbing.discipline.bouldering" = "볼더링";
+"climbing.discipline.lead" = "리드";
+"climbing.discipline.lead.endurance" = "리드/지구력";
+"climbing.grade.tape" = "난이도 테이프";
+"climbing.grade.optional" = "GRADE (선택)";
+"climbing.grade.placeholder.boulder" = "V3, 파랑...";
+"climbing.sent" = "완등";
+
+// Gym Picker
+"gym.section.builtin" = "암장";
+"gym.section.custom" = "내 암장";
+"gym.auto.updated" = "암장 데이터가 자동으로 업데이트되었습니다";
+"gym.picker.title" = "암장 선택";
+"gym.sync.loading" = "동기화 중...";
+"gym.sync.loading.message" = "원격 프리셋을 불러오는 중입니다";
+"gym.sync.complete" = "동기화 완료";
+"gym.sync.complete.message" = "최신 암장 데이터를 불러왔습니다";
+"gym.sync.failed" = "동기화 실패";
+"gym.action.custom" = "+ 사용자 지정";
+"gym.action.sync" = "암장 데이터 동기화";
+
+// Running
+"running.record.title" = "러닝 기록";
+"running.no.route.title" = "경로 정보 없음";
+"running.no.route.message" = "이 운동에는 GPS 경로 데이터가 없습니다.";
+"running.no.location.title" = "위치 정보 없음";
+"running.no.gps" = "GPS 없음";
+"running.empty" = "러닝 기록이 없습니다";
+"running.filter.all" = "전체";
+"running.filter.external" = "외부 기록";
+"running.external.badge" = " 외부 기록 ";
+"running.select.record" = "기록 선택";
+"running.select.record.message" = "타인의 기록을 첨부할 내 운동 기록을 선택하세요";
+"running.no.healthkit" = "첨부할 수 있는 HealthKit 기록이 없습니다.";
+"running.delete.record" = "기록 삭제";
+"running.delete.record.message" = "이 외부 기록을 삭제하시겠습니까?";
+"running.card.title" = "러닝 - %.2fkm";
+
+// Share
+"share.as.image" = "이미지로 공유";
+"share.workout.data" = "운동 데이터 공유 (.wplaza)";
+"share.with.name" = "이름과 함께 공유 (.wplaza)";
+"share.failed" = "공유 실패";
+"share.name.input.title" = "이름 입력";
+"share.name.input.message" = "공유할 때 표시될 이름을 입력하세요";
+"share.name.placeholder" = "이름";
+
+// Import
+"import.action" = "가져오기";
+"import.export.action" = "내보내기";
+"import.record.title" = "기록 가져오기";
+"import.record.message" = "이 기록을 어떻게 가져올까요?";
+"import.as.my.record" = "내 기록으로 가져오기";
+"import.as.other.record" = "타인 기록으로 추가";
+"import.file.failed" = "파일 불러오기 실패";
+"import.file.failed.message" = "선택한 파일을 불러올 수 없습니다.";
+"import.external" = "외부 기록 가져오기";
+"import.complete" = "가져오기 완료";
+"import.success.message" = "%@ 기록을 성공적으로 가져왔습니다.";
+"import.existing.delete" = "기존 내용 삭제";
+"import.existing.delete.message" = "내 기록으로 가져오면 현재 작성 중인 내용이 모두 사라집니다. 계속하시겠습니까?";
+"import.owner.record" = "%@의 기록";
+
+// Template
+"template.update.required" = "업데이트 필요";
+"text.input.placeholder" = "텍스트 입력";
+
+// Text Path
+"textpath.title" = "텍스트 패스";
+"textpath.message" = "경로를 따라 반복할 텍스트를 입력하세요";
+"textpath.placeholder" = "반복할 텍스트 입력";
+"textpath.draw" = "그리기";
+
+// Background
+"background.gradient.blue" = "블루 그라데이션";
+"background.gradient.purple" = "퍼플 그라데이션";
+"background.gradient.orange" = "오렌지 그라데이션";
+"background.gradient.green" = "그린 그라데이션";
+"background.dark" = "다크";
+"background.minimal" = "미니멀";
+"background.random" = "랜덤";
+"background.custom.gradient" = "커스텀 그라데이션...";
+"background.select.photo" = "사진 선택";
+"background.use.template" = "템플릿 사용";
+"background.remove" = "배경 제거";
+
+// Permission
+"permission.healthkit.title" = "권한 필요";
+"permission.healthkit.message" = "HealthKit 데이터를 읽기 위해 권한이 필요합니다. 설정에서 권한을 허용해주세요.";
+"permission.open.settings" = "설정으로 이동";
+
+// Share Errors
+"share.error.invalid.file.format" = "잘못된 파일 형식입니다.";
+"share.error.version.mismatch" = "파일 버전이 지원되지 않습니다.";
+"share.error.corrupted.data" = "파일 데이터가 손상되었습니다.";
+"share.error.missing.required.fields" = "필수 데이터가 누락되었습니다.";
+"share.error.export.failed" = "내보내기에 실패했습니다.";
+"share.error.import.failed" = "가져오기에 실패했습니다.";
+"share.error.invalid.file.extension" = "지원되지 않는 파일 확장자입니다.";
+"share.error.file.not.found" = "파일을 찾을 수 없습니다.";
+"share.error.encoding.failed" = "데이터 인코딩에 실패했습니다.";
+"share.error.decoding.failed" = "데이터 디코딩에 실패했습니다.";
+"share.error.template.version.mismatch" = "포함된 템플릿이 현재 앱 버전과 호환되지 않습니다. 앱을 업데이트해주세요.";
+
+// Import Field
+"import.field.route" = "경로";
+
+// Widget Group Conflicts
+"group.conflict.my.to.imported" = "내 기록 위젯은 타인 기록 그룹에 추가할 수 없습니다";
+"group.conflict.imported.to.my" = "타인 기록 위젯은 내 기록 그룹에 추가할 수 없습니다";
+"group.conflict.incompatible" = "그룹 타입이 호환되지 않습니다";
+"group.conflict.mixed" = "내 기록과 타인 기록을 함께 그룹화할 수 없습니다";
+
+// Gradient Direction
+"gradient.direction.vertical" = "수직";
+"gradient.direction.horizontal" = "수평";
+"gradient.direction.diagonal.right" = "대각선 ↘";
+"gradient.direction.diagonal.left" = "대각선 ↙";
+
+// Custom Gradient Picker
+"gradient.direction.label" = "방향";
+"gradient.start.color" = "시작 색상";
+"gradient.end.color" = "종료 색상";
+"gradient.change" = "변경";
+"gradient.custom.title" = "커스텀 그라데이션";
+
+// Home
+"home.no.records" = "아직 기록이 없습니다";
+"home.climbing.saved.message" = "클라이밍 기록이 저장되었습니다.\n공유용 카드를 만들까요?";
+"home.create.card" = "카드 만들기";
+"home.later" = "나중에";
+"home.weekly.count" = "%d회";
+"home.weekly.time.hours" = "%d시간 %d분";
+"home.weekly.time.minutes" = "%d분";
+"home.weekly.routes" = "%d 루트";
+"home.weekly.visits" = "%d회 방문";
+"home.weekly.sent" = "완등 %d";
+"home.duration.hours" = "%d시간 %02d분";
+"home.duration.minutes" = "%d분 %02d초";
+"home.record.type" = "%@ 기록";
+"home.record.owner" = "%@님의 %@ 기록";
+
+// More
+"more.section.card" = "카드";
+"more.section.data" = "데이터";
+"more.section.app.info" = "앱 정보";
+"more.section.developer" = "개발자";
+"more.saved.cards" = "저장된 카드";
+"more.export.data" = "데이터 내보내기";
+"more.reset.data" = "데이터 초기화";
+"more.version.info" = "버전 정보";
+"more.contact.developer" = "개발자에게 문의";
+"more.rate.app" = "앱 평가하기";
+"more.developer.settings" = "개발자 설정";
+"more.open.source.licenses" = "오픈소스 라이선스";
+"more.export.message" = "모든 운동 기록을 파일로 내보냅니다.";
+"more.export.action" = "내보내기";
+"more.reset.message" = "모든 운동 기록이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.";
+"more.version" = "버전 %@ (%@)";
+
+// Developer Settings
+"dev.title" = "개발자 설정";
+"dev.widget.edit" = "위젯 편집";
+"dev.pinch.resize" = "핀치로 크기 조절";
+"dev.section.data" = "데이터";
+"dev.migration.rerun" = "암장 구조 마이그레이션 재실행";
+"dev.migration.title" = "마이그레이션 재실행";
+"dev.migration.message" = "암장 구조를 다시 마이그레이션하시겠습니까?";
+"dev.migration.run" = "실행";
+"dev.migration.complete" = "완료";
+"dev.migration.complete.message" = "마이그레이션이 완료되었습니다. 기록을 다시 확인해주세요.";
+
+// Import Workout
+"import.owner.name" = "기록 소유자 이름";
+"import.select.data" = "가져올 데이터 선택";
+"import.select.template" = "템플릿 선택";
+"import.default.layout" = "기본 레이아웃";
+"import.default.layout.desc" = "템플릿 없이 기본 배치로 가져옵니다";
+"import.as.other.title" = "타인 기록 가져오기";
+"import.included.template" = "포함된 템플릿";
+"import.template.section" = "템플릿";
+"import.unknown.owner" = "알 수 없음";
+
+// Base Workout Detail
+"base.multi.select.count" = "%d개 선택";
+"base.textpath.draw.instruction" = "👆 드래그하여 텍스트 경로를 그려주세요";
+"base.textpath.edit" = "텍스트 편집";
+"base.textpath.repeat" = "반복 텍스트: %@";
+"base.text.edit.title" = "텍스트 편집";
+"base.text.edit.message" = "위젯에 표시할 텍스트를 입력하세요";
+"base.group.conflict.title" = "그룹화 불가";
+"base.group.conflict.default" = "그룹화할 수 없습니다";
+"base.item.delete.title" = "아이템 삭제";
+"base.item.delete.message" = "선택한 아이템을 삭제하시겠습니까?";
+"base.dim.effect.title" = "딤 효과";
+"base.dim.effect.message" = "위젯이 잘 보이도록 어두운 오버레이를 추가하시겠습니까?";
+"base.dim.add" = "추가";
+"base.dim.skip" = "추가 안함";
+"base.template.name.placeholder" = "템플릿 이름";
+"base.template.desc.placeholder" = "설명 (선택사항)";
+
+// Statistics
+"statistics.title" = "통계";
+"statistics.month.label" = "%d월";
+"statistics.summary.distance" = "거리";
+"statistics.summary.duration" = "시간";
+"statistics.summary.avg.pace" = "평균 페이스";
+"statistics.summary.count" = "%d회";
+"statistics.no.records" = "기록 없음";
+"statistics.no.records.hint" = "운동 기록이 있는 날짜를 선택하세요";
+"statistics.date.select.hint" = "날짜를 선택하세요";
+"statistics.date.label" = "%1$@월 %2$@일";
+"statistics.climbing.sent.count" = "%d 완등";
+"statistics.delete.climbing.title" = "기록 삭제";
+"statistics.delete.climbing.message" = "이 클라이밍 기록을 삭제하시겠습니까?";
+"statistics.gym.fallback" = "암장";
+"statistics.year.month.label" = "%1$d년 %2$d월";
+"statistics.year.label" = "%d년";
+
+// Background Editor
+"background.editor.title" = "배경 편집";
+"background.editor.overlay" = "색상 오버레이";
+"background.editor.instruction" = "핀치로 확대/축소, 드래그로 이동하세요";
+
+// Sport Selector
+"sport.selector.header" = "운동 기록 만들기";
+"sport.selector.subtitle" = "기록할 운동을 선택하세요";
+"sport.running.description" = "러닝, 걷기, 하이킹 등\nHealthKit에서 데이터를 가져옵니다";
+"sport.climbing.description" = "볼더링, 리드 클라이밍\n직접 기록을 입력합니다";
+"sport.selector.sheet.title" = "운동 종목 선택";
+
+// Template Group
+"template.group.owner.record" = "%@의 기록";
+
+// Gym Picker Cell
+"gym.grade.colors.count" = "%d개 난이도 색상";
+
+// Climbing Session
+"climbing.routes.count" = "%d 루트";
+"climbing.routes.completion" = "%d/%d 완등";
+"climbing.highest.grade" = "최고: %@";
+
+// Duration
+"duration.minutes" = "%d분";
+
+// Saved Cards
+"saved.cards.empty.message" = "저장된 카드가 없습니다\n운동 기록에서 공유 버튼을 눌러\n카드를 생성해보세요";
+"card.delete.title" = "카드 삭제";
+"card.delete.message" = "이 카드를 삭제하시겠습니까?";
+
+// External Workout
+"running.external.short" = "외부";
+
+// Template Preview
+"template.preview.widgets" = "포함된 위젯";
+"template.incompatible.message" = "이 템플릿은 최신 버전의 앱이 필요합니다.\n앱을 업데이트해주세요.";
+
+// Calendar
+"calendar.title" = "캘린더";
+"calendar.subtitle" = "모든 운동 기록";
+
+// Gym Stats
+"gym.stats.title" = "암장별 통계";
+"gym.stats.empty" = "이 기간에 방문한 암장이 없습니다";
+"gym.stats.summary" = "%1$d회 방문 · %2$d/%3$d 완등";
+
+// Widget Titles (additional)
+"widget.title.elevation.gain" = "고도 상승";
+"widget.title.avg.cadence" = "평균 케이던스";
+"widget.title.avg.stride" = "평균 보폭";
+
+// Text Path Guide
+"textpath.guide" = "화면을 드래그하여\n텍스트 경로를 그려주세요";

@@ -163,7 +163,7 @@ class CustomCalendarView: UIView {
 
     private func updateHeader() {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.setLocalizedDateFormatFromTemplate("MMMMyyyy")
         monthLabel.text = formatter.string(from: baseDate)
     }
 

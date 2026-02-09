@@ -107,9 +107,9 @@ class ClimbingSessionCell: UIView {
     func configure(with session: ClimbingData) {
         titleLabel.text = session.gymDisplayName
         disciplineLabel.text = session.discipline.displayName
-        routesLabel.text = "\(session.sentRoutes)/\(session.totalRoutes) 완등"
+        routesLabel.text = WorkoutPlazaStrings.Climbing.Routes.completion(session.sentRoutes, session.totalRoutes)
         if let highestGrade = session.highestGradeSent {
-            gradeLabel.text = "최고: \(highestGrade)"
+            gradeLabel.text = WorkoutPlazaStrings.Climbing.Highest.grade(highestGrade)
         } else {
             gradeLabel.text = ""
         }

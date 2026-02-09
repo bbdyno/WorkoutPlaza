@@ -31,11 +31,11 @@ class WorkoutLegendView: UIView {
         container.distribution = .equalCentering
         
         // Running legend
-        let runningLegend = createLegendItem(color: ColorSystem.primaryBlue, text: "러닝")
+        let runningLegend = createLegendItem(color: ColorSystem.primaryBlue, text: WorkoutPlazaStrings.Workout.running)
         container.addArrangedSubview(runningLegend)
 
         // Climbing legend
-        let climbingLegend = createLegendItem(color: ColorSystem.primaryGreen, text: "클라이밍")
+        let climbingLegend = createLegendItem(color: ColorSystem.primaryGreen, text: WorkoutPlazaStrings.Workout.climbing)
         container.addArrangedSubview(climbingLegend)
         
         addSubview(container)

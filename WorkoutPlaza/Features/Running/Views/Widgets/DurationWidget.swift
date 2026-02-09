@@ -19,7 +19,7 @@ class DurationWidget: BaseStatWidget {
     override var widgetIconName: String? { "timer" }
 
     func configure(duration: TimeInterval) {
-        titleLabel.text = "시간"
+        titleLabel.text = WorkoutPlazaStrings.Widget.duration
         
         let hours = Int(duration) / 3600
         let minutes = Int(duration) / 60 % 60

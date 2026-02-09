@@ -25,7 +25,7 @@ class ClimbingGymWidget: BaseStatWidget {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        titleLabel.text = "클라이밍짐"
+        titleLabel.text = WorkoutPlazaStrings.Widget.Climbing.gym
         unitLabel.text = ""
         itemIdentifier = "climbing_gym_\(UUID().uuidString)"
         setupLogoImageView()

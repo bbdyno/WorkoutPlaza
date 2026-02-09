@@ -19,7 +19,7 @@ class SpeedWidget: BaseStatWidget {
     override var widgetIconName: String? { "gauge.high" }
 
     func configure(speed: Double) {
-        titleLabel.text = "평균 속도"
+        titleLabel.text = WorkoutPlazaStrings.Widget.Title.Avg.speed
         valueLabel.text = String(format: "%.1f", speed)
         unitLabel.text = "km/h"
     }

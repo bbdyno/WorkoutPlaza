@@ -109,7 +109,7 @@ class GymPickerCell: UITableViewCell {
 //        logoImageView.tintColor = .secondaryLabel
 
         nameLabel.text = gym.displayName
-        infoLabel.text = "\(gym.gradeColors.count)개 난이도 색상"
+        infoLabel.text = WorkoutPlazaStrings.Gym.Grade.Colors.count(gym.gradeColors.count)
         checkmarkImageView.isHidden = !isSelected
 
         // Apply branch color border to container

@@ -45,37 +45,37 @@ class MoreViewController: UIViewController {
 
     private func setupData() {
         sections = [
-            Section(title: "카드", items: [
-                MenuItem(title: "저장된 카드", icon: "square.stack.3d.forward.dottedline", action: { [weak self] in
+            Section(title: WorkoutPlazaStrings.More.Section.card, items: [
+                MenuItem(title: WorkoutPlazaStrings.More.Saved.cards, icon: "square.stack.3d.forward.dottedline", action: { [weak self] in
                     self?.showSavedCards()
                 })
             ]),
-            Section(title: "데이터", items: [
-                MenuItem(title: "데이터 내보내기", icon: "square.and.arrow.up", action: { [weak self] in
+            Section(title: WorkoutPlazaStrings.More.Section.data, items: [
+                MenuItem(title: WorkoutPlazaStrings.More.Export.data, icon: "square.and.arrow.up", action: { [weak self] in
                     self?.exportData()
                 }),
-                MenuItem(title: "데이터 초기화", icon: "trash", action: { [weak self] in
+                MenuItem(title: WorkoutPlazaStrings.More.Reset.data, icon: "trash", action: { [weak self] in
                     self?.resetData()
                 })
             ]),
-            Section(title: "앱 정보", items: [
-                MenuItem(title: "버전 정보", icon: "info.circle", action: { [weak self] in
+            Section(title: WorkoutPlazaStrings.More.Section.App.info, items: [
+                MenuItem(title: WorkoutPlazaStrings.More.Version.info, icon: "info.circle", action: { [weak self] in
                     self?.showVersionInfo()
                 }),
-                MenuItem(title: "개발자에게 문의", icon: "envelope", action: { [weak self] in
+                MenuItem(title: WorkoutPlazaStrings.More.Contact.developer, icon: "envelope", action: { [weak self] in
                     self?.contactDeveloper()
                 }),
-                MenuItem(title: "앱 평가하기", icon: "star", action: { [weak self] in
+                MenuItem(title: WorkoutPlazaStrings.More.Rate.app, icon: "star", action: { [weak self] in
                     self?.rateApp()
                 })
             ]),
-            Section(title: "개발자", items: [
-                MenuItem(title: "개발자 설정", icon: "wrench.and.screwdriver", action: { [weak self] in
+            Section(title: WorkoutPlazaStrings.More.Section.developer, items: [
+                MenuItem(title: WorkoutPlazaStrings.More.Developer.settings, icon: "wrench.and.screwdriver", action: { [weak self] in
                     self?.showDeveloperSettings()
                 })
             ]),
             Section(title: nil, items: [
-                MenuItem(title: "오픈소스 라이선스", icon: "doc.text", action: { [weak self] in
+                MenuItem(title: WorkoutPlazaStrings.More.Open.Source.licenses, icon: "doc.text", action: { [weak self] in
                     self?.showLicenses()
                 })
             ])
@@ -85,7 +85,7 @@ class MoreViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = ColorSystem.background
         navigationController?.navigationBar.prefersLargeTitles = false
-        title = "더보기"
+        title = WorkoutPlazaStrings.Tab.more
 
         tableView.delegate = self
         tableView.dataSource = self
@@ -107,28 +107,28 @@ class MoreViewController: UIViewController {
 
     private func exportData() {
         let alert = UIAlertController(
-            title: "데이터 내보내기",
-            message: "모든 운동 기록을 파일로 내보냅니다.",
+            title: WorkoutPlazaStrings.More.Export.data,
+            message: WorkoutPlazaStrings.More.Export.message,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-        alert.addAction(UIAlertAction(title: "내보내기", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.More.Export.action, style: .default) { _ in
             // TODO: Implement export
-            self.showToast("기능 준비 중입니다")
+            self.showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
         })
         present(alert, animated: true)
     }
 
     private func resetData() {
         let alert = UIAlertController(
-            title: "데이터 초기화",
-            message: "모든 운동 기록이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+            title: WorkoutPlazaStrings.More.Reset.data,
+            message: WorkoutPlazaStrings.More.Reset.message,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-        alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { _ in
             // TODO: Implement reset
-            self.showToast("기능 준비 중입니다")
+            self.showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
         })
         present(alert, animated: true)
     }
@@ -139,10 +139,10 @@ class MoreViewController: UIViewController {
 
         let alert = UIAlertController(
             title: "Workout Plaza",
-            message: "버전 \(version) (\(build))",
+            message: WorkoutPlazaStrings.More.version(version, build),
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 
@@ -154,7 +154,7 @@ class MoreViewController: UIViewController {
 
     private func rateApp() {
         // TODO: Add App Store URL
-        showToast("앱스토어 출시 후 이용 가능합니다")
+        showToast(WorkoutPlazaStrings.Toast.Appstore.required)
     }
 
     private func showDeveloperSettings() {
@@ -222,7 +222,7 @@ extension MoreViewController: UITableViewDataSource {
         config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
         config.image = UIImage(systemName: item.icon)
 
-        if item.title.contains("삭제") || item.title.contains("초기화") {
+        if item.icon == "trash" {
             config.textProperties.color = .systemRed
             config.imageProperties.tintColor = .systemRed
         } else {
@@ -263,7 +263,7 @@ class LicensesViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "오픈소스 라이선스"
+        title = WorkoutPlazaStrings.More.Open.Source.licenses
         view.backgroundColor = .systemBackground
 
         view.addSubview(textView)

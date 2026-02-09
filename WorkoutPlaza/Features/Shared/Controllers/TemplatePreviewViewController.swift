@@ -68,7 +68,7 @@ class TemplatePreviewViewController: UIViewController {
 
     private let widgetListHeaderLabel: UILabel = {
         let label = UILabel()
-        label.text = "포함된 위젯"
+        label.text = WorkoutPlazaStrings.Template.Preview.widgets
         label.font = .systemFont(ofSize: 15, weight: .bold)
         label.textColor = ColorSystem.mainText
         return label
@@ -84,7 +84,7 @@ class TemplatePreviewViewController: UIViewController {
 
     private let applyButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("적용", for: .normal)
+        button.setTitle(WorkoutPlazaStrings.Button.apply, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 17, weight: .bold)
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = ColorSystem.primaryGreen
@@ -95,7 +95,7 @@ class TemplatePreviewViewController: UIViewController {
 
     private let incompatibleLabel: UILabel = {
         let label = UILabel()
-        label.text = "이 템플릿은 최신 버전의 앱이 필요합니다.\n앱을 업데이트해주세요."
+        label.text = WorkoutPlazaStrings.Template.Incompatible.message
         label.font = .systemFont(ofSize: 14)
         label.textColor = .systemRed
         label.textAlignment = .center
@@ -140,7 +140,7 @@ class TemplatePreviewViewController: UIViewController {
         view.backgroundColor = .systemBackground
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "닫기",
+            title: WorkoutPlazaStrings.Button.close,
             style: .done,
             target: self,
             action: #selector(closeTapped)

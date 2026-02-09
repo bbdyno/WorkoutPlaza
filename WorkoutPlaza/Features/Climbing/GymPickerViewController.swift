@@ -38,8 +38,8 @@ class GymPickerViewController: UIViewController {
 
         var title: String? {
             switch self {
-            case .builtIn: return "암장"
-            case .custom: return "내 암장"
+            case .builtIn: return WorkoutPlazaStrings.Gym.Section.builtin
+            case .custom: return WorkoutPlazaStrings.Gym.Section.custom
             case .actions: return nil
             }
         }
@@ -71,7 +71,7 @@ class GymPickerViewController: UIViewController {
 
     private func showAutoUpdateNotification() {
         let banner = UILabel()
-        banner.text = "암장 데이터가 자동으로 업데이트되었습니다"
+        banner.text = WorkoutPlazaStrings.Gym.Auto.updated
         banner.textAlignment = .center
         banner.font = .systemFont(ofSize: 14, weight: .medium)
         banner.textColor = .white  // Banner는 배경색 있으므로 흰색 유지
@@ -100,9 +100,9 @@ class GymPickerViewController: UIViewController {
     }
 
     private func setupNavigationBar() {
-        title = "암장 선택"
+        title = WorkoutPlazaStrings.Gym.Picker.title
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "완료",
+            title: WorkoutPlazaStrings.Common.done,
             style: .done,
             target: self,
             action: #selector(doneTapped)
@@ -134,8 +134,8 @@ class GymPickerViewController: UIViewController {
 
     private func handleRemoteSync() {
         let loadingAlert = UIAlertController(
-            title: "동기화 중...",
-            message: "원격 프리셋을 불러오는 중입니다",
+            title: WorkoutPlazaStrings.Gym.Sync.loading,
+            message: WorkoutPlazaStrings.Gym.Sync.Loading.message,
             preferredStyle: .alert
         )
         present(loadingAlert, animated: true)
@@ -158,21 +158,21 @@ class GymPickerViewController: UIViewController {
 
     private func showSuccessAlert() {
         let alert = UIAlertController(
-            title: "동기화 완료",
-            message: "최신 암장 데이터를 불러왔습니다",
+            title: WorkoutPlazaStrings.Gym.Sync.complete,
+            message: WorkoutPlazaStrings.Gym.Sync.Complete.message,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 
     private func showErrorAlert(_ error: Error) {
         let alert = UIAlertController(
-            title: "동기화 실패",
+            title: WorkoutPlazaStrings.Gym.Sync.failed,
             message: error.localizedDescription,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 }
@@ -231,12 +231,12 @@ extension GymPickerViewController: UITableViewDataSource {
             cell.backgroundColor = ColorSystem.cardBackground
 
             if indexPath.row == 0 {
-                cell.textLabel?.text = "+ 사용자 지정"
+                cell.textLabel?.text = WorkoutPlazaStrings.Gym.Action.custom
                 cell.textLabel?.textColor = ColorSystem.primaryGreen
                 cell.imageView?.image = UIImage(systemName: "plus.circle.fill")
                 cell.imageView?.tintColor = ColorSystem.primaryGreen
             } else {
-                cell.textLabel?.text = "암장 데이터 동기화"
+                cell.textLabel?.text = WorkoutPlazaStrings.Gym.Action.sync
                 cell.textLabel?.textColor = ColorSystem.primaryGreen
                 cell.imageView?.image = UIImage(systemName: "arrow.clockwise.circle.fill")
                 cell.imageView?.tintColor = ColorSystem.primaryGreen
@@ -287,7 +287,7 @@ extension GymPickerViewController: UITableViewDelegate {
 
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
             let deleteAction = UIAction(
-                title: "삭제",
+                title: WorkoutPlazaStrings.Common.delete,
                 image: UIImage(systemName: "trash"),
                 attributes: .destructive
             ) { [weak self] _ in

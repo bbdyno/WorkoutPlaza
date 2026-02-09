@@ -56,7 +56,7 @@ class DateWidget: BaseStatWidget {
 
     func configure(startDate: Date) {
         configuredDate = startDate
-        titleLabel.text = "날짜"
+        titleLabel.text = WorkoutPlazaStrings.Widget.date
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy.MM.dd"

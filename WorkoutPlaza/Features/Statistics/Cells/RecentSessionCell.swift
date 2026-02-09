@@ -76,7 +76,7 @@ class RecentSessionCell: UICollectionViewCell {
         subtitleLabel.text = subtitle
 
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
         dateLabel.text = formatter.string(from: date)
     }
 }

@@ -14,9 +14,9 @@ enum StatPeriod: Int, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .month: return "월"
-        case .year: return "년"
-        case .all: return "전체"
+        case .month: return WorkoutPlazaStrings.Statistics.Period.month
+        case .year: return WorkoutPlazaStrings.Statistics.Period.year
+        case .all: return WorkoutPlazaStrings.Statistics.Period.all
         }
     }
 }
@@ -27,8 +27,8 @@ enum StatSportType: Int, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .running: return "러닝"
-        case .climbing: return "클라이밍"
+        case .running: return WorkoutPlazaStrings.Workout.running
+        case .climbing: return WorkoutPlazaStrings.Workout.climbing
         }
     }
 

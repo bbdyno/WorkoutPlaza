@@ -214,15 +214,15 @@ class RunningStatsCell: UICollectionViewCell {
         // Update date label
         switch period {
         case .month:
-            dateLabel.text = "\(year)년 \(month)월"
+            dateLabel.text = WorkoutFormatter.stripGroupingSeparators(from: WorkoutPlazaStrings.Statistics.Year.Month.label(year, month))
         case .year:
-            dateLabel.text = "\(year)년"
+            dateLabel.text = WorkoutFormatter.stripGroupingSeparators(from: WorkoutPlazaStrings.Statistics.Year.label(year))
         case .all:
-            dateLabel.text = "전체"
+            dateLabel.text = WorkoutPlazaStrings.Statistics.Period.all
         }
 
         // Chart
-        chartTitleLabel.text = period == .month ? "일별 거리 (km)" : period == .year ? "월별 거리 (km)" : "연도별 거리 (km)"
+        chartTitleLabel.text = period == .month ? WorkoutPlazaStrings.Statistics.Chart.daily : period == .year ? WorkoutPlazaStrings.Statistics.Chart.monthly : WorkoutPlazaStrings.Statistics.Chart.yearly
         chartView.configure(
             with: chartData,
             showValues: true,
@@ -256,10 +256,10 @@ class RunningStatsCell: UICollectionViewCell {
 
         let accentColor = ColorSystem.primaryGreen
         let summaryItems = [
-            ("거리", String(format: "%.1f km", stats.totalDistance), "arrow.left.and.right", accentColor),
-            ("시간", stats.totalTime, "clock", accentColor),
-            ("페이스", stats.avgPace, "speedometer", accentColor),
-            ("횟수", "\(stats.runCount)회", "flame", accentColor)
+            (WorkoutPlazaStrings.Statistics.Summary.distance, String(format: "%.1f km", stats.totalDistance), "arrow.left.and.right", accentColor),
+            (WorkoutPlazaStrings.Statistics.Summary.duration, stats.totalTime, "clock", accentColor),
+            (WorkoutPlazaStrings.Statistics.Summary.Avg.pace, stats.avgPace, "speedometer", accentColor),
+            (WorkoutPlazaStrings.Statistics.Summary.count(stats.runCount), "\(stats.runCount)회", "flame", accentColor)
         ]
 
         for item in summaryItems {
@@ -369,9 +369,9 @@ class RunningStatsCell: UICollectionViewCell {
         stack.spacing = 12
         stack.alignment = .fill
 
-        let countLabel = createStatRow(icon: "figure.run", title: "러닝 횟수", value: "\(count)회")
-        let distanceLabel = createStatRow(icon: "arrow.left.and.right", title: "총 거리", value: String(format: "%.1f km", distance))
-        let timeLabel = createStatRow(icon: "clock", title: "총 시간", value: formatDuration(duration))
+        let countLabel = createStatRow(icon: "figure.run", title: WorkoutPlazaStrings.Statistics.Running.count, value: "\(count)회")
+        let distanceLabel = createStatRow(icon: "arrow.left.and.right", title: WorkoutPlazaStrings.Statistics.Total.distance, value: String(format: "%.1f km", distance))
+        let timeLabel = createStatRow(icon: "clock", title: WorkoutPlazaStrings.Statistics.Total.time, value: formatDuration(duration))
 
         stack.addArrangedSubview(countLabel)
         stack.addArrangedSubview(distanceLabel)
@@ -451,9 +451,9 @@ class RunningStatsCell: UICollectionViewCell {
         let seconds = Int(duration) % 60
 
         if hours > 0 {
-            return String(format: "%d시간 %02d분", hours, minutes)
+            return WorkoutPlazaStrings.Home.Duration.hours(hours, minutes)
         } else {
-            return String(format: "%d분 %02d초", minutes, seconds)
+            return WorkoutPlazaStrings.Home.Duration.minutes(minutes, seconds)
         }
     }
 

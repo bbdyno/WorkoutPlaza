@@ -44,7 +44,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
     
     override func setupNavigationButtons() {
         super.setupNavigationButtons()
-        title = "러닝 기록"
+        title = WorkoutPlazaStrings.Running.Record.title
     }
 
     // MARK: - Actions
@@ -58,7 +58,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             let compatible = template.isCompatible
             templateItems.append(ToolSheetItem(
                 title: template.name,
-                description: compatible ? template.description : "업데이트 필요",
+                description: compatible ? template.description : WorkoutPlazaStrings.Template.Update.required,
                 iconName: "rectangle.3.group",
                 isEnabled: compatible,
                 previewProvider: template.thumbnailProvider(widgetFactory: { [weak self] item, frame in
@@ -72,10 +72,10 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
         // Import / Export as header actions
         let templateActions: [ToolSheetHeaderAction] = [
-            ToolSheetHeaderAction(title: "가져오기", iconName: "square.and.arrow.down") { [weak self] in
+            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.action, iconName: "square.and.arrow.down") { [weak self] in
                 self?.importTemplate()
             },
-            ToolSheetHeaderAction(title: "내보내기", iconName: "square.and.arrow.up") { [weak self] in
+            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.Export.action, iconName: "square.and.arrow.up") { [weak self] in
                 self?.exportCurrentLayout()
             }
         ]
@@ -113,7 +113,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
             widgetItems.append(ToolSheetItem(
                 title: widgetType.displayName,
-                description: type.rawValue,
+                description: type.displayName,
                 iconName: widgetType.iconName,
                 isEnabled: enabled,
                 isAdded: added,
@@ -132,12 +132,12 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         saveCurrentDesign { [weak self] success in
             if success {
                 self?.hasUnsavedChanges = false
-                let alert = UIAlertController(title: "저장 완료", message: "카드 디자인이 저장되었습니다.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.completed, message: WorkoutPlazaStrings.Alert.Card.Design.saved, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 self?.present(alert, animated: true)
             } else {
-                let alert = UIAlertController(title: "저장 실패", message: "디자인을 저장하는 중 오류가 발생했습니다.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.failed, message: WorkoutPlazaStrings.Alert.Card.Design.Save.error, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 self?.present(alert, animated: true)
             }
         }
@@ -158,25 +158,25 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
     }
 
     private func showShareOptionsSheet() {
-        let alert = UIAlertController(title: "공유", message: "공유 방식을 선택하세요", preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.share, message: WorkoutPlazaStrings.Alert.Select.Share.method, preferredStyle: .actionSheet)
 
         // Share as image
-        alert.addAction(UIAlertAction(title: "이미지로 공유", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Share.As.image, style: .default) { [weak self] _ in
             self?.shareAsImage()
         })
 
         // Share as wplaza file (only if we have HealthKit data)
         if workoutData != nil {
-            alert.addAction(UIAlertAction(title: "운동 데이터 공유 (.wplaza)", style: .default) { [weak self] _ in
+            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Share.Workout.data, style: .default) { [weak self] _ in
                 self?.shareAsWplazaFile(creatorName: nil)
             })
 
-            alert.addAction(UIAlertAction(title: "이름과 함께 공유 (.wplaza)", style: .default) { [weak self] _ in
+            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Share.With.name, style: .default) { [weak self] _ in
                 self?.showCreatorNameInputForShare()
             })
         }
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
 
         if let popover = alert.popoverPresentationController {
             popover.sourceView = shareImageButton
@@ -209,32 +209,32 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             ShareManager.shared.presentShareSheet(for: fileURL, from: self, sourceView: shareImageButton)
         } catch {
             let alert = UIAlertController(
-                title: "공유 실패",
+                title: WorkoutPlazaStrings.Share.failed,
                 message: error.localizedDescription,
                 preferredStyle: .alert
             )
-            alert.addAction(UIAlertAction(title: "확인", style: .default))
+            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
             present(alert, animated: true)
         }
     }
 
     private func showCreatorNameInputForShare() {
         let alert = UIAlertController(
-            title: "이름 입력",
-            message: "공유할 때 표시될 이름을 입력하세요",
+            title: WorkoutPlazaStrings.Share.Name.Input.title,
+            message: WorkoutPlazaStrings.Share.Name.Input.message,
             preferredStyle: .alert
         )
 
         alert.addTextField { textField in
-            textField.placeholder = "이름"
+            textField.placeholder = WorkoutPlazaStrings.Share.Name.placeholder
         }
 
-        alert.addAction(UIAlertAction(title: "공유", style: .default) { [weak self, weak alert] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Alert.share, style: .default) { [weak self, weak alert] _ in
             let name = alert?.textFields?.first?.text
             self?.shareAsWplazaFile(creatorName: name)
         })
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         present(alert, animated: true)
     }
@@ -254,22 +254,22 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
     private func showImportOptionsSheet(for shareableWorkout: ShareableWorkout) {
         let alert = UIAlertController(
-            title: "기록 가져오기",
-            message: "이 기록을 어떻게 가져올까요?",
+            title: WorkoutPlazaStrings.Import.Record.title,
+            message: WorkoutPlazaStrings.Import.Record.message,
             preferredStyle: .actionSheet
         )
 
         // Option 1: Import as my record (clear existing content)
-        alert.addAction(UIAlertAction(title: "내 기록으로 가져오기", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Import.As.My.record, style: .default) { [weak self] _ in
             self?.importAsMyRecord(shareableWorkout)
         })
 
         // Option 2: Attach to current layout (as other's record)
-        alert.addAction(UIAlertAction(title: "타인 기록으로 추가", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Import.As.Other.record, style: .default) { [weak self] _ in
             self?.showImportFieldSelectionSheet(for: shareableWorkout)
         })
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         // iPad support
         if let popover = alert.popoverPresentationController {
@@ -363,7 +363,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
         case .text:
             let w = TextWidget()
-            w.configure(text: "텍스트 입력")
+            w.configure(text: WorkoutPlazaStrings.Text.Input.placeholder)
             w.textDelegate = self
             w.frame = frame
             w.initialSize = frame.size
@@ -561,11 +561,11 @@ extension RunningDetailViewController {
 
     private func showFileLoadError() {
         let alert = UIAlertController(
-            title: "파일 불러오기 실패",
-            message: "선택한 파일을 불러올 수 없습니다.",
+            title: WorkoutPlazaStrings.Import.File.failed,
+            message: WorkoutPlazaStrings.Import.File.Failed.message,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 }

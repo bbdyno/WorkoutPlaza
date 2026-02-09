@@ -20,10 +20,10 @@ enum GradientDirection: Int, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .topToBottom: return "수직"
-        case .leftToRight: return "수평"
-        case .topLeftToBottomRight: return "대각선 ↘"
-        case .topRightToBottomLeft: return "대각선 ↙"
+        case .topToBottom: return WorkoutPlazaStrings.Gradient.Direction.vertical
+        case .leftToRight: return WorkoutPlazaStrings.Gradient.Direction.horizontal
+        case .topLeftToBottomRight: return WorkoutPlazaStrings.Gradient.Direction.Diagonal.right
+        case .topRightToBottomLeft: return WorkoutPlazaStrings.Gradient.Direction.Diagonal.left
         }
     }
 
@@ -85,7 +85,7 @@ class CustomGradientPickerViewController: UIViewController {
     // Direction Section
     private let directionLabel: UILabel = {
         let label = UILabel()
-        label.text = "방향"
+        label.text = WorkoutPlazaStrings.Gradient.Direction.label
         label.font = .systemFont(ofSize: 14, weight: .medium)
         label.textColor = .secondaryLabel
         return label
@@ -123,7 +123,7 @@ class CustomGradientPickerViewController: UIViewController {
 
     private let startLabel: UILabel = {
         let label = UILabel()
-        label.text = "시작 색상"
+        label.text = WorkoutPlazaStrings.Gradient.Start.color
         label.font = .systemFont(ofSize: 16, weight: .semibold)
         label.textColor = .label
         return label
@@ -131,7 +131,7 @@ class CustomGradientPickerViewController: UIViewController {
 
     private let startColorButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("변경", for: .normal)
+        button.setTitle(WorkoutPlazaStrings.Gradient.change, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
         button.backgroundColor = .systemBlue
         button.setTitleColor(.white, for: .normal)
@@ -161,7 +161,7 @@ class CustomGradientPickerViewController: UIViewController {
 
     private let endLabel: UILabel = {
         let label = UILabel()
-        label.text = "종료 색상"
+        label.text = WorkoutPlazaStrings.Gradient.End.color
         label.font = .systemFont(ofSize: 16, weight: .semibold)
         label.textColor = .label
         return label
@@ -169,7 +169,7 @@ class CustomGradientPickerViewController: UIViewController {
 
     private let endColorButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("변경", for: .normal)
+        button.setTitle(WorkoutPlazaStrings.Gradient.change, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
         button.backgroundColor = .systemBlue
         button.setTitleColor(.white, for: .normal)
@@ -186,7 +186,7 @@ class CustomGradientPickerViewController: UIViewController {
 
     private let applyButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("적용", for: .normal)
+        button.setTitle(WorkoutPlazaStrings.Button.apply, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
         button.backgroundColor = .systemBlue
         button.setTitleColor(.white, for: .normal)
@@ -210,7 +210,7 @@ class CustomGradientPickerViewController: UIViewController {
     // MARK: - Setup
 
     private func setupUI() {
-        title = "커스텀 그라데이션"
+        title = WorkoutPlazaStrings.Gradient.Custom.title
         view.backgroundColor = .systemBackground
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(

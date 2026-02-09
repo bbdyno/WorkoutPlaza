@@ -16,8 +16,8 @@ class ClimbingSessionWidget: BaseStatWidget {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        titleLabel.text = "세션 기록"
-        unitLabel.text = "완등"
+        titleLabel.text = WorkoutPlazaStrings.Widget.Climbing.session
+        unitLabel.text = WorkoutPlazaStrings.Widget.Unit.sent
         itemIdentifier = "climbing_session_\(UUID().uuidString)"
     }
 

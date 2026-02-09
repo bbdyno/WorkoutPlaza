@@ -62,6 +62,11 @@ enum ColorSystem {
         WorkoutPlazaAsset.cardBackgroundHighlight.color
     }
 
+    /// Toast Background: 토스트 메시지 배경
+    static var toastBackground: UIColor {
+        WorkoutPlazaAsset.toastBackground.color
+    }
+
     // MARK: - Shadow Colors
 
     /// Card Shadow: Blue 색상이 미세하게 섞인 그림자
@@ -113,6 +118,23 @@ enum ColorSystem {
 
     /// Resize Handle: 크기조절 핸들용 그린
     static let resizeHandle = primaryGreen
+
+    // MARK: - Sample Route Colors (위젯 미리보기용)
+
+    /// 샘플 루트 빨강: 높은 난이도
+    static var sampleRouteRed: UIColor {
+        WorkoutPlazaAsset.sampleRouteRed.color
+    }
+
+    /// 샘플 루트 주황: 중간 난이도
+    static var sampleRouteOrange: UIColor {
+        WorkoutPlazaAsset.sampleRouteOrange.color
+    }
+
+    /// 샘플 루트 초록: 낮은 난이도
+    static var sampleRouteGreen: UIColor {
+        WorkoutPlazaAsset.sampleRouteGreen.color
+    }
 
     // MARK: - Semantic Colors
 

@@ -21,9 +21,430 @@
 // Workout Types
 "workout.running" = "Running";
 "workout.climbing" = "Climbing";
+"workout.cycling" = "Cycling";
+"workout.walking" = "Walking";
+"workout.hiking" = "Hiking";
+"workout.generic" = "Workout";
 
 // Permissions
 "permission.health.share" = "We need access to HealthKit data to view your workout records and routes.";
 "permission.health.update" = "We need access to HealthKit data to update your workout records.";
 "permission.photo.library" = "We need access to your photo library to select background images and save workout record images.";
 "permission.photo.add" = "We need access to your photo library to save workout record images to your album.";
+
+// Toast Messages
+"toast.aspect.ratio" = "Aspect Ratio: %@";
+"toast.layout.reset" = "Layout has been reset";
+"toast.feature.coming.soon" = "Feature coming soon";
+"toast.appstore.required" = "Available after App Store launch";
+
+// Alert Titles
+"alert.cancel.title" = "Cancel Operation";
+"alert.save.completed" = "Save Completed";
+"alert.save.failed" = "Save Failed";
+"alert.background.select" = "Select Background";
+"alert.background.options" = "Background Options";
+"alert.template.save" = "Save Template";
+"alert.font.style" = "Select Font Style";
+"alert.import.failed" = "Import Failed";
+"alert.share" = "Share";
+"alert.widget.add" = "Add Widget";
+"alert.error" = "Error";
+"alert.date.select" = "Select Date";
+
+// Alert Messages
+"alert.unsaved.changes" = "Your changes may not be saved. Do you want to exit?";
+"alert.image.saved" = "Image has been saved to your album";
+"alert.template.save.prompt" = "Enter template name and description";
+"alert.import.error" = "Error: %@";
+"alert.select.share.method" = "Select sharing method";
+"alert.card.design.saved" = "Card design has been saved.";
+"alert.card.design.save.error" = "An error occurred while saving the design.";
+
+// Button Titles
+"button.close" = "Close";
+"button.done" = "Done";
+"button.apply" = "Apply";
+"button.cancel" = "Cancel";
+"button.exit" = "Exit";
+"button.add.workout" = "+ Add Workout";
+"button.show.more" = "Show More";
+
+// Widget Names
+"widget.route.map" = "Route Map";
+"widget.distance" = "Distance";
+"widget.duration" = "Duration";
+"widget.pace" = "Pace";
+"widget.speed" = "Speed";
+"widget.calories" = "Calories";
+"widget.heart.rate" = "Heart Rate";
+"widget.date" = "Date";
+"widget.text" = "Text";
+"widget.location" = "Location";
+"widget.current.datetime" = "Current Date Time";
+"widget.composite" = "Composite";
+"widget.climbing.gym" = "Climbing Gym";
+"widget.climbing.discipline" = "Discipline";
+"widget.climbing.session" = "Session Record";
+"widget.climbing.routes.by.color" = "Climbing Routes";
+"widget.gym.logo" = "Gym Logo";
+
+// Widget Title Labels
+"widget.title.avg.pace" = "Avg Pace";
+"widget.title.avg.speed" = "Avg Speed";
+"widget.title.avg.heart.rate" = "Avg Heart Rate";
+"widget.title.workout.type" = "Workout Type";
+"widget.title.workout.datetime" = "Workout Date";
+"widget.unit.sent" = "Sent";
+
+// Template Names
+"template.default.running" = "Default Running";
+"template.default.running.description" = "Route + Distance + Duration + Pace";
+"template.detailed.stats" = "Detailed Stats";
+"template.detailed.stats.description" = "Route + Distance + Duration + Pace + Speed + Calories";
+"template.minimal" = "Minimal";
+"template.minimal.description" = "Route + Distance + Duration";
+"template.default.climbing" = "Default Climbing";
+"template.default.climbing.description" = "Gym + Discipline + Session";
+"template.detailed.climbing" = "Detailed Climbing";
+"template.detailed.climbing.description" = "Gym + Discipline + Session + Routes";
+
+// Sheet Titles
+"sheet.widget.add" = "Add Widget";
+"sheet.layout.templates" = "Layout Templates";
+
+// UI Labels
+"ui.drag.widgets.instruction" = "Drag widgets or pinch to arrange freely";
+"ui.color" = "Color";
+"ui.font" = "Font";
+"ui.size" = "Size";
+"ui.mode" = "Mode";
+"ui.font.default" = "Default";
+"ui.font.thin" = "Thin";
+"ui.font.rounded" = "Rounded";
+"ui.font.bold" = "Bold";
+
+// Font Names
+"font.system" = "System";
+
+// Statistics
+"statistics.period.month" = "Monthly";
+"statistics.period.year" = "Yearly";
+"statistics.period.all" = "All";
+"statistics.chart.daily" = "Daily Distance (km)";
+"statistics.chart.monthly" = "Monthly Distance (km)";
+"statistics.chart.yearly" = "Yearly Distance (km)";
+"statistics.running.count" = "Run Count";
+"statistics.total.distance" = "Total Distance";
+"statistics.total.time" = "Total Time";
+"statistics.sent.routes" = "Sent";
+"statistics.total.routes" = "Attempts";
+"statistics.success.rate" = "Success Rate";
+"statistics.visits" = "Visits";
+"statistics.sent.count" = "Sent Count";
+"statistics.total.sent" = "Total Sent";
+"statistics.chart.daily.sent" = "Daily Sent Count";
+"statistics.chart.monthly.sent" = "Monthly Sent Count";
+"statistics.chart.yearly.sent" = "Yearly Sent Count";
+
+// Home
+"home.description" = "Turn your workout records into photos";
+"home.this.week" = "This Week";
+"home.recent.records" = "Recent Records";
+
+// Common values
+"zero.times" = "0 times";
+"zero.minutes" = "0 min";
+"zero.routes" = "0 routes";
+"zero.visits" = "0 visits";
+"sent.zero" = "Sent 0";
+
+// Climbing
+"climbing.record.title" = "Climbing Record";
+"climbing.title" = "Climbing";
+"climbing.template.update.required" = "Update Required";
+"climbing.import" = "Import";
+"climbing.export" = "Export";
+"climbing.text.input" = "Enter Text";
+"climbing.routes.section" = "Route Records";
+"climbing.gym.select.hint" = "Select a gym to start recording";
+"climbing.gym.label" = "Gym";
+"climbing.gym.custom" = "Custom";
+"climbing.gym.name.placeholder" = "Enter Gym Name";
+"climbing.add.route" = "+ Add Route";
+"climbing.create.record" = "Create Record";
+"climbing.error.gym.name" = "Please enter or select a gym name.";
+"climbing.error.min.route" = "Please record at least one route.";
+"climbing.discipline.bouldering" = "Bouldering";
+"climbing.discipline.lead" = "Lead";
+"climbing.discipline.lead.endurance" = "Lead/Endurance";
+"climbing.grade.tape" = "Grade Tape";
+"climbing.grade.optional" = "GRADE (Optional)";
+"climbing.grade.placeholder.boulder" = "V3, blue...";
+"climbing.sent" = "Sent";
+
+// Gym Picker
+"gym.section.builtin" = "Gyms";
+"gym.section.custom" = "My Gyms";
+"gym.auto.updated" = "Gym data has been automatically updated";
+"gym.picker.title" = "Select Gym";
+"gym.sync.loading" = "Syncing...";
+"gym.sync.loading.message" = "Loading remote presets";
+"gym.sync.complete" = "Sync Complete";
+"gym.sync.complete.message" = "Latest gym data has been loaded";
+"gym.sync.failed" = "Sync Failed";
+"gym.action.custom" = "+ Custom";
+"gym.action.sync" = "Sync Gym Data";
+
+// Running
+"running.record.title" = "Running Record";
+"running.no.route.title" = "No Route Data";
+"running.no.route.message" = "This workout has no GPS route data.";
+"running.no.location.title" = "No Location Data";
+"running.no.gps" = "No GPS";
+"running.empty" = "No running records";
+"running.filter.all" = "All";
+"running.filter.external" = "External";
+"running.external.badge" = " External ";
+"running.select.record" = "Select Record";
+"running.select.record.message" = "Select your workout record to attach other's record";
+"running.no.healthkit" = "No HealthKit records available for attachment.";
+"running.delete.record" = "Delete Record";
+"running.delete.record.message" = "Delete this external record?";
+"running.card.title" = "Running - %.2fkm";
+
+// Share
+"share.as.image" = "Share as Image";
+"share.workout.data" = "Share Workout Data (.wplaza)";
+"share.with.name" = "Share with Name (.wplaza)";
+"share.failed" = "Share Failed";
+"share.name.input.title" = "Enter Name";
+"share.name.input.message" = "Enter the name to display when sharing";
+"share.name.placeholder" = "Name";
+
+// Import
+"import.action" = "Import";
+"import.export.action" = "Export";
+"import.record.title" = "Import Record";
+"import.record.message" = "How would you like to import this record?";
+"import.as.my.record" = "Import as My Record";
+"import.as.other.record" = "Add as Other's Record";
+"import.file.failed" = "File Import Failed";
+"import.file.failed.message" = "Unable to load the selected file.";
+"import.external" = "Import External Record";
+"import.complete" = "Import Complete";
+"import.success.message" = "%@ record has been imported successfully.";
+"import.existing.delete" = "Delete Existing Content";
+"import.existing.delete.message" = "Importing as my record will delete all current content. Continue?";
+"import.owner.record" = "%@'s Record";
+
+// Template
+"template.update.required" = "Update Required";
+"text.input.placeholder" = "Enter Text";
+
+// Text Path
+"textpath.title" = "Text Path";
+"textpath.message" = "Enter text to repeat along the route";
+"textpath.placeholder" = "Enter text to repeat";
+"textpath.draw" = "Draw";
+
+// Background
+"background.gradient.blue" = "Blue Gradient";
+"background.gradient.purple" = "Purple Gradient";
+"background.gradient.orange" = "Orange Gradient";
+"background.gradient.green" = "Green Gradient";
+"background.dark" = "Dark";
+"background.minimal" = "Minimal";
+"background.random" = "Random";
+"background.custom.gradient" = "Custom Gradient...";
+"background.select.photo" = "Select Photo";
+"background.use.template" = "Use Template";
+"background.remove" = "Remove Background";
+
+// Permission
+"permission.healthkit.title" = "Permission Required";
+"permission.healthkit.message" = "Permission is required to read HealthKit data. Please allow access in Settings.";
+"permission.open.settings" = "Open Settings";
+
+// Share Errors
+"share.error.invalid.file.format" = "Invalid file format.";
+"share.error.version.mismatch" = "File version is not supported.";
+"share.error.corrupted.data" = "File data is corrupted.";
+"share.error.missing.required.fields" = "Required data is missing.";
+"share.error.export.failed" = "Export failed.";
+"share.error.import.failed" = "Import failed.";
+"share.error.invalid.file.extension" = "Unsupported file extension.";
+"share.error.file.not.found" = "File not found.";
+"share.error.encoding.failed" = "Data encoding failed.";
+"share.error.decoding.failed" = "Data decoding failed.";
+"share.error.template.version.mismatch" = "The included template is not compatible with the current app version. Please update the app.";
+
+// Import Field
+"import.field.route" = "Route";
+
+// Widget Group Conflicts
+"group.conflict.my.to.imported" = "My record widgets cannot be added to other's record group";
+"group.conflict.imported.to.my" = "Other's record widgets cannot be added to my record group";
+"group.conflict.incompatible" = "Group types are not compatible";
+"group.conflict.mixed" = "My records and other's records cannot be grouped together";
+
+// Gradient Direction
+"gradient.direction.vertical" = "Vertical";
+"gradient.direction.horizontal" = "Horizontal";
+"gradient.direction.diagonal.right" = "Diagonal ↘";
+"gradient.direction.diagonal.left" = "Diagonal ↙";
+
+// Custom Gradient Picker
+"gradient.direction.label" = "Direction";
+"gradient.start.color" = "Start Color";
+"gradient.end.color" = "End Color";
+"gradient.change" = "Change";
+"gradient.custom.title" = "Custom Gradient";
+
+// Home
+"home.no.records" = "No records yet";
+"home.climbing.saved.message" = "Climbing record has been saved.\nWould you like to create a sharing card?";
+"home.create.card" = "Create Card";
+"home.later" = "Later";
+"home.weekly.count" = "%d times";
+"home.weekly.time.hours" = "%dh %dm";
+"home.weekly.time.minutes" = "%dm";
+"home.weekly.routes" = "%d routes";
+"home.weekly.visits" = "%d visits";
+"home.weekly.sent" = "Sent %d";
+"home.duration.hours" = "%dh %02dm";
+"home.duration.minutes" = "%dm %02ds";
+"home.record.type" = "%@ Record";
+"home.record.owner" = "%@'s %@ Record";
+
+// More
+"more.section.card" = "Cards";
+"more.section.data" = "Data";
+"more.section.app.info" = "App Info";
+"more.section.developer" = "Developer";
+"more.saved.cards" = "Saved Cards";
+"more.export.data" = "Export Data";
+"more.reset.data" = "Reset Data";
+"more.version.info" = "Version Info";
+"more.contact.developer" = "Contact Developer";
+"more.rate.app" = "Rate App";
+"more.developer.settings" = "Developer Settings";
+"more.open.source.licenses" = "Open Source Licenses";
+"more.export.message" = "Export all workout records to a file.";
+"more.export.action" = "Export";
+"more.reset.message" = "All workout records will be deleted. This action cannot be undone.";
+"more.version" = "Version %@ (%@)";
+
+// Developer Settings
+"dev.title" = "Developer Settings";
+"dev.widget.edit" = "Widget Edit";
+"dev.pinch.resize" = "Pinch to Resize";
+"dev.section.data" = "Data";
+"dev.migration.rerun" = "Rerun Gym Structure Migration";
+"dev.migration.title" = "Rerun Migration";
+"dev.migration.message" = "Would you like to re-migrate the gym structure?";
+"dev.migration.run" = "Run";
+"dev.migration.complete" = "Complete";
+"dev.migration.complete.message" = "Migration is complete. Please check your records again.";
+
+// Import Workout
+"import.owner.name" = "Record Owner Name";
+"import.select.data" = "Select Data to Import";
+"import.select.template" = "Select Template";
+"import.default.layout" = "Default Layout";
+"import.default.layout.desc" = "Import with default layout without template";
+"import.as.other.title" = "Import Other's Record";
+"import.included.template" = "Included Template";
+"import.template.section" = "Templates";
+"import.unknown.owner" = "Unknown";
+
+// Base Workout Detail
+"base.multi.select.count" = "%d selected";
+"base.textpath.draw.instruction" = "👆 Drag to draw a text path";
+"base.textpath.edit" = "Edit Text";
+"base.textpath.repeat" = "Repeat text: %@";
+"base.text.edit.title" = "Edit Text";
+"base.text.edit.message" = "Enter text to display on the widget";
+"base.group.conflict.title" = "Cannot Group";
+"base.group.conflict.default" = "Cannot group the items";
+"base.item.delete.title" = "Delete Item";
+"base.item.delete.message" = "Are you sure you want to delete the selected item?";
+"base.dim.effect.title" = "Dim Effect";
+"base.dim.effect.message" = "Would you like to add a dark overlay to make widgets more visible?";
+"base.dim.add" = "Add";
+"base.dim.skip" = "Don't Add";
+"base.template.name.placeholder" = "Template Name";
+"base.template.desc.placeholder" = "Description (Optional)";
+
+// Statistics
+"statistics.title" = "Statistics";
+"statistics.month.label" = "%d";
+"statistics.summary.distance" = "Distance";
+"statistics.summary.duration" = "Duration";
+"statistics.summary.avg.pace" = "Avg Pace";
+"statistics.summary.count" = "%d times";
+"statistics.no.records" = "No Records";
+"statistics.no.records.hint" = "Select a date with workout records";
+"statistics.date.select.hint" = "Select a date";
+"statistics.date.label" = "%1$@ %2$@";
+"statistics.climbing.sent.count" = "%d sent";
+"statistics.delete.climbing.title" = "Delete Record";
+"statistics.delete.climbing.message" = "Are you sure you want to delete this climbing record?";
+"statistics.gym.fallback" = "Gym";
+"statistics.year.month.label" = "%1$d-%2$d";
+"statistics.year.label" = "%d";
+
+// Background Editor
+"background.editor.title" = "Edit Background";
+"background.editor.overlay" = "Color Overlay";
+"background.editor.instruction" = "Pinch to zoom, drag to move";
+
+// Sport Selector
+"sport.selector.header" = "Create Workout Record";
+"sport.selector.subtitle" = "Select a workout to record";
+"sport.running.description" = "Running, walking, hiking, etc.\nImports data from HealthKit";
+"sport.climbing.description" = "Bouldering, lead climbing\nManually enter records";
+"sport.selector.sheet.title" = "Select Sport";
+
+// Template Group
+"template.group.owner.record" = "%@'s Record";
+
+// Gym Picker Cell
+"gym.grade.colors.count" = "%d grade colors";
+
+// Climbing Session
+"climbing.routes.count" = "%d routes";
+"climbing.routes.completion" = "%d/%d sent";
+"climbing.highest.grade" = "Best: %@";
+
+// Duration
+"duration.minutes" = "%d min";
+
+// Saved Cards
+"saved.cards.empty.message" = "No saved cards yet\nTap the share button on a workout record\nto create a card";
+"card.delete.title" = "Delete Card";
+"card.delete.message" = "Delete this card?";
+
+// External Workout
+"running.external.short" = "External";
+
+// Template Preview
+"template.preview.widgets" = "Included Widgets";
+"template.incompatible.message" = "This template requires the latest app version.\nPlease update the app.";
+
+// Calendar
+"calendar.title" = "Calendar";
+"calendar.subtitle" = "All Workout Records";
+
+// Gym Stats
+"gym.stats.title" = "Gym Statistics";
+"gym.stats.empty" = "No gyms visited in this period";
+"gym.stats.summary" = "%1$d visits · %2$d/%3$d sent";
+
+// Widget Titles (additional)
+"widget.title.elevation.gain" = "Elevation Gain";
+"widget.title.avg.cadence" = "Avg Cadence";
+"widget.title.avg.stride" = "Avg Stride";
+
+// Text Path Guide
+"textpath.guide" = "Drag on the screen to\ndraw a text path";

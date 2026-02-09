@@ -32,7 +32,7 @@ class SavedCardsViewController: UIViewController {
 
     private let emptyLabel: UILabel = {
         let label = UILabel()
-        label.text = "저장된 카드가 없습니다\n운동 기록에서 공유 버튼을 눌러\n카드를 생성해보세요"
+        label.text = WorkoutPlazaStrings.Saved.Cards.Empty.message
         label.font = .systemFont(ofSize: 16)
         label.textColor = .secondaryLabel
         label.textAlignment = .center
@@ -57,7 +57,7 @@ class SavedCardsViewController: UIViewController {
 
     private func setupUI() {
         view.backgroundColor = .systemBackground
-        title = "저장된 카드"
+        title = WorkoutPlazaStrings.More.Saved.cards
 
         navigationItem.largeTitleDisplayMode = .never
 
@@ -226,7 +226,7 @@ private class CardCell: UICollectionViewCell {
         titleLabel.text = card.workoutTitle
 
         let formatter = DateFormatter()
-        formatter.dateFormat = "M월 d일"
+        formatter.setLocalizedDateFormatFromTemplate("MMMMd")
         dateLabel.text = formatter.string(from: card.workoutDate)
 
         let iconName = card.sportType == .running ? "figure.run" : "figure.climbing"
@@ -294,7 +294,7 @@ class CardDetailViewController: UIViewController {
 
     private func setupNavigationBar() {
         let formatter = DateFormatter()
-        formatter.dateFormat = "M월 d일"
+        formatter.setLocalizedDateFormatFromTemplate("MMMMd")
         title = formatter.string(from: card.workoutDate)
 
         let shareButton = UIBarButtonItem(
@@ -325,13 +325,13 @@ class CardDetailViewController: UIViewController {
 
     @objc private func deleteTapped() {
         let alert = UIAlertController(
-            title: "카드 삭제",
-            message: "이 카드를 삭제하시겠습니까?",
+            title: WorkoutPlazaStrings.Card.Delete.title,
+            message: WorkoutPlazaStrings.Card.Delete.message,
             preferredStyle: .alert
         )
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-        alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { [weak self] _ in
             guard let self = self else { return }
             WorkoutCardManager.shared.deleteCard(self.card)
             self.onDelete?()

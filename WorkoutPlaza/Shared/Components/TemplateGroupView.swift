@@ -85,7 +85,7 @@ class TemplateGroupView: UIView, Selectable {
         self.ownerName = ownerName
 
         if let owner = ownerName {
-            self.groupLabel = "\(owner)의 기록"
+            self.groupLabel = WorkoutPlazaStrings.Template.Group.Owner.record(owner)
         }
 
         setupView()
@@ -103,7 +103,7 @@ class TemplateGroupView: UIView, Selectable {
         self.ownerName = ownerName
 
         if let owner = ownerName {
-            self.groupLabel = "\(owner)의 기록"
+            self.groupLabel = WorkoutPlazaStrings.Template.Group.Owner.record(owner)
         }
 
 
