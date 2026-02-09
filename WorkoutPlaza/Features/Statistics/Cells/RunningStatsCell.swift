@@ -211,15 +211,7 @@ class RunningStatsCell: UICollectionViewCell {
 
         periodSegmentedControl.selectedSegmentIndex = period.rawValue
 
-        // Update date label
-        switch period {
-        case .month:
-            dateLabel.text = WorkoutFormatter.stripGroupingSeparators(from: WorkoutPlazaStrings.Statistics.Year.Month.label(year, month))
-        case .year:
-            dateLabel.text = WorkoutFormatter.stripGroupingSeparators(from: WorkoutPlazaStrings.Statistics.Year.label(year))
-        case .all:
-            dateLabel.text = WorkoutPlazaStrings.Statistics.Period.all
-        }
+        dateLabel.text = StatisticsFormatter.periodLabel(for: period, year: year, month: month)
 
         // Chart
         chartTitleLabel.text = period == .month ? WorkoutPlazaStrings.Statistics.Chart.daily : period == .year ? WorkoutPlazaStrings.Statistics.Chart.monthly : WorkoutPlazaStrings.Statistics.Chart.yearly
