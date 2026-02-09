@@ -14,7 +14,7 @@ protocol TextWidgetDelegate: AnyObject {
 }
 
 // MARK: - Text Widget (for custom text input)
-class TextWidget: UIView, Selectable {
+class TextWidget: UIView, Selectable, WidgetContentAlignable {
 
     // MARK: - Selectable Properties
     var isSelected: Bool = false
@@ -34,6 +34,7 @@ class TextWidget: UIView, Selectable {
     var rotationIndicatorLayer: CAShapeLayer?
     weak var selectionDelegate: SelectionDelegate?
     // rotation and isRotating are provided by Selectable protocol default implementation
+    private(set) var contentAlignment: WidgetContentAlignment = .center
 
     // Text widget specific delegate
     weak var textDelegate: TextWidgetDelegate?
@@ -126,6 +127,11 @@ class TextWidget: UIView, Selectable {
 
     func updateText(_ text: String) {
         textLabel.text = text
+    }
+
+    func applyContentAlignment(_ alignment: WidgetContentAlignment) {
+        contentAlignment = alignment
+        textLabel.textAlignment = alignment.textAlignment
     }
 
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {

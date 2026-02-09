@@ -70,4 +70,10 @@ class ClimbingDisciplineWidget: BaseStatWidget {
             make.width.height.equalTo(iconSize)
         }
     }
+
+    override var alignmentSubjectViews: [UIView] {
+        var views = super.alignmentSubjectViews
+        views.insert(disciplineIconImageView, at: 0)
+        return views
+    }
 }

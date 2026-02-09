@@ -121,6 +121,10 @@
 "ui.font.thin" = "얇게";
 "ui.font.rounded" = "둥글게";
 "ui.font.bold" = "굵게";
+"ui.align.title" = "정렬";
+"ui.align.left" = "왼쪽 정렬";
+"ui.align.center" = "가운데 정렬";
+"ui.align.right" = "오른쪽 정렬";
 
 // Font Names
 "font.system" = "System";

@@ -113,6 +113,14 @@ class ClimbingGymWidget: BaseStatWidget {
             make.width.height.equalTo(logoSize)
         }
     }
+
+    override var alignmentSubjectViews: [UIView] {
+        var views = super.alignmentSubjectViews
+        if !logoImageView.isHidden {
+            views.insert(logoImageView, at: 0)
+        }
+        return views
+    }
     
     var idealSize: CGSize {
         layoutIfNeeded()

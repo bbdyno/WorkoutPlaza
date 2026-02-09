@@ -123,6 +123,10 @@
 "ui.font.thin" = "Thin";
 "ui.font.rounded" = "Rounded";
 "ui.font.bold" = "Bold";
+"ui.align.title" = "Alignment";
+"ui.align.left" = "Align Left";
+"ui.align.center" = "Align Center";
+"ui.align.right" = "Align Right";
 
 // Font Names
 "font.system" = "System";

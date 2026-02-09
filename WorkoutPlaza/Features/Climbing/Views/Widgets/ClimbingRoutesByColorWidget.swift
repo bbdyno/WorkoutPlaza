@@ -10,7 +10,7 @@ import SnapKit
 
 // MARK: - Routes By Color Widget (난이도 색별 완등 현황)
 
-class ClimbingRoutesByColorWidget: UIView, Selectable {
+class ClimbingRoutesByColorWidget: UIView, Selectable, WidgetContentAlignable {
     // MARK: - Selectable Protocol Properties
     var isSelected: Bool = false
     var currentColor: UIColor = .white {
@@ -25,6 +25,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
     var rotationIndicatorLayer: CAShapeLayer?
     weak var selectionDelegate: SelectionDelegate?
     // rotation and isRotating are provided by Selectable protocol default implementation
+    private(set) var contentAlignment: WidgetContentAlignment = .left
 
     // MARK: - UI Components
     private let titleLabel: UILabel = {
@@ -280,6 +281,22 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
     func applyFont(_ fontStyle: FontStyle) {
         currentFontStyle = fontStyle
         updateFonts()
+    }
+
+    func applyContentAlignment(_ alignment: WidgetContentAlignment) {
+        contentAlignment = alignment
+        titleLabel.textAlignment = alignment.textAlignment
+
+        switch alignment {
+        case .left:
+            stackView.alignment = .leading
+        case .center:
+            stackView.alignment = .center
+        case .right:
+            stackView.alignment = .trailing
+        }
+
+        updateStackView()
     }
 
     func showSelectionState() {

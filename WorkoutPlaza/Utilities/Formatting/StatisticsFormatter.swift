@@ -30,8 +30,16 @@ enum StatisticsFormatter {
         locale: Locale = .autoupdatingCurrent
     ) -> String? {
         guard let date = calendar.date(from: dateComponents) else { return nil }
+        return monthDayText(from: date, calendar: calendar, locale: locale)
+    }
 
+    static func monthDayText(
+        from date: Date,
+        calendar: Calendar = .current,
+        locale: Locale = .autoupdatingCurrent
+    ) -> String {
         let formatter = DateFormatter()
+        formatter.calendar = calendar
         formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("MMMd")
         return formatter.string(from: date)

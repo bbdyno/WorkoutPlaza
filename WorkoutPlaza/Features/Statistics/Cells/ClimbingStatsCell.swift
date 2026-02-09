@@ -218,7 +218,7 @@ class ClimbingStatsCell: UICollectionViewCell {
             (WorkoutPlazaStrings.Statistics.Sent.routes, "\(stats.sentRoutes)", "checkmark.circle", ColorSystem.primaryGreen),
             (WorkoutPlazaStrings.Statistics.Total.routes, "\(stats.totalRoutes)", "figure.climbing", ColorSystem.primaryGreen),
             (WorkoutPlazaStrings.Statistics.Success.rate, String(format: "%.0f", stats.successRate), "percent", ColorSystem.primaryGreen),
-            (WorkoutPlazaStrings.Statistics.visits, "\(stats.visitCount)회", "location", ColorSystem.primaryGreen)
+            (WorkoutPlazaStrings.Statistics.visits, WorkoutPlazaStrings.Statistics.Summary.count(stats.visitCount), "location", ColorSystem.primaryGreen)
         ]
 
         for item in summaryItems {

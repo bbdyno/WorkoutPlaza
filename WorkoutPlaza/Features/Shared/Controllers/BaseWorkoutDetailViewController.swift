@@ -354,6 +354,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     lazy var colorPickerButton: UIButton = createToolbarButton(systemName: "paintpalette", action: #selector(showColorPicker))
     lazy var fontPickerButton: UIButton = createToolbarButton(systemName: "textformat", action: #selector(showFontPicker))
+    lazy var alignmentButton: UIButton = createToolbarButton(systemName: WidgetContentAlignment.left.symbolName, action: #selector(cycleAlignmentForSelection))
     lazy var deleteItemButton: UIButton = createToolbarButton(systemName: "trash", action: #selector(deleteSelectedItem))
     
     lazy var groupButton: UIButton = createToolbarButton(systemName: "rectangle.stack.badge.plus", action: #selector(groupSelectedWidgets))
@@ -696,7 +697,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
     
     func setupBottomFloatingToolbar() {
-        let stack = UIStackView(arrangedSubviews: [colorPickerButton, fontPickerButton, deleteItemButton])
+        let stack = UIStackView(arrangedSubviews: [colorPickerButton, fontPickerButton, alignmentButton, deleteItemButton])
         stack.axis = .horizontal
         stack.spacing = 20
         stack.alignment = .center
@@ -1141,10 +1142,15 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             var workoutDate: Date?
             var numericValue: Double?
             var additionalText: String?
+            var contentAlignment: String?
 
             // Extract fontStyle from Selectable widgets
             if let selectable = widget as? Selectable {
                 fontStyle = selectable.currentFontStyle.rawValue
+            }
+
+            if let alignableWidget = widget as? WidgetContentAlignable {
+                contentAlignment = alignableWidget.contentAlignment.rawValue
             }
 
             // Extract data based on widget type
@@ -1211,7 +1217,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 workoutDate: workoutDate,
                 numericValue: numericValue,
                 additionalText: additionalText,
-                displayMode: displayMode
+                displayMode: displayMode,
+                contentAlignment: contentAlignment
             )
         }
         
@@ -1409,6 +1416,12 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 }
             }
 
+            if let alignmentRaw = savedWidget.contentAlignment,
+               let alignment = WidgetContentAlignment(rawValue: alignmentRaw),
+               let alignableWidget = widget as? WidgetContentAlignable {
+                alignableWidget.applyContentAlignment(alignment)
+            }
+
             // Add to map
             restoredWidgetsMap[savedWidget.identifier] = widget
         }
@@ -1495,6 +1508,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             }
             if let fontStyleRaw = savedState.fontStyle, let fontStyle = FontStyle(rawValue: fontStyleRaw) {
                 selectable.applyFont(fontStyle)
+            }
+            if let alignmentRaw = savedState.contentAlignment,
+               let alignment = WidgetContentAlignment(rawValue: alignmentRaw),
+               let alignableWidget = widget as? WidgetContentAlignable {
+                alignableWidget.applyContentAlignment(alignment)
             }
         }
         if let statWidget = widget as? BaseStatWidget,
@@ -3151,6 +3169,50 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         updateToolbarItemsState()
     }
+
+    private func selectedItemsForEditActions() -> [Selectable] {
+        var selectedItems = selectionManager.getSelectedItems()
+        if selectedItems.isEmpty, let selectedItem = selectionManager.currentlySelectedItem {
+            selectedItems = [selectedItem]
+        }
+        return selectedItems
+    }
+
+    private func selectedAlignableTargets() -> [WidgetContentAlignable] {
+        let selectedItems = selectedItemsForEditActions()
+        var targets: [WidgetContentAlignable] = []
+        var seenIdentifiers = Set<String>()
+
+        for item in selectedItems {
+            if let group = item as? TemplateGroupView {
+                for groupedItem in group.groupedItems {
+                    guard let alignable = groupedItem as? WidgetContentAlignable else { continue }
+                    guard !seenIdentifiers.contains(alignable.itemIdentifier) else { continue }
+                    seenIdentifiers.insert(alignable.itemIdentifier)
+                    targets.append(alignable)
+                }
+                continue
+            }
+
+            guard let alignable = item as? WidgetContentAlignable else { continue }
+            guard !seenIdentifiers.contains(alignable.itemIdentifier) else { continue }
+            seenIdentifiers.insert(alignable.itemIdentifier)
+            targets.append(alignable)
+        }
+
+        return targets
+    }
+
+    private func currentAlignment(from targets: [WidgetContentAlignable]) -> WidgetContentAlignment? {
+        guard let firstAlignment = targets.first?.contentAlignment else { return nil }
+        let allSame = targets.allSatisfy { $0.contentAlignment == firstAlignment }
+        return allSame ? firstAlignment : nil
+    }
+
+    private func updateToolbarButtonIcon(_ button: UIButton, systemName: String) {
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        button.setImage(UIImage(systemName: systemName, withConfiguration: config), for: .normal)
+    }
     
     @objc func showColorPicker() {
         // Check both multi-select and single selection modes
@@ -3195,6 +3257,36 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         }
 
         present(actionSheet, animated: true)
+    }
+
+    @objc private func cycleAlignmentForSelection() {
+        let targets = selectedAlignableTargets()
+        guard !targets.isEmpty else { return }
+
+        let current = currentAlignment(from: targets) ?? .left
+        let next: WidgetContentAlignment
+        switch current {
+        case .left:
+            next = .center
+        case .center:
+            next = .right
+        case .right:
+            next = .left
+        }
+
+        applyAlignmentToSelection(next)
+    }
+
+    private func applyAlignmentToSelection(_ alignment: WidgetContentAlignment) {
+        let targets = selectedAlignableTargets()
+        guard !targets.isEmpty else { return }
+
+        for target in targets {
+            target.applyContentAlignment(alignment)
+        }
+
+        hasUnsavedChanges = true
+        updateToolbarItemsState()
     }
 
     private func applyFontToSelection(_ fontStyle: FontStyle) {
@@ -3403,8 +3495,16 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             self.bottomFloatingToolbar.isHidden = !hasSelection
             self.bottomFloatingToolbar.alpha = hasSelection ? 1.0 : 0.0
         }
-        
+
+        let alignableTargets = selectedAlignableTargets()
+        let hasAlignableSelection = !alignableTargets.isEmpty
+        let selectedAlignment = currentAlignment(from: alignableTargets) ?? .left
+
         colorPickerButton.isEnabled = hasSelection
+        fontPickerButton.isEnabled = hasSelection
+        alignmentButton.isEnabled = hasAlignableSelection
+        alignmentButton.isHidden = !hasAlignableSelection
+        updateToolbarButtonIcon(alignmentButton, systemName: selectedAlignment.symbolName)
         deleteItemButton.isEnabled = hasSelection
     }
 }

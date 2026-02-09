@@ -251,7 +251,7 @@ class RunningStatsCell: UICollectionViewCell {
             (WorkoutPlazaStrings.Statistics.Summary.distance, String(format: "%.1f km", stats.totalDistance), "arrow.left.and.right", accentColor),
             (WorkoutPlazaStrings.Statistics.Summary.duration, stats.totalTime, "clock", accentColor),
             (WorkoutPlazaStrings.Statistics.Summary.Avg.pace, stats.avgPace, "speedometer", accentColor),
-            (WorkoutPlazaStrings.Statistics.Summary.count(stats.runCount), "\(stats.runCount)회", "flame", accentColor)
+            (WorkoutPlazaStrings.Statistics.Running.count, WorkoutPlazaStrings.Statistics.Summary.count(stats.runCount), "flame", accentColor)
         ]
 
         for item in summaryItems {
@@ -361,7 +361,11 @@ class RunningStatsCell: UICollectionViewCell {
         stack.spacing = 12
         stack.alignment = .fill
 
-        let countLabel = createStatRow(icon: "figure.run", title: WorkoutPlazaStrings.Statistics.Running.count, value: "\(count)회")
+        let countLabel = createStatRow(
+            icon: "figure.run",
+            title: WorkoutPlazaStrings.Statistics.Running.count,
+            value: WorkoutPlazaStrings.Statistics.Summary.count(count)
+        )
         let distanceLabel = createStatRow(icon: "arrow.left.and.right", title: WorkoutPlazaStrings.Statistics.Total.distance, value: String(format: "%.1f km", distance))
         let timeLabel = createStatRow(icon: "clock", title: WorkoutPlazaStrings.Statistics.Total.time, value: formatDuration(duration))
 
