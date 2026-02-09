@@ -23,7 +23,7 @@ class RecentRecordsSheetViewController: UIViewController {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "최근 기록"
+        label.text = WorkoutPlazaStrings.Home.Recent.records
         label.font = .systemFont(ofSize: 18, weight: .bold)
         label.textColor = ColorSystem.mainText
         label.textAlignment = .center
@@ -126,22 +126,22 @@ class RecentRecordsSheetViewController: UIViewController {
         switch workout.sportType {
         case .running:
             if let healthKitWorkout = workout.data as? WorkoutData {
-                titleLabel.text = "러닝"
+                titleLabel.text = WorkoutPlazaStrings.Workout.running
                 subtitleLabel.text = String(format: "%.1f km", healthKitWorkout.distance / 1000)
             } else if let externalWorkout = workout.data as? ExternalWorkout {
-                titleLabel.text = "러닝"
+                titleLabel.text = WorkoutPlazaStrings.Workout.running
                 subtitleLabel.text = String(format: "%.1f km", externalWorkout.workoutData.distance / 1000)
             }
         case .climbing:
             if let session = workout.data as? ClimbingData {
                 let gymDisplayName = session.gymDisplayName
-                titleLabel.text = gymDisplayName.isEmpty ? "클라이밍" : gymDisplayName
-                subtitleLabel.text = "\(session.totalRoutes) 루트"
+                titleLabel.text = gymDisplayName.isEmpty ? WorkoutPlazaStrings.Workout.climbing : gymDisplayName
+                subtitleLabel.text = WorkoutPlazaStrings.Climbing.Routes.count(session.totalRoutes)
             }
         }
 
         let formatter = DateFormatter()
-        formatter.dateFormat = "M월 d일"
+        formatter.setLocalizedDateFormatFromTemplate("MMMMd")
         dateLabel.text = formatter.string(from: workout.date)
 
         cell.contentView.addSubview(card)

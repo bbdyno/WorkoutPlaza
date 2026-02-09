@@ -52,7 +52,7 @@ enum UnifiedWorkoutSource {
 struct UnifiedWorkoutItem {
     let id: String
     let source: UnifiedWorkoutSource
-    let workoutType: String
+    let workoutType: WorkoutType
     let distance: Double
     let duration: TimeInterval
     let startDate: Date

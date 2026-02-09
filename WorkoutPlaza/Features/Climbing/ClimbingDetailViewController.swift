@@ -39,7 +39,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
     
     override func setupNavigationButtons() {
         super.setupNavigationButtons()
-        title = "클라이밍 기록"
+        title = WorkoutPlazaStrings.Climbing.Record.title
     }
     
     // MARK: - Configuration
@@ -80,7 +80,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             let compatible = template.isCompatible
             templateItems.append(ToolSheetItem(
                 title: template.name,
-                description: compatible ? template.description : "업데이트 필요",
+                description: compatible ? template.description : WorkoutPlazaStrings.Climbing.Template.Update.required,
                 iconName: "rectangle.3.group",
                 isEnabled: compatible,
                 previewProvider: template.thumbnailProvider(widgetFactory: { [weak self] item, frame in
@@ -94,10 +94,10 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         // Import / Export as header actions
         let templateActions: [ToolSheetHeaderAction] = [
-            ToolSheetHeaderAction(title: "가져오기", iconName: "square.and.arrow.down") { [weak self] in
+            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Climbing.import, iconName: "square.and.arrow.down") { [weak self] in
                 self?.importTemplate()
             },
-            ToolSheetHeaderAction(title: "내보내기", iconName: "square.and.arrow.up") { [weak self] in
+            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Climbing.export, iconName: "square.and.arrow.up") { [weak self] in
                 self?.exportCurrentLayout()
             }
         ]
@@ -105,22 +105,17 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         // Widgets
         var widgetItems: [ToolSheetItem] = []
 
-        let climbingWidgets: [(String, WidgetType)] = [
-            ("클라이밍짐", .climbingGym),
-            ("암장 로고", .gymLogo),
-            ("종목", .climbingDiscipline),
-            ("세션 기록", .climbingSession),
-            ("완등 현황", .climbingRoutesByColor),
-            ("텍스트", .text),
-            ("날짜", .date)
+        let climbingWidgets: [WidgetType] = [
+            .climbingGym, .gymLogo, .climbingDiscipline,
+            .climbingSession, .climbingRoutesByColor, .text, .date
         ]
 
-        for (name, type) in climbingWidgets {
+        for type in climbingWidgets {
             let added = !canAddWidget(type)
 
             widgetItems.append(ToolSheetItem(
                 title: type.displayName,
-                description: name,
+                description: type.displayName,
                 iconName: type.iconName,
                 isEnabled: !added,
                 isAdded: added,
@@ -138,12 +133,12 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
          saveCurrentDesign { [weak self] success in
             if success {
                 self?.hasUnsavedChanges = false
-                let alert = UIAlertController(title: "저장 완료", message: "카드 디자인이 저장되었습니다.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.completed, message: WorkoutPlazaStrings.Alert.Card.Design.saved, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 self?.present(alert, animated: true)
             } else {
-                let alert = UIAlertController(title: "저장 실패", message: "디자인을 저장하는 중 오류가 발생했습니다.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.failed, message: WorkoutPlazaStrings.Alert.Card.Design.Save.error, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 self?.present(alert, animated: true)
             }
         }
@@ -175,24 +170,19 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
     }
 
     @objc private func showAddWidgetMenu() {
-        let actionSheet = UIAlertController(title: "위젯 추가", message: nil, preferredStyle: .actionSheet)
+        let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Widget.add, message: nil, preferredStyle: .actionSheet)
 
-        let climbingWidgets: [(String, WidgetType)] = [
-            ("클라이밍짐", .climbingGym),
-            ("암장 로고", .gymLogo),
-            ("종목", .climbingDiscipline),
-            ("세션 기록", .climbingSession),
-            ("완등 현황", .climbingRoutesByColor),
-            ("텍스트", .text),
-            ("날짜", .date)
+        let climbingWidgetTypes: [WidgetType] = [
+            .climbingGym, .gymLogo, .climbingDiscipline,
+            .climbingSession, .climbingRoutesByColor, .text, .date
         ]
 
-        for (name, type) in climbingWidgets {
+        for type in climbingWidgetTypes {
             let isAdded = !canAddWidget(type)
-            var title = name
+            var title = type.displayName
 
             if isAdded {
-                title = "✓ \(name)"
+                title = "✓ \(title)"
             }
 
             let action = UIAlertAction(title: title, style: .default) { [weak self] _ in
@@ -203,7 +193,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             actionSheet.addAction(action)
         }
 
-        actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = addWidgetButton
@@ -289,7 +279,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         case .text:
             let w = TextWidget()
-            w.configure(text: "텍스트")
+            w.configure(text: WorkoutPlazaStrings.Widget.text)
             // Use a reasonable default size for text widget
             let defaultSize = CGSize(width: 100, height: 60)
             w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: defaultSize)
@@ -423,7 +413,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         case .text:
             let w = TextWidget()
-            w.configure(text: "텍스트 입력")
+            w.configure(text: WorkoutPlazaStrings.Climbing.Text.input)
             w.textDelegate = self as? TextWidgetDelegate
             w.frame = frame
             w.initialSize = frame.size
@@ -555,7 +545,7 @@ extension ClimbingDetailViewController: DateWidgetDelegate {
     }
 
     private func showDatePicker(for widget: DateWidget) {
-        let alert = UIAlertController(title: "날짜 선택", message: "\n\n\n\n\n\n\n\n", preferredStyle: .alert)
+        let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Date.select, message: "\n\n\n\n\n\n\n\n", preferredStyle: .alert)
 
         let datePicker = UIDatePicker()
         datePicker.datePickerMode = .date
@@ -570,7 +560,7 @@ extension ClimbingDetailViewController: DateWidgetDelegate {
             datePicker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50)
         ])
 
-        let confirmAction = UIAlertAction(title: "확인", style: .default) { [weak self, weak widget] _ in
+        let confirmAction = UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default) { [weak self, weak widget] _ in
             guard let self = self, let widget = widget else { return }
             let selectedDate = datePicker.date
 
@@ -602,7 +592,7 @@ extension ClimbingDetailViewController: DateWidgetDelegate {
             }
         }
 
-        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+        let cancelAction = UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel)
 
         alert.addAction(confirmAction)
         alert.addAction(cancelAction)
@@ -618,7 +608,7 @@ extension ClimbingDetailViewController: CurrentDateTimeWidgetDelegate {
     }
 
     private func showCurrentDateTimePicker(for widget: CurrentDateTimeWidget) {
-        let alert = UIAlertController(title: "날짜 선택", message: "\n\n\n\n\n\n\n\n", preferredStyle: .alert)
+        let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Date.select, message: "\n\n\n\n\n\n\n\n", preferredStyle: .alert)
 
         let datePicker = UIDatePicker()
         datePicker.datePickerMode = .dateAndTime
@@ -633,7 +623,7 @@ extension ClimbingDetailViewController: CurrentDateTimeWidgetDelegate {
             datePicker.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50)
         ])
 
-        let confirmAction = UIAlertAction(title: "확인", style: .default) { [weak self, weak widget] _ in
+        let confirmAction = UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default) { [weak self, weak widget] _ in
             guard let self = self, let widget = widget else { return }
             let selectedDate = datePicker.date
 
@@ -665,7 +655,7 @@ extension ClimbingDetailViewController: CurrentDateTimeWidgetDelegate {
             }
         }
 
-        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+        let cancelAction = UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel)
 
         alert.addAction(confirmAction)
         alert.addAction(cancelAction)

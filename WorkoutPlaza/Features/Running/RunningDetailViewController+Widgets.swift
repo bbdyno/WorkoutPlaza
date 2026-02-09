@@ -195,7 +195,7 @@ extension RunningDetailViewController {
     internal func createAdditionalWidgets(for data: WorkoutData) {
         // 8. 평균 심박수 위젯 (데모용)
         let heartRateWidget = createCustomWidget(
-            title: "평균 심박수",
+            title: WorkoutPlazaStrings.Widget.Title.Avg.Heart.rate,
             value: "142",
             unit: "bpm",
             icon: "heart.fill",
@@ -205,7 +205,7 @@ extension RunningDetailViewController {
         
         // 9. 고도 변화 위젯 (데모용)
         let elevationWidget = createCustomWidget(
-            title: "고도 상승",
+            title: WorkoutPlazaStrings.Widget.Title.Elevation.gain,
             value: "120",
             unit: "m",
             icon: "arrow.up.right",
@@ -215,7 +215,7 @@ extension RunningDetailViewController {
         
         // 10. 케이던스 위젯 (데모용)
         let cadenceWidget = createCustomWidget(
-            title: "평균 케이던스",
+            title: WorkoutPlazaStrings.Widget.Title.Avg.cadence,
             value: "165",
             unit: "spm",
             icon: "figure.run",
@@ -225,7 +225,7 @@ extension RunningDetailViewController {
         
         // 11. 스트라이드 위젯 (데모용)
         let strideWidget = createCustomWidget(
-            title: "평균 보폭",
+            title: WorkoutPlazaStrings.Widget.Title.Avg.stride,
             value: "1.12",
             unit: "m",
             icon: "arrow.left.and.right",
@@ -288,17 +288,33 @@ extension RunningDetailViewController {
     // MARK: - Widget Menu
     
     internal enum SingleWidgetType: String, CaseIterable {
-        case routeMap = "경로 지도"
-        case distance = "거리"
-        case duration = "시간"
-        case pace = "페이스"
-        case speed = "속도"
-        case calories = "칼로리"
-        case heartRate = "심박수"
-        case date = "날짜"
-        case currentDateTime = "현재 날짜 및 시간"
-        case text = "텍스트"
-        case location = "위치"
+        case routeMap
+        case distance
+        case duration
+        case pace
+        case speed
+        case calories
+        case heartRate
+        case date
+        case currentDateTime
+        case text
+        case location
+
+        var displayName: String {
+            switch self {
+            case .routeMap: return WorkoutPlazaStrings.Widget.Route.map
+            case .distance: return WorkoutPlazaStrings.Widget.distance
+            case .duration: return WorkoutPlazaStrings.Widget.duration
+            case .pace: return WorkoutPlazaStrings.Widget.pace
+            case .speed: return WorkoutPlazaStrings.Widget.speed
+            case .calories: return WorkoutPlazaStrings.Widget.calories
+            case .heartRate: return WorkoutPlazaStrings.Widget.Heart.rate
+            case .date: return WorkoutPlazaStrings.Widget.date
+            case .currentDateTime: return WorkoutPlazaStrings.Widget.Current.datetime
+            case .text: return WorkoutPlazaStrings.Widget.text
+            case .location: return WorkoutPlazaStrings.Widget.location
+            }
+        }
     }
     
     internal func canAddWidget(_ type: SingleWidgetType) -> Bool {
@@ -336,20 +352,20 @@ extension RunningDetailViewController {
         // Check if we have any data
         guard workoutData != nil || importedWorkoutData != nil || externalWorkout != nil else { return }
 
-        let actionSheet = UIAlertController(title: "위젯 추가", message: nil, preferredStyle: .actionSheet)
+        let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Widget.add, message: nil, preferredStyle: .actionSheet)
         let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? (externalWorkout?.workoutData.route.isEmpty == false)
 
         // 1. Single Widgets
         for type in SingleWidgetType.allCases {
             let isAdded = !canAddWidget(type)
-            var title = type.rawValue
+            var title = type.displayName
 
             // GPS 관련 위젯에 상태 표시
             if type == .routeMap || type == .location {
                 if !hasRoute {
-                    title = "\(type.rawValue) (GPS 없음)"
+                    title = "\(type.displayName) (\(WorkoutPlazaStrings.Running.No.gps))"
                 } else if isAdded {
-                    title = "✓ \(type.rawValue)"
+                    title = "✓ \(type.displayName)"
                 }
             } else if isAdded {
                 title = "✓ \(type.rawValue)"
@@ -363,7 +379,7 @@ extension RunningDetailViewController {
             actionSheet.addAction(action)
         }
 
-        actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = addWidgetButton
@@ -391,11 +407,11 @@ extension RunningDetailViewController {
         case .routeMap:
             guard data.hasRoute else {
                 let alert = UIAlertController(
-                    title: "경로 정보 없음",
-                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    title: WorkoutPlazaStrings.Running.No.Route.title,
+                    message: WorkoutPlazaStrings.Running.No.Route.message,
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 present(alert, animated: true)
                 return
             }
@@ -449,7 +465,7 @@ extension RunningDetailViewController {
 
         case .text:
             let w = TextWidget()
-            w.configure(text: "텍스트 입력")
+            w.configure(text: WorkoutPlazaStrings.Text.Input.placeholder)
             w.textDelegate = self
             widget = w
             // Use a reasonable default size for text widget
@@ -459,11 +475,11 @@ extension RunningDetailViewController {
             guard let firstLocation = data.route.first else {
                 // Show error if no GPS data
                 let alert = UIAlertController(
-                    title: "위치 정보 없음",
-                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    title: WorkoutPlazaStrings.Running.No.Location.title,
+                    message: WorkoutPlazaStrings.Running.No.Route.message,
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 present(alert, animated: true)
                 return
             }
@@ -509,11 +525,11 @@ extension RunningDetailViewController {
         case .routeMap:
             guard imported.hasRoute else {
                 let alert = UIAlertController(
-                    title: "경로 정보 없음",
-                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    title: WorkoutPlazaStrings.Running.No.Route.title,
+                    message: WorkoutPlazaStrings.Running.No.Route.message,
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 present(alert, animated: true)
                 return
             }
@@ -567,7 +583,7 @@ extension RunningDetailViewController {
 
         case .text:
             let w = TextWidget()
-            w.configure(text: "텍스트 입력")
+            w.configure(text: WorkoutPlazaStrings.Text.Input.placeholder)
             w.textDelegate = self
             widget = w
             // Use a reasonable default size for text widget
@@ -576,11 +592,11 @@ extension RunningDetailViewController {
         case .location:
             guard let firstLocation = imported.routeLocations.first else {
                 let alert = UIAlertController(
-                    title: "위치 정보 없음",
-                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    title: WorkoutPlazaStrings.Running.No.Location.title,
+                    message: WorkoutPlazaStrings.Running.No.Route.message,
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 present(alert, animated: true)
                 return
             }
@@ -634,11 +650,11 @@ extension RunningDetailViewController {
         case .routeMap:
             guard hasRoute else {
                 let alert = UIAlertController(
-                    title: "경로 정보 없음",
-                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    title: WorkoutPlazaStrings.Running.No.Route.title,
+                    message: WorkoutPlazaStrings.Running.No.Route.message,
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 present(alert, animated: true)
                 return
             }
@@ -692,7 +708,7 @@ extension RunningDetailViewController {
 
         case .text:
             let w = TextWidget()
-            w.configure(text: "텍스트 입력")
+            w.configure(text: WorkoutPlazaStrings.Text.Input.placeholder)
             w.textDelegate = self
             widget = w
             size = CGSize(width: 120, height: 60)
@@ -700,11 +716,11 @@ extension RunningDetailViewController {
         case .location:
             guard let firstLocation = routeLocations.first else {
                 let alert = UIAlertController(
-                    title: "위치 정보 없음",
-                    message: "이 운동에는 GPS 경로 데이터가 없습니다.",
+                    title: WorkoutPlazaStrings.Running.No.Location.title,
+                    message: WorkoutPlazaStrings.Running.No.Route.message,
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 present(alert, animated: true)
                 return
             }
@@ -742,19 +758,19 @@ extension RunningDetailViewController {
 
     @objc override internal func showTextPathInput() {
         let alert = UIAlertController(
-            title: "텍스트 패스",
-            message: "경로를 따라 반복할 텍스트를 입력하세요",
+            title: WorkoutPlazaStrings.Textpath.title,
+            message: WorkoutPlazaStrings.Textpath.message,
             preferredStyle: .alert
         )
 
         alert.addTextField { textField in
-            textField.placeholder = "반복할 텍스트 입력"
+            textField.placeholder = WorkoutPlazaStrings.Textpath.placeholder
             textField.autocapitalizationType = .none
         }
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
-        alert.addAction(UIAlertAction(title: "그리기", style: .default) { [weak self, weak alert] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Textpath.draw, style: .default) { [weak self, weak alert] _ in
             guard let self = self,
                   let text = alert?.textFields?.first?.text,
                   !text.isEmpty else { return }
@@ -785,13 +801,13 @@ extension RunningDetailViewController {
         if hasExistingContent {
             // Show warning
             let alert = UIAlertController(
-                title: "기존 내용 삭제",
-                message: "내 기록으로 가져오면 현재 작성 중인 내용이 모두 사라집니다. 계속하시겠습니까?",
+                title: WorkoutPlazaStrings.Import.Existing.delete,
+                message: WorkoutPlazaStrings.Import.Existing.Delete.message,
                 preferredStyle: .alert
             )
 
-            alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-            alert.addAction(UIAlertAction(title: "가져오기", style: .destructive) { [weak self] _ in
+            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Import.action, style: .destructive) { [weak self] _ in
                 self?.clearAllWidgetsAndImport(workout)
             })
 
@@ -959,7 +975,7 @@ extension RunningDetailViewController {
         // Add owner name label (TextWidget) - only if owner name is provided (for imported records)
         if !importedData.ownerName.isEmpty {
             let ownerWidget = TextWidget()
-            ownerWidget.configure(text: "\(importedData.ownerName)의 기록")
+            ownerWidget.configure(text: WorkoutPlazaStrings.Import.Owner.record(importedData.ownerName))
             ownerWidget.applyColor(.systemOrange)
             ownerWidget.textDelegate = self
             let ownerSize = CGSize(width: 200 * scaleFactor, height: 40 * scaleFactor)
@@ -1139,7 +1155,7 @@ extension RunningDetailViewController {
         // Add owner name label above template widgets
         if !importedData.ownerName.isEmpty {
             let ownerWidget = TextWidget()
-            ownerWidget.configure(text: "\(importedData.ownerName)의 기록")
+            ownerWidget.configure(text: WorkoutPlazaStrings.Import.Owner.record(importedData.ownerName))
             ownerWidget.applyColor(.systemOrange)
             ownerWidget.textDelegate = self
             let ownerSize = CGSize(width: 200, height: 40)
@@ -1172,15 +1188,15 @@ extension RunningDetailViewController {
 
     // MARK: - Background Customization
     @objc override internal func changeTemplate() {
-        let actionSheet = UIAlertController(title: "배경 옵션", message: nil, preferredStyle: .actionSheet)
+        let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Background.options, message: nil, preferredStyle: .actionSheet)
 
         let templates: [(name: String, style: BackgroundTemplateView.TemplateStyle, colors: [UIColor])] = [
-            ("블루 그라데이션", .gradient1, [UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0), UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)]),
-            ("퍼플 그라데이션", .gradient2, [UIColor(red: 0.5, green: 0.2, blue: 0.8, alpha: 1.0), UIColor(red: 0.8, green: 0.3, blue: 0.9, alpha: 1.0)]),
-            ("오렌지 그라데이션", .gradient3, [UIColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1.0), UIColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)]),
-            ("그린 그라데이션", .gradient4, [UIColor(red: 0.2, green: 0.7, blue: 0.5, alpha: 1.0), UIColor(red: 0.4, green: 0.9, blue: 0.6, alpha: 1.0)]),
-            ("다크", .dark, [UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0), UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)]),
-            ("미니멀", .minimal, [.white])
+            (WorkoutPlazaStrings.Background.Gradient.blue, .gradient1, [UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0), UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)]),
+            (WorkoutPlazaStrings.Background.Gradient.purple, .gradient2, [UIColor(red: 0.5, green: 0.2, blue: 0.8, alpha: 1.0), UIColor(red: 0.8, green: 0.3, blue: 0.9, alpha: 1.0)]),
+            (WorkoutPlazaStrings.Background.Gradient.orange, .gradient3, [UIColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1.0), UIColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)]),
+            (WorkoutPlazaStrings.Background.Gradient.green, .gradient4, [UIColor(red: 0.2, green: 0.7, blue: 0.5, alpha: 1.0), UIColor(red: 0.4, green: 0.9, blue: 0.6, alpha: 1.0)]),
+            (WorkoutPlazaStrings.Background.dark, .dark, [UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0), UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)]),
+            (WorkoutPlazaStrings.Background.minimal, .minimal, [.white])
         ]
 
         for template in templates {
@@ -1192,16 +1208,16 @@ extension RunningDetailViewController {
         }
 
         // Random
-        actionSheet.addAction(UIAlertAction(title: "랜덤", style: .default) { [weak self] _ in
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.random, style: .default) { [weak self] _ in
             self?.backgroundTemplateView.applyRandomTemplate()
         })
 
         // Custom
-        actionSheet.addAction(UIAlertAction(title: "커스텀 그라데이션...", style: .default) { [weak self] _ in
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.Custom.gradient, style: .default) { [weak self] _ in
             self?.presentCustomGradientPicker()
         })
 
-        actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         // iPad support
         if let popover = actionSheet.popoverPresentationController {
@@ -1260,22 +1276,22 @@ extension RunningDetailViewController {
     
     // MARK: - 사진 선택
     @objc override internal func selectPhoto() {
-        let actionSheet = UIAlertController(title: "배경 선택", message: nil, preferredStyle: .actionSheet)
+        let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Background.select, message: nil, preferredStyle: .actionSheet)
         
-        actionSheet.addAction(UIAlertAction(title: "사진 선택", style: .default) { [weak self] _ in
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.Select.photo, style: .default) { [weak self] _ in
             self?.presentPhotoPicker()
         })
         
-        actionSheet.addAction(UIAlertAction(title: "템플릿 사용", style: .default) { [weak self] _ in
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.Use.template, style: .default) { [weak self] _ in
             self?.useTemplate()
         })
         
-        actionSheet.addAction(UIAlertAction(title: "배경 제거", style: .destructive) { [weak self] _ in
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.remove, style: .destructive) { [weak self] _ in
             self?.removeBackground()
         })
         
-        actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
-        
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+
         // iPad 지원
         if let popover = actionSheet.popoverPresentationController {
             popover.sourceView = selectPhotoButton

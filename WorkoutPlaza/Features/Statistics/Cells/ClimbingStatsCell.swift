@@ -36,7 +36,7 @@ class ClimbingStatsCell: UICollectionViewCell {
 
     // Period Segment
     private let periodSegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: ["월별", "연도별", "전체"])
+        let control = UISegmentedControl(items: [WorkoutPlazaStrings.Statistics.Period.month, WorkoutPlazaStrings.Statistics.Period.year, WorkoutPlazaStrings.Statistics.Period.all])
         control.selectedSegmentIndex = 0
         control.backgroundColor = ColorSystem.divider
         control.selectedSegmentTintColor = ColorSystem.controlTint
@@ -215,10 +215,10 @@ class ClimbingStatsCell: UICollectionViewCell {
         summaryGridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         let summaryItems = [
-            ("완등", "\(stats.sentRoutes)", "checkmark.circle", ColorSystem.primaryGreen),
-            ("시도", "\(stats.totalRoutes)", "figure.climbing", ColorSystem.primaryGreen),
-            ("성공률", String(format: "%.0f", stats.successRate), "percent", ColorSystem.primaryGreen),
-            ("방문", "\(stats.visitCount)회", "location", ColorSystem.primaryGreen)
+            (WorkoutPlazaStrings.Statistics.Sent.routes, "\(stats.sentRoutes)", "checkmark.circle", ColorSystem.primaryGreen),
+            (WorkoutPlazaStrings.Statistics.Total.routes, "\(stats.totalRoutes)", "figure.climbing", ColorSystem.primaryGreen),
+            (WorkoutPlazaStrings.Statistics.Success.rate, String(format: "%.0f", stats.successRate), "percent", ColorSystem.primaryGreen),
+            (WorkoutPlazaStrings.Statistics.visits, "\(stats.visitCount)회", "location", ColorSystem.primaryGreen)
         ]
 
         for item in summaryItems {
@@ -233,11 +233,11 @@ class ClimbingStatsCell: UICollectionViewCell {
     private func updatePeriodLabel() {
         switch currentPeriod {
         case .month:
-            periodLabel.text = "\(currentYear)년 \(currentMonth)월"
+            periodLabel.text = WorkoutFormatter.stripGroupingSeparators(from: WorkoutPlazaStrings.Statistics.Year.Month.label(currentYear, currentMonth))
         case .year:
-            periodLabel.text = "\(currentYear)년"
+            periodLabel.text = WorkoutFormatter.stripGroupingSeparators(from: WorkoutPlazaStrings.Statistics.Year.label(currentYear))
         case .all:
-            periodLabel.text = "전체"
+            periodLabel.text = WorkoutPlazaStrings.Statistics.Period.all
         }
     }
 
@@ -246,11 +246,11 @@ class ClimbingStatsCell: UICollectionViewCell {
 
         switch currentPeriod {
         case .month:
-            chartTitleLabel.text = "일별 완등 수"
+            chartTitleLabel.text = WorkoutPlazaStrings.Statistics.Chart.Daily.sent
         case .year:
-            chartTitleLabel.text = "월별 완등 수"
+            chartTitleLabel.text = WorkoutPlazaStrings.Statistics.Chart.Monthly.sent
         case .all:
-            chartTitleLabel.text = "연도별 완등 수"
+            chartTitleLabel.text = WorkoutPlazaStrings.Statistics.Chart.Yearly.sent
         }
 
         chartView.configure(
@@ -320,7 +320,7 @@ class ClimbingStatsCell: UICollectionViewCell {
                     }
                 }
 
-                let label = (month % 2 == 1) ? "\(month)월" : ""
+                let label = (month % 2 == 1) ? WorkoutPlazaStrings.Statistics.Month.label(month) : ""
                 let workoutData: Any? = monthSessions.isEmpty ? nil : ["type": "monthly", "sessions": monthSessions, "month": month]
                 data.append(BarChartDataPoint(label: label, value: Double(monthRoutes), color: ColorSystem.primaryGreen, workoutData: workoutData))
             }
@@ -343,7 +343,7 @@ class ClimbingStatsCell: UICollectionViewCell {
                 }
 
                 let workoutData: Any? = yearSessions.isEmpty ? nil : ["type": "yearly", "sessions": yearSessions, "year": year]
-                data.append(BarChartDataPoint(label: "\(year)", value: Double(yearRoutes), color: ColorSystem.primaryGreen, workoutData: workoutData))
+                data.append(BarChartDataPoint(label: String(describing: year), value: Double(yearRoutes), color: ColorSystem.primaryGreen, workoutData: workoutData))
             }
             return data
         }
@@ -537,8 +537,8 @@ class ClimbingStatsCell: UICollectionViewCell {
         stack.spacing = 8
         stack.alignment = .fill
 
-        let countLabel = createStatRow(icon: "figure.climbing", title: "완등 수", value: "\(sessions.count)")
-        let routesLabel = createStatRow(icon: "checkmark.circle", title: "총 완등", value: "\(sessions.reduce(0) { $0 + $1.sentRoutes })")
+        let countLabel = createStatRow(icon: "figure.climbing", title: WorkoutPlazaStrings.Statistics.Sent.count, value: "\(sessions.count)")
+        let routesLabel = createStatRow(icon: "checkmark.circle", title: WorkoutPlazaStrings.Statistics.Total.sent, value: "\(sessions.reduce(0) { $0 + $1.sentRoutes })")
 
         stack.addArrangedSubview(countLabel)
         stack.addArrangedSubview(routesLabel)

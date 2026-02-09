@@ -448,8 +448,8 @@ enum ClimbingDiscipline: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .bouldering: return "볼더링"
-        case .leadEndurance: return "리드/지구력"
+        case .bouldering: return WorkoutPlazaStrings.Climbing.Discipline.bouldering
+        case .leadEndurance: return WorkoutPlazaStrings.Climbing.Discipline.Lead.endurance
         }
     }
 

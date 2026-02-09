@@ -52,7 +52,7 @@ class ImportWorkoutViewController: UIViewController {
 
     private let ownerNameTextField: UITextField = {
         let textField = UITextField()
-        textField.placeholder = "기록 소유자 이름"
+        textField.placeholder = WorkoutPlazaStrings.Import.Owner.name
         textField.borderStyle = .none
         textField.font = .systemFont(ofSize: 16)
         textField.textColor = ColorSystem.mainText
@@ -74,7 +74,7 @@ class ImportWorkoutViewController: UIViewController {
 
     private let ownerNameLabel: UILabel = {
         let label = UILabel()
-        label.text = "기록 소유자 이름"
+        label.text = WorkoutPlazaStrings.Import.Owner.name
         label.font = .systemFont(ofSize: 14, weight: .medium)
         label.textColor = ColorSystem.subText
         return label
@@ -82,7 +82,7 @@ class ImportWorkoutViewController: UIViewController {
 
     private let fieldsHeaderLabel: UILabel = {
         let label = UILabel()
-        label.text = "가져올 데이터 선택"
+        label.text = WorkoutPlazaStrings.Import.Select.data
         label.font = .systemFont(ofSize: 15, weight: .bold)
         label.textColor = ColorSystem.mainText
         return label
@@ -103,7 +103,7 @@ class ImportWorkoutViewController: UIViewController {
 
     private let templateSectionLabel: UILabel = {
         let label = UILabel()
-        label.text = "템플릿 선택"
+        label.text = WorkoutPlazaStrings.Import.Select.template
         label.font = .systemFont(ofSize: 15, weight: .bold)
         label.textColor = ColorSystem.mainText
         return label
@@ -111,7 +111,7 @@ class ImportWorkoutViewController: UIViewController {
 
     private let selectedTemplateNameLabel: UILabel = {
         let label = UILabel()
-        label.text = "기본 레이아웃"
+        label.text = WorkoutPlazaStrings.Import.Default.layout
         label.font = .systemFont(ofSize: 16)
         label.textColor = ColorSystem.mainText
         return label
@@ -119,7 +119,7 @@ class ImportWorkoutViewController: UIViewController {
 
     private let selectedTemplateDescLabel: UILabel = {
         let label = UILabel()
-        label.text = "템플릿 없이 기본 배치로 가져옵니다"
+        label.text = WorkoutPlazaStrings.Import.Default.Layout.desc
         label.font = .systemFont(ofSize: 13)
         label.textColor = ColorSystem.subText
         label.numberOfLines = 0
@@ -156,7 +156,7 @@ class ImportWorkoutViewController: UIViewController {
         view.backgroundColor = ColorSystem.background
 
         // Set title based on mode
-        title = importMode == .createNew ? "내 기록으로 가져오기" : "타인 기록 가져오기"
+        title = importMode == .createNew ? WorkoutPlazaStrings.Import.As.My.record : WorkoutPlazaStrings.Import.As.Other.title
 
         // Navigation buttons
         navigationItem.leftBarButtonItem = UIBarButtonItem(
@@ -166,7 +166,7 @@ class ImportWorkoutViewController: UIViewController {
         )
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "가져오기",
+            title: WorkoutPlazaStrings.Import.action,
             style: .done,
             target: self,
             action: #selector(importTapped)
@@ -318,7 +318,7 @@ class ImportWorkoutViewController: UIViewController {
         iconImageView.contentMode = .scaleAspectFit
 
         let label = UILabel()
-        label.text = field.rawValue
+        label.text = field.displayName
         label.font = .systemFont(ofSize: 16)
         label.textColor = ColorSystem.mainText
 
@@ -373,10 +373,10 @@ class ImportWorkoutViewController: UIViewController {
         guard let workout = shareableWorkout else { return }
 
         if importMode == .createNew {
-            headerLabel.text = "\(workout.workout.type) 기록"
+            headerLabel.text = WorkoutPlazaStrings.Home.Record.type(workout.workout.type)
         } else {
-            let displayName = ownerName.isEmpty ? "알 수 없음" : ownerName
-            headerLabel.text = "\(displayName)님의 \(workout.workout.type) 기록"
+            let displayName = ownerName.isEmpty ? WorkoutPlazaStrings.Import.Unknown.owner : ownerName
+            headerLabel.text = WorkoutPlazaStrings.Home.Record.owner(displayName, workout.workout.type)
         }
     }
 
@@ -394,7 +394,7 @@ class ImportWorkoutViewController: UIViewController {
         if importMode == .createNew {
             finalOwnerName = ""  // Not used for my own record
         } else {
-            finalOwnerName = ownerName.isEmpty ? (workout.creator?.name ?? "알 수 없음") : ownerName
+            finalOwnerName = ownerName.isEmpty ? (workout.creator?.name ?? WorkoutPlazaStrings.Import.Unknown.owner) : ownerName
         }
 
         // Create imported workout data
@@ -456,8 +456,8 @@ class ImportWorkoutViewController: UIViewController {
             selectedTemplateDescLabel.text = template.description
             clearTemplateButton.isHidden = false
         } else {
-            selectedTemplateNameLabel.text = "기본 레이아웃"
-            selectedTemplateDescLabel.text = "템플릿 없이 기본 배치로 가져옵니다"
+            selectedTemplateNameLabel.text = WorkoutPlazaStrings.Import.Default.layout
+            selectedTemplateDescLabel.text = WorkoutPlazaStrings.Import.Default.Layout.desc
             clearTemplateButton.isHidden = true
         }
     }
@@ -470,7 +470,7 @@ class ImportWorkoutViewController: UIViewController {
             templateItems.append(ToolSheetItem(
                 id: "included_\(included.name)",
                 title: "📎 \(included.name)",
-                description: "포함된 템플릿",
+                description: WorkoutPlazaStrings.Import.Included.template,
                 iconName: "doc.badge.arrow.up",
                 previewProvider: widgetFactory != nil ? { [weak self] in
                     self?.createTemplatePreview(for: included) ?? UIView()
@@ -499,9 +499,9 @@ class ImportWorkoutViewController: UIViewController {
 
         guard !templateItems.isEmpty else { return }
 
-        let sections = [ToolSheetSection(title: "템플릿", items: templateItems)]
+        let sections = [ToolSheetSection(title: WorkoutPlazaStrings.Import.Template.section, items: templateItems)]
         let sheetVC = ToolSheetViewController(sections: sections)
-        sheetVC.title = "템플릿 선택"
+        sheetVC.title = WorkoutPlazaStrings.Import.Select.template
 
         let nav = UINavigationController(rootViewController: sheetVC)
         nav.modalPresentationStyle = .pageSheet

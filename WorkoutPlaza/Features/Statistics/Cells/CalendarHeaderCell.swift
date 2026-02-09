@@ -15,7 +15,7 @@ class CalendarHeaderCell: UICollectionViewCell {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "캘린더"
+        label.text = WorkoutPlazaStrings.Calendar.title
         label.font = .systemFont(ofSize: 20, weight: .bold)
         label.textColor = ColorSystem.mainText
         return label
@@ -23,7 +23,7 @@ class CalendarHeaderCell: UICollectionViewCell {
 
     private let subtitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "모든 운동 기록"
+        label.text = WorkoutPlazaStrings.Calendar.subtitle
         label.font = .systemFont(ofSize: 14, weight: .regular)
         label.textColor = ColorSystem.subText
         return label

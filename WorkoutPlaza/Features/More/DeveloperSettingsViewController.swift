@@ -46,9 +46,9 @@ class DeveloperSettingsViewController: UIViewController {
 
     private func setupData() {
         sections = [
-            Section(title: "위젯 편집", items: [
+            Section(title: WorkoutPlazaStrings.Dev.Widget.edit, items: [
                 SettingItem(
-                    title: "핀치로 크기 조절",
+                    title: WorkoutPlazaStrings.Dev.Pinch.resize,
                     isOn: { DevSettings.shared.isPinchToResizeEnabled },
                     onToggle: { DevSettings.shared.isPinchToResizeEnabled = $0 }
                 )
@@ -56,7 +56,7 @@ class DeveloperSettingsViewController: UIViewController {
         ]
 
         actionSections = [
-            (title: "암장 구조 마이그레이션 재실행", action: { [weak self] in
+            (title: WorkoutPlazaStrings.Dev.Migration.rerun, action: { [weak self] in
                 self?.runMigration()
             })
         ]
@@ -64,13 +64,13 @@ class DeveloperSettingsViewController: UIViewController {
 
     private func runMigration() {
         let alert = UIAlertController(
-            title: "마이그레이션 재실행",
-            message: "암장 구조를 다시 마이그레이션하시겠습니까?",
+            title: WorkoutPlazaStrings.Dev.Migration.title,
+            message: WorkoutPlazaStrings.Dev.Migration.message,
             preferredStyle: .alert
         )
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-        alert.addAction(UIAlertAction(title: "실행", style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Dev.Migration.run, style: .destructive) { [weak self] _ in
             guard let self = self else { return }
 
             WPLog.info("=== Force migrating gym structure ===")
@@ -109,11 +109,11 @@ class DeveloperSettingsViewController: UIViewController {
             WPLog.info("=== Migration process completed ===")
 
             let successAlert = UIAlertController(
-                title: "완료",
-                message: "마이그레이션이 완료되었습니다. 기록을 다시 확인해주세요.",
+                title: WorkoutPlazaStrings.Dev.Migration.complete,
+                message: WorkoutPlazaStrings.Dev.Migration.Complete.message,
                 preferredStyle: .alert
             )
-            successAlert.addAction(UIAlertAction(title: "확인", style: .default))
+            successAlert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
             self.present(successAlert, animated: true)
         })
 
@@ -122,7 +122,7 @@ class DeveloperSettingsViewController: UIViewController {
 
     private func setupUI() {
         view.backgroundColor = ColorSystem.background
-        title = "개발자 설정"
+        title = WorkoutPlazaStrings.Dev.title
 
         tableView.delegate = self
         tableView.dataSource = self
@@ -155,7 +155,7 @@ extension DeveloperSettingsViewController: UITableViewDataSource {
         if section < sections.count {
             return sections[section].title
         } else {
-            return "데이터"
+            return WorkoutPlazaStrings.Dev.Section.data
         }
     }
 

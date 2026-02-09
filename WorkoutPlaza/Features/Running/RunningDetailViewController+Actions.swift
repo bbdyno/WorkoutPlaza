@@ -31,6 +31,6 @@ extension RunningDetailViewController {
         // Force update canvas size
         updateCanvasSize()
         
-        showToast("레이아웃이 초기화되었습니다")
+        showToast(WorkoutPlazaStrings.Toast.Layout.reset)
     }
 }

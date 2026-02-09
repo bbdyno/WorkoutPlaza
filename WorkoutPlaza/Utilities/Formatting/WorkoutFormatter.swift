@@ -97,6 +97,26 @@ enum WorkoutFormatter {
         return String(format: "%.0f", kcal)
     }
 
+    // MARK: - Localized Text Sanitizing
+
+    /// Remove locale-specific thousands separators from text.
+    static func stripGroupingSeparators(from text: String, locale: Locale = .autoupdatingCurrent) -> String {
+        let separators = [
+            locale.groupingSeparator,
+            Locale.current.groupingSeparator,
+            Locale.autoupdatingCurrent.groupingSeparator,
+            ",",
+            "\u{00A0}",
+            "\u{202F}"
+        ]
+        .compactMap { $0 }
+        .filter { !$0.isEmpty }
+
+        return separators.reduce(text) { partialResult, separator in
+            partialResult.replacingOccurrences(of: separator, with: "")
+        }
+    }
+
     // MARK: - Heart Rate Formatting
 
     /// Format heart rate in beats per minute

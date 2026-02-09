@@ -5,6 +5,7 @@
 //  Created by bbdyno on 1/13/26.
 //
 
+import SnapKit
 import UIKit
 import CoreLocation
 
@@ -215,23 +216,23 @@ enum WidgetType: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .routeMap: return "경로 맵"
-        case .distance: return "거리"
-        case .duration: return "시간"
-        case .pace: return "페이스"
-        case .speed: return "속도"
-        case .calories: return "칼로리"
-        case .heartRate: return "심박수"
-        case .date: return "날짜"
-        case .text: return "텍스트"
-        case .location: return "위치"
-        case .currentDateTime: return "날짜시간"
-        case .composite: return "복합"
-        case .climbingGym: return "클라이밍짐"
-        case .climbingDiscipline: return "종목"
-        case .climbingSession: return "세션 기록"
-        case .climbingRoutesByColor: return "완등 현황"
-        case .gymLogo: return "암장 로고"
+        case .routeMap: return WorkoutPlazaStrings.Widget.Route.map
+        case .distance: return WorkoutPlazaStrings.Widget.distance
+        case .duration: return WorkoutPlazaStrings.Widget.duration
+        case .pace: return WorkoutPlazaStrings.Widget.pace
+        case .speed: return WorkoutPlazaStrings.Widget.speed
+        case .calories: return WorkoutPlazaStrings.Widget.calories
+        case .heartRate: return WorkoutPlazaStrings.Widget.Heart.rate
+        case .date: return WorkoutPlazaStrings.Widget.date
+        case .text: return WorkoutPlazaStrings.Widget.text
+        case .location: return WorkoutPlazaStrings.Widget.location
+        case .currentDateTime: return WorkoutPlazaStrings.Widget.Current.datetime
+        case .composite: return WorkoutPlazaStrings.Widget.composite
+        case .climbingGym: return WorkoutPlazaStrings.Widget.Climbing.gym
+        case .climbingDiscipline: return WorkoutPlazaStrings.Widget.Climbing.discipline
+        case .climbingSession: return WorkoutPlazaStrings.Widget.Climbing.session
+        case .climbingRoutesByColor: return WorkoutPlazaStrings.Widget.Climbing.Routes.By.color
+        case .gymLogo: return WorkoutPlazaStrings.Widget.Gym.logo
         }
     }
 
@@ -320,6 +321,11 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(startDate: Date())
                 w.titleLabel.isHidden = true
+                w.valueLabel.textAlignment = .center
+                w.valueLabel.snp.remakeConstraints { make in
+                    make.center.equalToSuperview()
+                    make.leading.trailing.equalToSuperview().inset(LayoutConstants.standardPadding)
+                }
                 return w
             }
         case .currentDateTime:
@@ -334,7 +340,7 @@ enum WidgetType: String, Codable, CaseIterable {
             return {
                 let w = TextWidget()
                 w.frame = CGRect(origin: .zero, size: size)
-                w.configure(text: "텍스트")
+                w.configure(text: WorkoutPlazaStrings.Widget.text)
                 return w
             }
         case .climbingGym:
@@ -386,7 +392,51 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.configure(withText: "서울특별시")
                 return w
             }
-        case .composite, .climbingRoutesByColor, .gymLogo:
+        case .climbingRoutesByColor:
+            return {
+                let w = ClimbingRoutesByColorWidget(frame: CGRect(origin: .zero, size: CGSize(width: 140, height: 80)))
+                w.initialSize = CGSize(width: 140, height: 80)
+                // 샘플 루트 데이터
+                let sampleRoutes: [ClimbingRoute] = {
+                    var routes: [ClimbingRoute] = []
+                    let colors = [
+                        ColorSystem.sampleRouteRed.hexString,
+                        ColorSystem.sampleRouteOrange.hexString,
+                        ColorSystem.sampleRouteGreen.hexString
+                    ]
+                    let sentCounts = [3, 2, 1]
+                    let totalCounts = [4, 3, 2]
+                    for (i, color) in colors.enumerated() {
+                        for j in 0..<totalCounts[i] {
+                            let route = ClimbingRoute(grade: "", colorHex: color, isSent: j < sentCounts[i])
+                            routes.append(route)
+                        }
+                    }
+                    return routes
+                }()
+                w.configure(routes: sampleRoutes)
+                return w
+            }
+        case .gymLogo:
+            return {
+                let w = UIView(frame: CGRect(origin: .zero, size: size))
+                w.backgroundColor = .clear
+                let imageView = UIImageView()
+                imageView.contentMode = .scaleAspectFit
+                imageView.tintColor = .darkGray
+                imageView.image = UIImage(systemName: "building.2.fill")
+                imageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 32, weight: .medium)
+                w.addSubview(imageView)
+                imageView.translatesAutoresizingMaskIntoConstraints = false
+                NSLayoutConstraint.activate([
+                    imageView.centerXAnchor.constraint(equalTo: w.centerXAnchor),
+                    imageView.centerYAnchor.constraint(equalTo: w.centerYAnchor),
+                    imageView.widthAnchor.constraint(equalToConstant: 40),
+                    imageView.heightAnchor.constraint(equalToConstant: 40)
+                ])
+                return w
+            }
+        case .composite:
             return nil
         }
     }
@@ -397,8 +447,8 @@ enum WidgetType: String, Codable, CaseIterable {
 extension WidgetTemplate {
 
     static let basicRunning = WidgetTemplate(
-        name: "기본 러닝",
-        description: "경로 + 거리 + 시간 + 페이스",
+        name: WorkoutPlazaStrings.Template.Default.running,
+        description: WorkoutPlazaStrings.Template.Default.Running.description,
         version: "2.0",
         sportType: .running,
         items: [
@@ -435,8 +485,8 @@ extension WidgetTemplate {
     )
 
     static let detailedStats = WidgetTemplate(
-        name: "상세 통계",
-        description: "경로 + 거리 + 시간 + 페이스 + 속도 + 칼로리",
+        name: WorkoutPlazaStrings.Template.Detailed.stats,
+        description: WorkoutPlazaStrings.Template.Detailed.Stats.description,
         version: "2.0",
         sportType: .running,
         items: [
@@ -487,8 +537,8 @@ extension WidgetTemplate {
     )
 
     static let minimal = WidgetTemplate(
-        name: "미니멀",
-        description: "경로 + 거리 + 시간",
+        name: WorkoutPlazaStrings.Template.minimal,
+        description: WorkoutPlazaStrings.Template.Minimal.description,
         version: "2.0",
         sportType: .running,
         items: [
@@ -520,8 +570,8 @@ extension WidgetTemplate {
     // MARK: - Climbing Templates
 
     static let basicClimbing = WidgetTemplate(
-        name: "기본 클라이밍",
-        description: "짐 + 종목 + 세션 기록",
+        name: WorkoutPlazaStrings.Template.Default.climbing,
+        description: WorkoutPlazaStrings.Template.Default.Climbing.description,
         version: "2.0",
         sportType: .climbing,
         items: [
@@ -558,8 +608,8 @@ extension WidgetTemplate {
     )
 
     static let detailedClimbing = WidgetTemplate(
-        name: "상세 클라이밍",
-        description: "짐 + 종목 + 세션 + 완등 현황",
+        name: WorkoutPlazaStrings.Template.Detailed.climbing,
+        description: WorkoutPlazaStrings.Template.Detailed.Climbing.description,
         version: "2.0",
         sportType: .climbing,
         items: [

@@ -134,18 +134,27 @@ struct WorkoutData {
         workout.endDate
     }
     
-    var workoutType: String {
+    var workoutType: WorkoutType {
+        switch workout.workoutActivityType {
+        case .running, .cycling, .walking, .hiking:
+            return .running
+        default:
+            return .running
+        }
+    }
+
+    var workoutTypeDisplayName: String {
         switch workout.workoutActivityType {
         case .running:
-            return "러닝"
+            return WorkoutPlazaStrings.Workout.running
         case .cycling:
-            return "사이클링"
+            return WorkoutPlazaStrings.Workout.cycling
         case .walking:
-            return "걷기"
+            return WorkoutPlazaStrings.Workout.walking
         case .hiking:
-            return "하이킹"
+            return WorkoutPlazaStrings.Workout.hiking
         default:
-            return "운동"
+            return WorkoutPlazaStrings.Workout.generic
         }
     }
     

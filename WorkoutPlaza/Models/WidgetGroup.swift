@@ -114,11 +114,11 @@ class GroupManager {
             if widgetType != targetGroup.groupType {
                 switch (widgetType, targetGroup.groupType) {
                 case (.myRecord, .importedRecord):
-                    return .denied(reason: "내 기록 위젯은 타인 기록 그룹에 추가할 수 없습니다")
+                    return .denied(reason: WorkoutPlazaStrings.Group.Conflict.My.To.imported)
                 case (.importedRecord, .myRecord):
-                    return .denied(reason: "타인 기록 위젯은 내 기록 그룹에 추가할 수 없습니다")
+                    return .denied(reason: WorkoutPlazaStrings.Group.Conflict.Imported.To.my)
                 default:
-                    return .denied(reason: "그룹 타입이 호환되지 않습니다")
+                    return .denied(reason: WorkoutPlazaStrings.Group.Conflict.incompatible)
                 }
             }
         }
@@ -149,7 +149,7 @@ class GroupManager {
         }
 
         if hasMyRecord && hasImportedRecord {
-            return .denied(reason: "내 기록과 타인 기록을 함께 그룹화할 수 없습니다")
+            return .denied(reason: WorkoutPlazaStrings.Group.Conflict.mixed)
         }
 
         return .allowed

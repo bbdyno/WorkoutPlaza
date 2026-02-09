@@ -52,7 +52,7 @@ class HomeDashboardViewController: UIViewController {
 
     private let subtitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "운동 기록을 사진으로 만들어보세요"
+        label.text = WorkoutPlazaStrings.Home.description
         label.font = .systemFont(ofSize: 16)
         label.textColor = .black
         label.textAlignment = .center
@@ -94,7 +94,7 @@ class HomeDashboardViewController: UIViewController {
 
     private let addWorkoutButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("+ 운동 추가", for: .normal)
+        button.setTitle(WorkoutPlazaStrings.Button.Add.workout, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
         button.backgroundColor = ColorSystem.primaryBlue
         button.setTitleColor(.white, for: .normal)
@@ -198,7 +198,7 @@ class HomeDashboardViewController: UIViewController {
 
         // Weekly Summary Section
         let weeklySectionLabel = UILabel()
-        weeklySectionLabel.text = "이번 주"
+        weeklySectionLabel.text = WorkoutPlazaStrings.Home.This.week
         weeklySectionLabel.font = .systemFont(ofSize: 20, weight: .semibold)
         weeklySectionLabel.textColor = ColorSystem.mainText
 
@@ -216,7 +216,7 @@ class HomeDashboardViewController: UIViewController {
         let sectionHeaderView = UIView()
 
         let sectionLabel = UILabel()
-        sectionLabel.text = "최근 기록"
+        sectionLabel.text = WorkoutPlazaStrings.Home.Recent.records
         sectionLabel.font = .systemFont(ofSize: 20, weight: .semibold)
         sectionLabel.textColor = ColorSystem.mainText
 
@@ -261,7 +261,7 @@ class HomeDashboardViewController: UIViewController {
         runningIcon.snp.makeConstraints { make in make.width.height.equalTo(16) }
 
         let runningTitleLabel = UILabel()
-        runningTitleLabel.text = "러닝"
+        runningTitleLabel.text = WorkoutPlazaStrings.Workout.running
         runningTitleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         runningTitleLabel.textColor = ColorSystem.subText
 
@@ -274,11 +274,11 @@ class HomeDashboardViewController: UIViewController {
 
         runningWeeklyCountLabel.font = .systemFont(ofSize: 12, weight: .medium)
         runningWeeklyCountLabel.textColor = ColorSystem.subText
-        runningWeeklyCountLabel.text = "0회"
+        runningWeeklyCountLabel.text = WorkoutPlazaStrings.Zero.times
 
         runningWeeklyTimeLabel.font = .systemFont(ofSize: 12, weight: .medium)
         runningWeeklyTimeLabel.textColor = ColorSystem.subText
-        runningWeeklyTimeLabel.text = "0분"
+        runningWeeklyTimeLabel.text = WorkoutPlazaStrings.Zero.minutes
 
         let runningDetailStack = UIStackView(arrangedSubviews: [runningWeeklyCountLabel, runningWeeklyTimeLabel])
         runningDetailStack.axis = .horizontal
@@ -315,7 +315,7 @@ class HomeDashboardViewController: UIViewController {
         climbingIcon.snp.makeConstraints { make in make.width.height.equalTo(16) }
 
         let climbingTitleLabel = UILabel()
-        climbingTitleLabel.text = "클라이밍"
+        climbingTitleLabel.text = WorkoutPlazaStrings.Workout.climbing
         climbingTitleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         climbingTitleLabel.textColor = ColorSystem.subText
 
@@ -324,15 +324,15 @@ class HomeDashboardViewController: UIViewController {
 
         climbingWeeklyRoutesLabel.font = .systemFont(ofSize: 22, weight: .bold)
         climbingWeeklyRoutesLabel.textColor = ColorSystem.mainText
-        climbingWeeklyRoutesLabel.text = "0 루트"
+        climbingWeeklyRoutesLabel.text = WorkoutPlazaStrings.Zero.routes
 
         climbingWeeklyVisitLabel.font = .systemFont(ofSize: 12, weight: .medium)
         climbingWeeklyVisitLabel.textColor = ColorSystem.subText
-        climbingWeeklyVisitLabel.text = "0회 방문"
+        climbingWeeklyVisitLabel.text = WorkoutPlazaStrings.Zero.visits
 
         climbingWeeklySentLabel.font = .systemFont(ofSize: 12, weight: .medium)
         climbingWeeklySentLabel.textColor = ColorSystem.subText
-        climbingWeeklySentLabel.text = "완등 0"
+        climbingWeeklySentLabel.text = WorkoutPlazaStrings.Sent.zero
 
         let climbingDetailStack = UIStackView(arrangedSubviews: [climbingWeeklyVisitLabel, climbingWeeklySentLabel])
         climbingDetailStack.axis = .horizontal
@@ -367,12 +367,12 @@ class HomeDashboardViewController: UIViewController {
         climbingSessions = ClimbingDataManager.shared.loadSessions()
 
         // Load external running workouts
-        externalRunningWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == "러닝" }
+        externalRunningWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == .running }
 
         // Load HealthKit running workouts
         WorkoutManager.shared.fetchWorkouts { [weak self] workouts in
             guard let self = self else { return }
-            self.runningWorkouts = workouts.filter { $0.workoutType == "러닝" }
+            self.runningWorkouts = workouts.filter { $0.workoutType == .running }
 
             DispatchQueue.main.async {
                 self.updateWeeklySummary()
@@ -409,15 +409,15 @@ class HomeDashboardViewController: UIViewController {
 
         let distanceKm = weeklyRunningDistance / 1000.0
         runningWeeklyDistanceLabel.text = String(format: "%.1f km", distanceKm)
-        runningWeeklyCountLabel.text = "\(weeklyRunningCount)회"
+        runningWeeklyCountLabel.text = WorkoutPlazaStrings.Home.Weekly.count(weeklyRunningCount)
 
         let totalMinutes = Int(weeklyRunningDuration) / 60
         if totalMinutes >= 60 {
             let hours = totalMinutes / 60
             let mins = totalMinutes % 60
-            runningWeeklyTimeLabel.text = "\(hours)시간 \(mins)분"
+            runningWeeklyTimeLabel.text = WorkoutPlazaStrings.Home.Weekly.Time.hours(hours, mins)
         } else {
-            runningWeeklyTimeLabel.text = "\(totalMinutes)분"
+            runningWeeklyTimeLabel.text = WorkoutPlazaStrings.Home.Weekly.Time.minutes(totalMinutes)
         }
 
         // Climbing stats
@@ -426,9 +426,9 @@ class HomeDashboardViewController: UIViewController {
         let weeklySent = weeklyClimbingSessions.reduce(0) { $0 + $1.sentRoutes }
         let weeklyVisits = weeklyClimbingSessions.count
 
-        climbingWeeklyRoutesLabel.text = "\(weeklyRoutes) 루트"
-        climbingWeeklyVisitLabel.text = "\(weeklyVisits)회 방문"
-        climbingWeeklySentLabel.text = "완등 \(weeklySent)"
+        climbingWeeklyRoutesLabel.text = WorkoutPlazaStrings.Home.Weekly.routes(weeklyRoutes)
+        climbingWeeklyVisitLabel.text = WorkoutPlazaStrings.Home.Weekly.visits(weeklyVisits)
+        climbingWeeklySentLabel.text = WorkoutPlazaStrings.Home.Weekly.sent(weeklySent)
     }
 
     private func updateRecentRecords() {
@@ -455,7 +455,7 @@ class HomeDashboardViewController: UIViewController {
         let hasMore = combinedRecentWorkouts.count > previewRecordCount
         recordsToggleButton.isHidden = !hasMore
         if hasMore {
-            recordsToggleButton.setTitle("더보기", for: .normal)
+            recordsToggleButton.setTitle(WorkoutPlazaStrings.Button.Show.more, for: .normal)
         }
 
         let previewWorkouts = Array(combinedRecentWorkouts.prefix(previewRecordCount))
@@ -481,7 +481,7 @@ class HomeDashboardViewController: UIViewController {
         placeholder.layer.cornerCurve = .continuous
 
         let placeholderLabel = UILabel()
-        placeholderLabel.text = "아직 기록이 없습니다"
+        placeholderLabel.text = WorkoutPlazaStrings.Home.No.records
         placeholderLabel.font = .systemFont(ofSize: 14, weight: .medium)
         placeholderLabel.textColor = ColorSystem.subText
         placeholderLabel.textAlignment = .center
@@ -526,22 +526,22 @@ class HomeDashboardViewController: UIViewController {
         switch workout.sportType {
         case .running:
             if let healthKitWorkout = workout.data as? WorkoutData {
-                titleLabel.text = "러닝"
+                titleLabel.text = WorkoutPlazaStrings.Workout.running
                 subtitleLabel.text = String(format: "%.1f km", healthKitWorkout.distance / 1000)
             } else if let externalWorkout = workout.data as? ExternalWorkout {
-                titleLabel.text = "러닝"
+                titleLabel.text = WorkoutPlazaStrings.Workout.running
                 subtitleLabel.text = String(format: "%.1f km", externalWorkout.workoutData.distance / 1000)
             }
         case .climbing:
             if let session = workout.data as? ClimbingData {
                 let gymDisplayName = session.gymDisplayName
-                titleLabel.text = gymDisplayName.isEmpty ? "클라이밍" : gymDisplayName
-                subtitleLabel.text = "\(session.totalRoutes) 루트"
+                titleLabel.text = gymDisplayName.isEmpty ? WorkoutPlazaStrings.Workout.climbing : gymDisplayName
+                subtitleLabel.text = WorkoutPlazaStrings.Home.Weekly.routes(session.totalRoutes)
             }
         }
 
         let formatter = DateFormatter()
-        formatter.dateFormat = "M월 d일"
+        formatter.setLocalizedDateFormatFromTemplate("MMMMd")
         dateLabel.text = formatter.string(from: workout.date)
 
         containerView.addSubview(iconImageView)
@@ -642,9 +642,9 @@ class HomeDashboardViewController: UIViewController {
         let seconds = Int(duration) % 60
 
         if hours > 0 {
-            return String(format: "%d시간 %02d분", hours, minutes)
+            return WorkoutPlazaStrings.Home.Duration.hours(hours, minutes)
         } else {
-            return String(format: "%d분 %02d초", minutes, seconds)
+            return WorkoutPlazaStrings.Home.Duration.minutes(minutes, seconds)
         }
     }
 }
@@ -692,12 +692,12 @@ extension HomeDashboardViewController: ClimbingInputDelegate {
 
     private func showCardCreationAlert(for session: ClimbingData) {
         let alert = UIAlertController(
-            title: "저장 완료",
-            message: "클라이밍 기록이 저장되었습니다.\n공유용 카드를 만들까요?",
+            title: WorkoutPlazaStrings.Alert.Save.completed,
+            message: WorkoutPlazaStrings.Home.Climbing.Saved.message,
             preferredStyle: .alert
         )
 
-        alert.addAction(UIAlertAction(title: "카드 만들기", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Home.Create.card, style: .default) { [weak self] _ in
             guard let self = self else { return }
             let detailVC = ClimbingDetailViewController()
             detailVC.climbingData = session
@@ -705,7 +705,7 @@ extension HomeDashboardViewController: ClimbingInputDelegate {
             self.present(nav, animated: true)
         })
 
-        alert.addAction(UIAlertAction(title: "나중에", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Home.later, style: .cancel))
 
         present(alert, animated: true)
     }

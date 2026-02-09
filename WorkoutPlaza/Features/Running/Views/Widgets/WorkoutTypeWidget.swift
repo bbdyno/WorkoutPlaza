@@ -48,19 +48,19 @@ class WorkoutTypeWidget: BaseStatWidget {
     }
     
     func configure(workoutType: String) {
-        titleLabel.text = "운동 종류"
+        titleLabel.text = WorkoutPlazaStrings.Widget.Title.Workout.type
         valueLabel.text = workoutType
         unitLabel.text = ""
-        
+
         // 아이콘 설정
         switch workoutType {
-        case "러닝":
+        case WorkoutPlazaStrings.Workout.running:
             typeIconImageView.image = UIImage(systemName: "figure.run")
-        case "사이클링":
+        case WorkoutPlazaStrings.Workout.cycling:
             typeIconImageView.image = UIImage(systemName: "bicycle")
-        case "걷기":
+        case WorkoutPlazaStrings.Workout.walking:
             typeIconImageView.image = UIImage(systemName: "figure.walk")
-        case "하이킹":
+        case WorkoutPlazaStrings.Workout.hiking:
             typeIconImageView.image = UIImage(systemName: "figure.hiking")
         default:
             typeIconImageView.image = UIImage(systemName: "figure.mixed.cardio")

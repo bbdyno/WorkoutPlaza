@@ -22,7 +22,7 @@ class ClimbingDisciplineWidget: BaseStatWidget {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        titleLabel.text = "종목"
+        titleLabel.text = WorkoutPlazaStrings.Widget.Climbing.discipline
         unitLabel.text = ""
         itemIdentifier = "climbing_discipline_\(UUID().uuidString)"
         setupIcon()

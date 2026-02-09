@@ -42,7 +42,7 @@ extension RunningDetailViewController {
     override func saveWorkoutCard(image: UIImage) {
         if let data = workoutData {
             let distanceKm = data.distance / 1000
-            let title = String(format: "러닝 - %.2fkm", distanceKm)
+            let title = WorkoutPlazaStrings.Running.Card.title(Float(distanceKm))
             WorkoutCardManager.shared.createCard(
                 sportType: .running,
                 workoutId: data.workout.uuid.uuidString,
@@ -52,7 +52,7 @@ extension RunningDetailViewController {
             )
         } else if let imported = importedWorkoutData {
             let distanceKm = imported.originalData.distance / 1000
-            let title = String(format: "러닝 - %.2fkm", distanceKm)
+            let title = WorkoutPlazaStrings.Running.Card.title(Float(distanceKm))
             WorkoutCardManager.shared.createCard(
                 sportType: .running,
                 workoutId: UUID().uuidString,
@@ -62,7 +62,7 @@ extension RunningDetailViewController {
             )
         } else if let external = externalWorkout {
             let distanceKm = external.workoutData.distance / 1000
-            let title = String(format: "러닝 - %.2fkm", distanceKm)
+            let title = WorkoutPlazaStrings.Running.Card.title(Float(distanceKm))
             WorkoutCardManager.shared.createCard(
                 sportType: .running,
                 workoutId: external.id.uuidString,

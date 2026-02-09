@@ -81,7 +81,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     // MARK: - Setup
 
     private func setupNavigationBar() {
-        title = "클라이밍"
+        title = WorkoutPlazaStrings.Climbing.title
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: "xmark"),
             style: .plain,
@@ -165,7 +165,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
         case 0: return nil // Header inside cell for modern look
-        case 1: return "루트 기록"
+        case 1: return WorkoutPlazaStrings.Climbing.Routes.section
         default: return nil
         }
     }
@@ -186,7 +186,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         if section == 0 && selectedGym == nil && !isCustomGym {
             let footerView = UIView()
             let label = UILabel()
-            label.text = "암장을 선택하면 기록을 시작할 수 있습니다"
+            label.text = WorkoutPlazaStrings.Climbing.Gym.Select.hint
             label.font = .systemFont(ofSize: 14, weight: .regular)
             label.textColor = ColorSystem.subText
             label.textAlignment = .center
@@ -218,9 +218,9 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
             if indexPath.row == 0 {
                 // Gym Selector Cell
                 let cell = UITableViewCell(style: .value1, reuseIdentifier: "GymSelectorCell")
-                cell.textLabel?.text = "암장"
+                cell.textLabel?.text = WorkoutPlazaStrings.Climbing.Gym.label
                 cell.textLabel?.textColor = ColorSystem.mainText
-                cell.detailTextLabel?.text = selectedGym?.name ?? (isCustomGym ? "사용자 지정" : "암장 선택")
+                cell.detailTextLabel?.text = selectedGym?.name ?? (isCustomGym ? WorkoutPlazaStrings.Climbing.Gym.custom : WorkoutPlazaStrings.Gym.Picker.title)
                 cell.detailTextLabel?.textColor = selectedGym == nil && !isCustomGym ? ColorSystem.subText : ColorSystem.mainText
                 cell.accessoryType = .disclosureIndicator
                 cell.backgroundColor = ColorSystem.cardBackground
@@ -235,7 +235,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
                 cell.contentView.subviews.forEach { $0.removeFromSuperview() }
 
                 let textField = UITextField()
-                textField.placeholder = "암장 이름 입력"
+                textField.placeholder = WorkoutPlazaStrings.Climbing.Gym.Name.placeholder
                 textField.text = customGymName
                 textField.font = .systemFont(ofSize: 17)
                 textField.textColor = ColorSystem.mainText
@@ -272,11 +272,11 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         case 2:
             let cell = tableView.dequeueReusableCell(withIdentifier: "ButtonCell", for: indexPath) as! ButtonCell
             if indexPath.row == 0 {
-                cell.configure(title: "+ 루트 추가", style: .secondary) { [weak self] in
+                cell.configure(title: WorkoutPlazaStrings.Climbing.Add.route, style: .secondary) { [weak self] in
                     self?.addRoute()
                 }
             } else {
-                cell.configure(title: "기록 생성", style: .primary) { [weak self] in
+                cell.configure(title: WorkoutPlazaStrings.Climbing.Create.record, style: .primary) { [weak self] in
                     self?.createRecord()
                 }
             }
@@ -303,7 +303,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     private func createRecord() {
         let gymParams = getGymParams()
         guard !gymParams.name.trimmingCharacters(in: .whitespaces).isEmpty else {
-            showAlert(message: "암장 이름을 입력하거나 선택해주세요.")
+            showAlert(message: WorkoutPlazaStrings.Climbing.Error.Gym.name)
             return
         }
 
@@ -333,7 +333,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
         }
 
         guard !boulderingRoutes.isEmpty || !leadRoutes.isEmpty else {
-            showAlert(message: "최소 하나의 루트를 기록해주세요.")
+            showAlert(message: WorkoutPlazaStrings.Climbing.Error.Min.route)
             return
         }
 
@@ -403,8 +403,8 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     }
 
     private func showAlert(message: String) {
-        let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.error, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
     
@@ -766,7 +766,7 @@ class RouteCell: UITableViewCell {
     // Header
     private let headerStack = UIStackView()
     private let headerLabel = UILabel()
-    private let disciplineSegment = UISegmentedControl(items: ["볼더링", "리드"])
+    private let disciplineSegment = UISegmentedControl(items: [WorkoutPlazaStrings.Climbing.Discipline.bouldering, WorkoutPlazaStrings.Climbing.Discipline.lead])
     private let deleteButton = UIButton(type: .system)
 
     // Bouldering Color Section
@@ -847,7 +847,7 @@ class RouteCell: UITableViewCell {
         containerView.addSubview(headerStack)
 
         // Color Section Label
-        colorSectionLabel.text = "난이도 테이프"
+        colorSectionLabel.text = WorkoutPlazaStrings.Climbing.Grade.tape
         colorSectionLabel.font = .systemFont(ofSize: 11, weight: .semibold)
         colorSectionLabel.textColor = ColorSystem.subText
         containerView.addSubview(colorSectionLabel)
@@ -882,7 +882,7 @@ class RouteCell: UITableViewCell {
         containerView.addSubview(colorScrollView)
 
         // Grade
-        gradeLabel.text = "GRADE (선택)"
+        gradeLabel.text = WorkoutPlazaStrings.Climbing.Grade.optional
         gradeLabel.font = .systemFont(ofSize: 11, weight: .semibold)
         gradeLabel.textColor = ColorSystem.subText
 
@@ -893,7 +893,7 @@ class RouteCell: UITableViewCell {
         gradeField.textAlignment = .center
         gradeField.returnKeyType = .done
         gradeField.delegate = self
-        gradeField.placeholder = "V3, 파랑..."
+        gradeField.placeholder = WorkoutPlazaStrings.Climbing.Grade.Placeholder.boulder
         gradeField.addTarget(self, action: #selector(gradeChanged), for: .editingChanged)
 
         gradeStack.axis = .vertical
@@ -924,7 +924,7 @@ class RouteCell: UITableViewCell {
         attemptsStack.addArrangedSubview(attemptsControlStack)
 
         // Sent Switch
-        sentLabel.text = "완등"
+        sentLabel.text = WorkoutPlazaStrings.Climbing.sent
         sentLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         sentLabel.textColor = ColorSystem.mainText
 
@@ -1070,8 +1070,8 @@ class RouteCell: UITableViewCell {
 
         // Grade label and placeholder
         if isBouldering {
-            gradeLabel.text = "GRADE (선택)"
-            gradeField.placeholder = "V3, 파랑..."
+            gradeLabel.text = WorkoutPlazaStrings.Climbing.Grade.optional
+            gradeField.placeholder = WorkoutPlazaStrings.Climbing.Grade.Placeholder.boulder
         } else {
             gradeLabel.text = "GRADE"
             gradeField.placeholder = "5.11a, 6a..."
@@ -1153,8 +1153,8 @@ class RouteCell: UITableViewCell {
         attemptsLabel.text = isBouldering ? "ATTEMPTS" : "TAKES"
 
         if isBouldering {
-            gradeLabel.text = "GRADE (선택)"
-            gradeField.placeholder = "V3, 파랑..."
+            gradeLabel.text = WorkoutPlazaStrings.Climbing.Grade.optional
+            gradeField.placeholder = WorkoutPlazaStrings.Climbing.Grade.Placeholder.boulder
         } else {
             gradeLabel.text = "GRADE"
             gradeField.placeholder = "5.11a, 6a..."

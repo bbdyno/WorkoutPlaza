@@ -54,11 +54,13 @@ struct ToolSheetSection {
     let title: String
     let items: [ToolSheetItem]
     let headerActions: [ToolSheetHeaderAction]
+    let columnCount: Int
 
-    init(title: String, items: [ToolSheetItem], headerActions: [ToolSheetHeaderAction] = []) {
+    init(title: String, items: [ToolSheetItem], headerActions: [ToolSheetHeaderAction] = [], columnCount: Int = 3) {
         self.title = title
         self.items = items
         self.headerActions = headerActions
+        self.columnCount = columnCount
     }
 }
 
@@ -96,7 +98,7 @@ class ToolSheetViewController: UIViewController {
         view.backgroundColor = .systemBackground
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "닫기",
+            title: WorkoutPlazaStrings.Button.close,
             style: .done,
             target: self,
             action: #selector(closeTapped)
@@ -152,11 +154,11 @@ class ToolSheetViewController: UIViewController {
     }
 
     private func createLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { sectionIndex, environment in
-            // 3-column grid
+        return UICollectionViewCompositionalLayout { [weak self] sectionIndex, environment in
+            let columns = self?.sections[sectionIndex].columnCount ?? 3
             let itemSize = NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0 / 3.0),
-                heightDimension: .estimated(100)
+                widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
+                heightDimension: .estimated(columns == 2 ? 140 : 100)
             )
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
             item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 3, bottom: 5, trailing: 3)
@@ -202,8 +204,9 @@ extension ToolSheetViewController: UICollectionViewDataSource {
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ToolSheetCell.reuseIdentifier, for: indexPath) as! ToolSheetCell
-        let item = sections[indexPath.section].items[indexPath.item]
-        cell.configure(with: item)
+        let section = sections[indexPath.section]
+        let item = section.items[indexPath.item]
+        cell.configure(with: item, columnCount: section.columnCount)
         return cell
     }
 
@@ -362,7 +365,7 @@ private class ToolSheetCell: UICollectionViewCell {
         ])
     }
 
-    func configure(with item: ToolSheetItem) {
+    func configure(with item: ToolSheetItem, columnCount: Int = 3) {
         titleLabel.text = item.title
         checkmarkView.isHidden = !item.isAdded
 
@@ -371,6 +374,10 @@ private class ToolSheetCell: UICollectionViewCell {
             iconImageView.isHidden = true
             descriptionLabel.isHidden = true
             previewContainerView.isHidden = false
+
+            // 2열일 때 미리보기 영역을 더 크게
+            let previewHeight: CGFloat = columnCount == 2 ? 100 : 56
+            previewHeightConstraint.constant = previewHeight
 
             // Switch constraints to preview mode
             iconTopConstraint.isActive = false
@@ -395,8 +402,8 @@ private class ToolSheetCell: UICollectionViewCell {
             previewView.translatesAutoresizingMaskIntoConstraints = true
             let previewAreaWidth = previewContainerView.bounds.width > 0
                 ? previewContainerView.bounds.width
-                : (UIScreen.main.bounds.width / 3.0 - 30)
-            let previewAreaHeight: CGFloat = 56
+                : (UIScreen.main.bounds.width / CGFloat(columnCount) - 30)
+            let previewAreaHeight = previewHeight
             let previewSize = previewView.frame.size
 
             if previewSize.width > 0 && previewSize.height > 0 {
@@ -445,6 +452,7 @@ private class ToolSheetCell: UICollectionViewCell {
         previewContainerView.isHidden = true
         iconImageView.isHidden = false
         descriptionLabel.isHidden = false
+        previewHeightConstraint.constant = 56
 
         // Reset to icon mode constraints
         titleTopToPreviewConstraint.isActive = false

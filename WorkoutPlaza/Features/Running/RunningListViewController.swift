@@ -18,7 +18,7 @@ class RunningListViewController: UIViewController {
     // Unified list
     private var allWorkouts: [UnifiedWorkoutItem] = []
     private var filteredWorkouts: [UnifiedWorkoutItem] = []
-    private var currentFilter: String? = nil // nil means "All"
+    private var currentFilter: WorkoutType? = nil // nil means "All"
     private var sourceFilter: UnifiedWorkoutSource? = nil // nil means "All Sources"
     
     private lazy var tableView: UITableView = {
@@ -39,7 +39,7 @@ class RunningListViewController: UIViewController {
     
     private let emptyLabel: UILabel = {
         let label = UILabel()
-        label.text = "러닝 기록이 없습니다"
+        label.text = WorkoutPlazaStrings.Running.empty
         label.textColor = ColorSystem.subText
         label.font = .systemFont(ofSize: 16)
         label.textAlignment = .center
@@ -48,7 +48,7 @@ class RunningListViewController: UIViewController {
     }()
     
     private let segmentedControl: UISegmentedControl = {
-        let sc = UISegmentedControl(items: ["전체", "HealthKit", "외부 기록"])
+        let sc = UISegmentedControl(items: [WorkoutPlazaStrings.Running.Filter.all, "HealthKit", WorkoutPlazaStrings.Running.Filter.external])
         sc.selectedSegmentIndex = 0
         sc.backgroundColor = ColorSystem.cardBackground
         sc.selectedSegmentTintColor = ColorSystem.primaryGreen
@@ -82,7 +82,7 @@ class RunningListViewController: UIViewController {
         let imageConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
         config.image = UIImage(systemName: "square.and.arrow.down", withConfiguration: imageConfig)
         config.imagePadding = 8
-        config.title = "외부 기록 가져오기"
+        config.title = WorkoutPlazaStrings.Import.external
 
         button.configuration = config
 
@@ -193,8 +193,8 @@ class RunningListViewController: UIViewController {
 
     private func showWorkoutSelectionForAttachment(workout: ShareableWorkout) {
         let alert = UIAlertController(
-            title: "기록 선택",
-            message: "타인의 기록을 첨부할 내 운동 기록을 선택하세요",
+            title: WorkoutPlazaStrings.Running.Select.record,
+            message: WorkoutPlazaStrings.Running.Select.Record.message,
             preferredStyle: .actionSheet
         )
 
@@ -205,7 +205,7 @@ class RunningListViewController: UIViewController {
             guard let healthKitWorkout = unifiedWorkout.healthKitWorkout else { continue }
 
             let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "MM/dd HH:mm"
+            dateFormatter.setLocalizedDateFormatFromTemplate("MMddHHmm")
             let dateString = dateFormatter.string(from: unifiedWorkout.startDate)
             let title = "\(unifiedWorkout.workoutType) - \(dateString)"
 
@@ -215,26 +215,26 @@ class RunningListViewController: UIViewController {
         }
 
         if healthKitItems.isEmpty {
-            alert.message = "첨부할 수 있는 HealthKit 기록이 없습니다."
+            alert.message = WorkoutPlazaStrings.Running.No.healthkit
         }
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         present(alert, animated: true)
     }
 
     private func showImportError(_ error: Error) {
         let alert = UIAlertController(
-            title: "가져오기 실패",
+            title: WorkoutPlazaStrings.Alert.Import.failed,
             message: error.localizedDescription,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
-    
+
     private func setupUI() {
-        title = "러닝 기록"
+        title = WorkoutPlazaStrings.Running.Record.title
         view.backgroundColor = ColorSystem.background
         navigationItem.largeTitleDisplayMode = .never
 
@@ -353,7 +353,7 @@ class RunningListViewController: UIViewController {
             DispatchQueue.main.async {
                 self?.loadingIndicator.stopAnimating()
                 // Filter only running workouts (GPS 유무와 관계없이 모든 러닝 기록)
-                self?.healthKitWorkouts = workouts.filter { $0.workoutType == "러닝" }
+                self?.healthKitWorkouts = workouts.filter { $0.workoutType == .running }
                 self?.mergeAndSortWorkouts()
             }
         }
@@ -361,7 +361,7 @@ class RunningListViewController: UIViewController {
 
     private func loadExternalWorkouts() {
         // Filter only running workouts from external sources
-        externalWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == "러닝" }
+        externalWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == .running }
     }
 
     private func mergeAndSortWorkouts() {
@@ -410,19 +410,19 @@ class RunningListViewController: UIViewController {
         loadingIndicator.stopAnimating()
         
         let alert = UIAlertController(
-            title: "권한 필요",
-            message: "HealthKit 데이터를 읽기 위해 권한이 필요합니다. 설정에서 권한을 허용해주세요.",
+            title: WorkoutPlazaStrings.Permission.Healthkit.title,
+            message: WorkoutPlazaStrings.Permission.Healthkit.message,
             preferredStyle: .alert
         )
         
-        alert.addAction(UIAlertAction(title: "설정으로 이동", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Permission.Open.settings, style: .default) { _ in
             if let url = URL(string: UIApplication.openSettingsURLString) {
                 UIApplication.shared.open(url)
             }
         })
         
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-        
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+
         present(alert, animated: true)
     }
 }
@@ -494,34 +494,34 @@ extension RunningListViewController: UITableViewDelegate, UITableViewDataSource 
 
     private func confirmDeleteExternalWorkout(_ workout: ExternalWorkout, at indexPath: IndexPath) {
         let alert = UIAlertController(
-            title: "기록 삭제",
-            message: "이 외부 기록을 삭제하시겠습니까?",
+            title: WorkoutPlazaStrings.Running.Delete.record,
+            message: WorkoutPlazaStrings.Running.Delete.Record.message,
             preferredStyle: .alert
         )
 
-        alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { _ in
             ExternalWorkoutManager.shared.deleteWorkout(id: workout.id)
         })
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         present(alert, animated: true)
     }
 
     private func showShareOptions(for workout: WorkoutData, at indexPath: IndexPath) {
-        let alert = UIAlertController(title: "공유", message: "공유 방식을 선택하세요", preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.share, message: WorkoutPlazaStrings.Alert.Select.Share.method, preferredStyle: .actionSheet)
 
         // Share as .wplaza file
-        alert.addAction(UIAlertAction(title: "운동 데이터 공유 (.wplaza)", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Share.Workout.data, style: .default) { [weak self] _ in
             self?.shareWorkoutAsFile(workout)
         })
 
         // Share with creator name
-        alert.addAction(UIAlertAction(title: "이름과 함께 공유 (.wplaza)", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Share.With.name, style: .default) { [weak self] _ in
             self?.showCreatorNameInput(for: workout)
         })
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
 
         // iPad support
         if let popover = alert.popoverPresentationController,
@@ -544,32 +544,32 @@ extension RunningListViewController: UITableViewDelegate, UITableViewDataSource 
 
     private func showCreatorNameInput(for workout: WorkoutData) {
         let alert = UIAlertController(
-            title: "이름 입력",
-            message: "공유할 때 표시될 이름을 입력하세요",
+            title: WorkoutPlazaStrings.Share.Name.Input.title,
+            message: WorkoutPlazaStrings.Share.Name.Input.message,
             preferredStyle: .alert
         )
 
         alert.addTextField { textField in
-            textField.placeholder = "이름"
+            textField.placeholder = WorkoutPlazaStrings.Share.Name.placeholder
         }
 
-        alert.addAction(UIAlertAction(title: "공유", style: .default) { [weak self, weak alert] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Alert.share, style: .default) { [weak self, weak alert] _ in
             let name = alert?.textFields?.first?.text
             self?.shareWorkoutAsFile(workout, creatorName: name)
         })
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         present(alert, animated: true)
     }
 
     private func showShareError(_ error: Error) {
         let alert = UIAlertController(
-            title: "공유 실패",
+            title: WorkoutPlazaStrings.Share.failed,
             message: error.localizedDescription,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 }
@@ -606,13 +606,14 @@ extension RunningListViewController: ImportWorkoutViewControllerDelegate {
         // Nothing to do
     }
 
-    private func showImportSuccess(workoutType: String) {
+    private func showImportSuccess(workoutType: WorkoutType) {
+        let typeName = workoutType.sportType?.displayName ?? WorkoutPlazaStrings.Workout.generic
         let alert = UIAlertController(
-            title: "가져오기 완료",
-            message: "\(workoutType) 기록을 성공적으로 가져왔습니다.",
+            title: WorkoutPlazaStrings.Import.complete,
+            message: WorkoutPlazaStrings.Import.Success.message(typeName),
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 }
@@ -776,7 +777,7 @@ class WorkoutCell: UITableViewCell {
     func configure(with workout: UnifiedWorkoutItem) {
         // Date formatting
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "M월 d일"
+        dateFormatter.setLocalizedDateFormatFromTemplate("MMMMd")
         dateLabel.text = dateFormatter.string(from: workout.startDate)
 
         let timeFormatter = DateFormatter()
@@ -809,7 +810,7 @@ class WorkoutCell: UITableViewCell {
             accentBar.backgroundColor = ColorSystem.primaryGreen
         case .external:
             sourceBadge.isHidden = false
-            sourceBadge.text = " 외부 기록 "
+            sourceBadge.text = WorkoutPlazaStrings.Running.External.badge
             sourceBadge.backgroundColor = ColorSystem.warning
             accentBar.backgroundColor = ColorSystem.warning
         }

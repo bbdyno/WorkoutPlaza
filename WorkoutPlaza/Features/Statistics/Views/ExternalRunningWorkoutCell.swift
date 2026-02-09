@@ -47,7 +47,7 @@ class ExternalRunningWorkoutCell: UIView {
         timeLabel.font = .systemFont(ofSize: 13)
         timeLabel.textColor = ColorSystem.subText
 
-        externalBadge.text = "외부"
+        externalBadge.text = WorkoutPlazaStrings.Running.External.short
         externalBadge.font = .systemFont(ofSize: 10, weight: .semibold)
         externalBadge.textColor = .white
         externalBadge.backgroundColor = ColorSystem.warning
@@ -119,7 +119,7 @@ class ExternalRunningWorkoutCell: UIView {
     // MARK: - Configuration
     
     func configure(with workout: ExternalWorkout) {
-        titleLabel.text = workout.workoutData.type
+        titleLabel.text = workout.workoutData.type.sportType?.displayName ?? WorkoutPlazaStrings.Workout.generic
         
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
@@ -128,7 +128,7 @@ class ExternalRunningWorkoutCell: UIView {
         distanceLabel.text = String(format: "%.2f km", workout.workoutData.distance / 1000)
         
         let minutes = Int(workout.workoutData.duration) / 60
-        durationLabel.text = "\(minutes)분"
+        durationLabel.text = WorkoutPlazaStrings.Duration.minutes(minutes)
         
         if workout.workoutData.distance > 0 {
             let pace = (workout.workoutData.duration / 60) / (workout.workoutData.distance / 1000)

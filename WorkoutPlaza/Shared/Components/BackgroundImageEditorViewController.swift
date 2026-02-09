@@ -57,7 +57,7 @@ class BackgroundImageEditorViewController: UIViewController {
     private let overlayToggle = UISwitch()
     private let overlayLabel: UILabel = {
         let label = UILabel()
-        label.text = "색상 오버레이"
+        label.text = WorkoutPlazaStrings.Background.Editor.overlay
         label.font = .systemFont(ofSize: 16, weight: .medium)
         label.textColor = ColorSystem.mainText
         return label
@@ -118,7 +118,7 @@ class BackgroundImageEditorViewController: UIViewController {
 
     // MARK: - Setup
     private func setupUI() {
-        title = "배경 편집"
+        title = WorkoutPlazaStrings.Background.Editor.title
         view.backgroundColor = ColorSystem.background
 
         // Cancel button
@@ -169,7 +169,7 @@ class BackgroundImageEditorViewController: UIViewController {
 
         // Instructions label
         instructionLabel = UILabel()
-        instructionLabel.text = "핀치로 확대/축소, 드래그로 이동하세요"
+        instructionLabel.text = WorkoutPlazaStrings.Background.Editor.instruction
         instructionLabel.textColor = ColorSystem.subText
         instructionLabel.font = .systemFont(ofSize: 14)
         instructionLabel.textAlignment = .center

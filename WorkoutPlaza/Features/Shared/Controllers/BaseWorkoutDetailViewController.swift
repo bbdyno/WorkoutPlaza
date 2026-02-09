@@ -128,7 +128,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         static let multiSelectToolbarBackgroundColor = UIColor.white.withAlphaComponent(0.98)
         static let multiSelectBorderColor = ColorSystem.primaryGreen.withAlphaComponent(0.5).cgColor
 
-        static let toastBackgroundColor = UIColor(white: 0.95, alpha: 0.95)
+        static let toastBackgroundColor = ColorSystem.toastBackground
 
         static let textPathDrawingToolbarBackgroundColor = UIColor.black.withAlphaComponent(0.85)
         static let textPathDrawingOverlayColor = UIColor.black.withAlphaComponent(0.2)
@@ -277,7 +277,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     lazy var instructionLabel: UILabel = {
         let label = UILabel()
-        label.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
+        label.text = NSLocalizedString("ui.drag.widgets.instruction", comment: "")
         label.textColor = .lightGray
         label.font = .systemFont(ofSize: 14)
         label.textAlignment = .center
@@ -332,7 +332,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     lazy var multiSelectCountLabel: UILabel = {
         let label = UILabel()
-        label.text = "0개 선택"
+        label.text = WorkoutPlazaStrings.Base.Multi.Select.count(0)
         label.textColor = .white
         label.font = .systemFont(ofSize: 14, weight: .medium)
         return label
@@ -516,7 +516,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             action: #selector(backButtonTapped)
         )
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "완료",
+            title: WorkoutPlazaStrings.Button.done,
             style: .done,
             target: self,
             action: #selector(doneButtonTapped)
@@ -676,17 +676,17 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         ]
 
         let availableFonts: [(name: String, font: UIFont)] = [
-            ("기본", .boldSystemFont(ofSize: 20)),
-            ("얇게", .systemFont(ofSize: 20, weight: .light)),
-            ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
-            ("굵게", .systemFont(ofSize: 20, weight: .black))
+            (WorkoutPlazaStrings.Ui.Font.`default`, .boldSystemFont(ofSize: 20)),
+            (WorkoutPlazaStrings.Ui.Font.thin, .systemFont(ofSize: 20, weight: .light)),
+            (WorkoutPlazaStrings.Ui.Font.rounded, .systemFont(ofSize: 20, weight: .medium)),
+            (WorkoutPlazaStrings.Ui.Font.bold, .systemFont(ofSize: 20, weight: .black))
         ]
 
         // MARK: - Main Control Buttons
         // Color Button (Circle)
         let colorButtonContainer = UIView()
         let colorLabel = UILabel()
-        colorLabel.text = "색상"
+        colorLabel.text = NSLocalizedString("ui.color", comment: "")
         colorLabel.textColor = .white
         colorLabel.font = .systemFont(ofSize: 11, weight: .medium)
         colorLabel.textAlignment = .center
@@ -720,13 +720,13 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Font Button
         let fontButtonContainer = UIView()
         let fontLabel = UILabel()
-        fontLabel.text = "폰트"
+        fontLabel.text = WorkoutPlazaStrings.Ui.font
         fontLabel.textColor = .white
         fontLabel.font = .systemFont(ofSize: 11, weight: .medium)
         fontLabel.textAlignment = .center
 
         let textPathFontMainButton = UIButton(type: .system)
-        textPathFontMainButton.setTitle("기본", for: .normal)
+        textPathFontMainButton.setTitle(WorkoutPlazaStrings.Ui.Font.default, for: .normal)
         textPathFontMainButton.setTitleColor(.white, for: .normal)
         textPathFontMainButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
         textPathFontMainButton.backgroundColor = UIColor.white.withAlphaComponent(0.2)
@@ -758,7 +758,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Size Button
         let sizeButtonContainer = UIView()
         let sizeLabel = UILabel()
-        sizeLabel.text = "크기"
+        sizeLabel.text = NSLocalizedString("ui.size", comment: "")
         sizeLabel.textColor = .white
         sizeLabel.font = .systemFont(ofSize: 11, weight: .medium)
         sizeLabel.textAlignment = .center
@@ -796,7 +796,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Mode Button (자유곡선/직선 토글)
         let modeButtonContainer = UIView()
         let modeLabel = UILabel()
-        modeLabel.text = "모드"
+        modeLabel.text = WorkoutPlazaStrings.Ui.mode
         modeLabel.textColor = .white
         modeLabel.font = .systemFont(ofSize: 11, weight: .medium)
         modeLabel.textAlignment = .center
@@ -854,10 +854,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         ]
 
         let availableFonts: [(name: String, font: UIFont)] = [
-            ("기본", .boldSystemFont(ofSize: 20)),
-            ("얇게", .systemFont(ofSize: 20, weight: .light)),
-            ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
-            ("굵게", .systemFont(ofSize: 20, weight: .black))
+            (WorkoutPlazaStrings.Ui.Font.default, .boldSystemFont(ofSize: 20)),
+            (WorkoutPlazaStrings.Ui.Font.thin, .systemFont(ofSize: 20, weight: .light)),
+            (WorkoutPlazaStrings.Ui.Font.rounded, .systemFont(ofSize: 20, weight: .medium)),
+            (WorkoutPlazaStrings.Ui.Font.bold, .systemFont(ofSize: 20, weight: .black))
         ]
 
         // Color Panel Content
@@ -1053,9 +1053,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         }
 
         if hasUnsavedChanges {
-            let alert = UIAlertController(title: "작업 취소", message: "변경사항이 저장되지 않을 수 있습니다. 나가시겠습니까?", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "취소", style: .cancel))
-            alert.addAction(UIAlertAction(title: "나가기", style: .destructive) { _ in
+            let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Cancel.title, message: WorkoutPlazaStrings.Alert.Unsaved.changes, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
+            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.exit, style: .destructive) { _ in
                 closeAction()
             })
             present(alert, animated: true)
@@ -1546,7 +1546,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             currentAspectRatio = allRatios[nextIndex]
             aspectRatioButton.setTitle(currentAspectRatio.displayName, for: .normal)
             updateCanvasSize()
-            showToast("Aspect Ratio: \(currentAspectRatio.displayName)")
+            showToast(WorkoutPlazaStrings.Toast.Aspect.ratio(currentAspectRatio.displayName))
         }
     }
     
@@ -1555,9 +1555,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         let (_, widgets, _) = getToolSheetItems()
         guard !widgets.isEmpty else { return }
 
-        let sections = [ToolSheetSection(title: "위젯 추가", items: widgets)]
+        let sections = [ToolSheetSection(title: WorkoutPlazaStrings.Sheet.Widget.add, items: widgets)]
         let sheetVC = ToolSheetViewController(sections: sections)
-        sheetVC.title = "위젯 추가"
+        sheetVC.title = WorkoutPlazaStrings.Sheet.Widget.add
         presentAsSheet(sheetVC)
     }
 
@@ -1565,9 +1565,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         let (templates, _, templateActions) = getToolSheetItems()
         guard !templates.isEmpty else { return }
 
-        let sections = [ToolSheetSection(title: "레이아웃 템플릿", items: templates)]
+        let sections = [ToolSheetSection(title: WorkoutPlazaStrings.Sheet.Layout.templates, items: templates, columnCount: 2)]
         let sheetVC = ToolSheetViewController(sections: sections, toolbarActions: templateActions)
-        sheetVC.title = "레이아웃 템플릿"
+        sheetVC.title = WorkoutPlazaStrings.Sheet.Layout.templates
         presentAsSheet(sheetVC)
     }
 
@@ -1642,12 +1642,12 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         activityViewController.completionWithItemsHandler = { [weak self] activityType, completed, returnedItems, error in
             if completed && activityType == .saveToCameraRoll {
                 // Image was saved to camera roll
-                let alert = UIAlertController(title: "저장 완료", message: "이미지가 앨범에 저장되었습니다", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.completed, message: WorkoutPlazaStrings.Alert.Image.saved, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 self?.present(alert, animated: true)
             } else if let error = error {
-                let alert = UIAlertController(title: "저장 실패", message: error.localizedDescription, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "확인", style: .default))
+                let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.failed, message: error.localizedDescription, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                 self?.present(alert, animated: true)
             }
         }
@@ -1661,21 +1661,21 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
     
     @objc dynamic func selectPhoto() {
-        let actionSheet = UIAlertController(title: "배경 선택", message: nil, preferredStyle: .actionSheet)
+        let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Background.select, message: nil, preferredStyle: .actionSheet)
         
-        actionSheet.addAction(UIAlertAction(title: "사진 선택", style: .default) { [weak self] _ in
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.Select.photo, style: .default) { [weak self] _ in
             self?.presentPhotoPicker()
         })
-        
-        actionSheet.addAction(UIAlertAction(title: "템플릿 사용", style: .default) { [weak self] _ in
+
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.Use.template, style: .default) { [weak self] _ in
             self?.useTemplate()
         })
-        
-        actionSheet.addAction(UIAlertAction(title: "배경 제거", style: .destructive) { [weak self] _ in
+
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.remove, style: .destructive) { [weak self] _ in
             self?.removeBackground()
         })
-        
-        actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
         
         // iPad 지원
         if let popover = actionSheet.popoverPresentationController {
@@ -1741,19 +1741,19 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     @objc dynamic func showTextPathInput() {
         let alert = UIAlertController(
-            title: "텍스트 패스",
-            message: "경로를 따라 반복할 텍스트를 입력하세요",
+            title: WorkoutPlazaStrings.Textpath.title,
+            message: WorkoutPlazaStrings.Textpath.message,
             preferredStyle: .alert
         )
 
         alert.addTextField { textField in
-            textField.placeholder = "반복할 텍스트 입력"
+            textField.placeholder = WorkoutPlazaStrings.Textpath.placeholder
             textField.autocapitalizationType = .none
         }
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
-        alert.addAction(UIAlertAction(title: "그리기", style: .default) { [weak self, weak alert] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Textpath.draw, style: .default) { [weak self, weak alert] _ in
             guard let self = self,
                   let text = alert?.textFields?.first?.text,
                   !text.isEmpty else { return }
@@ -1785,17 +1785,17 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         topRightToolbar.isHidden = true
         bottomFloatingToolbar.isHidden = true
         multiSelectToolbar.isHidden = true
-        instructionLabel.text = "👆 드래그하여 텍스트 경로를 그려주세요"
+        instructionLabel.text = WorkoutPlazaStrings.Base.Textpath.Draw.instruction
 
         // Change navigation buttons
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            title: "취소",
+            title: WorkoutPlazaStrings.Common.cancel,
             style: .plain,
             target: self,
             action: #selector(exitTextPathDrawingMode)
         )
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "텍스트 편집",
+            title: WorkoutPlazaStrings.Base.Textpath.edit,
             style: .plain,
             target: self,
             action: #selector(editTextPathText)
@@ -1850,7 +1850,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         // Show normal UI elements
         topRightToolbar.isHidden = false
-        instructionLabel.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
+        instructionLabel.text = WorkoutPlazaStrings.Ui.Drag.Widgets.instruction
 
         // Restore navigation buttons
         setupNavigationButtons()
@@ -1874,26 +1874,26 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     @objc func editTextPathText() {
         let alert = UIAlertController(
-            title: "텍스트 편집",
-            message: "경로를 따라 반복할 텍스트를 입력하세요",
+            title: WorkoutPlazaStrings.Base.Textpath.edit,
+            message: WorkoutPlazaStrings.Textpath.message,
             preferredStyle: .alert
         )
 
         alert.addTextField { textField in
             textField.text = self.pendingTextForPath.trimmingCharacters(in: .whitespaces)
-            textField.placeholder = "반복할 텍스트 입력"
+            textField.placeholder = WorkoutPlazaStrings.Textpath.placeholder
             textField.autocapitalizationType = .none
         }
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
-        alert.addAction(UIAlertAction(title: "확인", style: .default) { [weak self, weak alert] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default) { [weak self, weak alert] _ in
             guard let self = self,
                   let text = alert?.textFields?.first?.text,
                   !text.isEmpty else { return }
 
             self.pendingTextForPath = text + " "
-            self.instructionLabel.text = "반복 텍스트: \(self.pendingTextForPath)"
+            self.instructionLabel.text = WorkoutPlazaStrings.Base.Textpath.repeat(self.pendingTextForPath)
 
             // Redraw with new text
             self.updateTextPathDrawing()
@@ -2094,10 +2094,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     @objc func textPathFontButtonTapped(_ sender: UIButton) {
         textPathSelectedFontIndex = sender.tag
         let availableFonts: [(name: String, font: UIFont)] = [
-            ("기본", .boldSystemFont(ofSize: 20)),
-            ("얇게", .systemFont(ofSize: 20, weight: .light)),
-            ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
-            ("굵게", .systemFont(ofSize: 20, weight: .black))
+            (WorkoutPlazaStrings.Ui.Font.default, .boldSystemFont(ofSize: 20)),
+            (WorkoutPlazaStrings.Ui.Font.thin, .systemFont(ofSize: 20, weight: .light)),
+            (WorkoutPlazaStrings.Ui.Font.rounded, .systemFont(ofSize: 20, weight: .medium)),
+            (WorkoutPlazaStrings.Ui.Font.bold, .systemFont(ofSize: 20, weight: .black))
         ]
         let baseFont = availableFonts[sender.tag].font
         textPathSelectedFont = baseFont.withSize(textPathSelectedFontSize)
@@ -2126,10 +2126,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             mainButton.setTitle("\(Int(textPathSelectedFontSize))", for: .normal)
         }
         let availableFonts: [(name: String, font: UIFont)] = [
-            ("기본", .boldSystemFont(ofSize: 20)),
-            ("얇게", .systemFont(ofSize: 20, weight: .light)),
-            ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
-            ("굵게", .systemFont(ofSize: 20, weight: .black))
+            (WorkoutPlazaStrings.Ui.Font.default, .boldSystemFont(ofSize: 20)),
+            (WorkoutPlazaStrings.Ui.Font.thin, .systemFont(ofSize: 20, weight: .light)),
+            (WorkoutPlazaStrings.Ui.Font.rounded, .systemFont(ofSize: 20, weight: .medium)),
+            (WorkoutPlazaStrings.Ui.Font.bold, .systemFont(ofSize: 20, weight: .black))
         ]
         let baseFont = availableFonts[textPathSelectedFontIndex].font
         textPathSelectedFont = baseFont.withSize(textPathSelectedFontSize)
@@ -2193,10 +2193,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Update main button
         if let mainButton = textPathDrawingToolbar.viewWithTag(9001) as? UIButton {
             let availableFonts: [(name: String, font: UIFont)] = [
-                ("기본", .boldSystemFont(ofSize: 20)),
-                ("얇게", .systemFont(ofSize: 20, weight: .light)),
-                ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
-                ("굵게", .systemFont(ofSize: 20, weight: .black))
+                (WorkoutPlazaStrings.Ui.Font.default, .boldSystemFont(ofSize: 20)),
+                (WorkoutPlazaStrings.Ui.Font.thin, .systemFont(ofSize: 20, weight: .light)),
+                (WorkoutPlazaStrings.Ui.Font.rounded, .systemFont(ofSize: 20, weight: .medium)),
+                (WorkoutPlazaStrings.Ui.Font.bold, .systemFont(ofSize: 20, weight: .black))
             ]
             mainButton.setTitle(availableFonts[textPathSelectedFontIndex].name, for: .normal)
         }
@@ -2308,15 +2308,15 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
 
     @objc dynamic func changeTemplate() {
-        let actionSheet = UIAlertController(title: "배경 옵션", message: nil, preferredStyle: .actionSheet)
+        let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Background.options, message: nil, preferredStyle: .actionSheet)
 
         let templates: [(name: String, style: BackgroundTemplateView.TemplateStyle, colors: [UIColor])] = [
-            ("블루 그라데이션", .gradient1, [UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0), UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)]),
-            ("퍼플 그라데이션", .gradient2, [UIColor(red: 0.5, green: 0.2, blue: 0.8, alpha: 1.0), UIColor(red: 0.8, green: 0.3, blue: 0.9, alpha: 1.0)]),
-            ("오렌지 그라데이션", .gradient3, [UIColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1.0), UIColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)]),
-            ("그린 그라데이션", .gradient4, [UIColor(red: 0.2, green: 0.7, blue: 0.5, alpha: 1.0), UIColor(red: 0.4, green: 0.9, blue: 0.6, alpha: 1.0)]),
-            ("다크", .dark, [UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0), UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)]),
-            ("미니멀", .minimal, [.white])
+            (WorkoutPlazaStrings.Background.Gradient.blue, .gradient1, [UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0), UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)]),
+            (WorkoutPlazaStrings.Background.Gradient.purple, .gradient2, [UIColor(red: 0.5, green: 0.2, blue: 0.8, alpha: 1.0), UIColor(red: 0.8, green: 0.3, blue: 0.9, alpha: 1.0)]),
+            (WorkoutPlazaStrings.Background.Gradient.orange, .gradient3, [UIColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1.0), UIColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)]),
+            (WorkoutPlazaStrings.Background.Gradient.green, .gradient4, [UIColor(red: 0.2, green: 0.7, blue: 0.5, alpha: 1.0), UIColor(red: 0.4, green: 0.9, blue: 0.6, alpha: 1.0)]),
+            (WorkoutPlazaStrings.Background.dark, .dark, [UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0), UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)]),
+            (WorkoutPlazaStrings.Background.minimal, .minimal, [.white])
         ]
 
         for template in templates {
@@ -2328,18 +2328,18 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         }
 
         // Random
-        actionSheet.addAction(UIAlertAction(title: "랜덤", style: .default) { [weak self] _ in
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.random, style: .default) { [weak self] _ in
             self?.backgroundTemplateView.applyRandomTemplate()
             self?.hasUnsavedChanges = true
             self?.updateWatermarkColorForBackground()
         })
 
         // Custom
-        actionSheet.addAction(UIAlertAction(title: "커스텀 그라데이션...", style: .default) { [weak self] _ in
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.Custom.gradient, style: .default) { [weak self] _ in
             self?.presentCustomGradientPicker()
         })
 
-        actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         // iPad support
         if let popover = actionSheet.popoverPresentationController {
@@ -2497,7 +2497,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             }
         }
 
-        instructionLabel.text = "위젯을 드래그하거나 핀치하여 자유롭게 배치하세요"
+        instructionLabel.text = WorkoutPlazaStrings.Ui.Drag.Widgets.instruction
         WPLog.info("Applied template directly: \(template.name)")
     }
     
@@ -2527,11 +2527,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             )
         }
 
-        let alert = UIAlertController(title: "템플릿 저장", message: "템플릿 이름과 설명을 입력하세요", preferredStyle: .alert)
-        alert.addTextField { $0.placeholder = "템플릿 이름" }
-        alert.addTextField { $0.placeholder = "설명 (선택사항)" }
+        let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Template.save, message: WorkoutPlazaStrings.Alert.Template.Save.prompt, preferredStyle: .alert)
+        alert.addTextField { $0.placeholder = WorkoutPlazaStrings.Base.Template.Name.placeholder }
+        alert.addTextField { $0.placeholder = WorkoutPlazaStrings.Base.Template.Desc.placeholder }
 
-        alert.addAction(UIAlertAction(title: "저장", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.save, style: .default) { [weak self] _ in
             guard let name = alert.textFields?[0].text, !name.isEmpty else { return }
             let description = alert.textFields?[1].text ?? ""
 
@@ -2555,7 +2555,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 WPLog.error("Failed to export template: \(error)")
             }
         })
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
         present(alert, animated: true)
     }
     
@@ -2836,7 +2836,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Check for group conflicts
         let conflictResult = GroupManager.shared.canGroupWidgets(widgetsToGroup)
         if !conflictResult.isAllowed {
-            showGroupConflictAlert(reason: conflictResult.denialReason ?? "그룹화할 수 없습니다")
+            showGroupConflictAlert(reason: conflictResult.denialReason ?? WorkoutPlazaStrings.Base.Group.Conflict.default)
             return
         }
 
@@ -2916,11 +2916,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     private func showGroupConflictAlert(reason: String) {
         let alert = UIAlertController(
-            title: "그룹화 불가",
+            title: WorkoutPlazaStrings.Base.Group.Conflict.title,
             message: reason,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
     
@@ -2975,16 +2975,16 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         guard let selectedItem = selectionManager.currentlySelectedItem else { return }
 
         let alert = UIAlertController(
-            title: "아이템 삭제",
-            message: "선택한 아이템을 삭제하시겠습니까?",
+            title: WorkoutPlazaStrings.Base.Item.Delete.title,
+            message: WorkoutPlazaStrings.Base.Item.Delete.message,
             preferredStyle: .alert
         )
 
-        alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { [weak self] _ in
             self?.performDelete()
         })
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         present(alert, animated: true)
     }
@@ -3038,7 +3038,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         guard hasValidSelection else { return }
 
-        let actionSheet = UIAlertController(title: "폰트 스타일 선택", message: nil, preferredStyle: .actionSheet)
+        let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Font.style, message: nil, preferredStyle: .actionSheet)
 
         for fontStyle in FontStyle.allCases {
             actionSheet.addAction(UIAlertAction(title: fontStyle.displayName, style: .default) { [weak self] _ in
@@ -3046,7 +3046,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             })
         }
 
-        actionSheet.addAction(UIAlertAction(title: "취소", style: .cancel))
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
 
         // iPad support
         if let popover = actionSheet.popoverPresentationController {
@@ -3122,17 +3122,17 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     func showDimOverlayOption() {
         let alert = UIAlertController(
-            title: "딤 효과",
-            message: "위젯이 잘 보이도록 어두운 오버레이를 추가하시겠습니까?",
+            title: WorkoutPlazaStrings.Base.Dim.Effect.title,
+            message: WorkoutPlazaStrings.Base.Dim.Effect.message,
             preferredStyle: .alert
         )
 
-        alert.addAction(UIAlertAction(title: "추가", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Base.Dim.add, style: .default) { [weak self] _ in
             self?.dimOverlay.isHidden = false
             self?.hasUnsavedChanges = true
         })
 
-        alert.addAction(UIAlertAction(title: "추가 안함", style: .cancel) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Base.Dim.skip, style: .cancel) { [weak self] _ in
             self?.dimOverlay.isHidden = true
         })
 
@@ -3240,7 +3240,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             selectedItems = [singleItem]
         }
         
-        multiSelectCountLabel.text = "\(selectedItems.count)개 선택"
+        multiSelectCountLabel.text = WorkoutPlazaStrings.Base.Multi.Select.count(selectedItems.count)
         
         // Group logic: can group if > 1 and not already grouped (simplified)
         // Check if any selected item is a group
@@ -3356,8 +3356,8 @@ extension BaseWorkoutDetailViewController: UIDocumentPickerDelegate {
                 }
             } catch {
                 await MainActor.run {
-                    let alert = UIAlertController(title: "가져오기 실패", message: "오류: \(error.localizedDescription)", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "확인", style: .default))
+                    let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Import.failed, message: WorkoutPlazaStrings.Alert.Import.error(error.localizedDescription), preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
                     present(alert, animated: true)
                 }
             }
@@ -3509,18 +3509,18 @@ extension BaseWorkoutDetailViewController {
         let currentText = widget.textLabel.text ?? ""
 
         let alert = UIAlertController(
-            title: "텍스트 편집",
-            message: "위젯에 표시할 텍스트를 입력하세요",
+            title: WorkoutPlazaStrings.Base.Text.Edit.title,
+            message: WorkoutPlazaStrings.Base.Text.Edit.message,
             preferredStyle: .alert
         )
 
         alert.addTextField { textField in
             textField.text = currentText
-            textField.placeholder = "텍스트 입력"
+            textField.placeholder = WorkoutPlazaStrings.Text.Input.placeholder
             textField.clearButtonMode = .whileEditing
         }
 
-        alert.addAction(UIAlertAction(title: "완료", style: .default) { [weak alert, weak widget] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.done, style: .default) { [weak alert, weak widget] _ in
             guard let textField = alert?.textFields?.first,
                   let newText = textField.text,
                   !newText.isEmpty else { return }
@@ -3528,7 +3528,7 @@ extension BaseWorkoutDetailViewController {
             widget?.updateText(newText)
         })
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         present(alert, animated: true)
     }

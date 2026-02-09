@@ -419,10 +419,10 @@ class TextPathDrawingOverlay: UIView {
     ]
 
     private let availableFonts: [(name: String, font: UIFont)] = [
-        ("기본", .boldSystemFont(ofSize: 20)),
-        ("얇게", .systemFont(ofSize: 20, weight: .light)),
-        ("둥글게", .systemFont(ofSize: 20, weight: .medium)),
-        ("굵게", .systemFont(ofSize: 20, weight: .black))
+        (WorkoutPlazaStrings.Ui.Font.default, .boldSystemFont(ofSize: 20)),
+        (WorkoutPlazaStrings.Ui.Font.thin, .systemFont(ofSize: 20, weight: .light)),
+        (WorkoutPlazaStrings.Ui.Font.rounded, .systemFont(ofSize: 20, weight: .medium)),
+        (WorkoutPlazaStrings.Ui.Font.bold, .systemFont(ofSize: 20, weight: .black))
     ]
 
     private var selectedColorIndex: Int = 0
@@ -431,7 +431,7 @@ class TextPathDrawingOverlay: UIView {
     // MARK: - UI Components
     private let guideLabel: UILabel = {
         let label = UILabel()
-        label.text = "화면을 드래그하여\n텍스트 경로를 그려주세요"
+        label.text = WorkoutPlazaStrings.Textpath.guide
         label.textColor = .white
         label.textAlignment = .center
         label.numberOfLines = 2
@@ -458,7 +458,7 @@ class TextPathDrawingOverlay: UIView {
 
     private let fontButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("기본", for: .normal)
+        button.setTitle(WorkoutPlazaStrings.Ui.Font.default, for: .normal)
         button.setTitleColor(.white, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
         button.backgroundColor = UIColor.white.withAlphaComponent(0.2)

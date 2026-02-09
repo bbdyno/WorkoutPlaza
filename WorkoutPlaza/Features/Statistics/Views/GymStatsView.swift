@@ -47,7 +47,7 @@ class GymStatsView: UIView {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "암장별 통계"
+        label.text = WorkoutPlazaStrings.Gym.Stats.title
         label.font = .systemFont(ofSize: 18, weight: .semibold)
         label.textColor = ColorSystem.mainText
         return label
@@ -120,7 +120,7 @@ class GymStatsView: UIView {
             let emptyContainer = UIView()
 
             let emptyLabel = UILabel()
-            emptyLabel.text = "이 기간에 방문한 암장이 없습니다"
+            emptyLabel.text = WorkoutPlazaStrings.Gym.Stats.empty
             emptyLabel.font = .systemFont(ofSize: 14, weight: .medium)
             emptyLabel.textColor = ColorSystem.subText
             emptyLabel.textAlignment = .center
@@ -156,13 +156,13 @@ class GymStatsView: UIView {
         infoStack.alignment = .leading
 
         let nameLabel = UILabel()
-        nameLabel.text = gymStat.gymName.isEmpty ? "암장" : gymStat.gymName
+        nameLabel.text = gymStat.gymName.isEmpty ? WorkoutPlazaStrings.Statistics.Gym.fallback : gymStat.gymName
         nameLabel.font = .systemFont(ofSize: 16, weight: .semibold)
         nameLabel.textColor = ColorSystem.mainText
         nameLabel.numberOfLines = 1
 
         let visitLabel = UILabel()
-        visitLabel.text = "\(gymStat.visitCount)회 방문 · \(gymStat.sentRoutes)/\(gymStat.totalRoutes) 완등"
+        visitLabel.text = WorkoutPlazaStrings.Gym.Stats.summary(gymStat.visitCount, gymStat.sentRoutes, gymStat.totalRoutes)
         visitLabel.font = .systemFont(ofSize: 13, weight: .regular)
         visitLabel.textColor = ColorSystem.subText
 

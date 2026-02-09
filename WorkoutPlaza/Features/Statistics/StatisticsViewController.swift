@@ -30,6 +30,13 @@ class StatisticsViewController: UIViewController {
     private var workoutsByDate: [DateComponents: Set<WorkoutType>] = [:]
     private var selectedDate: DateComponents?
 
+    private let selectedDateHeaderFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = .autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
+        return formatter
+    }()
+
     // MARK: - UI Components
 
     private lazy var collectionView: UICollectionView = {
@@ -69,7 +76,7 @@ class StatisticsViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = ColorSystem.background
         navigationController?.navigationBar.prefersLargeTitles = false
-        title = "통계"
+        title = WorkoutPlazaStrings.Statistics.title
 
         view.addSubview(collectionView)
 
@@ -209,7 +216,7 @@ class StatisticsViewController: UIViewController {
         dispatchGroup.enter()
         WorkoutManager.shared.fetchWorkouts { [weak self] workouts in
             guard let self = self else { return }
-            self.runningWorkouts = workouts.filter { $0.workoutType == "러닝" }
+            self.runningWorkouts = workouts.filter { $0.workoutType == .running }
 
             for workout in self.runningWorkouts {
                 let components = Calendar.current.dateComponents([.year, .month, .day], from: workout.startDate)
@@ -220,7 +227,7 @@ class StatisticsViewController: UIViewController {
         }
 
         dispatchGroup.enter()
-        externalRunningWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == "러닝" }
+        externalRunningWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == .running }
         for workout in externalRunningWorkouts {
             let components = Calendar.current.dateComponents([.year, .month, .day], from: workout.workoutData.startDate)
             runningDates.insert(components)
@@ -446,7 +453,7 @@ class StatisticsViewController: UIViewController {
                     }
                 }
 
-                let label = (month % 2 == 1) ? "\(month)월" : ""
+                let label = (month % 2 == 1) ? WorkoutPlazaStrings.Statistics.Month.label(month) : ""
                 let workoutData: Any? = monthCount > 0 ? [
                     "distance": monthDistance,
                     "duration": monthDuration,
@@ -480,7 +487,7 @@ class StatisticsViewController: UIViewController {
                 }
 
                 let workoutData: Any? = yearWorkouts.isEmpty ? nil : yearWorkouts
-                data.append(BarChartDataPoint(label: "\(year)", value: yearDistance, color: barColor, workoutData: workoutData))
+                data.append(BarChartDataPoint(label: String(describing: year), value: yearDistance, color: barColor, workoutData: workoutData))
             }
             return data
         }
@@ -552,18 +559,18 @@ class StatisticsViewController: UIViewController {
         let durationMinutes = (Int(totalDuration) % 3600) / 60
 
         let durationString = durationHours > 0
-            ? String(format: "%d시간 %02d분", durationHours, durationMinutes)
-            : String(format: "%d분", durationMinutes)
+            ? WorkoutPlazaStrings.Home.Duration.hours(durationHours, durationMinutes)
+            : WorkoutPlazaStrings.Home.Weekly.Time.minutes(durationMinutes)
 
         let paceMinutes = Int(avgPace)
         let paceSeconds = Int((avgPace - Double(paceMinutes)) * 60)
         let paceString = String(format: "%d'%02d\"", paceMinutes, paceSeconds)
 
         return [
-            StatsSummaryItem(title: "거리", value: String(format: "%.1f km", distanceKm), icon: "arrow.left.and.right", color: tierColor),
-            StatsSummaryItem(title: "시간", value: durationString, icon: "clock", color: tierColor),
-            StatsSummaryItem(title: "평균 페이스", value: paceString, icon: "speedometer", color: tierColor),
-            StatsSummaryItem(title: "횟수", value: "\(totalWorkouts)회", icon: "flame", color: tierColor)
+            StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Summary.distance, value: String(format: "%.1f km", distanceKm), icon: "arrow.left.and.right", color: tierColor),
+            StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Summary.duration, value: durationString, icon: "clock", color: tierColor),
+            StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Summary.Avg.pace, value: paceString, icon: "speedometer", color: tierColor),
+            StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Running.count, value: WorkoutPlazaStrings.Statistics.Summary.count(totalWorkouts), icon: "flame", color: tierColor)
         ]
     }
 
@@ -618,7 +625,7 @@ class StatisticsViewController: UIViewController {
                     }
                 }
 
-                let label = (monthOffset % 2 == 0) ? "\(monthOffset + 1)월" : ""
+                let label = (monthOffset % 2 == 0) ? WorkoutPlazaStrings.Statistics.Month.label(monthOffset + 1) : ""
                 data.append(BarChartDataPoint(label: label, value: Double(monthRoutes), color: ColorSystem.primaryGreen))
             }
             return data
@@ -661,10 +668,10 @@ class StatisticsViewController: UIViewController {
         let successRate = totalRoutes > 0 ? (Double(sentRoutes) / Double(totalRoutes) * 100) : 0
 
         return [
-            StatsSummaryItem(title: "완등", value: "\(sentRoutes)", icon: "checkmark.circle", color: ColorSystem.primaryGreen),
-            StatsSummaryItem(title: "시도", value: "\(totalRoutes)", icon: "figure.climbing", color: ColorSystem.primaryGreen),
-            StatsSummaryItem(title: "성공률", value: String(format: "%.0f", successRate), icon: "percent", color: ColorSystem.primaryGreen),
-            StatsSummaryItem(title: "방문", value: "\(totalVisits)회", icon: "location", color: ColorSystem.primaryGreen)
+            StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Sent.routes, value: "\(sentRoutes)", icon: "checkmark.circle", color: ColorSystem.primaryGreen),
+            StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Total.routes, value: "\(totalRoutes)", icon: "figure.climbing", color: ColorSystem.primaryGreen),
+            StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Success.rate, value: String(format: "%.0f", successRate), icon: "percent", color: ColorSystem.primaryGreen),
+            StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.visits, value: WorkoutPlazaStrings.Statistics.Summary.count(totalVisits), icon: "location", color: ColorSystem.primaryGreen)
         ]
     }
 
@@ -702,7 +709,7 @@ class StatisticsViewController: UIViewController {
         for session in climbingSessions {
             if session.sessionDate >= startDate && session.sessionDate <= endDate {
                 // gymName is brand name (e.g. "더클라임"), use it for grouping
-                let brandName = session.gymName.isEmpty ? "암장" : session.gymName
+                let brandName = session.gymName.isEmpty ? WorkoutPlazaStrings.Statistics.Gym.fallback : session.gymName
                 gymSessions[brandName, default: []].append(session)
             }
         }
@@ -845,13 +852,13 @@ extension StatisticsViewController: UICollectionViewDataSource {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecentSessionCell.identifier, for: indexPath) as! RecentSessionCell
 
         if filteredItems.isEmpty {
-            cell.configure(icon: "calendar", title: "기록 없음", subtitle: "운동 기록이 있는 날짜를 선택하세요", date: Date(), color: .secondaryLabel)
+            cell.configure(icon: "calendar", title: WorkoutPlazaStrings.Statistics.No.records, subtitle: WorkoutPlazaStrings.Statistics.No.Records.hint, date: Date(), color: .secondaryLabel)
         } else {
             let item = filteredItems[indexPath.item]
             if let workout = item.data as? WorkoutData {
                 cell.configure(
                     icon: "figure.run",
-                    title: "러닝",
+                    title: WorkoutPlazaStrings.Workout.running,
                     subtitle: String(format: "%.1fkm", workout.distance / 1000),
                     date: workout.startDate,
                     color: ColorSystem.primaryBlue
@@ -859,17 +866,17 @@ extension StatisticsViewController: UICollectionViewDataSource {
             } else if let externalWorkout = item.data as? ExternalWorkout {
                 cell.configure(
                     icon: "figure.run",
-                    title: "러닝",
+                    title: WorkoutPlazaStrings.Workout.running,
                     subtitle: String(format: "%.1fkm", externalWorkout.workoutData.distance / 1000),
                     date: externalWorkout.workoutData.startDate,
                     color: ColorSystem.primaryBlue
                 )
             } else if let session = item.data as? ClimbingData {
-                let displayName = session.gymDisplayName.isEmpty ? "클라이밍" : session.gymDisplayName
+                let displayName = session.gymDisplayName.isEmpty ? WorkoutPlazaStrings.Workout.climbing : session.gymDisplayName
                 cell.configure(
                     icon: "figure.climbing",
                     title: displayName,
-                    subtitle: "\(session.sentRoutes) 완등",
+                    subtitle: WorkoutPlazaStrings.Statistics.Climbing.Sent.count(session.sentRoutes),
                     date: session.sessionDate,
                     color: ColorSystem.primaryGreen
                 )
@@ -883,10 +890,10 @@ extension StatisticsViewController: UICollectionViewDataSource {
 
         // Section 3 is the selected date workouts
         if indexPath.section == 3 {
-            if let date = selectedDate, let month = date.month, let day = date.day {
-                header.titleLabel.text = "\(month)월 \(day)일"
+            if let selectedDate = selectedDate, let date = Calendar.current.date(from: selectedDate) {
+                header.titleLabel.text = selectedDateHeaderFormatter.string(from: date)
             } else {
-                header.titleLabel.text = "날짜를 선택하세요"
+                header.titleLabel.text = WorkoutPlazaStrings.Statistics.Date.Select.hint
             }
         } else {
             header.titleLabel.text = ""
@@ -943,7 +950,7 @@ extension StatisticsViewController: UICollectionViewDelegate {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             guard let self = self else { return nil }
 
-            let deleteAction = UIAction(title: "삭제", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+            let deleteAction = UIAction(title: WorkoutPlazaStrings.Common.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
                 self.deleteItem(at: indexPath, item: item)
             }
 
@@ -956,14 +963,14 @@ extension StatisticsViewController: UICollectionViewDelegate {
         guard let session = item.data as? ClimbingData else { return }
 
         let alert = UIAlertController(
-            title: "기록 삭제",
-            message: "이 클라이밍 기록을 삭제하시겠습니까?",
+            title: WorkoutPlazaStrings.Statistics.Delete.Climbing.title,
+            message: WorkoutPlazaStrings.Statistics.Delete.Climbing.message,
             preferredStyle: .alert
         )
 
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
-        alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { [weak self] _ in
             guard let self = self else { return }
 
             ClimbingDataManager.shared.deleteSession(id: session.id)

@@ -29,7 +29,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable {
     // MARK: - UI Components
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "완등 현황"
+        label.text = WorkoutPlazaStrings.Widget.Climbing.Routes.By.color
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .white.withAlphaComponent(0.7)
         label.adjustsFontSizeToFitWidth = true

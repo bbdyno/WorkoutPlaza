@@ -15,8 +15,8 @@ enum SportType: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .running: return "러닝"
-        case .climbing: return "클라이밍"
+        case .running: return WorkoutPlazaStrings.Workout.running
+        case .climbing: return WorkoutPlazaStrings.Workout.climbing
         }
     }
 

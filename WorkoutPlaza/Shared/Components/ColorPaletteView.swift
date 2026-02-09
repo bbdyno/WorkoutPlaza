@@ -86,7 +86,7 @@ class ColorPaletteView: UIView {
 
     private func setupButtons() {
         // More button
-        moreButton.setTitle("더보기", for: .normal)
+        moreButton.setTitle(WorkoutPlazaStrings.Button.Show.more, for: .normal)
         moreButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
         moreButton.addTarget(self, action: #selector(moreButtonTapped), for: .touchUpInside)
         addSubview(moreButton)

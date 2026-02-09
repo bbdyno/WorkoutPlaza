@@ -55,7 +55,7 @@ struct Creator: Codable {
 
 // MARK: - ExportableWorkoutData
 struct ExportableWorkoutData: Codable {
-    let type: String           // "러닝", "사이클링" 등
+    let type: WorkoutType
     let distance: Double       // 미터
     let duration: TimeInterval // 초
     let startDate: Date
@@ -67,7 +67,7 @@ struct ExportableWorkoutData: Codable {
     let avgHeartRate: Double?  // bpm (이전 데이터 호환을 위해 optional)
 
     init(
-        type: String,
+        type: WorkoutType,
         distance: Double,
         duration: TimeInterval,
         startDate: Date,
@@ -168,41 +168,54 @@ enum ShareError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidFileFormat:
-            return "잘못된 파일 형식입니다."
+            return WorkoutPlazaStrings.Share.Error.Invalid.File.format
         case .versionMismatch:
-            return "파일 버전이 지원되지 않습니다."
+            return WorkoutPlazaStrings.Share.Error.Version.mismatch
         case .corruptedData:
-            return "파일 데이터가 손상되었습니다."
+            return WorkoutPlazaStrings.Share.Error.Corrupted.data
         case .missingRequiredFields:
-            return "필수 데이터가 누락되었습니다."
+            return WorkoutPlazaStrings.Share.Error.Missing.Required.fields
         case .exportFailed:
-            return "내보내기에 실패했습니다."
+            return WorkoutPlazaStrings.Share.Error.Export.failed
         case .importFailed:
-            return "가져오기에 실패했습니다."
+            return WorkoutPlazaStrings.Share.Error.Import.failed
         case .invalidFileExtension:
-            return "지원되지 않는 파일 확장자입니다."
+            return WorkoutPlazaStrings.Share.Error.Invalid.File.extension
         case .fileNotFound:
-            return "파일을 찾을 수 없습니다."
+            return WorkoutPlazaStrings.Share.Error.File.Not.found
         case .encodingFailed:
-            return "데이터 인코딩에 실패했습니다."
+            return WorkoutPlazaStrings.Share.Error.Encoding.failed
         case .decodingFailed:
-            return "데이터 디코딩에 실패했습니다."
+            return WorkoutPlazaStrings.Share.Error.Decoding.failed
         case .templateVersionMismatch:
-            return "포함된 템플릿이 현재 앱 버전과 호환되지 않습니다. 앱을 업데이트해주세요."
+            return WorkoutPlazaStrings.Share.Error.Template.Version.mismatch
         }
     }
 }
 
 // MARK: - Import Field
 enum ImportField: String, CaseIterable, Codable {
-    case distance = "거리"
-    case duration = "시간"
-    case pace = "페이스"
-    case speed = "속도"
-    case calories = "칼로리"
-    case heartRate = "심박수"
-    case date = "날짜"
-    case route = "경로"
+    case distance = "distance"
+    case duration = "duration"
+    case pace = "pace"
+    case speed = "speed"
+    case calories = "calories"
+    case heartRate = "heartRate"
+    case date = "date"
+    case route = "route"
+
+    var displayName: String {
+        switch self {
+        case .distance: return WorkoutPlazaStrings.Widget.distance
+        case .duration: return WorkoutPlazaStrings.Widget.duration
+        case .pace: return WorkoutPlazaStrings.Widget.pace
+        case .speed: return WorkoutPlazaStrings.Widget.speed
+        case .calories: return WorkoutPlazaStrings.Widget.calories
+        case .heartRate: return WorkoutPlazaStrings.Widget.Heart.rate
+        case .date: return WorkoutPlazaStrings.Widget.date
+        case .route: return WorkoutPlazaStrings.Import.Field.route
+        }
+    }
 
     var icon: String {
         switch self {
