@@ -318,62 +318,35 @@ extension BaseWorkoutDetailViewController {
 
     private func applyFontToSelection(_ fontStyle: FontStyle) {
         let selectedItems = selectionManager.getSelectedItems()
+        let applyFontAndPersist: (Selectable) -> Void = { selectable in
+            selectable.applyFont(fontStyle)
+            if !(selectable is TemplateGroupView) {
+                FontPreferences.shared.saveFont(fontStyle, for: selectable.itemIdentifier)
+            }
+        }
+
+        let applyFontToGroup: (TemplateGroupView) -> Void = { group in
+            for widget in group.groupedItems {
+                if let selectable = widget as? Selectable {
+                    applyFontAndPersist(selectable)
+                }
+            }
+            group.applyFont(fontStyle)
+        }
 
         if !selectedItems.isEmpty {
-            // Apply font to all selected items
             for item in selectedItems {
                 if let group = item as? TemplateGroupView {
-                    // Apply font to all widgets inside the group
-                    for widget in group.groupedItems {
-                        if let statWidget = widget as? BaseStatWidget {
-                            statWidget.applyFont(fontStyle)
-                            FontPreferences.shared.saveFont(fontStyle, for: statWidget.itemIdentifier)
-                        } else if let textWidget = widget as? TextWidget {
-                            textWidget.applyFont(fontStyle)
-                            FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
-                        } else if let routesWidget = widget as? ClimbingRoutesByColorWidget {
-                            routesWidget.applyFont(fontStyle)
-                            FontPreferences.shared.saveFont(fontStyle, for: routesWidget.itemIdentifier)
-                        }
-                    }
-                    // Also update the group's font style
-                    group.applyFont(fontStyle)
-                } else if let statWidget = item as? BaseStatWidget {
-                    statWidget.applyFont(fontStyle)
-                    FontPreferences.shared.saveFont(fontStyle, for: statWidget.itemIdentifier)
-                } else if let textWidget = item as? TextWidget {
-                    textWidget.applyFont(fontStyle)
-                    FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
-                } else if let routesWidget = item as? ClimbingRoutesByColorWidget {
-                    routesWidget.applyFont(fontStyle)
-                    FontPreferences.shared.saveFont(fontStyle, for: routesWidget.itemIdentifier)
+                    applyFontToGroup(group)
+                } else {
+                    applyFontAndPersist(item)
                 }
             }
         } else if let selectedItem = selectionManager.currentlySelectedItem {
-            // Single selection mode (fallback)
-            if let statWidget = selectedItem as? BaseStatWidget {
-                statWidget.applyFont(fontStyle)
-                FontPreferences.shared.saveFont(fontStyle, for: statWidget.itemIdentifier)
-            } else if let textWidget = selectedItem as? TextWidget {
-                textWidget.applyFont(fontStyle)
-                FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
-            } else if let routesWidget = selectedItem as? ClimbingRoutesByColorWidget {
-                routesWidget.applyFont(fontStyle)
-                FontPreferences.shared.saveFont(fontStyle, for: routesWidget.itemIdentifier)
-            } else if let group = selectedItem as? TemplateGroupView {
-                for widget in group.groupedItems {
-                    if let statWidget = widget as? BaseStatWidget {
-                        statWidget.applyFont(fontStyle)
-                        FontPreferences.shared.saveFont(fontStyle, for: statWidget.itemIdentifier)
-                    } else if let textWidget = widget as? TextWidget {
-                        textWidget.applyFont(fontStyle)
-                        FontPreferences.shared.saveFont(fontStyle, for: textWidget.itemIdentifier)
-                    } else if let routesWidget = widget as? ClimbingRoutesByColorWidget {
-                        routesWidget.applyFont(fontStyle)
-                        FontPreferences.shared.saveFont(fontStyle, for: routesWidget.itemIdentifier)
-                    }
-                }
-                group.applyFont(fontStyle)
+            if let group = selectedItem as? TemplateGroupView {
+                applyFontToGroup(group)
+            } else {
+                applyFontAndPersist(selectedItem)
             }
         }
         hasUnsavedChanges = true

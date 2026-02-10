@@ -33,10 +33,9 @@ enum WidgetSizeNormalizer {
         widgetType: WidgetType,
         forceLegacyMigration: Bool
     ) -> CGSize {
-        guard forceLegacyMigration else {
-            return size
-        }
-        let tolerance = max(aspectTolerance, legacyAspectTolerance)
+        let tolerance = forceLegacyMigration
+            ? max(aspectTolerance, legacyAspectTolerance)
+            : aspectTolerance
         return normalizeRunningCompactStatSize(size, widgetType: widgetType, tolerance: tolerance)
     }
 
@@ -204,7 +203,7 @@ enum WidgetSizeNormalizer {
 
     static func isRunningCompactStat(_ widgetType: WidgetType) -> Bool {
         switch widgetType {
-        case .distance, .duration, .pace, .calories:
+        case .distance, .duration, .pace, .speed, .calories, .heartRate:
             return true
         default:
             return false
@@ -221,20 +220,13 @@ enum WidgetSizeNormalizer {
     }
 
     private static func isRegularRunningStat(_ widgetType: WidgetType) -> Bool {
-        switch widgetType {
-        case .speed, .heartRate:
-            return true
-        default:
-            return false
-        }
+        false
     }
 
     private static func defaultRunningStatSize(for widgetType: WidgetType) -> CGSize {
         switch widgetType {
-        case .distance, .duration, .pace, .calories:
+        case .distance, .duration, .pace, .speed, .calories, .heartRate:
             return compactDefaultSize
-        case .speed, .heartRate:
-            return regularDefaultSize
         default:
             return regularDefaultSize
         }

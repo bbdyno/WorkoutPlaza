@@ -14,6 +14,42 @@ class WorkoutManager {
     private let healthStore = HKHealthStore()
     
     private init() {}
+
+    func authorizationState(completion: @escaping (HealthKitAuthorizationState) -> Void) {
+        func complete(_ state: HealthKitAuthorizationState) {
+            DispatchQueue.main.async {
+                completion(state)
+            }
+        }
+
+        guard HKHealthStore.isHealthDataAvailable() else {
+            complete(.notAvailable)
+            return
+        }
+
+        let typesToRead: Set<HKObjectType> = [
+            HKObjectType.workoutType(),
+            HKSeriesType.workoutRoute()
+        ]
+
+        healthStore.getRequestStatusForAuthorization(toShare: Set<HKSampleType>(), read: typesToRead) { status, error in
+            if error != nil {
+                complete(.unknown)
+                return
+            }
+
+            switch status {
+            case .unnecessary:
+                complete(.authorized)
+            case .shouldRequest:
+                complete(.requestNeeded)
+            case .unknown:
+                complete(.unknown)
+            @unknown default:
+                complete(.unknown)
+            }
+        }
+    }
     
     // MARK: - HealthKit 권한 요청
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
@@ -105,6 +141,13 @@ class WorkoutManager {
         
         healthStore.execute(query)
     }
+}
+
+enum HealthKitAuthorizationState {
+    case notAvailable
+    case requestNeeded
+    case authorized
+    case unknown
 }
 
 // MARK: - 데이터 모델

@@ -626,7 +626,7 @@ class DisciplineSelectionCell: UITableViewCell {
         stackView.distribution = .fillEqually
         stackView.backgroundColor = .clear // No separator line
 
-        for (index, discipline) in ClimbingDiscipline.allCases.enumerated() {
+        for discipline in ClimbingDiscipline.allCases {
             let btn = UIButton(type: .system)
             btn.setTitle(discipline.displayName, for: .normal)
             btn.setTitleColor(ColorSystem.subText, for: .normal)

@@ -219,7 +219,7 @@ class ClimbingGymManager {
         WPLog.info("Starting gym structure migration...")
 
         // 1. Load all custom gyms
-        var customGyms = loadGyms()
+        let customGyms = loadGyms()
         WPLog.info("Loaded \(customGyms.count) custom gyms for migration")
 
         // 2. Group gyms by brand name to find duplicates
@@ -499,13 +499,10 @@ struct ClimbingRoute: Codable, Identifiable {
 
     // Display name combining color and grade
     var displayName: String {
-        if let colorHex = colorHex, !grade.isEmpty {
+        if !grade.isEmpty {
             return grade
-        } else if !grade.isEmpty {
-            return grade
-        } else {
-            return "미지정"
         }
+        return "미지정"
     }
 }
 
@@ -606,7 +603,7 @@ struct ClimbingData: SportDataProtocol, Codable {
 // MARK: - Exportable Climbing Data
 
 struct ExportableClimbingData: ExportableSportData {
-    let sportType: SportType = .climbing
+    let sportType: SportType
     let id: String
     let gymName: String
     let gymId: String?
@@ -619,6 +616,7 @@ struct ExportableClimbingData: ExportableSportData {
     let notes: String?
 
     init(from climbingData: ClimbingData) {
+        self.sportType = .climbing
         self.id = climbingData.id
         self.gymName = climbingData.gymName
         self.gymId = climbingData.gymId

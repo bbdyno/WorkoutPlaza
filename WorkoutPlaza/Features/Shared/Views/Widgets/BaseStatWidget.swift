@@ -11,6 +11,7 @@ import SnapKit
 // MARK: - Display Mode
 enum WidgetDisplayMode: String, Codable {
     case text
+    case textUnified
     case icon
 }
 
@@ -135,7 +136,14 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
 
     func toggleDisplayMode() {
         guard widgetIconName != nil else { return }
-        displayMode = (displayMode == .text) ? .icon : .text
+        switch displayMode {
+        case .text:
+            displayMode = .textUnified
+        case .textUnified:
+            displayMode = .icon
+        case .icon:
+            displayMode = .text
+        }
         applyDisplayMode()
     }
 
@@ -148,6 +156,7 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
     // 텍스트 모드의 기준 크기 (스케일 1.0일 때의 크기)
     private var textModeBaseSize: CGSize = .zero
     private var cachedHasUnitText: Bool?
+    private var unifiedSourceValueText: String?
     private static let textModeTopInset: CGFloat = 3
     private static let textModeBottomInset: CGFloat = 3
     private static let textModeTitleSpacing: CGFloat = 1
@@ -162,6 +171,8 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         switch displayMode {
         case .text:
             applyTextModeLayout()
+        case .textUnified:
+            applyUnifiedTextModeLayout()
         case .icon:
             applyIconModeLayout(scale: clampedScale)
         }
@@ -175,6 +186,8 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
     }
 
     private func applyTextModeLayout() {
+        restoreValueTextFromUnifiedModeIfNeeded()
+
         titleLabel.isHidden = false
         iconImageView.isHidden = true
         let hasUnit = usesUnitText
@@ -208,10 +221,33 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         }
     }
 
+    private func applyUnifiedTextModeLayout() {
+        titleLabel.isHidden = false
+        iconImageView.isHidden = true
+        cachedHasUnitText = usesUnitText
+        unitLabel.isHidden = true
+        applyUnifiedValueText()
+
+        titleLabel.snp.remakeConstraints { make in
+            make.top.equalToSuperview().offset(Self.textModeTopInset)
+            make.leading.trailing.equalToSuperview().inset(LayoutConstants.standardPadding)
+        }
+
+        valueLabel.snp.remakeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(Self.textModeTitleSpacing)
+            make.leading.equalToSuperview().inset(LayoutConstants.standardPadding)
+            make.trailing.lessThanOrEqualToSuperview().inset(LayoutConstants.standardPadding)
+            make.bottom.lessThanOrEqualToSuperview().inset(Self.textModeBottomInset)
+        }
+
+        unitLabel.snp.removeConstraints()
+    }
+
     private static let baseIconSize: CGFloat = 22
 
     private func applyIconModeLayout(scale: CGFloat = 1.0) {
         guard let iconName = widgetIconName else { return }
+        restoreValueTextFromUnifiedModeIfNeeded()
 
         let iconSize = Self.baseIconSize * scale
         let hasUnit = usesUnitText
@@ -257,7 +293,8 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
             textModeBaseSize = resolvedInitialTextModeBaseSize()
         }
 
-        if displayMode == .text {
+        switch displayMode {
+        case .text, .textUnified:
             let proposedSize = CGSize(
                 width: textModeBaseSize.width * safeScale,
                 height: textModeBaseSize.height * safeScale
@@ -274,7 +311,7 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
                 height: frame.size.height / safeScale
             )
             initialSize = textModeBaseSize
-        } else {
+        case .icon:
             let hasUnit = usesUnitText
             let unitSpacing = hasUnit ? Self.contentSpacing : 0
             let valueWidth = valueLabel.intrinsicContentSize.width
@@ -296,6 +333,52 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         if isSelected {
             positionResizeHandles()
         }
+    }
+
+    private func applyUnifiedValueText() {
+        let unitText = trimmedUnitText
+        let expectedText = mergedValueText(
+            value: unifiedSourceValueText ?? "",
+            unit: unitText
+        )
+
+        if let currentText = valueLabel.text, unifiedSourceValueText != nil, currentText != expectedText {
+            unifiedSourceValueText = normalizedValueSourceText(currentText, unit: unitText)
+        } else if unifiedSourceValueText == nil {
+            unifiedSourceValueText = normalizedValueSourceText(valueLabel.text ?? "", unit: unitText)
+        }
+
+        let mergedText = mergedValueText(value: unifiedSourceValueText ?? "", unit: unitText)
+        if valueLabel.text != mergedText {
+            valueLabel.text = mergedText
+        }
+    }
+
+    private func restoreValueTextFromUnifiedModeIfNeeded() {
+        guard let sourceText = unifiedSourceValueText else { return }
+        if valueLabel.text != sourceText {
+            valueLabel.text = sourceText
+        }
+        unifiedSourceValueText = nil
+    }
+
+    private var trimmedUnitText: String {
+        unitLabel.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    private func mergedValueText(value: String, unit: String) -> String {
+        let unitText = unit.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !unitText.isEmpty else { return value }
+        guard !value.isEmpty else { return unitText }
+        return "\(value) \(unitText)"
+    }
+
+    private func normalizedValueSourceText(_ text: String, unit: String) -> String {
+        let unitText = unit.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !unitText.isEmpty else { return text }
+        let suffix = " \(unitText)"
+        guard text.hasSuffix(suffix) else { return text }
+        return String(text.dropLast(suffix.count))
     }
 
     private var usesUnitText: Bool {
@@ -336,18 +419,26 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
 
     private func requiredTextModeSize() -> CGSize {
         let padding = LayoutConstants.standardPadding
-        let hasUnit = usesUnitText
-        let unitSpacing = hasUnit ? Self.contentSpacing : 0
 
         let titleWidth = titleLabel.intrinsicContentSize.width
         let valueWidth = valueLabel.intrinsicContentSize.width
-        let unitWidth = hasUnit ? unitLabel.intrinsicContentSize.width : 0
-        let valueLineWidth = valueWidth + unitSpacing + unitWidth
 
         let titleHeight = titleLabel.font.lineHeight
         let valueHeight = valueLabel.font.lineHeight
-        let unitHeight = hasUnit ? unitLabel.font.lineHeight : 0
-        let bodyHeight = max(valueHeight, unitHeight)
+
+        let valueLineWidth: CGFloat
+        let bodyHeight: CGFloat
+        if displayMode == .textUnified {
+            valueLineWidth = valueWidth
+            bodyHeight = valueHeight
+        } else {
+            let hasUnit = usesUnitText
+            let unitSpacing = hasUnit ? Self.contentSpacing : 0
+            let unitWidth = hasUnit ? unitLabel.intrinsicContentSize.width : 0
+            let unitHeight = hasUnit ? unitLabel.font.lineHeight : 0
+            valueLineWidth = valueWidth + unitSpacing + unitWidth
+            bodyHeight = max(valueHeight, unitHeight)
+        }
 
         let width = max(titleWidth, valueLineWidth) + padding * 2
         let height = Self.textModeTopInset + titleHeight + Self.textModeTitleSpacing + bodyHeight + Self.textModeBottomInset
@@ -445,10 +536,23 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
     }
 
     func updateColors() {
-        valueLabel.textColor = currentColor
-        titleLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
-        unitLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
-        iconImageView.tintColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+        switch displayMode {
+        case .text:
+            valueLabel.textColor = currentColor
+            titleLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+            unitLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+            iconImageView.tintColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+        case .textUnified:
+            valueLabel.textColor = currentColor
+            titleLabel.textColor = currentColor
+            unitLabel.textColor = currentColor
+            iconImageView.tintColor = currentColor
+        case .icon:
+            valueLabel.textColor = currentColor
+            titleLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+            unitLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+            iconImageView.tintColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+        }
     }
 
     func updateFonts() {
@@ -563,11 +667,13 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
     private func applyFontScale(_ scale: CGFloat) {
         let titleSize = (baseFontSizes["title"] ?? LayoutConstants.titleFontSize) * scale
         let valueSize = (baseFontSizes["value"] ?? LayoutConstants.valueFontSize) * scale
-        let unitSize = (baseFontSizes["unit"] ?? LayoutConstants.unitFontSize) * scale
+        let defaultUnitSize = (baseFontSizes["unit"] ?? LayoutConstants.unitFontSize) * scale
+        let valueUnitSize = (baseFontSizes["value"] ?? LayoutConstants.valueFontSize) * scale
+        let unitSize = displayMode == .textUnified ? valueUnitSize : defaultUnitSize
 
         titleLabel.font = currentFontStyle.font(size: titleSize, weight: .medium)
         valueLabel.font = currentFontStyle.font(size: valueSize, weight: .bold)
-        unitLabel.font = currentFontStyle.font(size: unitSize, weight: .regular)
+        unitLabel.font = currentFontStyle.font(size: unitSize, weight: displayMode == .textUnified ? .bold : .regular)
 
         // 아이콘 모드에서 아이콘 크기도 스케일에 맞게 조정
         if displayMode == .icon {
@@ -591,6 +697,9 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
     // MARK: - Layout
     override func layoutSubviews() {
         super.layoutSubviews()
+        if displayMode == .textUnified {
+            applyUnifiedValueText()
+        }
         syncUnitLayoutIfNeeded()
 
         applyAlignmentLayout()
@@ -608,6 +717,8 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         switch displayMode {
         case .text:
             applyTextModeLayout()
+        case .textUnified:
+            applyUnifiedTextModeLayout()
         case .icon:
             applyIconModeLayout(scale: calculateScaleFactor())
         }

@@ -47,7 +47,7 @@ struct WidgetPackageVerificationReport: Hashable {
     let trustLevel: WidgetPackageTrustLevel
     let messages: [String]
 
-    var isValid: Bool {
+    nonisolated var isValid: Bool {
         trustLevel != .invalid
     }
 }
@@ -86,7 +86,7 @@ struct WidgetCatalogItem: Codable, Hashable {
     let signature: String?
     let trustLevel: WidgetPackageTrustLevel
 
-    func isCompatible(appVersion: String) -> Bool {
+    nonisolated func isCompatible(appVersion: String) -> Bool {
         guard let minimumAppVersion else { return true }
         return appVersion.compare(minimumAppVersion, options: .numeric) != .orderedAscending
     }

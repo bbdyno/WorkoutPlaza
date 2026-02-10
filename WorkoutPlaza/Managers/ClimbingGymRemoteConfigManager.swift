@@ -177,7 +177,7 @@ class ClimbingGymRemoteConfigManager {
         WPLog.debug("Firebase App Info:",
                     "Name: \(app.name)",
                     "Project ID: \(app.options.projectID ?? "unknown")",
-                    "Bundle ID: \(app.options.bundleID ?? "unknown")",
+                    "Bundle ID: \(app.options.bundleID)",
                     "API Key: \(app.options.apiKey?.prefix(10) ?? "unknown")...")
 
         // GoogleService-Info.plist 확인
@@ -304,7 +304,7 @@ class ClimbingGymRemoteConfigManager {
 
     /// Remote Config에서 gym 데이터 파싱
     private func parseGyms() -> [ClimbingGym]? {
-        let jsonString = remoteConfig.configValue(forKey: "climbing_gym_presets").stringValue ?? ""
+        let jsonString = remoteConfig.configValue(forKey: "climbing_gym_presets").stringValue
 
         WPLog.debug("Remote Config JSON: \(jsonString.prefix(200))...")
 

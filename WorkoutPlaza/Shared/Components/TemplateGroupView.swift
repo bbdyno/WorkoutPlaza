@@ -579,7 +579,7 @@ class TemplateGroupView: UIView, Selectable {
         currentColor = color
         // Propagate color change to all grouped items
         for item in groupedItems {
-            if var selectable = item as? Selectable {
+            if let selectable = item as? Selectable {
                 selectable.applyColor(color)
             }
         }
@@ -589,11 +589,8 @@ class TemplateGroupView: UIView, Selectable {
         currentFontStyle = fontStyle
         // Propagate font change to all grouped items
         for item in groupedItems {
-            if let statWidget = item as? BaseStatWidget {
-                statWidget.applyFont(fontStyle)
-            }
-            if let textWidget = item as? TextWidget {
-                textWidget.applyFont(fontStyle)
+            if let selectable = item as? Selectable {
+                selectable.applyFont(fontStyle)
             }
         }
     }

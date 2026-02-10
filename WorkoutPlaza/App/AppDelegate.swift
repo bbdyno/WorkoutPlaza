@@ -24,7 +24,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                         "Firebase GCM Sender ID: \(options.gcmSenderID)",
                         "Firebase Google App ID: \(options.googleAppID)",
                         "Firebase API Key: \(options.apiKey ?? "unknown")",
-                        "Firebase Bundle ID: \(options.bundleID ?? "unknown")")
+                        "Firebase Bundle ID: \(options.bundleID)")
 
             // Remote Config 자동 업데이트 설정
             setupRemoteConfig()

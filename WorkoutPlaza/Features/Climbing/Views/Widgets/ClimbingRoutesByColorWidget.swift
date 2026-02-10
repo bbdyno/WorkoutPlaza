@@ -417,8 +417,6 @@ class ClimbingRoutesByColorWidget: UIView, Selectable, WidgetContentAlignable {
                 handle.center = CGPoint(x: frame.minX - offset + handleSize/2, y: frame.maxY + offset - handleSize/2)
             case .bottomRight:
                 handle.center = CGPoint(x: frame.maxX + offset - handleSize/2, y: frame.maxY + offset - handleSize/2)
-            default:
-                break
             }
         }
     }

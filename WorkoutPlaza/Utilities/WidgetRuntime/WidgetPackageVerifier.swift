@@ -19,7 +19,7 @@ actor WidgetPackageVerifier {
         trustedSignatureTokens = tokens
     }
 
-    func verify(package: WidgetPackage) -> WidgetPackageVerificationReport {
+    func verify(package: WidgetPackage) async -> WidgetPackageVerificationReport {
         var messages: [String] = []
 
         if let minVersion = package.manifest.minimumAppVersion,
@@ -29,7 +29,7 @@ actor WidgetPackageVerifier {
         }
 
         if let checksums = package.manifest.templateChecksums {
-            let checksumResult = verifyTemplateChecksums(package: package, checksums: checksums)
+            let checksumResult = await verifyTemplateChecksums(package: package, checksums: checksums)
             if !checksumResult.isValid {
                 return WidgetPackageVerificationReport(trustLevel: .invalid, messages: checksumResult.messages)
             }
@@ -48,7 +48,7 @@ actor WidgetPackageVerifier {
             return WidgetPackageVerificationReport(trustLevel: .trusted, messages: messages)
         }
 
-        let manifestDigest = manifestDigestString(for: package.manifest)
+        let manifestDigest = await manifestDigestString(for: package.manifest)
         if signature == manifestDigest {
             messages.append("Manifest digest signature matched.")
             return WidgetPackageVerificationReport(trustLevel: .signed, messages: messages)
@@ -61,14 +61,14 @@ actor WidgetPackageVerifier {
     private func verifyTemplateChecksums(
         package: WidgetPackage,
         checksums: [String: String]
-    ) -> WidgetPackageVerificationReport {
+    ) async -> WidgetPackageVerificationReport {
         var messages: [String] = []
 
         for template in package.templates {
             guard let expected = checksums[template.id] else {
                 continue
             }
-            guard let data = try? Self.stableEncoder.encode(template) else {
+            guard let data = await Self.stableEncodedTemplateData(template) else {
                 return WidgetPackageVerificationReport(
                     trustLevel: .invalid,
                     messages: ["Failed to encode template \(template.id) for checksum verification."]
@@ -87,9 +87,19 @@ actor WidgetPackageVerifier {
         return WidgetPackageVerificationReport(trustLevel: .unverified, messages: messages)
     }
 
-    private func manifestDigestString(for manifest: WidgetPackageManifest) -> String {
-        guard let data = try? Self.stableEncoder.encode(manifest) else { return "" }
+    private func manifestDigestString(for manifest: WidgetPackageManifest) async -> String {
+        guard let data = await Self.stableEncodedManifestData(manifest) else { return "" }
         return SHA256.hash(data: data).hexString
+    }
+
+    @MainActor
+    private static func stableEncodedTemplateData(_ template: WidgetTemplate) -> Data? {
+        try? stableEncoder.encode(template)
+    }
+
+    @MainActor
+    private static func stableEncodedManifestData(_ manifest: WidgetPackageManifest) -> Data? {
+        try? stableEncoder.encode(manifest)
     }
 
     private func currentAppVersion() -> String {
@@ -108,7 +118,7 @@ actor WidgetPackageVerifier {
 }
 
 private extension Digest {
-    var hexString: String {
+    nonisolated var hexString: String {
         self.map { String(format: "%02x", $0) }.joined()
     }
 }

@@ -16,7 +16,12 @@ import UIKit
 
 // MARK: - Pace Widget
 class PaceWidget: BaseStatWidget {
+    private static let minimumStandaloneSize: CGFloat = 30
+
     override var widgetIconName: String? { "speedometer" }
+    override var minimumSize: CGFloat {
+        isGroupManaged ? LayoutConstants.groupManagedMinimumWidgetSize : Self.minimumStandaloneSize
+    }
 
     func configure(pace: Double) {
         titleLabel.text = WorkoutPlazaStrings.Widget.Title.Avg.pace
