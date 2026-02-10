@@ -105,6 +105,7 @@ struct WidgetItem: Codable {
     let size: Size
     let color: String?  // Hex color string
     let font: String?   // Font style name
+    let payload: String? // Widget-specific JSON payload
 
     // Ratio-based positioning (version 2.0+)
     let positionRatio: PositionRatio?
@@ -145,6 +146,7 @@ struct WidgetItem: Codable {
         sizeRatio: SizeRatio,
         color: String? = nil,
         font: String? = nil,
+        payload: String? = nil,
         groupId: String? = nil,
         groupType: WidgetGroupType? = nil,
         ownerName: String? = nil,
@@ -155,6 +157,7 @@ struct WidgetItem: Codable {
         self.sizeRatio = sizeRatio
         self.color = color
         self.font = font
+        self.payload = payload
         self.groupId = groupId
         self.groupType = groupType
         self.ownerName = ownerName
@@ -172,6 +175,7 @@ struct WidgetItem: Codable {
         size: Size,
         color: String? = nil,
         font: String? = nil,
+        payload: String? = nil,
         groupId: String? = nil,
         groupType: WidgetGroupType? = nil,
         ownerName: String? = nil
@@ -181,6 +185,7 @@ struct WidgetItem: Codable {
         self.size = size
         self.color = color
         self.font = font
+        self.payload = payload
         self.groupId = groupId
         self.groupType = groupType
         self.ownerName = ownerName
@@ -437,7 +442,16 @@ enum WidgetType: String, Codable, CaseIterable {
                 return w
             }
         case .composite:
-            return nil
+            return {
+                let w = CompositeWidget()
+                w.frame = CGRect(origin: .zero, size: size)
+                w.configure(payload: CompositeWidgetPayload(
+                    title: WorkoutPlazaStrings.Widget.composite,
+                    primaryText: "5.20 km",
+                    secondaryText: "42:30"
+                ))
+                return w
+            }
         }
     }
 }
@@ -656,7 +670,9 @@ extension WidgetTemplate {
     static let allBuiltInTemplates: [WidgetTemplate] = [
         .basicRunning,
         .detailedStats,
-        .minimal
+        .minimal,
+        .basicClimbing,
+        .detailedClimbing
     ]
 
     // Running templates

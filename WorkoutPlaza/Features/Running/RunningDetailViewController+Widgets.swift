@@ -58,8 +58,6 @@ extension RunningDetailViewController {
     }
 
     private func configureWithImportedData(_ imported: ImportedWorkoutData) {
-        let data = imported.originalData
-
         // GPS 경로 데이터가 있을 때만 경로 맵 뷰 추가
         if imported.hasRoute {
             let mapView = RouteMapView()
@@ -260,16 +258,21 @@ extension RunningDetailViewController {
         widgets.append(widget)
         hasUnsavedChanges = true
 
-        widget.frame = CGRect(origin: position, size: size)
+        let definitionID = WidgetIdentity.definitionID(for: widget)
+        let widgetType = definitionID.map { WidgetIdentity.widgetType(for: $0) }
+        let normalizedSize = widgetType.map {
+            WidgetSizeNormalizer.normalizeRunningCompactStatSize(size, widgetType: $0)
+        } ?? size
+        widget.frame = CGRect(origin: position, size: normalizedSize)
 
         // Setup selection if widget is selectable
-        if var selectableWidget = widget as? Selectable {
+        if let selectableWidget = widget as? Selectable {
             selectableWidget.selectionDelegate = self
             selectionManager.registerItem(selectableWidget)
 
             // Set initial size for BaseStatWidget (for font scaling)
             if let statWidget = widget as? BaseStatWidget {
-                statWidget.initialSize = size
+                statWidget.initialSize = normalizedSize
             }
 
             // Load saved color if available
@@ -299,6 +302,7 @@ extension RunningDetailViewController {
         case currentDateTime
         case text
         case location
+        case composite
 
         var displayName: String {
             switch self {
@@ -313,6 +317,7 @@ extension RunningDetailViewController {
             case .currentDateTime: return WorkoutPlazaStrings.Widget.Current.datetime
             case .text: return WorkoutPlazaStrings.Widget.text
             case .location: return WorkoutPlazaStrings.Widget.location
+            case .composite: return WorkoutPlazaStrings.Widget.composite
             }
         }
     }
@@ -345,6 +350,8 @@ extension RunningDetailViewController {
         case .location:
             // GPS 경로 데이터가 없거나 이미 추가된 경우 비활성화
             return !widgets.contains(where: { $0 is LocationWidget }) && hasRoute
+        case .composite:
+            return true
         }
     }
 
@@ -489,13 +496,24 @@ extension RunningDetailViewController {
             size = CGSize(width: 220, height: 50)
 
             // Configure asynchronously (geocoding takes time)
-            w.configure(location: firstLocation) { [weak self] success in
+            w.configure(location: firstLocation) { success in
                 if success {
                     WPLog.info("Location widget configured successfully")
                 } else {
                     WPLog.warning("Location widget configuration failed")
                 }
             }
+
+        case .composite:
+            let w = CompositeWidget()
+            w.configure(payload: CompositeWidgetPayload(
+                title: WorkoutPlazaStrings.Widget.composite,
+                primaryText: "\(WorkoutFormatter.formatDistance(data.distance)) km",
+                secondaryText: WorkoutFormatter.formatDuration(data.duration)
+            ))
+            w.compositeDelegate = self
+            widget = w
+            size = CGSize(width: 220, height: 80)
         }
 
         if let widget = widget {
@@ -512,6 +530,13 @@ extension RunningDetailViewController {
 
             if let selectable = widget as? Selectable {
                 selectionManager.selectItem(selectable)
+            }
+
+            if let compositeWidget = widget as? CompositeWidget {
+                presentCompositeWidgetEditor(initialPayload: compositeWidget.payload) { [weak self, weak compositeWidget] payload in
+                    compositeWidget?.updatePayload(payload)
+                    self?.hasUnsavedChanges = true
+                }
             }
         }
     }
@@ -605,13 +630,24 @@ extension RunningDetailViewController {
             widget = w
             size = CGSize(width: 220, height: 50)
 
-            w.configure(location: firstLocation) { [weak self] success in
+            w.configure(location: firstLocation) { success in
                 if success {
                     WPLog.info("Location widget configured successfully")
                 } else {
                     WPLog.warning("Location widget configuration failed")
                 }
             }
+
+        case .composite:
+            let w = CompositeWidget()
+            w.configure(payload: CompositeWidgetPayload(
+                title: WorkoutPlazaStrings.Widget.composite,
+                primaryText: "\(WorkoutFormatter.formatDistance(data.distance)) km",
+                secondaryText: WorkoutFormatter.formatDuration(data.duration)
+            ))
+            w.compositeDelegate = self
+            widget = w
+            size = CGSize(width: 220, height: 80)
         }
 
         if let widget = widget {
@@ -626,6 +662,13 @@ extension RunningDetailViewController {
 
             if let selectable = widget as? Selectable {
                 selectionManager.selectItem(selectable)
+            }
+
+            if let compositeWidget = widget as? CompositeWidget {
+                presentCompositeWidgetEditor(initialPayload: compositeWidget.payload) { [weak self, weak compositeWidget] payload in
+                    compositeWidget?.updatePayload(payload)
+                    self?.hasUnsavedChanges = true
+                }
             }
         }
     }
@@ -736,6 +779,17 @@ extension RunningDetailViewController {
                     WPLog.warning("Location widget configuration failed")
                 }
             }
+
+        case .composite:
+            let w = CompositeWidget()
+            w.configure(payload: CompositeWidgetPayload(
+                title: WorkoutPlazaStrings.Widget.composite,
+                primaryText: "\(WorkoutFormatter.formatDistance(data.distance)) km",
+                secondaryText: WorkoutFormatter.formatDuration(data.duration)
+            ))
+            w.compositeDelegate = self
+            widget = w
+            size = CGSize(width: 220, height: 80)
         }
 
         if let widget = widget {
@@ -750,6 +804,13 @@ extension RunningDetailViewController {
 
             if let selectable = widget as? Selectable {
                 selectionManager.selectItem(selectable)
+            }
+
+            if let compositeWidget = widget as? CompositeWidget {
+                presentCompositeWidgetEditor(initialPayload: compositeWidget.payload) { [weak self, weak compositeWidget] payload in
+                    compositeWidget?.updatePayload(payload)
+                    self?.hasUnsavedChanges = true
+                }
             }
         }
     }
@@ -855,7 +916,7 @@ extension RunningDetailViewController {
         importVC.importMode = .attachToExisting
         importVC.attachToWorkout = workoutData
         importVC.delegate = self
-        importVC.availableTemplates = WidgetTemplate.runningTemplates
+        importVC.availableTemplates = availableTemplates
         importVC.widgetFactory = { [weak self] item, frame in
             self?.createWidget(for: item, frame: frame)
         }
@@ -1008,8 +1069,9 @@ extension RunningDetailViewController {
         if importedData.selectedFields.contains(.distance) {
             let w = DistanceWidget()
             w.configure(distance: originalData.distance)
-            w.frame = CGRect(x: startX, y: currentY, width: widgetSize.width, height: widgetSize.height)
-            w.initialSize = widgetSize
+            let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(widgetSize, widgetType: .distance)
+            w.frame = CGRect(x: startX, y: currentY, width: normalizedSize.width, height: normalizedSize.height)
+            w.initialSize = normalizedSize
             contentView.addSubview(w)
             w.selectionDelegate = self
             importedWidgets.append(w)
@@ -1019,8 +1081,14 @@ extension RunningDetailViewController {
         if importedData.selectedFields.contains(.duration) {
             let w = DurationWidget()
             w.configure(duration: originalData.duration)
-            w.frame = CGRect(x: startX + widgetSize.width + spacing, y: currentY, width: widgetSize.width, height: widgetSize.height)
-            w.initialSize = widgetSize
+            let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(widgetSize, widgetType: .duration)
+            w.frame = CGRect(
+                x: startX + widgetSize.width + spacing,
+                y: currentY,
+                width: normalizedSize.width,
+                height: normalizedSize.height
+            )
+            w.initialSize = normalizedSize
             contentView.addSubview(w)
             w.selectionDelegate = self
             importedWidgets.append(w)
@@ -1032,8 +1100,9 @@ extension RunningDetailViewController {
         if importedData.selectedFields.contains(.pace) {
             let w = PaceWidget()
             w.configure(pace: originalData.pace)
-            w.frame = CGRect(x: startX, y: currentY, width: widgetSize.width, height: widgetSize.height)
-            w.initialSize = widgetSize
+            let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(widgetSize, widgetType: .pace)
+            w.frame = CGRect(x: startX, y: currentY, width: normalizedSize.width, height: normalizedSize.height)
+            w.initialSize = normalizedSize
             contentView.addSubview(w)
             w.selectionDelegate = self
             importedWidgets.append(w)
@@ -1056,8 +1125,9 @@ extension RunningDetailViewController {
         if importedData.selectedFields.contains(.calories) {
             let w = CaloriesWidget()
             w.configure(calories: originalData.calories)
-            w.frame = CGRect(x: startX, y: currentY, width: widgetSize.width, height: widgetSize.height)
-            w.initialSize = widgetSize
+            let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(widgetSize, widgetType: .calories)
+            w.frame = CGRect(x: startX, y: currentY, width: normalizedSize.width, height: normalizedSize.height)
+            w.initialSize = normalizedSize
             contentView.addSubview(w)
             w.selectionDelegate = self
             importedWidgets.append(w)
@@ -1129,6 +1199,7 @@ extension RunningDetailViewController {
 
     private func createImportedWidgetsWithTemplate(_ importedData: ImportedWorkoutData, template: WidgetTemplate) -> [UIView] {
         var importedWidgets: [UIView] = []
+        let importedSource = RunningWidgetDataSource.from(importedData: importedData)
 
         let canvasSize = contentView.bounds.size
         let templateCanvasSize: CGSize
@@ -1171,7 +1242,7 @@ extension RunningDetailViewController {
         for item in template.items {
             let frame = TemplateManager.absoluteFrame(from: item, canvasSize: canvasSize, templateCanvasSize: templateCanvasSize)
             let offsetFrame = CGRect(x: frame.origin.x, y: frame.origin.y + startY, width: frame.width, height: frame.height)
-            if let widget = createWidget(for: item, frame: offsetFrame) {
+            if let widget = createWidget(for: item, frame: offsetFrame, source: importedSource) {
                 contentView.addSubview(widget)
                 if let selectable = widget as? Selectable {
                     selectable.selectionDelegate = self

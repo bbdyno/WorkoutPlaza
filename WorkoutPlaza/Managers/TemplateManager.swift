@@ -7,6 +7,35 @@
 
 import UIKit
 
+enum TemplateValidationError: LocalizedError {
+    case emptyName
+    case incompatibleMinimumVersion(required: String)
+    case emptyItems
+    case tooManyItems(Int)
+    case unsupportedWidgetType(widget: WidgetType, sport: SportType)
+    case invalidRatioValue(widget: WidgetType)
+    case invalidLegacyFrame(widget: WidgetType)
+
+    var errorDescription: String? {
+        switch self {
+        case .emptyName:
+            return "Template name is required."
+        case .incompatibleMinimumVersion(let required):
+            return "This template requires app version \(required) or later."
+        case .emptyItems:
+            return "Template must include at least one widget item."
+        case .tooManyItems(let count):
+            return "Template has too many items (\(count))."
+        case .unsupportedWidgetType(let widget, let sport):
+            return "Widget type \(widget.rawValue) is not supported for sport \(sport.rawValue)."
+        case .invalidRatioValue(let widget):
+            return "Template contains invalid ratio values for \(widget.rawValue)."
+        case .invalidLegacyFrame(let widget):
+            return "Template contains invalid legacy frame values for \(widget.rawValue)."
+        }
+    }
+}
+
 actor TemplateManager {
     static let shared = TemplateManager()
 
@@ -45,14 +74,16 @@ actor TemplateManager {
     func getTemplates(for sport: SportType) async -> [WidgetTemplate] {
         await loadCustomTemplates()
         // Get built-in for sport
-        let builtIn = try? WidgetTemplate.templates(for: sport)
+        let builtIn = WidgetTemplate.templates(for: sport)
         // Get custom for sport
         let custom = customTemplates.filter { $0.sportType == sport }
-        return (builtIn ?? []) + custom
+        return builtIn + custom
     }
 
     // MARK: - Save Custom Template
     func saveCustomTemplate(_ template: WidgetTemplate) async throws {
+        try validate(template)
+
         let fileURL = templatesDirectoryURL.appendingPathComponent("\(template.id).wptemplate")
 
         let encoder = JSONEncoder()
@@ -136,6 +167,7 @@ actor TemplateManager {
         let data = try Data(contentsOf: url)
         let decoder = JSONDecoder()
         let template = try decoder.decode(WidgetTemplate.self, from: data)
+        try validate(template)
 
         // Save as custom template
         try await saveCustomTemplate(template)
@@ -192,6 +224,7 @@ actor TemplateManager {
         canvasSize: CGSize,
         color: String? = nil,
         font: String? = nil,
+        payload: String? = nil,
         rotation: CGFloat? = nil
     ) -> WidgetItem {
         let positionRatio = WidgetItem.PositionRatio(
@@ -210,6 +243,7 @@ actor TemplateManager {
             sizeRatio: sizeRatio,
             color: color,
             font: font,
+            payload: payload,
             rotation: rotation
         )
     }
@@ -248,5 +282,49 @@ actor TemplateManager {
             width: item.size.width,
             height: item.size.height
         )
+    }
+
+    private func validate(_ template: WidgetTemplate) throws {
+        if template.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw TemplateValidationError.emptyName
+        }
+
+        if let minVersion = template.minimumAppVersion, !template.isCompatible {
+            throw TemplateValidationError.incompatibleMinimumVersion(required: minVersion)
+        }
+
+        if template.items.isEmpty {
+            throw TemplateValidationError.emptyItems
+        }
+
+        if template.items.count > 150 {
+            throw TemplateValidationError.tooManyItems(template.items.count)
+        }
+
+        for item in template.items {
+            if !item.type.supportedSports.contains(template.sportType) {
+                throw TemplateValidationError.unsupportedWidgetType(widget: item.type, sport: template.sportType)
+            }
+
+            if let positionRatio = item.positionRatio, let sizeRatio = item.sizeRatio {
+                let ratioValues = [positionRatio.x, positionRatio.y, sizeRatio.width, sizeRatio.height]
+                let hasInvalidRatio = ratioValues.contains { !$0.isFinite || $0 < 0 || $0 > 1 }
+                let hasInvalidSize = sizeRatio.width <= 0 || sizeRatio.height <= 0
+                if hasInvalidRatio || hasInvalidSize {
+                    throw TemplateValidationError.invalidRatioValue(widget: item.type)
+                }
+                continue
+            }
+
+            let isLegacyFrameValid = item.size.width > 0
+                && item.size.height > 0
+                && item.position.x.isFinite
+                && item.position.y.isFinite
+                && item.size.width.isFinite
+                && item.size.height.isFinite
+            if !isLegacyFrameValid {
+                throw TemplateValidationError.invalidLegacyFrame(widget: item.type)
+            }
+        }
     }
 }

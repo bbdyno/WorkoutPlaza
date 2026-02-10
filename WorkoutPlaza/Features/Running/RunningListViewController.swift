@@ -760,7 +760,7 @@ class WorkoutCell: UITableViewCell {
 
         distanceUnitLabel.snp.makeConstraints { make in
             make.leading.equalTo(distanceLabel.snp.trailing).offset(4)
-            make.baseline.equalTo(distanceLabel)
+            make.lastBaseline.equalTo(distanceLabel.snp.lastBaseline)
         }
 
         durationLabel.snp.makeConstraints { make in

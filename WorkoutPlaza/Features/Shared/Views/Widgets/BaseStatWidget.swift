@@ -36,10 +36,15 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
     weak var selectionDelegate: SelectionDelegate?
 
     // Font scaling properties
-    var initialSize: CGSize = .zero
+    var initialSize: CGSize = .zero {
+        didSet {
+            updateMinimumSizeOverride()
+        }
+    }
     var baseFontSizes: [String: CGFloat] = [:]
     var isGroupManaged: Bool = false
     var isResizing: Bool = false
+    private var minimumSizeOverride: CGFloat?
 
     // Movement properties
     private var initialCenter: CGPoint = .zero
@@ -47,6 +52,9 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
     // MARK: - Display Mode
     var displayMode: WidgetDisplayMode = .text
     private(set) var contentAlignment: WidgetContentAlignment = .left
+    var minimumSize: CGFloat {
+        minimumSizeOverride ?? minimumSizeCandidate(for: bounds.size)
+    }
 
     var widgetIconName: String? { nil }
 
@@ -64,7 +72,7 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         label.font = .systemFont(ofSize: LayoutConstants.titleFontSize, weight: .medium)
         label.textColor = .white.withAlphaComponent(LayoutConstants.secondaryAlpha)
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.5
+        label.minimumScaleFactor = 0.35
         label.numberOfLines = 1
         return label
     }()
@@ -74,7 +82,7 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         label.font = .systemFont(ofSize: LayoutConstants.valueFontSize, weight: .bold)
         label.textColor = .white
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.5
+        label.minimumScaleFactor = 0.35
         label.numberOfLines = 1
         return label
     }()
@@ -84,7 +92,7 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         label.font = .systemFont(ofSize: LayoutConstants.unitFontSize, weight: .regular)
         label.textColor = .white.withAlphaComponent(LayoutConstants.secondaryAlpha)
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.5
+        label.minimumScaleFactor = 0.55
         label.numberOfLines = 1
         return label
     }()
@@ -107,6 +115,18 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         addSubview(valueLabel)
         addSubview(unitLabel)
 
+        // Keep unit labels (km, bpm, kcal, etc.) visible in tight layouts.
+        valueLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        valueLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        unitLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        unitLabel.setContentHuggingPriority(.required, for: .horizontal)
+        titleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        titleLabel.setContentHuggingPriority(.required, for: .vertical)
+        valueLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        valueLabel.setContentHuggingPriority(.required, for: .vertical)
+        unitLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        unitLabel.setContentHuggingPriority(.required, for: .vertical)
+
         applyTextModeLayout()
         applyContentAlignment(contentAlignment)
     }
@@ -127,11 +147,17 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
 
     // 텍스트 모드의 기준 크기 (스케일 1.0일 때의 크기)
     private var textModeBaseSize: CGSize = .zero
+    private var cachedHasUnitText: Bool?
+    private static let textModeTopInset: CGFloat = 3
+    private static let textModeBottomInset: CGFloat = 3
+    private static let textModeTitleSpacing: CGFloat = 1
+    private static let contentSpacing: CGFloat = 4
+    private static let compactStatMinimumSize: CGFloat = 45
 
     private func applyDisplayMode() {
         // 토글 전 폰트 스케일 보존
         let scaleBeforeToggle = calculateScaleFactor()
-        let clampedScale = min(max(scaleBeforeToggle, LayoutConstants.minimumAllowedScale), LayoutConstants.maximumScaleFactor)
+        let clampedScale = min(max(scaleBeforeToggle, LayoutConstants.statWidgetMinimumScale), LayoutConstants.maximumScaleFactor)
 
         switch displayMode {
         case .text:
@@ -140,28 +166,45 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
             applyIconModeLayout(scale: clampedScale)
         }
         updateColors()
-        resizeToFitContent(preservingScale: clampedScale)
         applyFontScale(clampedScale)
         applyContentAlignment(contentAlignment)
+        setNeedsLayout()
+        if isSelected {
+            positionResizeHandles()
+        }
     }
 
     private func applyTextModeLayout() {
         titleLabel.isHidden = false
         iconImageView.isHidden = true
+        let hasUnit = usesUnitText
+        cachedHasUnitText = hasUnit
+        unitLabel.isHidden = !hasUnit
 
         titleLabel.snp.remakeConstraints { make in
-            make.top.equalToSuperview().offset(LayoutConstants.standardPadding)
+            make.top.equalToSuperview().offset(Self.textModeTopInset)
             make.leading.trailing.equalToSuperview().inset(LayoutConstants.standardPadding)
         }
 
         valueLabel.snp.remakeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.top.equalTo(titleLabel.snp.bottom).offset(Self.textModeTitleSpacing)
             make.leading.equalToSuperview().inset(LayoutConstants.standardPadding)
+            if hasUnit {
+                make.trailing.lessThanOrEqualTo(unitLabel.snp.leading).offset(-Self.contentSpacing)
+            } else {
+                make.trailing.lessThanOrEqualToSuperview().inset(LayoutConstants.standardPadding)
+            }
+            make.bottom.lessThanOrEqualToSuperview().inset(Self.textModeBottomInset)
         }
 
-        unitLabel.snp.remakeConstraints { make in
-            make.lastBaseline.equalTo(valueLabel.snp.lastBaseline)
-            make.leading.equalTo(valueLabel.snp.trailing).offset(4)
+        if hasUnit {
+            unitLabel.snp.remakeConstraints { make in
+                make.lastBaseline.equalTo(valueLabel.snp.lastBaseline)
+                make.leading.equalTo(valueLabel.snp.trailing).offset(Self.contentSpacing)
+                make.trailing.lessThanOrEqualToSuperview().inset(LayoutConstants.standardPadding)
+            }
+        } else {
+            unitLabel.snp.removeConstraints()
         }
     }
 
@@ -171,10 +214,13 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         guard let iconName = widgetIconName else { return }
 
         let iconSize = Self.baseIconSize * scale
+        let hasUnit = usesUnitText
+        cachedHasUnitText = hasUnit
 
         titleLabel.isHidden = true
         iconImageView.isHidden = false
         iconImageView.image = UIImage(systemName: iconName)
+        unitLabel.isHidden = !hasUnit
 
         iconImageView.snp.remakeConstraints { make in
             make.centerY.equalToSuperview()
@@ -185,46 +231,64 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         valueLabel.snp.remakeConstraints { make in
             make.centerY.equalToSuperview()
             make.leading.equalTo(iconImageView.snp.trailing).offset(6)
+            if hasUnit {
+                make.trailing.lessThanOrEqualTo(unitLabel.snp.leading).offset(-Self.contentSpacing)
+            } else {
+                make.trailing.lessThanOrEqualToSuperview().inset(LayoutConstants.standardPadding)
+            }
         }
 
-        unitLabel.snp.remakeConstraints { make in
-            make.lastBaseline.equalTo(valueLabel.snp.lastBaseline)
-            make.leading.equalTo(valueLabel.snp.trailing).offset(4)
+        if hasUnit {
+            unitLabel.snp.remakeConstraints { make in
+                make.lastBaseline.equalTo(valueLabel.snp.lastBaseline)
+                make.leading.equalTo(valueLabel.snp.trailing).offset(Self.contentSpacing)
+                make.trailing.lessThanOrEqualToSuperview().inset(LayoutConstants.standardPadding)
+            }
+        } else {
+            unitLabel.snp.removeConstraints()
         }
     }
 
     private func resizeToFitContent(preservingScale scale: CGFloat) {
+        let safeScale = max(scale, 0.001)
         let padding = LayoutConstants.standardPadding
 
+        if textModeBaseSize == .zero {
+            textModeBaseSize = resolvedInitialTextModeBaseSize()
+        }
+
         if displayMode == .text {
-            // 텍스트 모드 기준 크기가 없으면 현재 initialSize를 기준으로 사용
-            if textModeBaseSize == .zero {
-                textModeBaseSize = initialSize
-            }
-            // 텍스트 모드: 기준 크기 * 스케일로 프레임 설정
+            let proposedSize = CGSize(
+                width: textModeBaseSize.width * safeScale,
+                height: textModeBaseSize.height * safeScale
+            )
+            let requiredSize = requiredTextModeSize()
             frame.size = CGSize(
-                width: textModeBaseSize.width * scale,
-                height: textModeBaseSize.height * scale
+                width: max(proposedSize.width, requiredSize.width),
+                height: max(proposedSize.height, requiredSize.height)
+            )
+
+            // Recalculate base size so mode toggles keep consistent visible bounds.
+            textModeBaseSize = CGSize(
+                width: frame.size.width / safeScale,
+                height: frame.size.height / safeScale
             )
             initialSize = textModeBaseSize
         } else {
-            // 아이콘 모드로 처음 전환 시 텍스트 모드 기준 크기 저장
-            if textModeBaseSize == .zero {
-                textModeBaseSize = initialSize
-            }
-
-            let iconSize = Self.baseIconSize * scale
+            let hasUnit = usesUnitText
+            let unitSpacing = hasUnit ? Self.contentSpacing : 0
             let valueWidth = valueLabel.intrinsicContentSize.width
-            let unitWidth = unitLabel.intrinsicContentSize.width
-            let neededWidth = padding + iconSize + 6 + valueWidth + 4 + unitWidth + padding
+            let unitWidth = hasUnit ? unitLabel.intrinsicContentSize.width : 0
+            let iconSize = Self.baseIconSize * safeScale
+            let neededWidth = padding + iconSize + 6 + valueWidth + unitSpacing + unitWidth + padding
 
-            // 아이콘 모드에서 필요한 최소 너비 계산 (스케일 1.0 기준)
-            let baseNeededWidth = padding + Self.baseIconSize + 6 + (valueWidth / scale) + 4 + (unitWidth / scale) + padding
+            // Icon mode should never shrink below text baseline width.
+            let baseNeededWidth = padding + Self.baseIconSize + 6 + (valueWidth / safeScale) + unitSpacing + (unitWidth / safeScale) + padding
             let baseWidth = max(baseNeededWidth, textModeBaseSize.width)
 
             frame.size = CGSize(
-                width: baseWidth * scale,
-                height: textModeBaseSize.height * scale
+                width: max(baseWidth * safeScale, neededWidth),
+                height: textModeBaseSize.height * safeScale
             )
             initialSize = CGSize(width: baseWidth, height: textModeBaseSize.height)
         }
@@ -232,6 +296,62 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         if isSelected {
             positionResizeHandles()
         }
+    }
+
+    private var usesUnitText: Bool {
+        !(unitLabel.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+    }
+
+    private func resolvedInitialTextModeBaseSize() -> CGSize {
+        let fallbackSize = initialSize == .zero ? bounds.size : initialSize
+        let requiredSize = requiredTextModeSize()
+        let width = max(requiredSize.width, fallbackSize.width, LayoutConstants.minWidth)
+        let height = max(requiredSize.height, fallbackSize.height, LayoutConstants.minHeight)
+        return CGSize(width: width, height: height)
+    }
+
+    private func updateMinimumSizeOverride() {
+        guard initialSize.width > 0, initialSize.height > 0 else { return }
+        let candidate = minimumSizeCandidate(for: initialSize)
+        if let current = minimumSizeOverride {
+            minimumSizeOverride = min(current, candidate)
+        } else {
+            minimumSizeOverride = candidate
+        }
+    }
+
+    private func minimumSizeCandidate(for size: CGSize) -> CGFloat {
+        guard size.width > 0, size.height > 0 else {
+            return LayoutConstants.minimumWidgetSize
+        }
+        let minDimension = min(size.width, size.height)
+        let targetMinimum = minDimension <= LayoutConstants.minimumWidgetSize
+            ? Self.compactStatMinimumSize
+            : LayoutConstants.minimumWidgetSize
+        return min(
+            targetMinimum,
+            max(minDimension, LayoutConstants.groupManagedMinimumWidgetSize)
+        )
+    }
+
+    private func requiredTextModeSize() -> CGSize {
+        let padding = LayoutConstants.standardPadding
+        let hasUnit = usesUnitText
+        let unitSpacing = hasUnit ? Self.contentSpacing : 0
+
+        let titleWidth = titleLabel.intrinsicContentSize.width
+        let valueWidth = valueLabel.intrinsicContentSize.width
+        let unitWidth = hasUnit ? unitLabel.intrinsicContentSize.width : 0
+        let valueLineWidth = valueWidth + unitSpacing + unitWidth
+
+        let titleHeight = titleLabel.font.lineHeight
+        let valueHeight = valueLabel.font.lineHeight
+        let unitHeight = hasUnit ? unitLabel.font.lineHeight : 0
+        let bodyHeight = max(valueHeight, unitHeight)
+
+        let width = max(titleWidth, valueLineWidth) + padding * 2
+        let height = Self.textModeTopInset + titleHeight + Self.textModeTitleSpacing + bodyHeight + Self.textModeBottomInset
+        return CGSize(width: width, height: height)
     }
 
     private func setupGestures() {
@@ -422,11 +542,8 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         let widthScale = bounds.width / initialSize.width
         let heightScale = bounds.height / initialSize.height
         let minScale = min(widthScale, heightScale)
-        let lowerBound = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.minimumAllowedScale
+        let lowerBound = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.statWidgetMinimumScale
         let result = min(max(minScale, lowerBound), LayoutConstants.maximumScaleFactor)
-
-        print("   [calculateScaleFactor] bounds=\(bounds.size), initialSize=\(initialSize), widthScale=\(widthScale), heightScale=\(heightScale), minScale=\(minScale), result=\(result)")
-
         return result
     }
 
@@ -438,9 +555,8 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
             baseFontSizes["unit"] = LayoutConstants.unitFontSize
         }
 
-        let minScale = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.minimumAllowedScale
+        let minScale = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.statWidgetMinimumScale
         let clampedScale = min(max(scale, minScale), LayoutConstants.maximumScaleFactor)
-        print("📐 [updateFontsWithScale] requested=\(scale), clamped=\(clampedScale), bounds=\(bounds.size), initialSize=\(initialSize)")
         applyFontScale(clampedScale)
     }
 
@@ -475,6 +591,7 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
     // MARK: - Layout
     override func layoutSubviews() {
         super.layoutSubviews()
+        syncUnitLayoutIfNeeded()
 
         applyAlignmentLayout()
 
@@ -482,5 +599,18 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         if isSelected && !isResizing {
             positionResizeHandles()
         }
+    }
+
+    private func syncUnitLayoutIfNeeded() {
+        let hasUnit = usesUnitText
+        guard cachedHasUnitText != hasUnit else { return }
+
+        switch displayMode {
+        case .text:
+            applyTextModeLayout()
+        case .icon:
+            applyIconModeLayout(scale: calculateScaleFactor())
+        }
+        setNeedsLayout()
     }
 }

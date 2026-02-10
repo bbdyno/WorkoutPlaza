@@ -14,7 +14,7 @@ extension RunningDetailViewController {
     
     @objc internal func resetLayout() {
         // 원래 위치로 리셋
-        guard let data = workoutData else { return }
+        guard workoutData != nil || importedWorkoutData != nil || externalWorkout != nil else { return }
         
         // 모든 위젯 제거
         widgets.forEach { $0.removeFromSuperview() }

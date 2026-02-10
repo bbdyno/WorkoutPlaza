@@ -32,7 +32,13 @@ struct SavedGroupState: Codable {
 struct SavedWidgetState: Codable {
     let identifier: String // Widget unique identifier (className_index)
     let type: String // Widget type identifier (className)
+    let definitionID: String? // Stable widget definition identifier
     let frame: CGRect
+    let initialSize: CGSize? // Baseline size used for font scaling
+    let statFontScale: CGFloat? // Explicit BaseStatWidget scale at save time
+    let statTitleBaseFontSize: CGFloat?
+    let statValueBaseFontSize: CGFloat?
+    let statUnitBaseFontSize: CGFloat?
     let text: String?
     let fontName: String?
     let fontSize: CGFloat?
@@ -49,6 +55,7 @@ struct SavedWidgetState: Codable {
     let additionalText: String? // For LocationWidget, etc.
     let displayMode: String? // WidgetDisplayMode rawValue (text, icon)
     let contentAlignment: String? // WidgetContentAlignment rawValue (left, center, right)
+    let widgetPayload: String? // Widget-specific JSON payload (e.g. composite widget)
 }
 
 enum BackgroundType: String, Codable {
