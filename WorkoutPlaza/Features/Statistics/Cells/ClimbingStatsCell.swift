@@ -25,11 +25,13 @@ class ClimbingStatsCell: UICollectionViewCell {
     // Sport Picker Button (Dropdown)
     private lazy var sportPickerButton: UIButton = {
         let button = UIButton(type: .system)
+        var configuration = UIButton.Configuration.plain()
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
+        button.configuration = configuration
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 16
         button.layer.cornerCurve = .continuous
-        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16)
         button.showsMenuAsPrimaryAction = true
         return button
     }()
@@ -268,7 +270,7 @@ class ClimbingStatsCell: UICollectionViewCell {
 
     private func computeClimbingChartData(sessions: [ClimbingData]) -> [BarChartDataPoint] {
         let calendar = Calendar.current
-        let (startDate, endDate) = getDateRange(for: currentPeriod, offset: 0)
+        let (startDate, _) = getDateRange(for: currentPeriod, offset: 0)
 
         switch currentPeriod {
         case .month:
@@ -365,14 +367,14 @@ class ClimbingStatsCell: UICollectionViewCell {
                 targetYear += 1
             }
 
-            var components = DateComponents(year: targetYear, month: targetMonth, day: 1)
+            let components = DateComponents(year: targetYear, month: targetMonth, day: 1)
             guard let startDate = calendar.date(from: components) else { return (now, now) }
             guard let endDate = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startDate) else { return (now, now) }
             return (startDate, endDate)
 
         case .year:
             let targetYear = currentYear + offset
-            var components = DateComponents(year: targetYear, month: 1, day: 1)
+            let components = DateComponents(year: targetYear, month: 1, day: 1)
             guard let startDate = calendar.date(from: components) else { return (now, now) }
             guard let endDate = calendar.date(byAdding: DateComponents(year: 1, day: -1), to: startDate) else { return (now, now) }
             return (startDate, endDate)
@@ -521,8 +523,7 @@ class ClimbingStatsCell: UICollectionViewCell {
     private func showFloatingClimbingStats(data: [String: Any]) {
         dismissFloatingView()
 
-        guard let type = data["type"] as? String,
-              let sessions = data["sessions"] as? [ClimbingData] else { return }
+        guard let sessions = data["sessions"] as? [ClimbingData] else { return }
 
         let container = UIView()
         container.backgroundColor = UIColor.black.withAlphaComponent(0.85)

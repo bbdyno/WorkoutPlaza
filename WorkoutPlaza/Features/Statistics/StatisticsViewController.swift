@@ -371,7 +371,7 @@ class StatisticsViewController: UIViewController {
     // MARK: - Running Statistics
 
     private func computeRunningChartData(barColor: UIColor = ColorSystem.primaryBlue) -> [BarChartDataPoint] {
-        let (startDate, endDate) = getSelectedDateRange()
+        let (startDate, _) = getSelectedDateRange()
         let calendar = Calendar.current
 
         switch currentPeriod {
@@ -384,7 +384,7 @@ class StatisticsViewController: UIViewController {
                 components.year = selectedYear
                 components.month = selectedMonth
                 components.day = day
-                guard let dayDate = calendar.date(from: components) else { continue }
+                guard calendar.date(from: components) != nil else { continue }
 
                 var dayDistance: Double = 0
                 var dayWorkouts: [(type: String, data: Any, distance: Double)] = []
@@ -570,7 +570,7 @@ class StatisticsViewController: UIViewController {
     // MARK: - Climbing Statistics
 
     private func computeClimbingChartData() -> [BarChartDataPoint] {
-        let (startDate, endDate) = getDateRange(for: currentPeriod, offset: currentPeriodOffset)
+        let (startDate, _) = getDateRange(for: currentPeriod, offset: currentPeriodOffset)
         let calendar = Calendar.current
 
         switch currentPeriod {
@@ -582,7 +582,7 @@ class StatisticsViewController: UIViewController {
             for day in 1...daysInMonth {
                 var components = calendar.dateComponents([.year, .month], from: startDate)
                 components.day = day
-                guard let dayDate = calendar.date(from: components) else { continue }
+                guard calendar.date(from: components) != nil else { continue }
 
                 var dayRoutes = 0
 

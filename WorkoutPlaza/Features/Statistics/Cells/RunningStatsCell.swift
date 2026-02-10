@@ -26,11 +26,13 @@ class RunningStatsCell: UICollectionViewCell {
     // Sport Picker Button (Dropdown)
     private lazy var sportPickerButton: UIButton = {
         let button = UIButton(type: .system)
+        var configuration = UIButton.Configuration.plain()
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
+        button.configuration = configuration
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 16
         button.layer.cornerCurve = .continuous
-        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16)
         button.showsMenuAsPrimaryAction = true
         return button
     }()
@@ -348,8 +350,7 @@ class RunningStatsCell: UICollectionViewCell {
 
         guard let distance = stats["distance"] as? Double,
               let duration = stats["duration"] as? TimeInterval,
-              let count = stats["count"] as? Int,
-              let month = stats["month"] as? Int else { return }
+              let count = stats["count"] as? Int else { return }
 
         let container = UIView()
         container.backgroundColor = UIColor.black.withAlphaComponent(0.85)

@@ -59,7 +59,9 @@ class DateWidget: BaseStatWidget {
         titleLabel.text = WorkoutPlazaStrings.Widget.date
 
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy.MM.dd"
+        formatter.locale = .autoupdatingCurrent
+        formatter.calendar = .autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("yMMMd")
         let dateString = formatter.string(from: startDate)
 
         valueLabel.text = dateString

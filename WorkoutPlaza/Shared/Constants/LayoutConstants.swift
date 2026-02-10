@@ -41,6 +41,7 @@ enum LayoutConstants {
     static let minimumScaleFactor: CGFloat = 0.1
     static let titleMinimumScaleFactor: CGFloat = 0.2
     static let maximumScaleFactor: CGFloat = 3.0
+    static let statWidgetMinimumScale: CGFloat = 0.35
     static let minimumAllowedScale: CGFloat = 0.65      // 0.5 → 0.65
     static let textWidgetMinimumScale: CGFloat = 0.35   // 0.2 → 0.35
     static let groupManagedMinimumScale: CGFloat = 0.3  // 그룹 관리 시 더 작게 축소 허용

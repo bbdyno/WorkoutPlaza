@@ -16,6 +16,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
     // Data
     var climbingData: ClimbingData?
+    var availableTemplates: [WidgetTemplate] = WidgetTemplate.climbingTemplates
 
     // Track date widgets for updating
     private var dateWidgets: [DateWidget] = []
@@ -28,11 +29,17 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         
         // Specific setup
         configureWithClimbingData()
+        refreshTemplateLibrary()
         
         // Load saved design if exists
         loadSavedDesign()
         
         WPLog.debug("ClimbingDetailViewController loaded (Inherited from Base)")
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshTemplateLibrary()
     }
     
     // MARK: - UI Setup
@@ -55,9 +62,6 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
     }
     
     func createDefaultWidgets(for data: ClimbingData) {
-        let widgetSize = CGSize(width: 80, height: 80) // Small icon style for climbing? Or stick to standard
-        // Climbing widgets might need different default sizes
-        
         let gymWidget = ClimbingGymWidget()
         gymWidget.configure(gymName: data.gymName, displayName: data.gymDisplayName)
         addWidget(gymWidget, size: gymWidget.idealSize, position: CGPoint(x: 30, y: 100))
@@ -75,8 +79,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         // Templates
         var templateItems: [ToolSheetItem] = []
 
-        let builtInTemplates = WidgetTemplate.climbingTemplates
-        for template in builtInTemplates {
+        for template in availableTemplates {
             let compatible = template.isCompatible
             templateItems.append(ToolSheetItem(
                 title: template.name,
@@ -97,6 +100,12 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             ToolSheetHeaderAction(title: WorkoutPlazaStrings.Climbing.import, iconName: "square.and.arrow.down") { [weak self] in
                 self?.importTemplate()
             },
+            ToolSheetHeaderAction(title: "Widget Pack", iconName: "shippingbox") { [weak self] in
+                self?.importWidgetPackage()
+            },
+            ToolSheetHeaderAction(title: "Packages", iconName: "shippingbox.fill") { [weak self] in
+                self?.showWidgetPackageManagerSheet()
+            },
             ToolSheetHeaderAction(title: WorkoutPlazaStrings.Climbing.export, iconName: "square.and.arrow.up") { [weak self] in
                 self?.exportCurrentLayout()
             }
@@ -107,7 +116,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         let climbingWidgets: [WidgetType] = [
             .climbingGym, .gymLogo, .climbingDiscipline,
-            .climbingSession, .climbingRoutesByColor, .text, .date
+            .climbingSession, .climbingRoutesByColor, .text, .date, .composite
         ]
 
         for type in climbingWidgets {
@@ -127,6 +136,15 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         }
 
         return (templateItems, widgetItems, templateActions)
+    }
+
+    override func refreshTemplateLibrary() {
+        Task {
+            let templates = await TemplateManager.shared.getTemplates(for: .climbing)
+            await MainActor.run {
+                self.availableTemplates = templates
+            }
+        }
     }
 
     override func doneButtonTapped() {
@@ -174,7 +192,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         let climbingWidgetTypes: [WidgetType] = [
             .climbingGym, .gymLogo, .climbingDiscipline,
-            .climbingSession, .climbingRoutesByColor, .text, .date
+            .climbingSession, .climbingRoutesByColor, .text, .date, .composite
         ]
 
         for type in climbingWidgetTypes {
@@ -300,12 +318,32 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
                 self?.showDatePicker(for: w)
             }
 
+        case .composite:
+            let w = CompositeWidget()
+            w.configure(payload: CompositeWidgetPayload(
+                title: WorkoutPlazaStrings.Widget.composite,
+                primaryText: data.gymDisplayName,
+                secondaryText: data.summaryText
+            ))
+            w.compositeDelegate = self
+            let defaultSize = CGSize(width: 220, height: 80)
+            w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: defaultSize)
+            w.initialSize = defaultSize
+            widget = w
+
         default:
             break
         }
 
         if let widget = widget {
             addWidget(widget, size: widget.frame.size, position: widget.frame.origin)
+
+            if let compositeWidget = widget as? CompositeWidget {
+                presentCompositeWidgetEditor(initialPayload: compositeWidget.payload) { [weak self, weak compositeWidget] payload in
+                    compositeWidget?.updatePayload(payload)
+                    self?.hasUnsavedChanges = true
+                }
+            }
         }
     }
     
@@ -322,7 +360,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         widget.frame = CGRect(origin: position, size: size)
 
         // Setup selection if widget is selectable
-        if var selectableWidget = widget as? Selectable {
+        if let selectableWidget = widget as? Selectable {
             selectableWidget.selectionDelegate = self
             selectionManager.registerItem(selectableWidget)
 
@@ -414,7 +452,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         case .text:
             let w = TextWidget()
             w.configure(text: WorkoutPlazaStrings.Climbing.Text.input)
-            w.textDelegate = self as? TextWidgetDelegate
+            w.textDelegate = self
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
@@ -440,7 +478,24 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             currentDateTimeWidgets.append(w)
             widget = w
 
-        case .composite, .routeMap, .distance, .duration, .pace, .speed, .calories, .heartRate, .location:
+        case .composite:
+            let w = CompositeWidget()
+            if let payload = CompositeWidget.payload(from: item.payload) {
+                w.configure(payload: payload)
+            } else {
+                w.configure(payload: CompositeWidgetPayload(
+                    title: WorkoutPlazaStrings.Widget.composite,
+                    primaryText: data.gymDisplayName,
+                    secondaryText: data.summaryText
+                ))
+            }
+            w.compositeDelegate = self
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .routeMap, .distance, .duration, .pace, .speed, .calories, .heartRate, .location:
             return nil
         }
 
@@ -453,6 +508,10 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         return climbingData?.sessionDate
     }
 
+    override func getSportType() -> SportType {
+        return .climbing
+    }
+
     override func createWidgetFromSavedState(_ savedWidget: SavedWidgetState) -> UIView? {
         // Try base implementation first
         if let widget = super.createWidgetFromSavedState(savedWidget) {
@@ -460,28 +519,30 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         }
 
         // Handle Climbing-specific widgets
-        guard let data = climbingData else { return nil }
-        let widgetType = savedWidget.type
+        guard let data = climbingData,
+              let definitionID = WidgetIdentity.resolvedDefinitionID(from: savedWidget) else {
+            return nil
+        }
 
         let widget: UIView?
 
-        switch widgetType {
-        case "ClimbingGymWidget":
+        switch definitionID {
+        case .climbingGym:
             let w = ClimbingGymWidget()
             w.configure(gymName: data.gymName, displayName: data.gymDisplayName)
             widget = w
 
-        case "ClimbingSessionWidget":
+        case .climbingSession:
             let w = ClimbingSessionWidget()
             w.configure(sent: data.sentRoutes, total: data.totalRoutes)
             widget = w
 
-        case "ClimbingDisciplineWidget":
+        case .climbingDiscipline:
             let w = ClimbingDisciplineWidget()
             w.configure(discipline: data.discipline)
             widget = w
 
-        case "ClimbingRoutesByColorWidget":
+        case .climbingRoutesByColor:
             let w = ClimbingRoutesByColorWidget()
             w.configure(routes: data.routes)
             // Apply styles with fallback to old font preferences
@@ -491,7 +552,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             }
             return w
 
-        case "GymLogoWidget":
+        case .gymLogo:
             let w = GymLogoWidget()
             WPLog.debug("🏢 [Saved] Looking for gym with name: '\(data.gymName)'")
             var gym = ClimbingGymManager.shared.findGym(byName: data.gymName)
@@ -509,7 +570,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             w.configure(with: finalGym)
             widget = w
 
-        case "DateWidget":
+        case .date:
             let w = DateWidget()
             w.configure(startDate: data.sessionDate)
             w.dateDelegate = self
@@ -517,7 +578,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             dateWidgets.append(w)
             return w
 
-        case "CurrentDateTimeWidget":
+        case .currentDateTime:
             let w = CurrentDateTimeWidget()
             w.configure(date: data.sessionDate)
             w.currentDateTimeDelegate = self

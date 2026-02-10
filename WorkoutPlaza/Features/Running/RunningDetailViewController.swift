@@ -10,10 +10,73 @@ import SnapKit
 import PhotosUI
 import UniformTypeIdentifiers
 import HealthKit
+import CoreLocation
 
 class RunningDetailViewController: BaseWorkoutDetailViewController {
 
     // MARK: - Properties
+
+    struct RunningWidgetDataSource {
+        let distance: Double
+        let duration: TimeInterval
+        let pace: Double
+        let avgSpeed: Double
+        let calories: Double
+        let avgHeartRate: Double
+        let startDate: Date
+        let routeLocations: [CLLocation]
+
+        static func from(workoutData: WorkoutData) -> RunningWidgetDataSource {
+            RunningWidgetDataSource(
+                distance: workoutData.distance,
+                duration: workoutData.duration,
+                pace: workoutData.pace,
+                avgSpeed: workoutData.avgSpeed,
+                calories: workoutData.calories,
+                avgHeartRate: workoutData.avgHeartRate,
+                startDate: workoutData.startDate,
+                routeLocations: workoutData.route
+            )
+        }
+
+        static func from(importedData: ImportedWorkoutData) -> RunningWidgetDataSource {
+            let data = importedData.originalData
+            return RunningWidgetDataSource(
+                distance: data.distance,
+                duration: data.duration,
+                pace: data.pace,
+                avgSpeed: data.avgSpeed,
+                calories: data.calories,
+                avgHeartRate: data.avgHeartRate ?? 0,
+                startDate: data.startDate,
+                routeLocations: importedData.routeLocations
+            )
+        }
+
+        static func from(externalWorkout: ExternalWorkout) -> RunningWidgetDataSource {
+            let data = externalWorkout.workoutData
+            let routeLocations = data.route.map { point in
+                CLLocation(
+                    coordinate: CLLocationCoordinate2D(latitude: point.lat, longitude: point.lon),
+                    altitude: point.alt ?? 0,
+                    horizontalAccuracy: 10,
+                    verticalAccuracy: 10,
+                    timestamp: point.timestamp ?? Date()
+                )
+            }
+
+            return RunningWidgetDataSource(
+                distance: data.distance,
+                duration: data.duration,
+                pace: data.pace,
+                avgSpeed: data.avgSpeed,
+                calories: data.calories,
+                avgHeartRate: data.avgHeartRate ?? 0,
+                startDate: data.startDate,
+                routeLocations: routeLocations
+            )
+        }
+    }
 
     // Data
     var workoutData: WorkoutData?
@@ -21,6 +84,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
     var externalWorkout: ExternalWorkout?
 
     var routeMapView: RouteMapView?
+    var availableTemplates: [WidgetTemplate] = WidgetTemplate.runningTemplates
 
     // MARK: - Lifecycle
     
@@ -30,6 +94,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         
         // Specific setup
         configureWithWorkoutData()
+        refreshTemplateLibrary()
         
         // Load saved design if exists
         loadSavedDesign()
@@ -38,6 +103,11 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(handleReceivedWorkoutInDetail(_:)), name: NSNotification.Name("ReceivedWorkoutInDetail"), object: nil)
         
         WPLog.debug("RunningDetailViewController loaded (Inherited from Base)")
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshTemplateLibrary()
     }
     
     // MARK: - Setup UI
@@ -53,8 +123,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         // Templates
         var templateItems: [ToolSheetItem] = []
 
-        let builtInTemplates = WidgetTemplate.runningTemplates
-        for template in builtInTemplates {
+        for template in availableTemplates {
             let compatible = template.isCompatible
             templateItems.append(ToolSheetItem(
                 title: template.name,
@@ -74,6 +143,12 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         let templateActions: [ToolSheetHeaderAction] = [
             ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.action, iconName: "square.and.arrow.down") { [weak self] in
                 self?.importTemplate()
+            },
+            ToolSheetHeaderAction(title: "Widget Pack", iconName: "shippingbox") { [weak self] in
+                self?.importWidgetPackage()
+            },
+            ToolSheetHeaderAction(title: "Packages", iconName: "shippingbox.fill") { [weak self] in
+                self?.showWidgetPackageManagerSheet()
             },
             ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.Export.action, iconName: "square.and.arrow.up") { [weak self] in
                 self?.exportCurrentLayout()
@@ -109,6 +184,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             case .currentDateTime: widgetType = .currentDateTime
             case .text: widgetType = .text
             case .location: widgetType = .location
+            case .composite: widgetType = .composite
             }
 
             widgetItems.append(ToolSheetItem(
@@ -125,6 +201,15 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         }
 
         return (templateItems, widgetItems, templateActions)
+    }
+
+    override func refreshTemplateLibrary() {
+        Task {
+            let templates = await TemplateManager.shared.getTemplates(for: .running)
+            await MainActor.run {
+                self.availableTemplates = templates
+            }
+        }
     }
 
     // Override other actions as needed or rely on Base if generic enough
@@ -287,15 +372,39 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         routeMapView = nil
     }
 
-    override func createWidget(for item: WidgetItem, frame: CGRect) -> UIView? {
-        guard let data = workoutData else { return nil }
+    private func resolveCurrentWidgetDataSource() -> RunningWidgetDataSource? {
+        if let workoutData {
+            return .from(workoutData: workoutData)
+        }
+        if let importedWorkoutData {
+            return .from(importedData: importedWorkoutData)
+        }
+        if let externalWorkout {
+            return .from(externalWorkout: externalWorkout)
+        }
+        return nil
+    }
 
+    private func makeCompositePayload(from source: RunningWidgetDataSource) -> CompositeWidgetPayload {
+        CompositeWidgetPayload(
+            title: WorkoutPlazaStrings.Widget.composite,
+            primaryText: "\(WorkoutFormatter.formatDistance(source.distance)) km",
+            secondaryText: WorkoutFormatter.formatDuration(source.duration)
+        )
+    }
+
+    override func createWidget(for item: WidgetItem, frame: CGRect) -> UIView? {
+        guard let source = resolveCurrentWidgetDataSource() else { return nil }
+        return createWidget(for: item, frame: frame, source: source)
+    }
+
+    func createWidget(for item: WidgetItem, frame: CGRect, source: RunningWidgetDataSource) -> UIView? {
         var widget: UIView?
 
         switch item.type {
         case .routeMap:
             let mapView = RouteMapView()
-            mapView.setRoute(data.route)
+            mapView.setRoute(source.routeLocations)
             routeMapView = mapView
             mapView.frame = frame
             mapView.initialSize = frame.size
@@ -307,31 +416,34 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
         case .distance:
             let w = DistanceWidget()
-            w.configure(distance: data.distance)
-            w.frame = frame
-            w.initialSize = frame.size
+            w.configure(distance: source.distance)
+            let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(frame.size, widgetType: .distance)
+            w.frame = CGRect(origin: frame.origin, size: normalizedSize)
+            w.initialSize = normalizedSize
             applyItemStyles(to: w, item: item)
             widget = w
 
         case .duration:
             let w = DurationWidget()
-            w.configure(duration: data.duration)
-            w.frame = frame
-            w.initialSize = frame.size
+            w.configure(duration: source.duration)
+            let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(frame.size, widgetType: .duration)
+            w.frame = CGRect(origin: frame.origin, size: normalizedSize)
+            w.initialSize = normalizedSize
             applyItemStyles(to: w, item: item)
             widget = w
 
         case .pace:
             let w = PaceWidget()
-            w.configure(pace: data.pace)
-            w.frame = frame
-            w.initialSize = frame.size
+            w.configure(pace: source.pace)
+            let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(frame.size, widgetType: .pace)
+            w.frame = CGRect(origin: frame.origin, size: normalizedSize)
+            w.initialSize = normalizedSize
             applyItemStyles(to: w, item: item)
             widget = w
 
         case .speed:
             let w = SpeedWidget()
-            w.configure(speed: data.avgSpeed)
+            w.configure(speed: source.avgSpeed)
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
@@ -339,15 +451,16 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
         case .calories:
             let w = CaloriesWidget()
-            w.configure(calories: data.calories)
-            w.frame = frame
-            w.initialSize = frame.size
+            w.configure(calories: source.calories)
+            let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(frame.size, widgetType: .calories)
+            w.frame = CGRect(origin: frame.origin, size: normalizedSize)
+            w.initialSize = normalizedSize
             applyItemStyles(to: w, item: item)
             widget = w
 
         case .heartRate:
             let w = HeartRateWidget()
-            w.configure(heartRate: data.avgHeartRate)
+            w.configure(heartRate: source.avgHeartRate)
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
@@ -355,7 +468,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
         case .date:
             let w = DateWidget()
-            w.configure(startDate: data.startDate)
+            w.configure(startDate: source.startDate)
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
@@ -371,7 +484,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             widget = w
 
         case .location:
-            guard let firstLocation = data.route.first else {
+            guard let firstLocation = source.routeLocations.first else {
                 WPLog.warning("No GPS data for location widget in template")
                 return nil
             }
@@ -390,13 +503,26 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
         case .currentDateTime:
             let w = CurrentDateTimeWidget()
-            w.configure(date: data.startDate)
+            w.configure(date: source.startDate)
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
             widget = w
 
-        case .composite, .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo:
+        case .composite:
+            let w = CompositeWidget()
+            if let payload = CompositeWidget.payload(from: item.payload) {
+                w.configure(payload: payload)
+            } else {
+                w.configure(payload: makeCompositePayload(from: source))
+            }
+            w.compositeDelegate = self
+            w.frame = frame
+            w.initialSize = frame.size
+            applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo:
             return nil
         }
 
@@ -412,6 +538,10 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             return imported.originalData.startDate
         }
         return nil
+    }
+
+    override func getSportType() -> SportType {
+        return .running
     }
 
     private func applyWidgetStyles(to widget: UIView, from savedState: SavedWidgetState) {
@@ -436,6 +566,31 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         }
     }
 
+    override func frameForRestoredWidget(_ savedState: SavedWidgetState, widget: UIView) -> CGRect {
+        let scaledBaseFrame = super.frameForRestoredWidget(savedState, widget: widget)
+        let widgetType: WidgetType?
+        if let definitionID = WidgetIdentity.definitionID(for: widget) {
+            widgetType = WidgetIdentity.widgetType(for: definitionID)
+        } else if let definitionID = WidgetIdentity.resolvedDefinitionID(from: savedState) {
+            widgetType = WidgetIdentity.widgetType(for: definitionID)
+        } else {
+            widgetType = nil
+        }
+
+        guard let widgetType else {
+            return scaledBaseFrame
+        }
+
+        let isLegacySavedWidget = savedState.definitionID == nil
+        let normalizedSize = WidgetSizeNormalizer.normalizeRestoredRunningStatSize(
+            scaledBaseFrame.size,
+            widgetType: widgetType,
+            forceLegacyMigration: isLegacySavedWidget,
+            canvasScale: restoreCanvasUniformScale()
+        )
+        return CGRect(origin: scaledBaseFrame.origin, size: normalizedSize)
+    }
+
     override func createWidgetFromSavedState(_ savedWidget: SavedWidgetState) -> UIView? {
         // Try base implementation first
         if let widget = super.createWidgetFromSavedState(savedWidget) {
@@ -443,78 +598,56 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         }
 
         // Handle Running-specific widgets
-        // Get data from workoutData, importedWorkoutData, or externalWorkout
-        let distance: Double
-        let duration: TimeInterval
-        let pace: Double
-        let avgSpeed: Double
-        let calories: Double
-        let avgHeartRate: Double
-
-        if let data = workoutData {
-            distance = data.distance
-            duration = data.duration
-            pace = data.pace
-            avgSpeed = data.avgSpeed
-            calories = data.calories
-            avgHeartRate = data.avgHeartRate
-        } else if let imported = importedWorkoutData {
-            distance = imported.originalData.distance
-            duration = imported.originalData.duration
-            pace = imported.originalData.pace
-            avgSpeed = imported.originalData.avgSpeed
-            calories = imported.originalData.calories
-            avgHeartRate = imported.originalData.avgHeartRate ?? 0
-        } else if let external = externalWorkout {
-            distance = external.workoutData.distance
-            duration = external.workoutData.duration
-            pace = external.workoutData.pace
-            avgSpeed = external.workoutData.avgSpeed
-            calories = external.workoutData.calories
-            avgHeartRate = external.workoutData.avgHeartRate ?? 0
-        } else {
+        guard let source = resolveCurrentWidgetDataSource(),
+              let definitionID = WidgetIdentity.resolvedDefinitionID(from: savedWidget) else {
             return nil
         }
-
-        let widgetType = savedWidget.type
         let widget: UIView?
 
-        switch widgetType {
-        case "LocationWidget":
+        switch definitionID {
+        case .routeMap:
+            let w = RouteMapView()
+            w.setRoute(source.routeLocations)
+            routeMapView = w
+            widget = w
+
+        case .location:
             let w = LocationWidget()
             if let locationText = savedWidget.additionalText {
                 w.configure(withText: locationText)
+            } else if let firstLocation = source.routeLocations.first {
+                w.configure(location: firstLocation) { _ in }
             }
             widget = w
 
-        case "DistanceWidget":
+        case .distance:
             let w = DistanceWidget()
-            w.configure(distance: distance)
+            w.configure(distance: source.distance)
             widget = w
 
-        case "DurationWidget":
+        case .duration:
             let w = DurationWidget()
-            w.configure(duration: duration)
+            w.configure(duration: source.duration)
             widget = w
 
-        case "PaceWidget":
+        case .pace:
             let w = PaceWidget()
-            w.configure(pace: pace)
+            w.configure(pace: source.pace)
             widget = w
 
-        case "SpeedWidget":
+        case .speed:
             let w = SpeedWidget()
-            w.configure(speed: avgSpeed)
+            w.configure(speed: source.avgSpeed)
             widget = w
 
-        case "CaloriesWidget":
+        case .calories:
             let w = CaloriesWidget()
-            w.configure(calories: calories)
+            w.configure(calories: source.calories)
             widget = w
 
-        case "HeartRateWidget":
+        case .heartRate:
             let w = HeartRateWidget()
-            w.configure(heartRate: avgHeartRate)
+            w.configure(heartRate: source.avgHeartRate)
             widget = w
 
         default:
@@ -523,9 +656,14 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
         // Apply common properties
         if let widget = widget {
-            widget.frame = savedWidget.frame
-            if var selectable = widget as? Selectable {
-                selectable.initialSize = savedWidget.frame.size
+            let restoredFrame = frameForRestoredWidget(savedWidget, widget: widget)
+            widget.frame = restoredFrame
+            if let selectable = widget as? Selectable {
+                selectable.initialSize = resolvedRestoredInitialSize(
+                    savedWidget,
+                    widget: widget,
+                    restoredFrame: restoredFrame
+                )
             }
             applyWidgetStyles(to: widget, from: savedWidget)
         }
