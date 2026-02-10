@@ -19,7 +19,9 @@ actor WidgetCatalogService {
 
     func fetchCatalog(from url: URL) async throws -> WidgetCatalogResponse {
         let (data, _) = try await URLSession.shared.data(from: url)
-        return try Self.decoder.decode(WidgetCatalogResponse.self, from: data)
+        return try await MainActor.run {
+            try Self.decoder.decode(WidgetCatalogResponse.self, from: data)
+        }
     }
 
     func filterCompatibleItems(

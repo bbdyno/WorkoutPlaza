@@ -49,7 +49,7 @@ actor WidgetPackageManager {
         }
 
         let data = try Data(contentsOf: fileURL)
-        let package = try decodePackage(from: data)
+        let package = try await decodePackage(from: data)
         try validatePackage(package)
 
         let isDuplicate = installedPackagesCache.contains {
@@ -120,7 +120,7 @@ actor WidgetPackageManager {
 
         for installed in matches {
             let packageURL = packagesDirectoryURL.appendingPathComponent(installed.packageFileName)
-            if let package = try? loadPackage(from: packageURL) {
+            if let package = try? await loadPackage(from: packageURL) {
                 for template in package.templates {
                     try? await TemplateManager.shared.deleteCustomTemplate(template)
                 }
@@ -141,12 +141,12 @@ actor WidgetPackageManager {
 
     private func ensureInitialized() async {
         guard !isInitialized else { return }
-        loadIndex()
+        await loadIndex()
         await restoreRegistryFromInstalledPackages()
         isInitialized = true
     }
 
-    private func loadIndex() {
+    private func loadIndex() async {
         guard fileManager.fileExists(atPath: indexFileURL.path),
               let data = try? Data(contentsOf: indexFileURL) else {
             installedPackagesCache = []
@@ -154,10 +154,14 @@ actor WidgetPackageManager {
         }
 
         do {
-            installedPackagesCache = try Self.decoder.decode([InstalledWidgetPackage].self, from: data)
+            installedPackagesCache = try await MainActor.run {
+                try Self.decoder.decode([InstalledWidgetPackage].self, from: data)
+            }
         } catch {
             installedPackagesCache = []
-            WPLog.error("Failed to decode package index: \(error)")
+            await MainActor.run {
+                WPLog.error("Failed to decode package index: \(error)")
+            }
         }
     }
 
@@ -170,7 +174,7 @@ actor WidgetPackageManager {
         var definitions: [WidgetDefinition] = []
         for package in installedPackagesCache {
             let packageURL = packagesDirectoryURL.appendingPathComponent(package.packageFileName)
-            if let decoded = try? loadPackage(from: packageURL),
+            if let decoded = try? await loadPackage(from: packageURL),
                let packageDefinitions = decoded.definitions {
                 definitions.append(contentsOf: packageDefinitions)
             }
@@ -181,14 +185,16 @@ actor WidgetPackageManager {
         }
     }
 
-    private func loadPackage(from url: URL) throws -> WidgetPackage {
+    private func loadPackage(from url: URL) async throws -> WidgetPackage {
         let data = try Data(contentsOf: url)
-        return try decodePackage(from: data)
+        return try await decodePackage(from: data)
     }
 
-    private func decodePackage(from data: Data) throws -> WidgetPackage {
+    private func decodePackage(from data: Data) async throws -> WidgetPackage {
         do {
-            return try Self.decoder.decode(WidgetPackage.self, from: data)
+            return try await MainActor.run {
+                try Self.decoder.decode(WidgetPackage.self, from: data)
+            }
         } catch {
             throw WidgetPackageError.invalidPackage(error.localizedDescription)
         }

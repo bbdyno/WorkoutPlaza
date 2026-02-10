@@ -16,7 +16,12 @@ import UIKit
 
 // MARK: - Speed Widget
 class SpeedWidget: BaseStatWidget {
+    private static let minimumStandaloneSize: CGFloat = 30
+
     override var widgetIconName: String? { "gauge.high" }
+    override var minimumSize: CGFloat {
+        isGroupManaged ? LayoutConstants.groupManagedMinimumWidgetSize : Self.minimumStandaloneSize
+    }
 
     func configure(speed: Double) {
         titleLabel.text = WorkoutPlazaStrings.Widget.Title.Avg.speed

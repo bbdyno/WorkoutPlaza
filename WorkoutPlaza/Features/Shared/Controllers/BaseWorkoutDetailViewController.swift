@@ -603,7 +603,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 statTitleBaseFontSize = statWidget.baseFontSizes["title"] ?? LayoutConstants.titleFontSize
                 statValueBaseFontSize = statWidget.baseFontSizes["value"] ?? LayoutConstants.valueFontSize
                 statUnitBaseFontSize = statWidget.baseFontSizes["unit"] ?? LayoutConstants.unitFontSize
-                if statWidget.widgetIconName != nil && statWidget.displayMode == .icon {
+                if statWidget.widgetIconName != nil && statWidget.displayMode != .text {
                     displayMode = statWidget.displayMode.rawValue
                 }
             }

@@ -184,7 +184,7 @@ extension BaseWorkoutDetailViewController {
 
             let currentAppVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
 
-            let template = WidgetTemplate(
+                let template = WidgetTemplate(
                 name: name,
                 description: description,
                 version: "2.0",
@@ -196,12 +196,12 @@ extension BaseWorkoutDetailViewController {
                 minimumAppVersion: currentAppVersion
             )
 
-            Task { [weak self] in
-                do {
-                    let fileURL = try await TemplateManager.shared.exportTemplate(template)
-                    await MainActor.run {
-                        self?.shareTemplate(fileURL: fileURL)
-                    }
+                Task { [weak self] in
+                    do {
+                        let fileURL = try TemplateManager.shared.exportTemplate(template)
+                        await MainActor.run {
+                            self?.shareTemplate(fileURL: fileURL)
+                        }
                 } catch {
                     WPLog.error("Failed to export template: \(error)")
                 }

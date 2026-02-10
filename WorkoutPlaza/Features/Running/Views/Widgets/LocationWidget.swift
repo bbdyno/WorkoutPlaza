@@ -11,6 +11,9 @@ import SnapKit
 
 // MARK: - Location Widget
 class LocationWidget: UIView, Selectable, WidgetContentAlignable {
+    private static let minimumStandaloneFontScale: CGFloat = 0.45
+    private static let maximumFontScale: CGFloat = 3.0
+    private static let minimumStandaloneWidgetSize: CGFloat = 18
 
     // MARK: - Selectable Properties
     var isSelected: Bool = false
@@ -23,6 +26,9 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
         didSet {
             updateFonts()
         }
+    }
+    var minimumSize: CGFloat {
+        isGroupManaged ? LayoutConstants.groupManagedMinimumWidgetSize : Self.minimumStandaloneWidgetSize
     }
     var itemIdentifier: String = UUID().uuidString
     var resizeHandles: [ResizeHandleView] = []
@@ -60,6 +66,14 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
         return imageView
     }()
 
+    private var loadingText: String {
+        NSLocalizedString("location.widget.loading", comment: "Location widget loading text")
+    }
+
+    private var unavailableText: String {
+        NSLocalizedString("location.widget.unavailable", comment: "Location widget fallback text")
+    }
+
     let locationLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 18, weight: .medium)
@@ -93,7 +107,7 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
 
         addSubview(containerStack)
         containerStack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(8)
+            make.edges.equalToSuperview().inset(4)
         }
 
         iconImageView.snp.makeConstraints { make in
@@ -101,7 +115,7 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
         }
 
         // Set default text
-        locationLabel.text = "Loading location..."
+        locationLabel.text = loadingText
     }
 
     private func setupGestures() {
@@ -120,16 +134,16 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
 
     // MARK: - Configuration
     func configure(location: CLLocation, completion: @escaping (Bool) -> Void) {
-        locationLabel.text = "Loading location..."
+        locationLabel.text = loadingText
 
         let geocoder = CLGeocoder()
-        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
+        geocoder.reverseGeocodeLocation(location, preferredLocale: Locale.current) { [weak self] placemarks, error in
             guard let self = self else { return }
 
             if let error = error {
                 WPLog.warning("Geocoding failed: \(error.localizedDescription)")
                 DispatchQueue.main.async {
-                    self.locationLabel.text = "Location unavailable"
+                    self.locationLabel.text = self.unavailableText
                     completion(false)
                 }
                 return
@@ -137,13 +151,13 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
 
             guard let placemark = placemarks?.first else {
                 DispatchQueue.main.async {
-                    self.locationLabel.text = "Location unavailable"
+                    self.locationLabel.text = self.unavailableText
                     completion(false)
                 }
                 return
             }
 
-            let cityName = self.formatKoreanAddress(from: placemark)
+            let cityName = self.formatLocationText(from: placemark)
 
             DispatchQueue.main.async {
                 self.locationLabel.text = cityName
@@ -164,6 +178,36 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
     }
 
     // MARK: - Korean Address Formatting
+    private func formatLocationText(from placemark: CLPlacemark) -> String {
+        let languageCode = Locale.preferredLanguages.first?.lowercased().prefix(2)
+        if languageCode == "ko" {
+            return formatKoreanAddress(from: placemark)
+        }
+
+        let locality = placemark.locality?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let administrativeArea = placemark.administrativeArea?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let subAdministrativeArea = placemark.subAdministrativeArea?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let country = placemark.country?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        if !locality.isEmpty && !administrativeArea.isEmpty && locality != administrativeArea {
+            return "\(locality), \(administrativeArea)"
+        }
+        if !locality.isEmpty {
+            return locality
+        }
+        if !administrativeArea.isEmpty {
+            return administrativeArea
+        }
+        if !subAdministrativeArea.isEmpty {
+            return subAdministrativeArea
+        }
+        if !country.isEmpty {
+            return country
+        }
+
+        return unavailableText
+    }
+
     private func formatKoreanAddress(from placemark: CLPlacemark) -> String {
         // administrativeArea: 경기도, 서울특별시, 부산광역시, etc.
         // locality: 수원시, 서울, 부산, etc.
@@ -199,7 +243,7 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
             return administrativeArea
         }
 
-        return "Location unavailable"
+        return unavailableText
     }
 
     // MARK: - Gesture Handlers
@@ -273,7 +317,10 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
         let averageScale = (scaleX + scaleY) / 2.0
 
         let fontSize = baseFontSize * averageScale
-        let clampedSize = min(max(fontSize, baseFontSize * 0.5), baseFontSize * 3.0)
+        let clampedSize = min(
+            max(fontSize, baseFontSize * minimumFontScale),
+            baseFontSize * Self.maximumFontScale
+        )
 
         locationLabel.font = currentFontStyle.font(size: clampedSize, weight: .medium)
 
@@ -344,14 +391,14 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
         // Use the smaller scale factor to prevent text overflow
         // This ensures text fits within the available space without causing extra padding
         let minScale = min(widthScale, heightScale)
-        let lowerBound = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.minimumAllowedScale
+        let lowerBound = minimumFontScale
 
         return min(max(minScale, lowerBound), LayoutConstants.maximumScaleFactor)
     }
 
     /// Update fonts with a specific scale factor (used by group resize)
     func updateFontsWithScale(_ scale: CGFloat) {
-        let minScale = isGroupManaged ? LayoutConstants.groupManagedMinimumScale : LayoutConstants.minimumAllowedScale
+        let minScale = minimumFontScale
         let clampedScale = min(max(scale, minScale), LayoutConstants.maximumScaleFactor)
         let fontSize = baseFontSize * clampedScale
         locationLabel.font = currentFontStyle.font(size: fontSize, weight: .medium)
@@ -383,7 +430,10 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
             if sizeDelta > LayoutConstants.significantSizeChange {
                 let scaleFactor = calculateScaleFactor()
                 let fontSize = baseFontSize * scaleFactor
-                let clampedSize = min(max(fontSize, baseFontSize * LayoutConstants.minimumAllowedScale), baseFontSize * LayoutConstants.maximumScaleFactor)
+                let clampedSize = min(
+                    max(fontSize, baseFontSize * minimumFontScale),
+                    baseFontSize * LayoutConstants.maximumScaleFactor
+                )
 
                 locationLabel.font = currentFontStyle.font(size: clampedSize, weight: .medium)
             }
@@ -404,5 +454,9 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
         }
 
         return super.hitTest(point, with: event)
+    }
+
+    private var minimumFontScale: CGFloat {
+        isGroupManaged ? LayoutConstants.groupManagedMinimumScale : Self.minimumStandaloneFontScale
     }
 }

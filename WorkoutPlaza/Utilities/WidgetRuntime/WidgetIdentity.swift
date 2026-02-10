@@ -31,7 +31,7 @@ enum WidgetDefinitionID: String, Codable, CaseIterable {
 }
 
 enum WidgetIdentity {
-    static func definitionID(for widgetType: WidgetType) -> WidgetDefinitionID {
+    nonisolated static func definitionID(for widgetType: WidgetType) -> WidgetDefinitionID {
         switch widgetType {
         case .routeMap: return .routeMap
         case .distance: return .distance
@@ -53,7 +53,7 @@ enum WidgetIdentity {
         }
     }
 
-    static func widgetType(for definitionID: WidgetDefinitionID) -> WidgetType {
+    nonisolated static func widgetType(for definitionID: WidgetDefinitionID) -> WidgetType {
         switch definitionID {
         case .routeMap: return .routeMap
         case .distance: return .distance
@@ -100,7 +100,7 @@ enum WidgetIdentity {
         }
     }
 
-    static func legacyTypeName(for definitionID: WidgetDefinitionID) -> String {
+    nonisolated static func legacyTypeName(for definitionID: WidgetDefinitionID) -> String {
         switch definitionID {
         case .routeMap: return "RouteMapView"
         case .distance: return "DistanceWidget"
@@ -123,7 +123,7 @@ enum WidgetIdentity {
         }
     }
 
-    static func definitionID(fromLegacyTypeName legacyTypeName: String) -> WidgetDefinitionID? {
+    nonisolated static func definitionID(fromLegacyTypeName legacyTypeName: String) -> WidgetDefinitionID? {
         switch legacyTypeName {
         case "RouteMapView": return .routeMap
         case "DistanceWidget": return .distance
@@ -147,7 +147,7 @@ enum WidgetIdentity {
         }
     }
 
-    static func resolvedDefinitionID(from savedWidget: SavedWidgetState) -> WidgetDefinitionID? {
+    nonisolated static func resolvedDefinitionID(from savedWidget: SavedWidgetState) -> WidgetDefinitionID? {
         if let idRaw = savedWidget.definitionID, let id = WidgetDefinitionID(rawValue: idRaw) {
             return id
         }

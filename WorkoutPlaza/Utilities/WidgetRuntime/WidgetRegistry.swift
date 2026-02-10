@@ -43,12 +43,20 @@ actor WidgetRegistry {
         }
     }
 
-    func definition(for id: WidgetDefinitionID) -> WidgetDefinition? {
-        installedDefinitions[id] ?? Self.builtInDefinition(for: id)
+    func definition(for id: WidgetDefinitionID) async -> WidgetDefinition? {
+        if let installed = installedDefinitions[id] {
+            return installed
+        }
+        return await Self.builtInDefinition(for: id)
     }
 
-    func allDefinitions(for sport: SportType? = nil) -> [WidgetDefinition] {
-        let builtIn = WidgetDefinitionID.allCases.compactMap(Self.builtInDefinition(for:))
+    func allDefinitions(for sport: SportType? = nil) async -> [WidgetDefinition] {
+        var builtIn: [WidgetDefinition] = []
+        for id in WidgetDefinitionID.allCases {
+            if let definition = await Self.builtInDefinition(for: id) {
+                builtIn.append(definition)
+            }
+        }
         let merged = Dictionary(uniqueKeysWithValues: (builtIn + installedDefinitions.values).map { ($0.id, $0) })
         let values = Array(merged.values)
         guard let sport else {
@@ -59,6 +67,7 @@ actor WidgetRegistry {
             .sorted { $0.displayName < $1.displayName }
     }
 
+    @MainActor
     private static func builtInDefinition(for id: WidgetDefinitionID) -> WidgetDefinition? {
         let widgetType = WidgetIdentity.widgetType(for: id)
         let capabilities = capabilities(for: id)

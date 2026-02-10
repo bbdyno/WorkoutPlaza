@@ -16,7 +16,12 @@ import UIKit
 
 // MARK: - Duration Widget
 class DurationWidget: BaseStatWidget {
+    private static let minimumStandaloneSize: CGFloat = 30
+
     override var widgetIconName: String? { "timer" }
+    override var minimumSize: CGFloat {
+        isGroupManaged ? LayoutConstants.groupManagedMinimumWidgetSize : Self.minimumStandaloneSize
+    }
 
     func configure(duration: TimeInterval) {
         titleLabel.text = WorkoutPlazaStrings.Widget.duration

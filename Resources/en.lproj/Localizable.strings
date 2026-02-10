@@ -206,6 +206,8 @@
 "running.no.route.message" = "This workout has no GPS route data.";
 "running.no.location.title" = "No Location Data";
 "running.no.gps" = "No GPS";
+"location.widget.loading" = "Loading location...";
+"location.widget.unavailable" = "Location unavailable";
 "running.empty" = "No running records";
 "running.filter.all" = "All";
 "running.filter.external" = "External";
@@ -338,6 +340,25 @@
 "more.export.action" = "Export";
 "more.reset.message" = "All workout records will be deleted. This action cannot be undone.";
 "more.version" = "Version %@ (%@)";
+"more.section.healthkit" = "HealthKit";
+"more.healthkit.permissions" = "HealthKit Permissions";
+"more.healthkit.sync" = "Sync HealthKit Data";
+"more.healthkit.permission.title" = "Manage HealthKit Permissions";
+"more.healthkit.permission.status" = "Current permission status: %@";
+"more.healthkit.permission.request" = "Request Permission";
+"more.healthkit.permission.requesting" = "Requesting HealthKit permission...";
+"more.healthkit.permission.updated" = "Permission status: %@";
+"more.healthkit.status.not.available" = "Not available on this device";
+"more.healthkit.status.request.needed" = "Request needed";
+"more.healthkit.status.not.determined" = "Not requested";
+"more.healthkit.status.denied" = "Denied";
+"more.healthkit.status.authorized" = "Authorized";
+"more.healthkit.status.unknown" = "Unknown";
+"more.healthkit.unavailable.title" = "HealthKit Unavailable";
+"more.healthkit.unavailable.message" = "Health data is not available on this device.";
+"more.healthkit.sync.in.progress" = "Syncing HealthKit data...";
+"more.healthkit.sync.completed.title" = "Sync Complete";
+"more.healthkit.sync.completed.message" = "Total workouts synced: %d\nWorkouts with route data: %d";
 
 // Developer Settings
 "dev.title" = "Developer Settings";

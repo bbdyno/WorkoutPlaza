@@ -16,7 +16,12 @@ import UIKit
 
 // MARK: - Distance Widget
 class DistanceWidget: BaseStatWidget {
+    private static let minimumStandaloneSize: CGFloat = 30
+
     override var widgetIconName: String? { "ruler" }
+    override var minimumSize: CGFloat {
+        isGroupManaged ? LayoutConstants.groupManagedMinimumWidgetSize : Self.minimumStandaloneSize
+    }
 
     func configure(distance: Double) {
         titleLabel.text = WorkoutPlazaStrings.Widget.distance
