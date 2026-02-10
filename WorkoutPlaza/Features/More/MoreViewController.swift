@@ -7,6 +7,7 @@
 
 import UIKit
 import SnapKit
+import StoreKit
 
 class MoreViewController: UIViewController {
 
@@ -129,16 +130,99 @@ class MoreViewController: UIViewController {
     }
 
     private func resetData() {
-        let alert = UIAlertController(
+        let sheet = UIAlertController(
             title: WorkoutPlazaStrings.More.Reset.data,
             message: WorkoutPlazaStrings.More.Reset.message,
+            preferredStyle: .actionSheet
+        )
+
+        sheet.addAction(UIAlertAction(title: NSLocalizedString("reset.climbing.data", comment: "Reset climbing data"), style: .destructive) { [weak self] _ in
+            self?.confirmReset(title: NSLocalizedString("reset.climbing.data", comment: ""), message: NSLocalizedString("reset.climbing.confirm", comment: "Confirm climbing data reset")) {
+                ClimbingDataManager.shared.saveSessions([])
+                self?.showResetResultAlert(message: NSLocalizedString("reset.climbing.completed", comment: ""))
+            }
+        })
+
+        sheet.addAction(UIAlertAction(title: NSLocalizedString("reset.external.data", comment: "Reset external data"), style: .destructive) { [weak self] _ in
+            self?.confirmReset(title: NSLocalizedString("reset.external.data", comment: ""), message: NSLocalizedString("reset.external.confirm", comment: "Confirm external data reset")) {
+                let allExternal = ExternalWorkoutManager.shared.getAllWorkouts()
+                for workout in allExternal {
+                    ExternalWorkoutManager.shared.deleteWorkout(id: workout.id)
+                }
+                self?.showResetResultAlert(message: NSLocalizedString("reset.external.completed", comment: ""))
+            }
+        })
+
+        sheet.addAction(UIAlertAction(title: NSLocalizedString("reset.running.data", comment: "Reset running card designs and re-sync from HealthKit"), style: .destructive) { [weak self] _ in
+            self?.confirmReset(title: NSLocalizedString("reset.running.data", comment: ""), message: NSLocalizedString("reset.running.confirm", comment: "Confirm running data reset")) {
+                self?.resetRunningDataAndResync()
+            }
+        })
+
+        sheet.addAction(UIAlertAction(title: NSLocalizedString("reset.all.data", comment: "Reset all data"), style: .destructive) { [weak self] _ in
+            self?.confirmReset(title: NSLocalizedString("reset.all.data", comment: ""), message: NSLocalizedString("reset.all.confirm", comment: "Confirm all data reset")) {
+                ClimbingDataManager.shared.saveSessions([])
+                let allExternal = ExternalWorkoutManager.shared.getAllWorkouts()
+                for workout in allExternal {
+                    ExternalWorkoutManager.shared.deleteWorkout(id: workout.id)
+                }
+                self?.deleteAllCardDesigns()
+                self?.syncHealthKitAfterReset(additionalMessage: NSLocalizedString("reset.all.completed", comment: ""))
+            }
+        })
+
+        sheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
+        present(sheet, animated: true)
+    }
+
+    private func confirmReset(title: String, message: String, action: @escaping () -> Void) {
+        let confirm = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        confirm.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
+        confirm.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { _ in
+            action()
+        })
+        present(confirm, animated: true)
+    }
+
+    private func resetRunningDataAndResync() {
+        deleteAllCardDesigns()
+        syncHealthKitAfterReset(additionalMessage: NSLocalizedString("reset.running.completed", comment: ""))
+    }
+
+    private func deleteAllCardDesigns() {
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let files = (try? FileManager.default.contentsOfDirectory(at: documentsURL, includingPropertiesForKeys: nil)) ?? []
+        for file in files where file.lastPathComponent.hasPrefix("card_design_") && file.pathExtension == "json" {
+            try? FileManager.default.removeItem(at: file)
+        }
+    }
+
+    private func syncHealthKitAfterReset(additionalMessage: String? = nil) {
+        WorkoutManager.shared.requestAuthorization { [weak self] success, error in
+            guard success else {
+                DispatchQueue.main.async {
+                    let message = [additionalMessage, NSLocalizedString("reset.healthkit.sync.failed", comment: "")].compactMap { $0 }.joined(separator: "\n")
+                    self?.showResetResultAlert(message: message)
+                }
+                return
+            }
+            WorkoutManager.shared.fetchWorkouts { workouts in
+                DispatchQueue.main.async {
+                    let resyncText = String(format: NSLocalizedString("reset.running.resynced", comment: ""), workouts.count)
+                    let message = [additionalMessage, resyncText].compactMap { $0 }.joined(separator: "\n")
+                    self?.showResetResultAlert(message: message)
+                }
+            }
+        }
+    }
+
+    private func showResetResultAlert(message: String) {
+        let alert = UIAlertController(
+            title: NSLocalizedString("reset.result.title", comment: "Reset result alert title"),
+            message: message,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { _ in
-            // TODO: Implement reset
-            self.showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
-        })
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 
@@ -156,14 +240,15 @@ class MoreViewController: UIViewController {
     }
 
     private func contactDeveloper() {
-        if let url = URL(string: "mailto:support@workoutplaza.app") {
+        if let url = URL(string: "mailto:della.kimko@gmail.com") {
             UIApplication.shared.open(url)
         }
     }
 
     private func rateApp() {
-        // TODO: Add App Store URL
-        showToast(WorkoutPlazaStrings.Toast.Appstore.required)
+        if let scene = view.window?.windowScene {
+            SKStoreReviewController.requestReview(in: scene)
+        }
     }
 
     private func showDeveloperSettings() {
