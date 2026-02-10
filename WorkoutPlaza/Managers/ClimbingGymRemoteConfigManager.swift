@@ -18,6 +18,8 @@ class ClimbingGymRemoteConfigManager {
     // MARK: - Properties
     
     private lazy var remoteConfig = RemoteConfig.remoteConfig()
+    private let climbingGymPresetsKey = "climbing_gym_presets"
+    private let climbingGymPresetsEnglishKey = "climbing_gym_presets_eng"
     private let cacheKey = "remoteClimbingGyms"
     private let lastSyncKey = "remoteClimbingGyms_lastSync"
 
@@ -63,12 +65,13 @@ class ClimbingGymRemoteConfigManager {
         """
 
         let defaults: [String: NSObject] = [
-            "climbing_gym_presets": defaultJson as NSString
+            climbingGymPresetsKey: defaultJson as NSString,
+            climbingGymPresetsEnglishKey: defaultJson as NSString
         ]
         remoteConfig.setDefaults(defaults)
 
         // Default 값이 제대로 설정되었는지 확인
-        let testValue = remoteConfig.configValue(forKey: "climbing_gym_presets")
+        let testValue = remoteConfig.configValue(forKey: climbingGymPresetsKey)
         WPLog.info("Firebase Remote Config initialized",
                    "Minimum fetch interval: \(settings.minimumFetchInterval)",
                    "Fetch timeout: \(settings.fetchTimeout)",
@@ -192,8 +195,10 @@ class ClimbingGymRemoteConfigManager {
         }
 
         // 현재 config 값 확인
-        let currentValue = remoteConfig.configValue(forKey: "climbing_gym_presets")
+        let selectedKey = selectedGymPresetsKey()
+        let currentValue = remoteConfig.configValue(forKey: selectedKey)
         WPLog.debug("Current config value:",
+                    "Selected key: \(selectedKey)",
                     "Source: \(currentValue.source.rawValue)",
                     "Value: \(currentValue.stringValue.prefix(100))...")
 
@@ -304,7 +309,20 @@ class ClimbingGymRemoteConfigManager {
 
     /// Remote Config에서 gym 데이터 파싱
     private func parseGyms() -> [ClimbingGym]? {
-        let jsonString = remoteConfig.configValue(forKey: "climbing_gym_presets").stringValue
+        let primaryKey = selectedGymPresetsKey()
+        let fallbackKey = fallbackGymPresetsKey(for: primaryKey)
+
+        let primaryJson = remoteConfig.configValue(forKey: primaryKey).stringValue
+        let usingFallback = primaryJson.isEmpty
+        let jsonString = usingFallback
+            ? remoteConfig.configValue(forKey: fallbackKey).stringValue
+            : primaryJson
+
+        if usingFallback {
+            WPLog.warning("Remote Config value empty for key '\(primaryKey)'. Using fallback key '\(fallbackKey)'.")
+        }
+
+        WPLog.debug("Using gym presets key: \(usingFallback ? fallbackKey : primaryKey)")
 
         WPLog.debug("Remote Config JSON: \(jsonString.prefix(200))...")
 
@@ -328,6 +346,16 @@ class ClimbingGymRemoteConfigManager {
             }
             return nil
         }
+    }
+
+    private func selectedGymPresetsKey() -> String {
+        let preferredLanguage = Locale.preferredLanguages.first?.lowercased() ?? Locale.current.identifier.lowercased()
+        let isKorean = preferredLanguage.hasPrefix("ko")
+        return isKorean ? climbingGymPresetsKey : climbingGymPresetsEnglishKey
+    }
+
+    private func fallbackGymPresetsKey(for primaryKey: String) -> String {
+        primaryKey == climbingGymPresetsKey ? climbingGymPresetsEnglishKey : climbingGymPresetsKey
     }
 
     private func convertToClimbingGym(_ remote: RemoteGym) -> ClimbingGym {

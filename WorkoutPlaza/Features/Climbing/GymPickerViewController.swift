@@ -251,6 +251,16 @@ extension GymPickerViewController: UITableViewDataSource {
 // MARK: - UITableViewDelegate
 
 extension GymPickerViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard let sectionType = Section(rawValue: indexPath.section) else { return 44 }
+        switch sectionType {
+        case .builtIn, .custom:
+            return GymPickerCell.minimumHeight
+        case .actions:
+            return 44
+        }
+    }
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 

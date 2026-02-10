@@ -22,11 +22,15 @@ class GymPickerCell: UITableViewCell {
         static let cellMinHeight: CGFloat = 60
     }
 
+    static let minimumHeight: CGFloat = Constants.cellMinHeight
+
     private let logoContainer = UIView()
     private let logoImageView = UIImageView()
     private let nameLabel = UILabel()
     private let infoLabel = UILabel()
     private let checkmarkImageView = UIImageView()
+    private var representedGymID: String?
+    private var logoLoadTask: Task<Void, Never>?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -35,6 +39,15 @@ class GymPickerCell: UITableViewCell {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        representedGymID = nil
+        logoLoadTask?.cancel()
+        logoLoadTask = nil
+        logoImageView.image = nil
+        logoImageView.isHidden = true
     }
 
     private func setupUI() {
@@ -95,18 +108,33 @@ class GymPickerCell: UITableViewCell {
         labelStack.snp.makeConstraints { make in
             make.leading.equalTo(logoContainer.snp.trailing).offset(Constants.labelStackLeadingOffset)
             make.centerY.equalToSuperview()
-//            make.trailing.lessThanOrEqualTo(checkmarkImageView.snp.leading).offset(-Constants.labelStackLeadingOffset)
-        }
-
-        contentView.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(Constants.cellMinHeight)
+            make.trailing.lessThanOrEqualTo(checkmarkImageView.snp.leading).offset(-Constants.labelStackLeadingOffset)
         }
     }
 
+    private func preferredLogoTintColor(for backgroundColor: UIColor) -> UIColor {
+        var red: CGFloat = 1
+        var green: CGFloat = 1
+        var blue: CGFloat = 1
+        var alpha: CGFloat = 1
+
+        guard backgroundColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            return .white
+        }
+
+        // Relative luminance approximation for contrast
+        let luminance = (0.299 * red) + (0.587 * green) + (0.114 * blue)
+        return luminance > 0.7 ? .black : .white
+    }
+
     func configure(with gym: ClimbingGym, isSelected: Bool) {
-        // Reset state
-//        logoImageView.image = UIImage(systemName: "building.2.fill")
-//        logoImageView.tintColor = .secondaryLabel
+        representedGymID = gym.id
+        logoLoadTask?.cancel()
+        logoLoadTask = nil
+
+        // Reset state for reuse safety
+        logoImageView.image = nil
+        logoImageView.isHidden = true
 
         nameLabel.text = gym.displayName
         infoLabel.text = WorkoutPlazaStrings.Gym.Grade.Colors.count(gym.gradeColors.count)
@@ -118,18 +146,22 @@ class GymPickerCell: UITableViewCell {
         logoContainer.layer.borderWidth = Constants.borderWidth
         logoContainer.layer.borderColor = branchColor.cgColor
         logoContainer.backgroundColor = branchColor
+        let logoTintColor = preferredLogoTintColor(for: branchColor)
+        logoImageView.tintColor = logoTintColor
 
         // Load logo asynchronously as template (white)
-        Task { [weak self] in
+        let gymID = gym.id
+        logoLoadTask = Task { [weak self] in
             let image = await ClimbingGymLogoManager.shared.loadLogo(for: gym, asTemplate: true)
-            
+
+            guard !Task.isCancelled else { return }
+
             // UI updates must be on main thread
             await MainActor.run {
-                // Verify cell is still valid for this gym if possible, or just update
-                if self?.nameLabel.text == gym.name {
-                    self?.logoImageView.image = image
-                    self?.logoImageView.tintColor = .white // User requested white
-                }
+                guard let self, self.representedGymID == gymID else { return }
+                self.logoImageView.image = image
+                self.logoImageView.isHidden = (image == nil)
+                self.logoImageView.tintColor = logoTintColor
             }
         }
     }
