@@ -169,11 +169,62 @@ class ClimbingGymManager {
         saveGyms(gyms)
     }
 
+    func findGym(byId id: String) -> ClimbingGym? {
+        getAllGyms().first { $0.id == id }
+    }
+
+    func resolveGym(
+        gymId: String?,
+        gymName: String,
+        gymBranch: String? = nil,
+        gymRegion: String? = nil
+    ) -> ClimbingGym? {
+        if let gymId, let gym = findGym(byId: gymId) {
+            return gym
+        }
+
+        let normalizedName = normalizeGymText(gymName)
+        let normalizedBranch = gymBranch.map(normalizeGymText)
+        let normalizedRegion = gymRegion.map(normalizeGymText)
+
+        guard !normalizedName.isEmpty else { return nil }
+
+        let allGyms = getAllGyms()
+        var candidates = allGyms.filter { gym in
+            normalizeGymText(gym.name) == normalizedName
+                || normalizeGymText(gym.displayName) == normalizedName
+        }
+
+        if let normalizedBranch, !normalizedBranch.isEmpty {
+            let branchMatched = candidates.filter { gym in
+                normalizeGymText(gym.metadata?.branch ?? "") == normalizedBranch
+            }
+            if !branchMatched.isEmpty {
+                candidates = branchMatched
+            }
+        }
+
+        if let normalizedRegion, !normalizedRegion.isEmpty {
+            let regionMatched = candidates.filter { gym in
+                normalizeGymText(gym.metadata?.region ?? "") == normalizedRegion
+            }
+            if !regionMatched.isEmpty {
+                candidates = regionMatched
+            }
+        }
+
+        if let noBranchCandidate = candidates.first(where: { ($0.metadata?.branch ?? "").isEmpty }) {
+            return noBranchCandidate
+        }
+
+        return candidates.first
+    }
+
     func findGym(byName name: String) -> ClimbingGym? {
-        // defined gyms (presets) + saved gyms
-        let allGyms = presets + loadGyms()
         let lowered = name.lowercased()
-        return allGyms.first { $0.name.lowercased() == lowered || $0.displayName.lowercased() == lowered }
+        return getAllGyms().first {
+            $0.name.lowercased() == lowered || $0.displayName.lowercased() == lowered
+        }
     }
 
     func findOrCreateGym(name: String) -> ClimbingGym {
@@ -413,7 +464,11 @@ class ClimbingGymManager {
             uniqueGyms[gym.id] = gym
         }
 
-        return Array(uniqueGyms.values).sorted { $0.name < $1.name }
+        return Array(uniqueGyms.values).sorted {
+            if $0.name != $1.name { return $0.name < $1.name }
+            if $0.displayName != $1.displayName { return $0.displayName < $1.displayName }
+            return $0.id < $1.id
+        }
     }
 
     func getBuiltInGyms() -> [ClimbingGym] {
@@ -437,6 +492,10 @@ class ClimbingGymManager {
                 completion(.failure(error))
             }
         }
+    }
+
+    private func normalizeGymText(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }
 
@@ -527,10 +586,37 @@ struct ClimbingData: SportDataProtocol, Codable {
 
     /// 표시용 이름 (암장명 + 지점명)
     var gymDisplayName: String {
-        if let branch = gymBranch {
-            return "\(gymName) \(branch)"
+        resolvedGymDisplayName
+    }
+
+    /// 현재 언어 기준으로 조회된 암장 정보 (remote/custom 포함)
+    var resolvedGym: ClimbingGym? {
+        ClimbingGymManager.shared.resolveGym(
+            gymId: gymId,
+            gymName: gymName,
+            gymBranch: gymBranch,
+            gymRegion: gymRegion
+        )
+    }
+
+    /// 저장 당시 이름이 아닌, gymId 기준으로 현재 preset 이름을 우선 사용
+    var resolvedGymName: String {
+        resolvedGym?.name ?? gymName
+    }
+
+    var resolvedGymBranch: String? {
+        resolvedGym?.metadata?.branch ?? gymBranch
+    }
+
+    var resolvedGymRegion: String? {
+        resolvedGym?.metadata?.region ?? gymRegion
+    }
+
+    var resolvedGymDisplayName: String {
+        if let branch = resolvedGymBranch, !branch.isEmpty {
+            return "\(resolvedGymName) \(branch)"
         }
-        return gymName
+        return resolvedGymName
     }
 
     init(

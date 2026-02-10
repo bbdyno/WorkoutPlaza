@@ -63,7 +63,13 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
     
     func createDefaultWidgets(for data: ClimbingData) {
         let gymWidget = ClimbingGymWidget()
-        gymWidget.configure(gymName: data.gymName, displayName: data.gymDisplayName)
+        gymWidget.configure(
+            gymName: data.gymName,
+            gymId: data.gymId,
+            gymBranch: data.gymBranch,
+            gymRegion: data.gymRegion,
+            displayName: data.resolvedGymDisplayName
+        )
         addWidget(gymWidget, size: gymWidget.idealSize, position: CGPoint(x: 30, y: 100))
         
         let sessionWidget = ClimbingSessionWidget()
@@ -235,7 +241,13 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         switch type {
         case .climbingGym:
             let w = ClimbingGymWidget()
-            w.configure(gymName: data.gymName, displayName: data.gymDisplayName)
+            w.configure(
+                gymName: data.gymName,
+                gymId: data.gymId,
+                gymBranch: data.gymBranch,
+                gymRegion: data.gymRegion,
+                displayName: data.resolvedGymDisplayName
+            )
             let gymSize = w.idealSize
             w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: gymSize)
             w.initialSize = gymSize
@@ -244,31 +256,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         case .gymLogo:
             let w = GymLogoWidget()
             w.frame = CGRect(origin: CGPoint(x: centerX, y: centerY), size: widgetSize)
-
-            // Try to find the gym object to get logo and metadata
-            WPLog.debug("🏢 Looking for gym with name: '\(data.gymName)'")
-
-            // 1. Try exact match via manager (covers presets and custom saved)
-            var gym = ClimbingGymManager.shared.findGym(byName: data.gymName)
-
-            // 2. If not found, try searching ALL gyms including remote config explicitly
-            if gym == nil {
-                WPLog.debug("🏢 Gym not found by exact name, searching all gyms...")
-                let allGyms = ClimbingGymManager.shared.getAllGyms()
-                WPLog.debug("🏢 Total gyms available: \(allGyms.count)")
-                gym = allGyms.first { $0.name.caseInsensitiveCompare(data.gymName) == .orderedSame }
-            }
-
-            // 3. Fallback to dummy
-            if let foundGym = gym {
-                WPLog.debug("🏢 Found gym: '\(foundGym.name)' with logoSource: \(foundGym.logoSource)")
-            } else {
-                WPLog.warning("🏢 Gym not found, using fallback with .none logoSource")
-            }
-
-            let finalGym = gym ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
-
-            w.configure(with: finalGym)
+            w.configure(with: resolveGymForWidgets(from: data, logPrefix: "🏢"))
             w.initialSize = widgetSize
             widget = w
 
@@ -322,7 +310,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             let w = CompositeWidget()
             w.configure(payload: CompositeWidgetPayload(
                 title: WorkoutPlazaStrings.Widget.composite,
-                primaryText: data.gymDisplayName,
+                primaryText: data.resolvedGymDisplayName,
                 secondaryText: data.summaryText
             ))
             w.compositeDelegate = self
@@ -385,6 +373,37 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             }
         }
     }
+
+    private func resolveGymForWidgets(from data: ClimbingData, logPrefix: String) -> ClimbingGym {
+        if let gymId = data.gymId {
+            WPLog.debug("\(logPrefix) Looking for gym with id: '\(gymId)'")
+        } else {
+            WPLog.debug("\(logPrefix) No gymId in session. Resolving by name/branch/region.")
+        }
+
+        if let gym = ClimbingGymManager.shared.resolveGym(
+            gymId: data.gymId,
+            gymName: data.gymName,
+            gymBranch: data.gymBranch,
+            gymRegion: data.gymRegion
+        ) {
+            WPLog.debug("\(logPrefix) Resolved gym: '\(gym.displayName)' (id: \(gym.id)) with logoSource: \(gym.logoSource)")
+            return gym
+        }
+
+        WPLog.warning("\(logPrefix) Gym not found, using fallback with .none logoSource")
+        return ClimbingGym(
+            id: data.gymId ?? "unknown",
+            name: data.resolvedGymName,
+            logoSource: .none,
+            gradeColors: [],
+            isBuiltIn: false,
+            metadata: ClimbingGym.GymMetadata(
+                region: data.resolvedGymRegion,
+                branch: data.resolvedGymBranch
+            )
+        )
+    }
     
     // MARK: - Template Application
 
@@ -396,7 +415,13 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         switch item.type {
         case .climbingGym:
             let w = ClimbingGymWidget()
-            w.configure(gymName: data.gymName, displayName: data.gymDisplayName)
+            w.configure(
+                gymName: data.gymName,
+                gymId: data.gymId,
+                gymBranch: data.gymBranch,
+                gymRegion: data.gymRegion,
+                displayName: data.resolvedGymDisplayName
+            )
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
@@ -404,20 +429,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         case .gymLogo:
             let w = GymLogoWidget()
-            WPLog.debug("🏢 [Template] Looking for gym with name: '\(data.gymName)'")
-            var gym = ClimbingGymManager.shared.findGym(byName: data.gymName)
-            if gym == nil {
-                WPLog.debug("🏢 [Template] Gym not found by exact name, searching all gyms...")
-                let allGyms = ClimbingGymManager.shared.getAllGyms()
-                gym = allGyms.first { $0.name.caseInsensitiveCompare(data.gymName) == .orderedSame }
-            }
-            if let foundGym = gym {
-                WPLog.debug("🏢 [Template] Found gym: '\(foundGym.name)' with logoSource: \(foundGym.logoSource)")
-            } else {
-                WPLog.warning("🏢 [Template] Gym not found, using fallback")
-            }
-            let finalGym = gym ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
-            w.configure(with: finalGym)
+            w.configure(with: resolveGymForWidgets(from: data, logPrefix: "🏢 [Template]"))
             w.frame = frame
             w.initialSize = frame.size
             if let colorHex = item.color, let color = TemplateManager.color(from: colorHex) {
@@ -485,7 +497,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             } else {
                 w.configure(payload: CompositeWidgetPayload(
                     title: WorkoutPlazaStrings.Widget.composite,
-                    primaryText: data.gymDisplayName,
+                    primaryText: data.resolvedGymDisplayName,
                     secondaryText: data.summaryText
                 ))
             }
@@ -529,7 +541,13 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         switch definitionID {
         case .climbingGym:
             let w = ClimbingGymWidget()
-            w.configure(gymName: data.gymName, displayName: data.gymDisplayName)
+            w.configure(
+                gymName: data.gymName,
+                gymId: data.gymId,
+                gymBranch: data.gymBranch,
+                gymRegion: data.gymRegion,
+                displayName: data.resolvedGymDisplayName
+            )
             widget = w
 
         case .climbingSession:
@@ -554,20 +572,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         case .gymLogo:
             let w = GymLogoWidget()
-            WPLog.debug("🏢 [Saved] Looking for gym with name: '\(data.gymName)'")
-            var gym = ClimbingGymManager.shared.findGym(byName: data.gymName)
-            if gym == nil {
-                WPLog.debug("🏢 [Saved] Gym not found by exact name, searching all gyms...")
-                let allGyms = ClimbingGymManager.shared.getAllGyms()
-                gym = allGyms.first { $0.name.caseInsensitiveCompare(data.gymName) == .orderedSame }
-            }
-            if let foundGym = gym {
-                WPLog.debug("🏢 [Saved] Found gym: '\(foundGym.name)' with logoSource: \(foundGym.logoSource)")
-            } else {
-                WPLog.warning("🏢 [Saved] Gym not found, using fallback")
-            }
-            let finalGym = gym ?? ClimbingGym(id: "unknown", name: data.gymName, logoSource: .none, gradeColors: [], isBuiltIn: false, metadata: nil)
-            w.configure(with: finalGym)
+            w.configure(with: resolveGymForWidgets(from: data, logPrefix: "🏢 [Saved]"))
             widget = w
 
         case .date:

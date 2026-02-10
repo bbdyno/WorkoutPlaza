@@ -29,6 +29,7 @@ class GymLogoWidget: UIView, Selectable, WidgetContentAlignable {
     // Scaling
     var initialSize: CGSize = .zero
     private var initialCenter: CGPoint = .zero
+    private var configuredGymID: String?
     
     // UI
     private let stackView: UIStackView = {
@@ -45,6 +46,13 @@ class GymLogoWidget: UIView, Selectable, WidgetContentAlignable {
         iv.contentMode = .scaleAspectFit
         iv.tintColor = .white
         return iv
+    }()
+
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        indicator.color = .white
+        return indicator
     }()
     
     private let branchLabel: UILabel = {
@@ -78,6 +86,12 @@ class GymLogoWidget: UIView, Selectable, WidgetContentAlignable {
         stackView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
+
+        addSubview(loadingIndicator)
+        loadingIndicator.snp.makeConstraints { make in
+            make.centerX.equalTo(logoImageView.snp.centerX)
+            make.centerY.equalTo(logoImageView.snp.centerY)
+        }
         
         // Logo expands to fill available space, label takes intrinsic size
         logoImageView.setContentHuggingPriority(.defaultLow, for: .vertical)
@@ -101,12 +115,21 @@ class GymLogoWidget: UIView, Selectable, WidgetContentAlignable {
     }
     
     func configure(with gym: ClimbingGym) {
+        configuredGymID = gym.id
+        logoImageView.image = nil
+        logoImageView.isHidden = true
+        loadingIndicator.startAnimating()
+
         Task { [weak self] in
             let image = await ClimbingGymLogoManager.shared.loadLogo(for: gym, asTemplate: true)
             
             await MainActor.run {
-                guard let self = self else { return }
-                self.logoImageView.image = image
+                guard let self = self, self.configuredGymID == gym.id else { return }
+                self.loadingIndicator.stopAnimating()
+                if let image = image {
+                    self.logoImageView.image = image
+                    self.logoImageView.isHidden = false
+                }
                 self.setNeedsLayout()
                 self.layoutIfNeeded()
             }
@@ -250,6 +273,7 @@ class GymLogoWidget: UIView, Selectable, WidgetContentAlignable {
     func updateColors() {
         logoImageView.tintColor = currentColor
         branchLabel.textColor = currentColor
+        loadingIndicator.color = currentColor
     }
     
     func updateFonts() {
