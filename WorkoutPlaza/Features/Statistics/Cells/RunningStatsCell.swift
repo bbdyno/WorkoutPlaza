@@ -219,7 +219,7 @@ class RunningStatsCell: UICollectionViewCell {
         chartTitleLabel.text = period == .month ? WorkoutPlazaStrings.Statistics.Chart.daily : period == .year ? WorkoutPlazaStrings.Statistics.Chart.monthly : WorkoutPlazaStrings.Statistics.Chart.yearly
         chartView.configure(
             with: chartData,
-            showValues: true,
+            showValues: false,
             valueFormatter: { value in
                 String(format: "%.1f", value)
             },

@@ -26,6 +26,15 @@ actor ClimbingGymLogoManager {
     ///   - asTemplate: If true, returns image with .alwaysTemplate rendering mode (useful for tinting)
     /// - Returns: Loaded UIImage or nil
     func loadLogo(for gym: ClimbingGym, asTemplate: Bool = false) async -> UIImage? {
+        if case .none = gym.logoSource {
+            return nil
+        }
+
+        let cacheKey = cacheKey(for: gym, asTemplate: asTemplate)
+        if let cachedImage = imageCache.object(forKey: cacheKey) {
+            return cachedImage
+        }
+
         var image: UIImage?
 
         switch gym.logoSource {
@@ -39,21 +48,23 @@ actor ClimbingGymLogoManager {
             image = await loadLogoFromURL(urlString)
 
         case .none:
-            image = placeholderImage
+            image = nil
         }
 
-        if asTemplate, let loadedImage = image {
-            return loadedImage.withRenderingMode(.alwaysTemplate)
+        guard let loadedImage = image else {
+            return nil
         }
-        
-        return image
+
+        let finalImage = asTemplate ? loadedImage.withRenderingMode(.alwaysTemplate) : loadedImage
+        imageCache.setObject(finalImage, forKey: cacheKey)
+        return finalImage
     }
 
     private func loadLogoFromURL(_ urlString: String) async -> UIImage? {
-        let cacheKey = urlString as NSString
+        let rawCacheKey = "urlraw:\(urlString)" as NSString
 
         // 1. Check Memory Cache
-        if let cachedImage = imageCache.object(forKey: cacheKey) {
+        if let cachedImage = imageCache.object(forKey: rawCacheKey) {
             return cachedImage
         }
 
@@ -86,14 +97,24 @@ actor ClimbingGymLogoManager {
         
         if let image = loadedImage {
              // Cache the result
-             imageCache.setObject(image, forKey: cacheKey)
+             imageCache.setObject(image, forKey: rawCacheKey)
         }
         
-        return loadedImage ?? placeholderImage
+        return loadedImage
     }
 
-    var placeholderImage: UIImage? {
-        UIImage(systemName: "building.2.fill")
+    private func cacheKey(for gym: ClimbingGym, asTemplate: Bool) -> NSString {
+        let templateSuffix = asTemplate ? "|template:1" : "|template:0"
+        switch gym.logoSource {
+        case .assetName(let name):
+            return "asset:\(name)\(templateSuffix)" as NSString
+        case .imageData(let data):
+            return "data:\(gym.id):\(data.hashValue)\(templateSuffix)" as NSString
+        case .url(let urlString):
+            return "url:\(urlString)\(templateSuffix)" as NSString
+        case .none:
+            return "none:\(gym.id)\(templateSuffix)" as NSString
+        }
     }
 
     func clearCache() {

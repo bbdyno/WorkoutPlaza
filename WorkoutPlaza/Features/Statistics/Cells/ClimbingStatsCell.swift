@@ -101,6 +101,7 @@ class ClimbingStatsCell: UICollectionViewCell {
     private var currentMonth: Int = Calendar.current.component(.month, from: Date())
     private var currentYear: Int = Calendar.current.component(.year, from: Date())
     private var floatingView: UIView?
+    private var backgroundDismissTapGesture: UITapGestureRecognizer?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -254,7 +255,7 @@ class ClimbingStatsCell: UICollectionViewCell {
 
         chartView.configure(
             with: chartData,
-            showValues: true,
+            showValues: false,
             valueFormatter: { value in
                 String(format: "%.0f", value)
             },
@@ -518,6 +519,10 @@ class ClimbingStatsCell: UICollectionViewCell {
     @objc private func dismissFloatingView() {
         floatingView?.removeFromSuperview()
         floatingView = nil
+        if let gesture = backgroundDismissTapGesture {
+            contentView.removeGestureRecognizer(gesture)
+            backgroundDismissTapGesture = nil
+        }
     }
 
     private func showFloatingClimbingStats(data: [String: Any]) {
@@ -550,7 +555,8 @@ class ClimbingStatsCell: UICollectionViewCell {
         container.snp.makeConstraints { make in
             make.centerX.equalTo(chartView)
             make.top.equalTo(chartView).offset(40)
-            make.width.lessThanOrEqualToSuperview().offset(-32)
+            make.leading.greaterThanOrEqualToSuperview().offset(16)
+            make.trailing.lessThanOrEqualToSuperview().offset(-16)
         }
 
         floatingView = container
@@ -559,14 +565,20 @@ class ClimbingStatsCell: UICollectionViewCell {
         container.addGestureRecognizer(tapGesture)
 
         contentView.isUserInteractionEnabled = true
+        if let gesture = backgroundDismissTapGesture {
+            contentView.removeGestureRecognizer(gesture)
+        }
         let bgTapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissFloatingView))
+        bgTapGesture.cancelsTouchesInView = false
         contentView.addGestureRecognizer(bgTapGesture)
+        backgroundDismissTapGesture = bgTapGesture
     }
 
     private func createStatRow(icon: String, title: String, value: String) -> UIView {
         let row = UIView()
         row.backgroundColor = UIColor.white.withAlphaComponent(0.1)
         row.layer.cornerRadius = 8
+        row.clipsToBounds = true
 
         let iconView = UIImageView()
         iconView.image = UIImage(systemName: icon)
@@ -576,34 +588,44 @@ class ClimbingStatsCell: UICollectionViewCell {
         let titleLabel = UILabel()
         titleLabel.font = .systemFont(ofSize: 14, weight: .medium)
         titleLabel.textColor = UIColor.white.withAlphaComponent(0.8)
+        titleLabel.numberOfLines = 1
+        titleLabel.lineBreakMode = .byTruncatingTail
 
         let valueLabel = UILabel()
         valueLabel.font = .systemFont(ofSize: 18, weight: .semibold)
         valueLabel.textColor = .white
+        valueLabel.numberOfLines = 1
+        valueLabel.lineBreakMode = .byTruncatingTail
+        valueLabel.adjustsFontSizeToFitWidth = true
+        valueLabel.minimumScaleFactor = 0.75
 
         titleLabel.text = title
         valueLabel.text = value
 
+        let textStack = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
+        textStack.axis = .vertical
+        textStack.spacing = 2
+        textStack.alignment = .fill
+
         row.addSubview(iconView)
-        row.addSubview(titleLabel)
-        row.addSubview(valueLabel)
+        row.addSubview(textStack)
 
         iconView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(16)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(28)
+            make.width.height.equalTo(24)
         }
 
-        titleLabel.snp.makeConstraints { make in
+        textStack.snp.makeConstraints { make in
             make.leading.equalTo(iconView.snp.trailing).offset(12)
-            make.top.equalToSuperview().offset(10)
-        }
-
-        valueLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconView.snp.trailing).offset(12)
-            make.top.equalTo(titleLabel.snp.bottom).offset(2)
             make.trailing.equalToSuperview().offset(-16)
-            make.bottom.equalToSuperview().offset(-10)
+            make.top.greaterThanOrEqualToSuperview().offset(10)
+            make.bottom.lessThanOrEqualToSuperview().offset(-10)
+            make.centerY.equalToSuperview()
+        }
+
+        row.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(56)
         }
 
         return row
