@@ -701,8 +701,8 @@ class StatisticsViewController: UIViewController {
 
         for session in climbingSessions {
             if session.sessionDate >= startDate && session.sessionDate <= endDate {
-                // gymName is brand name (e.g. "더클라임"), use it for grouping
-                let brandName = session.gymName.isEmpty ? WorkoutPlazaStrings.Statistics.Gym.fallback : session.gymName
+                // Resolve by gymId first so language changes use current preset naming.
+                let brandName = session.resolvedGymName.isEmpty ? WorkoutPlazaStrings.Statistics.Gym.fallback : session.resolvedGymName
                 gymSessions[brandName, default: []].append(session)
             }
         }

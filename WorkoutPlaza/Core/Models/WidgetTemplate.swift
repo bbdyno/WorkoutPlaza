@@ -274,6 +274,65 @@ enum WidgetType: String, Codable, CaseIterable {
         }
     }
 
+    private static func gymHasLocalPreviewLogo(_ gym: ClimbingGym) -> Bool {
+        switch gym.logoSource {
+        case .assetName, .imageData:
+            return true
+        case .url, .none:
+            return false
+        }
+    }
+
+    private static func gymHasAnyPreviewLogo(_ gym: ClimbingGym) -> Bool {
+        switch gym.logoSource {
+        case .assetName, .imageData:
+            return true
+        case .url(let url):
+            return !url.isEmpty
+        case .none:
+            return false
+        }
+    }
+
+    private static func sampleGymForLogoPreview() -> ClimbingGym {
+        let allGyms = ClimbingGymManager.shared.getAllGyms()
+        let placeholderSource: ClimbingGym.LogoSource = {
+            if let data = UIImage(systemName: "building.2.fill")?.pngData() {
+                return .imageData(data)
+            }
+            return .none
+        }()
+
+        if let localLogoGym = allGyms.first(where: gymHasLocalPreviewLogo) {
+            return localLogoGym
+        }
+
+        if let anyLogoGym = allGyms.first(where: gymHasAnyPreviewLogo) {
+            return anyLogoGym
+        }
+
+        if let anyGym = allGyms.first {
+            return ClimbingGym(
+                id: anyGym.id,
+                name: anyGym.name,
+                logoSource: placeholderSource,
+                gradeColors: anyGym.gradeColors,
+                branchColor: anyGym.branchColor,
+                isBuiltIn: anyGym.isBuiltIn,
+                metadata: anyGym.metadata
+            )
+        }
+
+        return ClimbingGym(
+            id: "preview_gym_logo",
+            name: WorkoutPlazaStrings.Widget.Gym.logo,
+            logoSource: placeholderSource,
+            gradeColors: [],
+            isBuiltIn: true,
+            metadata: nil
+        )
+    }
+
     /// 샘플 데이터로 실제 위젯을 렌더링하는 미리보기 클로저. nil이면 아이콘 모드 유지.
     var previewProvider: (() -> UIView)? {
         let size = CGSize(width: 140, height: 56)
@@ -352,7 +411,17 @@ enum WidgetType: String, Codable, CaseIterable {
             return {
                 let w = ClimbingGymWidget()
                 w.frame = CGRect(origin: .zero, size: size)
-                w.configure(gymName: "더클라임")
+                if let sampleGym = ClimbingGymManager.shared.getAllGyms().first {
+                    w.configure(
+                        gymName: sampleGym.name,
+                        gymId: sampleGym.id,
+                        gymBranch: sampleGym.metadata?.branch,
+                        gymRegion: sampleGym.metadata?.region,
+                        displayName: sampleGym.displayName
+                    )
+                } else {
+                    w.configure(gymName: WorkoutPlazaStrings.Widget.Climbing.gym)
+                }
                 return w
             }
         case .climbingDiscipline:
@@ -424,21 +493,9 @@ enum WidgetType: String, Codable, CaseIterable {
             }
         case .gymLogo:
             return {
-                let w = UIView(frame: CGRect(origin: .zero, size: size))
-                w.backgroundColor = .clear
-                let imageView = UIImageView()
-                imageView.contentMode = .scaleAspectFit
-                imageView.tintColor = .darkGray
-                imageView.image = UIImage(systemName: "building.2.fill")
-                imageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 32, weight: .medium)
-                w.addSubview(imageView)
-                imageView.translatesAutoresizingMaskIntoConstraints = false
-                NSLayoutConstraint.activate([
-                    imageView.centerXAnchor.constraint(equalTo: w.centerXAnchor),
-                    imageView.centerYAnchor.constraint(equalTo: w.centerYAnchor),
-                    imageView.widthAnchor.constraint(equalToConstant: 40),
-                    imageView.heightAnchor.constraint(equalToConstant: 40)
-                ])
+                let w = GymLogoWidget(frame: CGRect(origin: .zero, size: size))
+                let sampleGym = WidgetType.sampleGymForLogoPreview()
+                w.configure(with: sampleGym)
                 return w
             }
         case .composite:
