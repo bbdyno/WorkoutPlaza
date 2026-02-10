@@ -36,7 +36,8 @@ enum TemplateValidationError: LocalizedError {
     }
 }
 
-actor TemplateManager {
+@MainActor
+final class TemplateManager {
     static let shared = TemplateManager()
 
     private init() {}
@@ -90,10 +91,7 @@ actor TemplateManager {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
         let data = try encoder.encode(template)
-        
-        try await Task.detached(priority: .utility) {
-            try data.write(to: fileURL)
-        }.value
+        try data.write(to: fileURL)
 
         // Reload custom templates
         await loadCustomTemplates()
@@ -106,9 +104,7 @@ actor TemplateManager {
         let fileURL = templatesDirectoryURL.appendingPathComponent("\(template.id).wptemplate")
 
         if FileManager.default.fileExists(atPath: fileURL.path) {
-            try await Task.detached(priority: .utility) {
-                try FileManager.default.removeItem(at: fileURL)
-            }.value
+            try FileManager.default.removeItem(at: fileURL)
             
             await loadCustomTemplates()
             WPLog.info("Template deleted: \(template.name)")
@@ -118,29 +114,27 @@ actor TemplateManager {
     // MARK: - Load Custom Templates
     private func loadCustomTemplates() async {
         let directoryURL = templatesDirectoryURL
-        
-        let templates = await Task.detached(priority: .userInitiated) { () -> [WidgetTemplate] in
-            var loadedTemplates: [WidgetTemplate] = []
-            
-            guard let files = try? FileManager.default.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil) else {
-                return []
-            }
 
-            for fileURL in files where fileURL.pathExtension == "wptemplate" || fileURL.pathExtension == "json" {
-                do {
-                    let data = try Data(contentsOf: fileURL)
-                    let decoder = JSONDecoder()
-                    let template = try decoder.decode(WidgetTemplate.self, from: data)
-                    loadedTemplates.append(template)
-                } catch {
-                    WPLog.warning("Failed to load template from \(fileURL.lastPathComponent): \(error)")
-                }
+        var loadedTemplates: [WidgetTemplate] = []
+
+        guard let files = try? FileManager.default.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil) else {
+            self.customTemplates = []
+            WPLog.info("Loaded 0 custom templates")
+            return
+        }
+
+        for fileURL in files where fileURL.pathExtension == "wptemplate" || fileURL.pathExtension == "json" {
+            do {
+                let data = try Data(contentsOf: fileURL)
+                let decoder = JSONDecoder()
+                let template = try decoder.decode(WidgetTemplate.self, from: data)
+                loadedTemplates.append(template)
+            } catch {
+                WPLog.warning("Failed to load template from \(fileURL.lastPathComponent): \(error)")
             }
-            return loadedTemplates
-        }.value
-        
-        // Update on actor context
-        self.customTemplates = templates
+        }
+
+        self.customTemplates = loadedTemplates
         WPLog.info("Loaded \(self.customTemplates.count) custom templates")
     }
 
@@ -190,7 +184,7 @@ actor TemplateManager {
     }
 
     // MARK: - Helper: Convert UIColor to Hex
-    static func hexString(from color: UIColor) -> String {
+    @MainActor static func hexString(from color: UIColor) -> String {
         var red: CGFloat = 0
         var green: CGFloat = 0
         var blue: CGFloat = 0
@@ -203,7 +197,7 @@ actor TemplateManager {
     }
 
     // MARK: - Helper: Convert Hex to UIColor
-    static func color(from hex: String) -> UIColor? {
+    @MainActor static func color(from hex: String) -> UIColor? {
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
 
@@ -218,7 +212,7 @@ actor TemplateManager {
     }
 
     // MARK: - Helper: Convert absolute coordinates to ratios
-    static func createRatioBasedItem(
+    @MainActor static func createRatioBasedItem(
         type: WidgetType,
         frame: CGRect,
         canvasSize: CGSize,
@@ -249,7 +243,7 @@ actor TemplateManager {
     }
 
     // MARK: - Helper: Convert ratio to absolute coordinates
-    static func absoluteFrame(from item: WidgetItem, canvasSize: CGSize, templateCanvasSize: CGSize? = nil) -> CGRect {
+    @MainActor static func absoluteFrame(from item: WidgetItem, canvasSize: CGSize, templateCanvasSize: CGSize? = nil) -> CGRect {
         // Use ratio-based positioning if available (version 2.0+)
         if let positionRatio = item.positionRatio, let sizeRatio = item.sizeRatio {
             let x = positionRatio.x * canvasSize.width
