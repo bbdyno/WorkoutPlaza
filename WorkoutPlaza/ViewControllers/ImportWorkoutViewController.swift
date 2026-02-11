@@ -515,27 +515,6 @@ class ImportWorkoutViewController: UIViewController {
 
     private func createTemplatePreview(for template: WidgetTemplate) -> UIView? {
         guard let factory = widgetFactory else { return nil }
-
-        let templateCanvasSize: CGSize
-        if let tcs = template.canvasSize {
-            templateCanvasSize = CGSize(width: tcs.width, height: tcs.height)
-        } else {
-            templateCanvasSize = CGSize(width: 414, height: 700)
-        }
-
-        let previewSize = CGSize(width: 120, height: 120 * (templateCanvasSize.height / templateCanvasSize.width))
-        let container = UIView(frame: CGRect(origin: .zero, size: previewSize))
-        container.backgroundColor = .white
-        container.clipsToBounds = true
-
-        for item in template.items {
-            let frame = TemplateManager.absoluteFrame(from: item, canvasSize: previewSize, templateCanvasSize: templateCanvasSize)
-            if let widget = factory(item, frame) {
-                widget.isUserInteractionEnabled = false
-                container.addSubview(widget)
-            }
-        }
-
-        return container
+        return template.thumbnailProvider(widgetFactory: factory)()
     }
 }

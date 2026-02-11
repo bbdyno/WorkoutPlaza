@@ -50,6 +50,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                               "Will continue with cached/default values")
             }
         }
+
+        FeaturePackManager.shared.setupAutoUpdate()
     }
 
     // MARK: UISceneSession Lifecycle

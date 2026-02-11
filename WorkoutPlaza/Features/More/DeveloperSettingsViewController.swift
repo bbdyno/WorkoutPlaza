@@ -56,10 +56,62 @@ class DeveloperSettingsViewController: UIViewController {
         ]
 
         actionSections = [
+            (title: NSLocalizedString("dev.reset.userdefaults", comment: "Reset UserDefaults"), action: { [weak self] in
+                self?.confirmAndRun(
+                    title: NSLocalizedString("dev.reset.userdefaults", comment: "Reset UserDefaults"),
+                    message: NSLocalizedString("dev.reset.userdefaults.confirm", comment: "Confirm reset UserDefaults"),
+                    completionMessage: NSLocalizedString("dev.reset.userdefaults.completed", comment: "Reset UserDefaults completed")
+                ) {
+                    AppDataManager.shared.resetUserDefaultsData()
+                }
+            }),
+            (title: NSLocalizedString("dev.reset.localdb", comment: "Reset Local DB"), action: { [weak self] in
+                self?.confirmAndRun(
+                    title: NSLocalizedString("dev.reset.localdb", comment: "Reset Local DB"),
+                    message: NSLocalizedString("dev.reset.localdb.confirm", comment: "Confirm reset Local DB"),
+                    completionMessage: NSLocalizedString("dev.reset.localdb.completed", comment: "Reset Local DB completed")
+                ) {
+                    AppDataManager.shared.resetLocalDBData()
+                }
+            }),
+            (title: NSLocalizedString("dev.reset.appdata", comment: "Reset In-App Data"), action: { [weak self] in
+                self?.confirmAndRun(
+                    title: NSLocalizedString("dev.reset.appdata", comment: "Reset In-App Data"),
+                    message: NSLocalizedString("dev.reset.appdata.confirm", comment: "Confirm reset In-App Data"),
+                    completionMessage: NSLocalizedString("dev.reset.appdata.completed", comment: "Reset In-App Data completed")
+                ) {
+                    AppDataManager.shared.resetAllInAppData()
+                }
+            }),
             (title: WorkoutPlazaStrings.Dev.Migration.rerun, action: { [weak self] in
                 self?.runMigration()
             })
         ]
+    }
+
+    private func confirmAndRun(
+        title: String,
+        message: String,
+        completionMessage: String,
+        action: @escaping () -> Void
+    ) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: NSLocalizedString("common.no", comment: "No"), style: .cancel))
+        alert.addAction(UIAlertAction(title: NSLocalizedString("common.yes", comment: "Yes"), style: .destructive) { [weak self] _ in
+            action()
+            self?.showActionResultAlert(message: completionMessage)
+        })
+        present(alert, animated: true)
+    }
+
+    private func showActionResultAlert(message: String) {
+        let alert = UIAlertController(
+            title: NSLocalizedString("reset.result.title", comment: "Reset result alert title"),
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
+        present(alert, animated: true)
     }
 
     private func runMigration() {
@@ -181,11 +233,13 @@ extension DeveloperSettingsViewController: UITableViewDataSource {
             cell.selectionStyle = .none
         } else {
             let action = actionSections[indexPath.row]
+            let resetActionCount = 3
+            let isDestructiveReset = indexPath.row < resetActionCount
 
             var config = cell.defaultContentConfiguration()
             config.text = action.title
             config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
-            config.textProperties.color = ColorSystem.primaryGreen
+            config.textProperties.color = isDestructiveReset ? .systemRed : ColorSystem.primaryGreen
             cell.contentConfiguration = config
 
             cell.selectionStyle = .default

@@ -10,6 +10,8 @@
 "common.delete" = "삭제";
 "common.edit" = "편집";
 "common.done" = "완료";
+"common.yes" = "예";
+"common.no" = "아니오";
 
 // Tab Bar
 "tab.home" = "홈";
@@ -35,6 +37,7 @@
 "toast.layout.reset" = "레이아웃이 초기화되었습니다";
 "toast.feature.coming.soon" = "기능 준비 중입니다";
 "toast.appstore.required" = "앱스토어 출시 후 이용 가능합니다";
+"feature.pack.market.button" = "마켓";
 
 // Alert Titles
 "alert.cancel.title" = "작업 취소";
@@ -369,6 +372,15 @@
 "dev.migration.run" = "실행";
 "dev.migration.complete" = "완료";
 "dev.migration.complete.message" = "마이그레이션이 완료되었습니다. 기록을 다시 확인해주세요.";
+"dev.reset.userdefaults" = "UserDefaults 초기화";
+"dev.reset.userdefaults.confirm" = "UserDefaults를 초기화하시겠습니까?";
+"dev.reset.userdefaults.completed" = "UserDefaults가 초기화되었습니다.";
+"dev.reset.localdb" = "Local DB 초기화";
+"dev.reset.localdb.confirm" = "기기 내 로컬 DB 파일을 초기화하시겠습니까?";
+"dev.reset.localdb.completed" = "Local DB가 초기화되었습니다.";
+"dev.reset.appdata" = "앱 내 데이터 초기화";
+"dev.reset.appdata.confirm" = "앱 내 데이터 전체를 초기화하시겠습니까? UserDefaults와 로컬 DB가 모두 삭제됩니다.";
+"dev.reset.appdata.completed" = "앱 내 데이터가 초기화되었습니다.";
 
 // Data Reset
 "reset.climbing.data" = "클라이밍 기록 초기화";
@@ -382,7 +394,7 @@
 "reset.running.completed" = "러닝 데이터가 초기화되고 HealthKit에서 다시 동기화됩니다.";
 "reset.running.resynced" = "HealthKit에서 %d개의 운동을 다시 불러왔습니다.";
 "reset.all.data" = "전체 데이터 초기화";
-"reset.all.confirm" = "클라이밍, 외부 기록, 러닝 카드 디자인이 모두 삭제됩니다. 러닝 데이터는 HealthKit에서 다시 불러옵니다. 이 작업은 되돌릴 수 없습니다.";
+"reset.all.confirm" = "앱 내 데이터 전체가 초기화됩니다. UserDefaults, 클라이밍/외부 기록, 카드 데이터, 템플릿 파일이 삭제됩니다. 러닝 데이터는 HealthKit에서 다시 불러옵니다. 이 작업은 되돌릴 수 없습니다.";
 "reset.all.completed" = "모든 데이터가 초기화되었습니다.";
 "reset.result.title" = "초기화 완료";
 "reset.healthkit.sync.failed" = "HealthKit 동기화에 실패했습니다. 설정에서 권한을 확인해주세요.";

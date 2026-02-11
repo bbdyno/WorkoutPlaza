@@ -12,6 +12,8 @@
 "common.delete" = "Delete";
 "common.edit" = "Edit";
 "common.done" = "Done";
+"common.yes" = "Yes";
+"common.no" = "No";
 
 // Tab Bar
 "tab.home" = "Home";
@@ -37,6 +39,7 @@
 "toast.layout.reset" = "Layout has been reset";
 "toast.feature.coming.soon" = "Feature coming soon";
 "toast.appstore.required" = "Available after App Store launch";
+"feature.pack.market.button" = "Market";
 
 // Alert Titles
 "alert.cancel.title" = "Cancel Operation";
@@ -371,6 +374,15 @@
 "dev.migration.run" = "Run";
 "dev.migration.complete" = "Complete";
 "dev.migration.complete.message" = "Migration is complete. Please check your records again.";
+"dev.reset.userdefaults" = "Reset UserDefaults";
+"dev.reset.userdefaults.confirm" = "Reset UserDefaults?";
+"dev.reset.userdefaults.completed" = "UserDefaults has been reset.";
+"dev.reset.localdb" = "Reset Local DB";
+"dev.reset.localdb.confirm" = "Reset on-device local DB files?";
+"dev.reset.localdb.completed" = "Local DB has been reset.";
+"dev.reset.appdata" = "Reset In-App Data";
+"dev.reset.appdata.confirm" = "Reset all in-app data? This will delete both UserDefaults and local DB data.";
+"dev.reset.appdata.completed" = "In-app data has been reset.";
 
 // Data Reset
 "reset.climbing.data" = "Reset Climbing Data";
@@ -384,7 +396,7 @@
 "reset.running.completed" = "Running data has been reset and re-synced from HealthKit.";
 "reset.running.resynced" = "Re-synced %d workouts from HealthKit.";
 "reset.all.data" = "Reset All Data";
-"reset.all.confirm" = "All climbing, external records, and running card designs will be deleted. Running data will be re-synced from HealthKit. This action cannot be undone.";
+"reset.all.confirm" = "All in-app data will be reset. UserDefaults, climbing/external records, card data, and template files will be deleted. Running data will be re-synced from HealthKit. This action cannot be undone.";
 "reset.all.completed" = "All data has been reset.";
 "reset.result.title" = "Reset Complete";
 "reset.healthkit.sync.failed" = "HealthKit sync failed. Please check permissions in Settings.";

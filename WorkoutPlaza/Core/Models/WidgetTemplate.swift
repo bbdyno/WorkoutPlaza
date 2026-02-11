@@ -64,6 +64,31 @@ struct WidgetTemplate: Codable {
         let height: CGFloat
     }
 
+    private var resolvedCanvasSize: CGSize {
+        let fallback = CGSize(width: 414, height: 700)
+        guard let canvasSize else { return fallback }
+
+        let width = canvasSize.width
+        let height = canvasSize.height
+        guard width.isFinite, height.isFinite, width > 0, height > 0 else {
+            return fallback
+        }
+
+        return CGSize(width: width, height: height)
+    }
+
+    private func thumbnailRenderCanvasSize(for templateCanvasSize: CGSize) -> CGSize {
+        let maxRenderSide: CGFloat = 420
+        let maxSide = max(templateCanvasSize.width, templateCanvasSize.height)
+        guard maxSide.isFinite, maxSide > 0 else { return templateCanvasSize }
+
+        let scale = min(1.0, maxRenderSide / maxSide)
+        return CGSize(
+            width: templateCanvasSize.width * scale,
+            height: templateCanvasSize.height * scale
+        )
+    }
+
     /// Creates a closure that produces a miniature preview of this template's layout.
     func thumbnailProvider(widgetFactory: @escaping (WidgetItem, CGRect) -> UIView?) -> (() -> UIView) {
         return { [self] in
@@ -72,19 +97,19 @@ struct WidgetTemplate: Codable {
             canvasView.clipsToBounds = true
             canvasView.layer.cornerRadius = 4
 
-            let previewWidth: CGFloat = 100
-            let cs = self.canvasSize ?? CanvasSize(width: 414, height: 700)
-            let aspect = cs.height / cs.width
-            let previewHeight = previewWidth * aspect
-            canvasView.frame = CGRect(origin: .zero, size: CGSize(width: previewWidth, height: previewHeight))
-
-            let templateCanvasSize = CGSize(width: cs.width, height: cs.height)
-            let targetSize = canvasView.bounds.size
+            let templateCanvasSize = self.resolvedCanvasSize
+            let renderCanvasSize = self.thumbnailRenderCanvasSize(for: templateCanvasSize)
+            canvasView.frame = CGRect(origin: .zero, size: renderCanvasSize)
 
             for item in self.items {
-                let frame = TemplateManager.absoluteFrame(from: item, canvasSize: targetSize, templateCanvasSize: templateCanvasSize)
+                let frame = TemplateManager.absoluteFrame(
+                    from: item,
+                    canvasSize: renderCanvasSize,
+                    templateCanvasSize: templateCanvasSize
+                )
                 if let widget = widgetFactory(item, frame) {
                     widget.isUserInteractionEnabled = false
+                    widget.clipsToBounds = true
                     canvasView.addSubview(widget)
                 }
             }
