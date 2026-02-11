@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkoutPlaza - Build and Share Workout Cards</title>
+  <meta name="description" content="WorkoutPlaza is a card-based workout journal for climbing and running. Track sessions, design cards, and share your progress.">
+  <meta property="og:title" content="WorkoutPlaza - Build and Share Workout Cards">
+  <meta property="og:description" content="Track climbing and running workouts, design beautiful cards, and keep your data on-device.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/workoutplaza-icon.png">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="apple-itunes-app" content="app-id=6758429244">
+  <link rel="icon" href="assets/workoutplaza-icon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/app.js"></script>
+</head>
+<body>
+  <div class="bg-orb bg-orb-one"></div>
+  <div class="bg-orb bg-orb-two"></div>
+
+  <header class="site-header">
+    <nav class="nav container">
+      <a class="brand" href="#top" aria-label="WorkoutPlaza home">
+        <img src="assets/workoutplaza-icon.png" alt="WorkoutPlaza icon">
+        <span>WorkoutPlaza</span>
+      </a>
+
+      <div class="nav-right">
+        <a href="#features" data-i18n="nav_features">Features</a>
+        <a href="#support" data-i18n="nav_support">Support</a>
+        <a class="nav-store" href="https://apps.apple.com/app/id6758429244" target="_blank" rel="noreferrer" data-i18n="nav_store">App Store</a>
+
+        <label class="lang-wrap" for="langSelect">
+          <span class="visually-hidden" data-i18n="lang_label">Language</span>
+          <select id="langSelect" aria-label="Language selector">
+            <option value="en">English</option>
+            <option value="ko">한국어</option>
+          </select>
+        </label>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero container reveal">
+      <div class="hero-copy">
+        <p class="badge" data-i18n="hero_badge">Now on the App Store</p>
+        <h1>
+          <span data-i18n="hero_title_1">Build Workout Cards</span>
+          <span class="gradient" data-i18n="hero_title_2">that feel like your story.</span>
+        </h1>
+        <p class="hero-sub" data-i18n="hero_sub">
+          Track climbing and running sessions, design visuals with templates, and share your progress in one clean flow.
+        </p>
+        <p class="hero-desc" data-i18n="hero_desc">
+          Local-first by default. HealthKit sync when you want it.
+        </p>
+
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://apps.apple.com/app/id6758429244" target="_blank" rel="noreferrer" data-i18n="cta_appstore">Download on App Store</a>
+          <a class="btn btn-secondary" href="https://github.com/bbdyno/WorkoutPlaza" target="_blank" rel="noreferrer" data-i18n="cta_github">View on GitHub</a>
+          <a class="btn btn-tertiary" href="#support" data-i18n="cta_support">Support Development</a>
+        </div>
+
+        <ul class="trust-row">
+          <li data-i18n="trust_1">Running + Climbing</li>
+          <li data-i18n="trust_2">Template-based Cards</li>
+          <li data-i18n="trust_3">On-device Data</li>
+        </ul>
+      </div>
+
+      <div class="hero-art" aria-hidden="true">
+        <div class="phone-frame floating">
+          <div class="phone-notch"></div>
+          <div class="phone-content">
+            <img src="assets/workoutplaza-icon.png" alt="" class="app-icon">
+            <h3>WorkoutPlaza</h3>
+            <p data-i18n="mock_sub">Card studio for your workouts</p>
+            <div class="mini-stats">
+              <span data-i18n="mock_stat_1">Route count</span>
+              <span data-i18n="mock_stat_2">Distance</span>
+              <span data-i18n="mock_stat_3">Duration</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="section container reveal">
+      <div class="section-head">
+        <h2 data-i18n="features_title">Everything for card-style workout journaling</h2>
+        <p data-i18n="features_sub">From tracking to visual composition, built for creators who train.</p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <h3 data-i18n="f1_title">Dual-Sport Tracking</h3>
+          <p data-i18n="f1_desc">Log running and climbing in one timeline with sport-specific widgets and summaries.</p>
+        </article>
+
+        <article class="feature-card">
+          <h3 data-i18n="f2_title">Card Builder</h3>
+          <p data-i18n="f2_desc">Compose distance, pace, routes, map, and notes with drag-and-resize editing.</p>
+        </article>
+
+        <article class="feature-card">
+          <h3 data-i18n="f3_title">Template Presets</h3>
+          <p data-i18n="f3_desc">Apply reusable layouts fast and keep your style consistent across every workout.</p>
+        </article>
+
+        <article class="feature-card">
+          <h3 data-i18n="f4_title">HealthKit Sync</h3>
+          <p data-i18n="f4_desc">Pull workouts from HealthKit and keep route data connected to your cards.</p>
+        </article>
+
+        <article class="feature-card">
+          <h3 data-i18n="f5_title">Import & Share</h3>
+          <p data-i18n="f5_desc">Export workout packages, import shared records, and collaborate with teammates.</p>
+        </article>
+
+        <article class="feature-card">
+          <h3 data-i18n="f6_title">Privacy by Design</h3>
+          <p data-i18n="f6_desc">Core data stays on your device. You decide when and how anything is shared.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section-alt reveal">
+      <div class="container">
+        <div class="section-head">
+          <h2 data-i18n="flow_title">How WorkoutPlaza fits your routine</h2>
+        </div>
+
+        <div class="flow-grid">
+          <article class="flow-step">
+            <span>01</span>
+            <h3 data-i18n="flow_1_title">Track</h3>
+            <p data-i18n="flow_1_desc">Record your run or climbing session and sync baseline data from HealthKit.</p>
+          </article>
+
+          <article class="flow-step">
+            <span>02</span>
+            <h3 data-i18n="flow_2_title">Design</h3>
+            <p data-i18n="flow_2_desc">Build a visual card using widgets, templates, custom backgrounds, and typography.</p>
+          </article>
+
+          <article class="flow-step">
+            <span>03</span>
+            <h3 data-i18n="flow_3_title">Share</h3>
+            <p data-i18n="flow_3_desc">Save cards, export your workout package, and publish progress where you want.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="support" class="section container reveal">
+      <div class="section-head">
+        <h2 data-i18n="support_title">Support the developer</h2>
+        <p data-i18n="support_sub">WorkoutPlaza is developed independently. Support helps keep updates shipping.</p>
+      </div>
+
+      <div class="support-grid">
+        <article class="support-card center">
+          <h3 data-i18n="support_coffee_title">Buy Me a Coffee</h3>
+          <a href="https://buymeacoffee.com/bbdyno" target="_blank" rel="noreferrer" class="coffee-link" data-i18n="support_coffee_btn">Open Support Page</a>
+        </article>
+
+        <article class="support-card">
+          <h3 data-i18n="support_crypto_title">Crypto Donation</h3>
+          <div class="wallet">
+            <p>BTC</p>
+            <code id="btcAddress">bc1qz5neag5j4cg6j8sj53889udws70v7223zlvgd3</code>
+            <button class="copy-btn" data-copy-target="btcAddress" data-i18n="copy_btn">Copy</button>
+          </div>
+          <div class="wallet">
+            <p>ETH</p>
+            <code id="ethAddress">0x5f35523757d0e672fa3ffbc0f1d50d35fd6b2571</code>
+            <button class="copy-btn" data-copy-target="ethAddress" data-i18n="copy_btn">Copy</button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>
+        <p class="footer-brand">WorkoutPlaza</p>
+        <p data-i18n="footer_rights">© 2026 WorkoutPlaza. All rights reserved.</p>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://github.com/bbdyno" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="mailto:della.kimko@gmail.com" data-i18n="footer_contact">Contact</a>
+        <a href="terms.html" data-i18n="footer_terms">Terms</a>
+        <a href="privacy.html" data-i18n="footer_privacy">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
