@@ -27,6 +27,8 @@ let project = Project(
             product: .app,
             bundleId: "com.bbdyno.app.WorkoutPlaza",
             infoPlist: .extendingDefault(with: [
+                "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
                 "UILaunchScreen": [
                     "UIImageRespectsSafeAreaInsets": true,
                     "UIColorName": "systemBackground"
