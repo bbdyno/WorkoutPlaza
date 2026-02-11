@@ -1,5 +1,22 @@
-# WorkoutPlaza
-WorkoutPlaza
+# WorkoutPlaza 
+> 나의 운동 기록을, 나만의 카드로.
+
+WorkoutPlaza는 운동 기록을 카드로 만들어 SNS에 공유할 수 있는 앱입니다.
+Apple HealthKit 연동으로 운동 데이터를 자동으로 불러오고, 다양한 운동을 세밀하게 기록합니다.
+완료한 운동을 자유롭게 디자인한 카드로 만들어 인스타그램, 스토리, 트위터 등 어디서든 공유하세요.
+
+> Turn your workouts into cards. Share them anywhere.
+
+WorkoutPlaza lets you create beautiful, shareable cards from your workout records.
+It syncs with Apple HealthKit to automatically import your data and tracks various workouts in detail.
+Design your own workout cards and share them on Instagram, Stories, X, or wherever you like.
+
+<img width="17%" alt="Simulator Screenshot - iPhone 14 Plus - 2026-02-11 at 12 17 19" src="https://github.com/user-attachments/assets/58dfbb7a-1b75-4f55-9072-9ef82fde8094" />
+<img width="17%" alt="Simulator Screenshot - iPhone 14 Plus - 2026-02-11 at 12 17 10" src="https://github.com/user-attachments/assets/b2aa2185-da35-4d5c-96f4-ee82dc2b44cd" />
+<img width="17%" alt="Simulator Screenshot - iPhone 14 Plus - 2026-02-11 at 12 16 59" src="https://github.com/user-attachments/assets/0f5a32d4-db5c-43b2-a326-71d3d5925e90" />
+<img width="17%" alt="Simulator Screenshot - iPhone 14 Plus - 2026-02-11 at 12 17 26" src="https://github.com/user-attachments/assets/8cd9057a-0514-4a99-80cd-d188979fb233" />
+<img width="17%" alt="Simulator Screenshot - iPhone 14 Plus - 2026-02-11 at 12 30 47" src="https://github.com/user-attachments/assets/cf3dbbb9-317c-4ed3-9076-c7b4d497ff8c" />
+
 
 ---
 
