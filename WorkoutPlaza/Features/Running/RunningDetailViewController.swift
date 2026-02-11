@@ -139,21 +139,27 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             ))
         }
 
-        // Import / Export as header actions
-        let templateActions: [ToolSheetHeaderAction] = [
+        // Import / Market / Export as header actions
+        var templateActions: [ToolSheetHeaderAction] = [
             ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.action, iconName: "square.and.arrow.down") { [weak self] in
                 self?.importTemplate()
-            },
-            ToolSheetHeaderAction(title: "Widget Pack", iconName: "shippingbox") { [weak self] in
-                self?.importWidgetPackage()
-            },
-            ToolSheetHeaderAction(title: "Packages", iconName: "shippingbox.fill") { [weak self] in
-                self?.showWidgetPackageManagerSheet()
-            },
+            }
+        ]
+
+        let marketConfig = FeaturePackManager.shared.templateMarketButtonConfig()
+        if marketConfig.isEnabled {
+            templateActions.append(
+                ToolSheetHeaderAction(title: marketConfig.title, iconName: "storefront") { [weak self] in
+                    self?.showTemplateMarket()
+                }
+            )
+        }
+
+        templateActions.append(
             ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.Export.action, iconName: "square.and.arrow.up") { [weak self] in
                 self?.exportCurrentLayout()
             }
-        ]
+        )
 
         // Widgets
         var widgetItems: [ToolSheetItem] = []

@@ -158,7 +158,7 @@ class ToolSheetViewController: UIViewController {
             let columns = self?.sections[sectionIndex].columnCount ?? 3
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
-                heightDimension: .estimated(columns == 2 ? 140 : 100)
+                heightDimension: .estimated(columns == 2 ? 190 : 100)
             )
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
             item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 3, bottom: 5, trailing: 3)
@@ -241,6 +241,7 @@ extension ToolSheetViewController: UICollectionViewDelegate {
 private class ToolSheetCell: UICollectionViewCell {
 
     static let reuseIdentifier = "ToolSheetCell"
+    private static let previewImageCache = NSCache<NSString, UIImage>()
 
     private let iconImageView: UIImageView = {
         let iv = UIImageView()
@@ -284,6 +285,14 @@ private class ToolSheetCell: UICollectionViewCell {
         return view
     }()
 
+    private let previewImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.clipsToBounds = true
+        imageView.isHidden = true
+        return imageView
+    }()
+
     private let checkmarkView: UIImageView = {
         let iv = UIImageView()
         iv.image = UIImage(systemName: "checkmark.circle.fill")
@@ -300,6 +309,10 @@ private class ToolSheetCell: UICollectionViewCell {
     private var descriptionBottomConstraint: NSLayoutConstraint!
     private var titleBottomConstraint: NSLayoutConstraint!
     private var previewHeightConstraint: NSLayoutConstraint!
+    private var previewImageTopConstraint: NSLayoutConstraint!
+    private var previewImageLeadingConstraint: NSLayoutConstraint!
+    private var previewImageTrailingConstraint: NSLayoutConstraint!
+    private var previewImageBottomConstraint: NSLayoutConstraint!
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -314,6 +327,7 @@ private class ToolSheetCell: UICollectionViewCell {
         contentView.addSubview(containerView)
         containerView.addSubview(iconImageView)
         containerView.addSubview(previewContainerView)
+        previewContainerView.addSubview(previewImageView)
         containerView.addSubview(titleLabel)
         containerView.addSubview(descriptionLabel)
         containerView.addSubview(checkmarkView)
@@ -321,6 +335,7 @@ private class ToolSheetCell: UICollectionViewCell {
         containerView.translatesAutoresizingMaskIntoConstraints = false
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         previewContainerView.translatesAutoresizingMaskIntoConstraints = false
+        previewImageView.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         checkmarkView.translatesAutoresizingMaskIntoConstraints = false
@@ -331,6 +346,10 @@ private class ToolSheetCell: UICollectionViewCell {
         descriptionBottomConstraint = descriptionLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -10)
         titleBottomConstraint = titleLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -6)
         previewHeightConstraint = previewContainerView.heightAnchor.constraint(equalToConstant: 56)
+        previewImageTopConstraint = previewImageView.topAnchor.constraint(equalTo: previewContainerView.topAnchor)
+        previewImageLeadingConstraint = previewImageView.leadingAnchor.constraint(equalTo: previewContainerView.leadingAnchor)
+        previewImageTrailingConstraint = previewImageView.trailingAnchor.constraint(equalTo: previewContainerView.trailingAnchor)
+        previewImageBottomConstraint = previewImageView.bottomAnchor.constraint(equalTo: previewContainerView.bottomAnchor)
 
         titleTopToPreviewConstraint.isActive = false
         titleBottomConstraint.isActive = false
@@ -350,6 +369,11 @@ private class ToolSheetCell: UICollectionViewCell {
             previewContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 6),
             previewContainerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -6),
             previewHeightConstraint,
+
+            previewImageTopConstraint,
+            previewImageLeadingConstraint,
+            previewImageTrailingConstraint,
+            previewImageBottomConstraint,
 
             titleTopToIconConstraint,
             titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 4),
@@ -374,10 +398,16 @@ private class ToolSheetCell: UICollectionViewCell {
             iconImageView.isHidden = true
             descriptionLabel.isHidden = true
             previewContainerView.isHidden = false
+            previewImageView.isHidden = false
 
             // 2열일 때 미리보기 영역을 더 크게
-            let previewHeight: CGFloat = columnCount == 2 ? 100 : 56
+            let previewHeight: CGFloat = columnCount == 2 ? 140 : 56
             previewHeightConstraint.constant = previewHeight
+            let previewInset: CGFloat = columnCount == 2 ? 18 : 0
+            previewImageTopConstraint.constant = previewInset
+            previewImageLeadingConstraint.constant = previewInset
+            previewImageTrailingConstraint.constant = -previewInset
+            previewImageBottomConstraint.constant = -previewInset
 
             // Switch constraints to preview mode
             iconTopConstraint.isActive = false
@@ -386,34 +416,30 @@ private class ToolSheetCell: UICollectionViewCell {
             titleTopToPreviewConstraint.isActive = true
             titleBottomConstraint.isActive = true
 
-            // Clear old preview
-            previewContainerView.subviews.forEach { $0.removeFromSuperview() }
+            let cacheKey = Self.previewCacheKey(
+                itemID: item.id,
+                columnCount: columnCount,
+                previewHeight: previewHeight
+            )
 
-            let previewView = previewProvider()
-            previewView.isUserInteractionEnabled = false
-            previewView.transform = .identity
-
-            // Tint all labels dark for contrast on light cell background
-            Self.tintLabelsDark(in: previewView)
-
-            previewContainerView.addSubview(previewView)
-
-            // Scale preview to fit within container
-            previewView.translatesAutoresizingMaskIntoConstraints = true
-            let previewAreaWidth = previewContainerView.bounds.width > 0
-                ? previewContainerView.bounds.width
-                : (UIScreen.main.bounds.width / CGFloat(columnCount) - 30)
-            let previewAreaHeight = previewHeight
-            let previewSize = previewView.frame.size
-
-            if previewSize.width > 0 && previewSize.height > 0 {
-                let scaleX = previewAreaWidth / previewSize.width
-                let scaleY = previewAreaHeight / previewSize.height
-                let scale = min(scaleX, scaleY, 1.0)
-                previewView.transform = CGAffineTransform(scaleX: scale, y: scale)
-                previewView.center = CGPoint(x: previewAreaWidth / 2, y: previewAreaHeight / 2)
+            if let cachedImage = Self.previewImageCache.object(forKey: cacheKey) {
+                previewImageView.image = cachedImage
             } else {
-                previewView.center = CGPoint(x: previewAreaWidth / 2, y: previewAreaHeight / 2)
+                let previewView = previewProvider()
+                previewView.isUserInteractionEnabled = false
+                previewView.transform = .identity
+                previewView.frame.origin = .zero
+                previewView.clipsToBounds = true
+
+                // Tint all labels dark for contrast on light cell background
+                Self.tintLabelsDark(in: previewView)
+
+                if let image = Self.snapshotImage(from: previewView) {
+                    previewImageView.image = image
+                    Self.previewImageCache.setObject(image, forKey: cacheKey)
+                } else {
+                    previewImageView.image = nil
+                }
             }
         } else {
             // Icon mode (default)
@@ -422,6 +448,8 @@ private class ToolSheetCell: UICollectionViewCell {
             descriptionLabel.isHidden = false
             descriptionLabel.text = item.description
             previewContainerView.isHidden = true
+            previewImageView.isHidden = true
+            previewImageView.image = nil
 
             // Switch constraints to icon mode
             titleTopToPreviewConstraint.isActive = false
@@ -448,11 +476,16 @@ private class ToolSheetCell: UICollectionViewCell {
         containerView.alpha = 1.0
         isUserInteractionEnabled = true
         checkmarkView.isHidden = true
-        previewContainerView.subviews.forEach { $0.removeFromSuperview() }
         previewContainerView.isHidden = true
+        previewImageView.isHidden = true
+        previewImageView.image = nil
         iconImageView.isHidden = false
         descriptionLabel.isHidden = false
         previewHeightConstraint.constant = 56
+        previewImageTopConstraint.constant = 0
+        previewImageLeadingConstraint.constant = 0
+        previewImageTrailingConstraint.constant = 0
+        previewImageBottomConstraint.constant = 0
 
         // Reset to icon mode constraints
         titleTopToPreviewConstraint.isActive = false
@@ -478,6 +511,26 @@ private class ToolSheetCell: UICollectionViewCell {
             for layer in sublayers where layer is CAShapeLayer {
                 (layer as! CAShapeLayer).strokeColor = darkColor.cgColor
             }
+        }
+    }
+
+    private static func previewCacheKey(itemID: String, columnCount: Int, previewHeight: CGFloat) -> NSString {
+        "\(itemID)|\(columnCount)|\(Int(previewHeight.rounded()))" as NSString
+    }
+
+    private static func snapshotImage(from view: UIView) -> UIImage? {
+        let size = view.bounds.size
+        guard size.width > 0, size.height > 0 else { return nil }
+
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+
+        let format = UIGraphicsImageRendererFormat.default()
+        format.opaque = false
+        format.scale = UIScreen.main.scale
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        return renderer.image { context in
+            view.layer.render(in: context.cgContext)
         }
     }
 }

@@ -130,71 +130,21 @@ class MoreViewController: UIViewController {
     }
 
     private func resetData() {
-        let sheet = UIAlertController(
-            title: WorkoutPlazaStrings.More.Reset.data,
-            message: WorkoutPlazaStrings.More.Reset.message,
-            preferredStyle: .actionSheet
+        let alert = UIAlertController(
+            title: NSLocalizedString("reset.all.data", comment: "Reset all data"),
+            message: NSLocalizedString("reset.all.confirm", comment: "Confirm all data reset"),
+            preferredStyle: .alert
         )
-
-        sheet.addAction(UIAlertAction(title: NSLocalizedString("reset.climbing.data", comment: "Reset climbing data"), style: .destructive) { [weak self] _ in
-            self?.confirmReset(title: NSLocalizedString("reset.climbing.data", comment: ""), message: NSLocalizedString("reset.climbing.confirm", comment: "Confirm climbing data reset")) {
-                ClimbingDataManager.shared.saveSessions([])
-                self?.showResetResultAlert(message: NSLocalizedString("reset.climbing.completed", comment: ""))
-            }
+        alert.addAction(UIAlertAction(title: NSLocalizedString("common.no", comment: "No"), style: .cancel))
+        alert.addAction(UIAlertAction(title: NSLocalizedString("common.yes", comment: "Yes"), style: .destructive) { [weak self] _ in
+            self?.performAllResetAndResync()
         })
-
-        sheet.addAction(UIAlertAction(title: NSLocalizedString("reset.external.data", comment: "Reset external data"), style: .destructive) { [weak self] _ in
-            self?.confirmReset(title: NSLocalizedString("reset.external.data", comment: ""), message: NSLocalizedString("reset.external.confirm", comment: "Confirm external data reset")) {
-                let allExternal = ExternalWorkoutManager.shared.getAllWorkouts()
-                for workout in allExternal {
-                    ExternalWorkoutManager.shared.deleteWorkout(id: workout.id)
-                }
-                self?.showResetResultAlert(message: NSLocalizedString("reset.external.completed", comment: ""))
-            }
-        })
-
-        sheet.addAction(UIAlertAction(title: NSLocalizedString("reset.running.data", comment: "Reset running card designs and re-sync from HealthKit"), style: .destructive) { [weak self] _ in
-            self?.confirmReset(title: NSLocalizedString("reset.running.data", comment: ""), message: NSLocalizedString("reset.running.confirm", comment: "Confirm running data reset")) {
-                self?.resetRunningDataAndResync()
-            }
-        })
-
-        sheet.addAction(UIAlertAction(title: NSLocalizedString("reset.all.data", comment: "Reset all data"), style: .destructive) { [weak self] _ in
-            self?.confirmReset(title: NSLocalizedString("reset.all.data", comment: ""), message: NSLocalizedString("reset.all.confirm", comment: "Confirm all data reset")) {
-                ClimbingDataManager.shared.saveSessions([])
-                let allExternal = ExternalWorkoutManager.shared.getAllWorkouts()
-                for workout in allExternal {
-                    ExternalWorkoutManager.shared.deleteWorkout(id: workout.id)
-                }
-                self?.deleteAllCardDesigns()
-                self?.syncHealthKitAfterReset(additionalMessage: NSLocalizedString("reset.all.completed", comment: ""))
-            }
-        })
-
-        sheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
-        present(sheet, animated: true)
+        present(alert, animated: true)
     }
 
-    private func confirmReset(title: String, message: String, action: @escaping () -> Void) {
-        let confirm = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        confirm.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
-        confirm.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { _ in
-            action()
-        })
-        present(confirm, animated: true)
-    }
-
-    private func resetRunningDataAndResync() {
-        deleteAllCardDesigns()
-        syncHealthKitAfterReset(additionalMessage: NSLocalizedString("reset.running.completed", comment: ""))
-    }
-
-    private func deleteAllCardDesigns() {
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let files = (try? FileManager.default.contentsOfDirectory(at: documentsURL, includingPropertiesForKeys: nil)) ?? []
-        for file in files where file.lastPathComponent.hasPrefix("card_design_") && file.pathExtension == "json" {
-            try? FileManager.default.removeItem(at: file)
-        }
+    private func performAllResetAndResync() {
+        AppDataManager.shared.resetAllInAppData()
+        syncHealthKitAfterReset(additionalMessage: NSLocalizedString("reset.all.completed", comment: ""))
     }
 
     private func syncHealthKitAfterReset(additionalMessage: String? = nil) {
