@@ -161,7 +161,10 @@ class ToolSheetViewController: UIViewController {
                 heightDimension: .estimated(columns == 2 ? 190 : 100)
             )
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
-            item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 3, bottom: 5, trailing: 3)
+            item.edgeSpacing = NSCollectionLayoutEdgeSpacing(
+                leading: .fixed(3), top: .fixed(5),
+                trailing: .fixed(3), bottom: .fixed(5)
+            )
 
             let groupSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),

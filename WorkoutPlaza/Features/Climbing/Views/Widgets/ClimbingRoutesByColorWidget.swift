@@ -173,7 +173,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable, WidgetContentAlignable {
 
         let rowHeight: CGFloat = 26 * scaleFactor
         rowView.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(rowHeight)
+            make.height.greaterThanOrEqualTo(rowHeight).priority(.high)
         }
 
         return rowView

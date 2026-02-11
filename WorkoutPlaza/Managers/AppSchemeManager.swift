@@ -25,6 +25,7 @@ final class AppSchemeManager {
         case home
         case statistics
         case more
+        case browser
         case templateMarket = "template-market"
         case widgetMarket = "widget-market"
     }
@@ -51,11 +52,23 @@ final class AppSchemeManager {
             return selectTab(index: 1, rootViewController: rootViewController)
         case .more:
             return selectTab(index: 2, rootViewController: rootViewController)
+        case .browser:
+            guard let targetURL = targetWebURL(from: url) else {
+                WPLog.warning("Missing or invalid url query for browser route:", url.absoluteString)
+                return false
+            }
+            return presentBrowser(with: targetURL, rootViewController: rootViewController)
         case .templateMarket:
+            if let targetURL = targetWebURL(from: url) {
+                return presentBrowser(with: targetURL, rootViewController: rootViewController)
+            }
             _ = selectTab(index: 2, rootViewController: rootViewController)
             NotificationCenter.default.post(name: .didOpenTemplateMarketDeepLink, object: nil, userInfo: ["url": url])
             return true
         case .widgetMarket:
+            if let targetURL = targetWebURL(from: url) {
+                return presentBrowser(with: targetURL, rootViewController: rootViewController)
+            }
             _ = selectTab(index: 2, rootViewController: rootViewController)
             NotificationCenter.default.post(name: .didOpenWidgetMarketDeepLink, object: nil, userInfo: ["url": url])
             return true
@@ -76,6 +89,8 @@ final class AppSchemeManager {
                 return .statistics
             case "more":
                 return .more
+            case "browser", "web", "inappbrowser":
+                return .browser
             case "templatemarket":
                 return .templateMarket
             case "widgetmarket":
@@ -108,6 +123,38 @@ final class AppSchemeManager {
             .replacingOccurrences(of: "_", with: "")
     }
 
+    private func targetWebURL(from url: URL) -> URL? {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems else {
+            return nil
+        }
+
+        let keys = ["url", "target", "target_url"]
+        for key in keys {
+            guard let value = queryItems.first(where: { $0.name == key })?.value,
+                  let targetURL = URL(string: value),
+                  let scheme = targetURL.scheme?.lowercased(),
+                  ["http", "https"].contains(scheme) else {
+                continue
+            }
+            return targetURL
+        }
+        return nil
+    }
+
+    private func presentBrowser(with url: URL, rootViewController: UIViewController?) -> Bool {
+        guard let rootViewController else { return false }
+        guard let presenter = topMostViewController(from: rootViewController) else { return false }
+
+        DispatchQueue.main.async {
+            let browser = InAppBrowserViewController(url: url, configuration: .default)
+            let navigationController = UINavigationController(rootViewController: browser)
+            navigationController.modalPresentationStyle = .fullScreen
+            presenter.present(navigationController, animated: true)
+        }
+        return true
+    }
+
     private func selectTab(index: Int, rootViewController: UIViewController?) -> Bool {
         guard let tabBarController = findMainTabBarController(from: rootViewController) else {
             WPLog.warning("MainTabBarController not found for app scheme routing")
@@ -135,10 +182,6 @@ final class AppSchemeManager {
             return tabBarController
         }
 
-        if let presented = rootViewController.presentedViewController {
-            return findMainTabBarController(from: presented)
-        }
-
         if let navigationController = rootViewController as? UINavigationController {
             return findMainTabBarController(from: navigationController.visibleViewController)
         }
@@ -147,7 +190,29 @@ final class AppSchemeManager {
             return tabBarController as? MainTabBarController
         }
 
+        if let presented = rootViewController.presentedViewController {
+            return findMainTabBarController(from: presented)
+        }
+
         return nil
+    }
+
+    private func topMostViewController(from rootViewController: UIViewController?) -> UIViewController? {
+        guard let rootViewController else { return nil }
+
+        if let navigationController = rootViewController as? UINavigationController {
+            return topMostViewController(from: navigationController.visibleViewController)
+        }
+
+        if let tabBarController = rootViewController as? UITabBarController {
+            return topMostViewController(from: tabBarController.selectedViewController ?? tabBarController)
+        }
+
+        if let presented = rootViewController.presentedViewController {
+            return topMostViewController(from: presented)
+        }
+
+        return rootViewController
     }
 }
 

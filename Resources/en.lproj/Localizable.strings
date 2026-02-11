@@ -42,6 +42,42 @@
 "feature.pack.market.button" = "Market";
 "feature.pack.widget.market.button" = "Widget Market";
 
+// In-App Browser
+"browser.close" = "Close";
+"browser.close.hint" = "Close browser";
+"browser.address.placeholder" = "Enter address";
+"browser.address.label" = "Address";
+"browser.address.hint" = "Edit website address";
+"browser.address.toggle" = "Toggle address style";
+"browser.address.toggle.hint" = "Switch between compact and full URL";
+"browser.invalid.address.title" = "Invalid Address";
+"browser.invalid.address.message" = "Please enter a valid web address.";
+"browser.blocked.domain.title" = "Blocked Domain";
+"browser.blocked.domain.message" = "The domain %@ cannot be opened.";
+"browser.ssl.secure" = "Secure connection";
+"browser.ssl.insecure" = "Insecure connection";
+"browser.error.title" = "Unable to load page";
+"browser.error.description" = "Something went wrong. Please refresh and try again.";
+"browser.error.retry" = "Refresh";
+"browser.action.back" = "Back";
+"browser.action.back.hint" = "Go back";
+"browser.action.forward" = "Forward";
+"browser.action.forward.hint" = "Go forward";
+"browser.action.reload" = "Refresh";
+"browser.action.stop" = "Stop";
+"browser.action.reload_stop.hint" = "Reload page or stop loading";
+"browser.action.share" = "Share";
+"browser.action.share.hint" = "Share current page";
+"browser.action.open_safari" = "Open in Safari";
+"browser.action.open_safari.hint" = "Open current page in Safari";
+"browser.download.completed.title" = "Download Complete";
+"browser.download.completed.message" = "Saved %@.";
+"browser.download.share" = "Share";
+"browser.upload.source.title" = "Choose Upload Source";
+"browser.upload.source.photos" = "Photo Library";
+"browser.upload.source.camera" = "Camera";
+"browser.upload.source.files" = "Files";
+
 // Alert Titles
 "alert.cancel.title" = "Cancel Operation";
 "alert.save.completed" = "Save Completed";
@@ -369,6 +405,7 @@
 "dev.widget.edit" = "Widget Edit";
 "dev.pinch.resize" = "Pinch to Resize";
 "dev.section.data" = "Data";
+"dev.section.appscheme" = "App Scheme";
 "dev.migration.rerun" = "Rerun Gym Structure Migration";
 "dev.migration.title" = "Rerun Migration";
 "dev.migration.message" = "Would you like to re-migrate the gym structure?";
@@ -384,6 +421,23 @@
 "dev.reset.appdata" = "Reset In-App Data";
 "dev.reset.appdata.confirm" = "Reset all in-app data? This will delete both UserDefaults and local DB data.";
 "dev.reset.appdata.completed" = "In-app data has been reset.";
+"dev.browser.section" = "In-App Browser";
+"dev.browser.addressbar" = "Show Address Bar";
+"dev.browser.toolbar" = "Show Bottom Toolbar";
+"dev.browser.presentation.sheet" = "Present as Sheet";
+"dev.browser.test" = "In-App Browser Test";
+"dev.browser.prompt.message" = "Enter the URL to open. e.g. https://example.com";
+"dev.browser.prompt.placeholder" = "https://example.com";
+"dev.browser.invalid.title" = "Invalid URL";
+"dev.browser.invalid.message" = "Please enter a URL with http or https.";
+"dev.appscheme.test" = "App Scheme Test";
+"dev.appscheme.prompt.message" = "Enter a scheme URL to run.\nExample: workoutplaza://more\nExample: workoutplaza://browser?url=https://example.com";
+"dev.appscheme.prompt.placeholder" = "workoutplaza://browser?url=https://example.com";
+"dev.appscheme.prompt.default" = "workoutplaza://more";
+"dev.appscheme.invalid.title" = "Invalid Scheme URL";
+"dev.appscheme.invalid.message" = "Please enter a valid URL format.";
+"dev.appscheme.unhandled.title" = "Unhandled Scheme";
+"dev.appscheme.unhandled.message" = "This scheme cannot be handled by the current app.";
 
 // Data Reset
 "reset.climbing.data" = "Reset Climbing Data";
