@@ -349,11 +349,11 @@ class RunningListViewController: UIViewController {
     }
     
     private func loadWorkouts() {
-        WorkoutManager.shared.fetchWorkouts { [weak self] workouts in
+        WorkoutManager.shared.fetchIndoorOutdoorRunningWorkouts { [weak self] workouts in
             DispatchQueue.main.async {
                 self?.loadingIndicator.stopAnimating()
-                // Filter only running workouts (GPS 유무와 관계없이 모든 러닝 기록)
-                self?.healthKitWorkouts = workouts.filter { $0.workoutType == .running }
+                // Include only indoor/outdoor running workouts from HealthKit.
+                self?.healthKitWorkouts = workouts
                 self?.mergeAndSortWorkouts()
             }
         }

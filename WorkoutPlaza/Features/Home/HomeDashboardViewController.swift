@@ -369,10 +369,10 @@ class HomeDashboardViewController: UIViewController {
         // Load external running workouts
         externalRunningWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == .running }
 
-        // Load HealthKit running workouts
-        WorkoutManager.shared.fetchWorkouts { [weak self] workouts in
+        // Load HealthKit indoor/outdoor running workouts.
+        WorkoutManager.shared.fetchIndoorOutdoorRunningWorkouts { [weak self] workouts in
             guard let self = self else { return }
-            self.runningWorkouts = workouts.filter { $0.workoutType == .running }
+            self.runningWorkouts = workouts
 
             DispatchQueue.main.async {
                 self.updateWeeklySummary()

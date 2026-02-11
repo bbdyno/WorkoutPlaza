@@ -70,10 +70,26 @@ class WorkoutManager {
     
     // MARK: - 운동 가져오기 (GPS 유무와 관계없이 모든 운동)
     func fetchWorkouts(completion: @escaping ([WorkoutData]) -> Void) {
+        fetchWorkouts(predicate: nil, completion: completion)
+    }
+
+    // MARK: - 실내/실외 달리기 운동 가져오기
+    func fetchIndoorOutdoorRunningWorkouts(completion: @escaping ([WorkoutData]) -> Void) {
+        let runningPredicate = HKQuery.predicateForWorkouts(with: .running)
+        let indoorOutdoorPredicate = HKQuery.predicateForObjects(
+            withMetadataKey: HKMetadataKeyIndoorWorkout,
+            allowedValues: [NSNumber(value: true), NSNumber(value: false)]
+        )
+        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [runningPredicate, indoorOutdoorPredicate])
+
+        fetchWorkouts(predicate: predicate, completion: completion)
+    }
+
+    private func fetchWorkouts(predicate: NSPredicate?, completion: @escaping ([WorkoutData]) -> Void) {
         let workoutType = HKObjectType.workoutType()
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
-        let query = HKSampleQuery(sampleType: workoutType, predicate: nil, limit: 50, sortDescriptors: [sortDescriptor]) { [weak self] query, samples, error in
+        let query = HKSampleQuery(sampleType: workoutType, predicate: predicate, limit: 50, sortDescriptors: [sortDescriptor]) { [weak self] query, samples, error in
             guard let workouts = samples as? [HKWorkout], error == nil else {
                 completion([])
                 return
