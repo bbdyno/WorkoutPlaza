@@ -361,7 +361,7 @@ extension DeveloperSettingsViewController: UITableViewDataSource {
             let toggle = UISwitch()
             toggle.isOn = isOn()
             toggle.tag = (indexPath.section * 1000) + indexPath.row
-            toggle.onTintColor = ColorSystem.primaryGreen
+            toggle.onTintColor = .black
             toggle.addTarget(self, action: #selector(switchToggled(_:)), for: .valueChanged)
             cell.accessoryView = toggle
             cell.accessoryType = .none
@@ -371,7 +371,7 @@ extension DeveloperSettingsViewController: UITableViewDataSource {
             var config = cell.defaultContentConfiguration()
             config.text = title
             config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
-            config.textProperties.color = isDestructive ? .systemRed : ColorSystem.primaryGreen
+            config.textProperties.color = isDestructive ? .systemRed : ColorSystem.mainText
             cell.contentConfiguration = config
 
             cell.accessoryView = nil
