@@ -65,6 +65,13 @@ let project = Project(
                         "LSItemContentTypes": ["com.workoutplaza.workout"]
                     ]
                 ],
+                "CFBundleURLTypes": [
+                    [
+                        "CFBundleURLName": "com.bbdyno.app.WorkoutPlaza",
+                        "CFBundleTypeRole": "Editor",
+                        "CFBundleURLSchemes": ["workoutplaza"]
+                    ]
+                ],
                 "UTExportedTypeDeclarations": [
                     [
                         "UTTypeIdentifier": "com.workoutplaza.workout",

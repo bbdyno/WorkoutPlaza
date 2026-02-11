@@ -40,9 +40,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     private func handleIncomingURL(_ url: URL) {
+        if AppSchemeManager.shared.handle(url, rootViewController: window?.rootViewController) {
+            WPLog.info("Handled app scheme URL:", url.absoluteString)
+            return
+        }
+
         // Only handle .wplaza files
         guard url.pathExtension.lowercased() == "wplaza" else {
-            WPLog.warning("Unsupported file extension: \(url.pathExtension)")
+            WPLog.warning("Unsupported incoming URL:", url.absoluteString)
             return
         }
 

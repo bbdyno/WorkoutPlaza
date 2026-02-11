@@ -166,6 +166,10 @@ extension BaseWorkoutDetailViewController {
             return
         }
 
+        if AppSchemeManager.shared.handle(url, rootViewController: view.window?.rootViewController) {
+            return
+        }
+
         UIApplication.shared.open(url, options: [:]) { [weak self] success in
             guard success == false else { return }
             self?.showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
@@ -179,6 +183,10 @@ extension BaseWorkoutDetailViewController {
         guard let destination = config.destination,
               let url = URL(string: destination) else {
             showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
+            return
+        }
+
+        if AppSchemeManager.shared.handle(url, rootViewController: view.window?.rootViewController) {
             return
         }
 
