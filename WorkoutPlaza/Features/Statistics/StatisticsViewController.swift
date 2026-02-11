@@ -207,9 +207,9 @@ class StatisticsViewController: UIViewController {
         let dispatchGroup = DispatchGroup()
 
         dispatchGroup.enter()
-        WorkoutManager.shared.fetchWorkouts { [weak self] workouts in
+        WorkoutManager.shared.fetchIndoorOutdoorRunningWorkouts { [weak self] workouts in
             guard let self = self else { return }
-            self.runningWorkouts = workouts.filter { $0.workoutType == .running }
+            self.runningWorkouts = workouts
 
             for workout in self.runningWorkouts {
                 let components = Calendar.current.dateComponents([.year, .month, .day], from: workout.startDate)
