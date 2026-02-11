@@ -24,6 +24,7 @@ final class FeaturePackManager {
 
     enum FeatureKey: String {
         case templateMarket = "template_market"
+        case widgetMarket = "widget_market"
     }
 
     struct FeaturePack: Codable {
@@ -35,7 +36,8 @@ final class FeaturePackManager {
             version: "1.0.0",
             updatedAt: "1970-01-01T00:00:00Z",
             features: [
-                FeatureKey.templateMarket.rawValue: .disabled
+                FeatureKey.templateMarket.rawValue: .disabled,
+                FeatureKey.widgetMarket.rawValue: .disabled
             ]
         )
     }
@@ -53,6 +55,12 @@ final class FeaturePackManager {
     }
 
     struct TemplateMarketButtonConfig {
+        let isEnabled: Bool
+        let title: String
+        let destination: String?
+    }
+
+    struct WidgetMarketButtonConfig {
         let isEnabled: Bool
         let title: String
         let destination: String?
@@ -94,6 +102,23 @@ final class FeaturePackManager {
             title: (title?.isEmpty == false)
                 ? title!
                 : NSLocalizedString("feature.pack.market.button", comment: "Template market button title"),
+            destination: (destination?.isEmpty == false) ? destination : nil
+        )
+    }
+
+    func widgetMarketButtonConfig() -> WidgetMarketButtonConfig {
+        let feature = feature(for: .widgetMarket)
+        let enabled = isFeatureEnabled(feature)
+        let title = feature?.payload?["button_title"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let destination = feature?.payload?["destination"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return WidgetMarketButtonConfig(
+            isEnabled: enabled,
+            title: (title?.isEmpty == false)
+                ? title!
+                : NSLocalizedString("feature.pack.widget.market.button", comment: "Widget market button title"),
             destination: (destination?.isEmpty == false) ? destination : nil
         )
     }

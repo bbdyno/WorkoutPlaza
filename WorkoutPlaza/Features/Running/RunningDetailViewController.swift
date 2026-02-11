@@ -139,12 +139,8 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             ))
         }
 
-        // Import / Market / Export as header actions
-        var templateActions: [ToolSheetHeaderAction] = [
-            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.action, iconName: "square.and.arrow.down") { [weak self] in
-                self?.importTemplate()
-            }
-        ]
+        // Market / Import / Export as header actions
+        var templateActions: [ToolSheetHeaderAction] = []
 
         let marketConfig = FeaturePackManager.shared.templateMarketButtonConfig()
         if marketConfig.isEnabled {
@@ -154,6 +150,12 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
                 }
             )
         }
+
+        templateActions.append(
+            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.action, iconName: "square.and.arrow.down") { [weak self] in
+                self?.importTemplate()
+            }
+        )
 
         templateActions.append(
             ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.Export.action, iconName: "square.and.arrow.up") { [weak self] in

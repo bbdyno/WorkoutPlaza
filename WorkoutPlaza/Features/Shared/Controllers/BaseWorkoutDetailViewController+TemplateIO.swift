@@ -172,6 +172,22 @@ extension BaseWorkoutDetailViewController {
         }
     }
 
+    @objc dynamic func showWidgetMarket() {
+        let config = FeaturePackManager.shared.widgetMarketButtonConfig()
+        guard config.isEnabled else { return }
+
+        guard let destination = config.destination,
+              let url = URL(string: destination) else {
+            showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
+            return
+        }
+
+        UIApplication.shared.open(url, options: [:]) { [weak self] success in
+            guard success == false else { return }
+            self?.showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
+        }
+    }
+
     @objc dynamic func exportCurrentLayout() {
         let items = createTemplateItemsFromCurrentLayout()
         let canvasSize = contentView.bounds.size
