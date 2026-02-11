@@ -26,8 +26,18 @@ extension BaseWorkoutDetailViewController {
         let (_, widgets, _) = getToolSheetItems()
         guard !widgets.isEmpty else { return }
 
+        var widgetActions: [ToolSheetHeaderAction] = []
+        let marketConfig = FeaturePackManager.shared.widgetMarketButtonConfig()
+        if marketConfig.isEnabled {
+            widgetActions.append(
+                ToolSheetHeaderAction(title: marketConfig.title, iconName: "storefront") { [weak self] in
+                    self?.showWidgetMarket()
+                }
+            )
+        }
+
         let sections = [ToolSheetSection(title: WorkoutPlazaStrings.Sheet.Widget.add, items: widgets)]
-        let sheetVC = ToolSheetViewController(sections: sections)
+        let sheetVC = ToolSheetViewController(sections: sections, toolbarActions: widgetActions)
         sheetVC.title = WorkoutPlazaStrings.Sheet.Widget.add
         presentAsSheet(sheetVC)
     }

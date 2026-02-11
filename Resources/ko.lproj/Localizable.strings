@@ -38,6 +38,7 @@
 "toast.feature.coming.soon" = "기능 준비 중입니다";
 "toast.appstore.required" = "앱스토어 출시 후 이용 가능합니다";
 "feature.pack.market.button" = "마켓";
+"feature.pack.widget.market.button" = "위젯 마켓";
 
 // Alert Titles
 "alert.cancel.title" = "작업 취소";

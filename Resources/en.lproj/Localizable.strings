@@ -40,6 +40,7 @@
 "toast.feature.coming.soon" = "Feature coming soon";
 "toast.appstore.required" = "Available after App Store launch";
 "feature.pack.market.button" = "Market";
+"feature.pack.widget.market.button" = "Widget Market";
 
 // Alert Titles
 "alert.cancel.title" = "Cancel Operation";
