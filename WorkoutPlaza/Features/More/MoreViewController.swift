@@ -47,6 +47,11 @@ class MoreViewController: UIViewController {
 
     private func setupData() {
         sections = [
+            Section(title: WorkoutPlazaStrings.More.Section.Developer.info, items: [
+                MenuItem(title: WorkoutPlazaStrings.More.Github.developer, icon: "link", action: { [weak self] in
+                    self?.openDeveloperGitHubProfile()
+                })
+            ]),
             Section(title: WorkoutPlazaStrings.More.Section.card, items: [
                 MenuItem(title: WorkoutPlazaStrings.More.Saved.cards, icon: "square.stack.3d.forward.dottedline", action: { [weak self] in
                     self?.showSavedCards()
@@ -79,14 +84,14 @@ class MoreViewController: UIViewController {
                     self?.rateApp()
                 })
             ]),
-            Section(title: WorkoutPlazaStrings.More.Section.developer, items: [
-                MenuItem(title: WorkoutPlazaStrings.More.Developer.settings, icon: "wrench.and.screwdriver", action: { [weak self] in
-                    self?.showDeveloperSettings()
-                })
-            ]),
             Section(title: nil, items: [
                 MenuItem(title: WorkoutPlazaStrings.More.Open.Source.licenses, icon: "doc.text", action: { [weak self] in
                     self?.showLicenses()
+                })
+            ]),
+            Section(title: WorkoutPlazaStrings.More.Section.developer, items: [
+                MenuItem(title: WorkoutPlazaStrings.More.Developer.settings, icon: "wrench.and.screwdriver", action: { [weak self] in
+                    self?.showDeveloperSettings()
                 })
             ])
         ]
@@ -193,6 +198,15 @@ class MoreViewController: UIViewController {
         if let url = URL(string: "mailto:della.kimko@gmail.com") {
             UIApplication.shared.open(url)
         }
+    }
+
+    private func openDeveloperGitHubProfile() {
+        openURLString(GitHubLinks.developerProfile)
+    }
+
+    private func openURLString(_ urlString: String) {
+        guard let url = URL(string: urlString) else { return }
+        UIApplication.shared.open(url)
     }
 
     private func rateApp() {
@@ -420,51 +434,5 @@ extension MoreViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         let item = sections[indexPath.section].items[indexPath.row]
         item.action()
-    }
-}
-
-// MARK: - Licenses View Controller
-
-class LicensesViewController: UIViewController {
-
-    private let textView: UITextView = {
-        let tv = UITextView()
-        tv.isEditable = false
-        tv.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
-        tv.textColor = .label
-        tv.backgroundColor = .systemBackground
-        return tv
-    }()
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = WorkoutPlazaStrings.More.Open.Source.licenses
-        view.backgroundColor = .systemBackground
-
-        view.addSubview(textView)
-        textView.snp.makeConstraints { make in
-            make.edges.equalTo(view.safeAreaLayoutGuide).inset(16)
-        }
-
-        textView.text = """
-        SnapKit
-        --------
-        MIT License
-        Copyright (c) 2011-Present SnapKit Team
-
-        Permission is hereby granted, free of charge, to any person obtaining a copy
-        of this software and associated documentation files (the "Software"), to deal
-        in the Software without restriction, including without limitation the rights
-        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-        copies of the Software, and to permit persons to whom the Software is
-        furnished to do so, subject to the following conditions:
-
-        The above copyright notice and this permission notice shall be included in all
-        copies or substantial portions of the Software.
-
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-        """
     }
 }
