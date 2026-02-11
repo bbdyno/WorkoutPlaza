@@ -42,6 +42,11 @@ final class InAppBrowserViewModel {
     // MARK: - Updates
 
     func updateURL(_ url: URL?) {
+        let previousURLString = state.currentURL?.absoluteString
+        let currentURLString = url?.absoluteString
+        if let currentURLString, currentURLString != previousURLString {
+            WPLog.info("InAppBrowser current URL:", currentURLString)
+        }
         state.currentURL = url
     }
 
