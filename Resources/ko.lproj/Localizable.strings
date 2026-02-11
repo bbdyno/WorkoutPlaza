@@ -429,8 +429,8 @@
 "dev.browser.invalid.title" = "잘못된 URL";
 "dev.browser.invalid.message" = "http 또는 https 형식의 URL을 입력해 주세요.";
 "dev.appscheme.test" = "앱 스킴 테스트";
-"dev.appscheme.prompt.message" = "실행할 스킴 URL을 입력하세요.\n예: workoutplaza://more\n예: workoutplaza://browser?url=https://example.com";
-"dev.appscheme.prompt.placeholder" = "workoutplaza://browser?url=https://example.com";
+"dev.appscheme.prompt.message" = "실행할 스킴 URL을 입력하세요.\n예: workoutplaza://more\n예: workoutplaza://browser?target_url=https://example.com";
+"dev.appscheme.prompt.placeholder" = "workoutplaza://browser?target_url=https://example.com";
 "dev.appscheme.prompt.default" = "workoutplaza://more";
 "dev.appscheme.invalid.title" = "잘못된 스킴 URL";
 "dev.appscheme.invalid.message" = "유효한 URL 형식으로 입력해 주세요.";

@@ -157,43 +157,67 @@ extension BaseWorkoutDetailViewController {
     }
 
     @objc dynamic func showTemplateMarket() {
-        let config = FeaturePackManager.shared.templateMarketButtonConfig()
+        let config = FeaturePackManager.shared.templateMarketButtonConfig(for: getSportType())
         guard config.isEnabled else { return }
+        if handleMarketRoute(.templateMarket, destination: config.destination, targetURLString: config.url) { return }
 
-        guard let destination = config.destination,
-              let url = URL(string: destination) else {
-            showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
-            return
-        }
-
-        if AppSchemeManager.shared.handle(url, rootViewController: view.window?.rootViewController) {
-            return
-        }
-
-        UIApplication.shared.open(url, options: [:]) { [weak self] success in
-            guard success == false else { return }
-            self?.showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
-        }
+        showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
     }
 
     @objc dynamic func showWidgetMarket() {
-        let config = FeaturePackManager.shared.widgetMarketButtonConfig()
+        let config = FeaturePackManager.shared.widgetMarketButtonConfig(for: getSportType())
         guard config.isEnabled else { return }
+        if handleMarketRoute(.widgetMarket, destination: config.destination, targetURLString: config.url) { return }
 
-        guard let destination = config.destination,
-              let url = URL(string: destination) else {
-            showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
-            return
+        showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
+    }
+
+    private func handleMarketRoute(
+        _ route: AppSchemeManager.Route,
+        destination: String?,
+        targetURLString: String?
+    ) -> Bool {
+        let rootViewController = view.window?.rootViewController
+
+        if let routeURL = marketRouteURL(route, destination: destination, targetURLString: targetURLString),
+           AppSchemeManager.shared.handle(routeURL, rootViewController: rootViewController) {
+            return true
         }
 
-        if AppSchemeManager.shared.handle(url, rootViewController: view.window?.rootViewController) {
-            return
+        if let destination,
+           let destinationURL = URL(string: destination),
+           AppSchemeManager.shared.handle(destinationURL, rootViewController: rootViewController) {
+            return true
         }
 
-        UIApplication.shared.open(url, options: [:]) { [weak self] success in
-            guard success == false else { return }
-            self?.showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
+        return false
+    }
+
+    private func marketRouteURL(
+        _ route: AppSchemeManager.Route,
+        destination: String?,
+        targetURLString: String?
+    ) -> URL? {
+        if let destination,
+           let baseURL = URL(string: destination),
+           AppSchemeManager.shared.canHandle(baseURL) {
+            guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+                return baseURL
+            }
+
+            if let targetURLString {
+                let trimmedTarget = targetURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmedTarget.isEmpty == false {
+                    var queryItems = components.queryItems ?? []
+                    queryItems.removeAll { $0.name == "target_url" || $0.name == "url" }
+                    queryItems.append(URLQueryItem(name: "target_url", value: trimmedTarget))
+                    components.queryItems = queryItems
+                }
+            }
+            return components.url ?? baseURL
         }
+
+        return AppSchemeManager.shared.makeRouteURL(route, targetURLString: targetURLString)
     }
 
     @objc dynamic func exportCurrentLayout() {

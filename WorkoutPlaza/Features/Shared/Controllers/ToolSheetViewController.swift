@@ -155,10 +155,11 @@ class ToolSheetViewController: UIViewController {
 
     private func createLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { [weak self] sectionIndex, environment in
-            let columns = self?.sections[sectionIndex].columnCount ?? 3
+            let columns = max(self?.sections[sectionIndex].columnCount ?? 3, 1)
+            let estimatedItemHeight: CGFloat = columns == 2 ? 190 : 100
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0 / CGFloat(columns)),
-                heightDimension: .estimated(columns == 2 ? 190 : 100)
+                heightDimension: .estimated(estimatedItemHeight)
             )
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
             item.edgeSpacing = NSCollectionLayoutEdgeSpacing(
@@ -168,9 +169,9 @@ class ToolSheetViewController: UIViewController {
 
             let groupSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
-                heightDimension: .estimated(100)
+                heightDimension: .estimated(estimatedItemHeight)
             )
-            let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+            let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitem: item, count: columns)
 
             let section = NSCollectionLayoutSection(group: group)
             section.interGroupSpacing = 6

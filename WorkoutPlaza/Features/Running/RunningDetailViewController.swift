@@ -142,7 +142,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         // Market / Import / Export as header actions
         var templateActions: [ToolSheetHeaderAction] = []
 
-        let marketConfig = FeaturePackManager.shared.templateMarketButtonConfig()
+        let marketConfig = FeaturePackManager.shared.templateMarketButtonConfig(for: getSportType())
         if marketConfig.isEnabled {
             templateActions.append(
                 ToolSheetHeaderAction(title: marketConfig.title, iconName: "storefront") { [weak self] in
