@@ -618,22 +618,27 @@ class HomeDashboardViewController: UIViewController {
             if let healthKitWorkout = workout.data as? WorkoutData {
                 let detailVC = RunningDetailViewController()
                 detailVC.workoutData = healthKitWorkout
-                let nav = UINavigationController(rootViewController: detailVC)
-                present(nav, animated: true)
+                presentWorkoutDetail(detailVC)
             } else if let externalWorkout = workout.data as? ExternalWorkout {
                 let detailVC = RunningDetailViewController()
                 detailVC.externalWorkout = externalWorkout
-                let nav = UINavigationController(rootViewController: detailVC)
-                present(nav, animated: true)
+                presentWorkoutDetail(detailVC)
             }
         case .climbing:
             if let session = workout.data as? ClimbingData {
                 let detailVC = ClimbingDetailViewController()
                 detailVC.climbingData = session
-                let nav = UINavigationController(rootViewController: detailVC)
-                present(nav, animated: true)
+                presentWorkoutDetail(detailVC)
             }
         }
+    }
+
+    private func presentWorkoutDetail(_ detailViewController: UIViewController) {
+        let nav = UINavigationController(rootViewController: detailViewController)
+        if traitCollection.userInterfaceIdiom == .pad {
+            nav.modalPresentationStyle = .fullScreen
+        }
+        present(nav, animated: true)
     }
 
     private func formatDuration(_ duration: TimeInterval) -> String {
@@ -701,8 +706,7 @@ extension HomeDashboardViewController: ClimbingInputDelegate {
             guard let self = self else { return }
             let detailVC = ClimbingDetailViewController()
             detailVC.climbingData = session
-            let nav = UINavigationController(rootViewController: detailVC)
-            self.present(nav, animated: true)
+            self.presentWorkoutDetail(detailVC)
         })
 
         alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Home.later, style: .cancel))
@@ -723,20 +727,17 @@ extension HomeDashboardViewController: RecentRecordsSheetDelegate {
             if let healthKitWorkout = workout.data as? WorkoutData {
                 let detailVC = RunningDetailViewController()
                 detailVC.workoutData = healthKitWorkout
-                let nav = UINavigationController(rootViewController: detailVC)
-                present(nav, animated: true)
+                presentWorkoutDetail(detailVC)
             } else if let externalWorkout = workout.data as? ExternalWorkout {
                 let detailVC = RunningDetailViewController()
                 detailVC.externalWorkout = externalWorkout
-                let nav = UINavigationController(rootViewController: detailVC)
-                present(nav, animated: true)
+                presentWorkoutDetail(detailVC)
             }
         case .climbing:
             if let session = workout.data as? ClimbingData {
                 let detailVC = ClimbingDetailViewController()
                 detailVC.climbingData = session
-                let nav = UINavigationController(rootViewController: detailVC)
-                present(nav, animated: true)
+                presentWorkoutDetail(detailVC)
             }
         }
     }

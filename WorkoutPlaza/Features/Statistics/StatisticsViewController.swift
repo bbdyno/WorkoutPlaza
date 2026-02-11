@@ -911,23 +911,28 @@ extension StatisticsViewController: UICollectionViewDelegate {
             if let session = item.data as? ClimbingData {
                 let detailVC = ClimbingDetailViewController()
                 detailVC.climbingData = session
-                let nav = UINavigationController(rootViewController: detailVC)
-                present(nav, animated: true)
+                presentWorkoutDetail(detailVC)
             }
 
         case .running:
             if let workout = item.data as? WorkoutData {
                 let detailVC = RunningDetailViewController()
                 detailVC.workoutData = workout
-                let nav = UINavigationController(rootViewController: detailVC)
-                present(nav, animated: true)
+                presentWorkoutDetail(detailVC)
             } else if let externalWorkout = item.data as? ExternalWorkout {
                 let detailVC = RunningDetailViewController()
                 detailVC.externalWorkout = externalWorkout
-                let nav = UINavigationController(rootViewController: detailVC)
-                present(nav, animated: true)
+                presentWorkoutDetail(detailVC)
             }
         }
+    }
+
+    private func presentWorkoutDetail(_ detailViewController: UIViewController) {
+        let nav = UINavigationController(rootViewController: detailViewController)
+        if traitCollection.userInterfaceIdiom == .pad {
+            nav.modalPresentationStyle = .fullScreen
+        }
+        present(nav, animated: true)
     }
 
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
