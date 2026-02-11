@@ -159,7 +159,14 @@ extension BaseWorkoutDetailViewController {
     @objc dynamic func showTemplateMarket() {
         let config = FeaturePackManager.shared.templateMarketButtonConfig(for: getSportType())
         guard config.isEnabled else { return }
-        if handleMarketRoute(.templateMarket, destination: config.destination, targetURLString: config.url) { return }
+        if handleMarketRoute(
+            .templateMarket,
+            destination: config.destination,
+            targetURLString: config.url,
+            sportType: getSportType()
+        ) {
+            return
+        }
 
         showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
     }
@@ -167,7 +174,14 @@ extension BaseWorkoutDetailViewController {
     @objc dynamic func showWidgetMarket() {
         let config = FeaturePackManager.shared.widgetMarketButtonConfig(for: getSportType())
         guard config.isEnabled else { return }
-        if handleMarketRoute(.widgetMarket, destination: config.destination, targetURLString: config.url) { return }
+        if handleMarketRoute(
+            .widgetMarket,
+            destination: config.destination,
+            targetURLString: config.url,
+            sportType: getSportType()
+        ) {
+            return
+        }
 
         showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
     }
@@ -175,11 +189,17 @@ extension BaseWorkoutDetailViewController {
     private func handleMarketRoute(
         _ route: AppSchemeManager.Route,
         destination: String?,
-        targetURLString: String?
+        targetURLString: String?,
+        sportType: SportType
     ) -> Bool {
         let rootViewController = view.window?.rootViewController
 
-        if let routeURL = marketRouteURL(route, destination: destination, targetURLString: targetURLString),
+        if let routeURL = marketRouteURL(
+            route,
+            destination: destination,
+            targetURLString: targetURLString,
+            sportType: sportType
+        ),
            AppSchemeManager.shared.handle(routeURL, rootViewController: rootViewController) {
             return true
         }
@@ -196,8 +216,11 @@ extension BaseWorkoutDetailViewController {
     private func marketRouteURL(
         _ route: AppSchemeManager.Route,
         destination: String?,
-        targetURLString: String?
+        targetURLString: String?,
+        sportType: SportType
     ) -> URL? {
+        let resolvedTargetURLString = marketTargetURLString(from: targetURLString, sportType: sportType)
+
         if let destination,
            let baseURL = URL(string: destination),
            AppSchemeManager.shared.canHandle(baseURL) {
@@ -205,19 +228,48 @@ extension BaseWorkoutDetailViewController {
                 return baseURL
             }
 
-            if let targetURLString {
-                let trimmedTarget = targetURLString.trimmingCharacters(in: .whitespacesAndNewlines)
-                if trimmedTarget.isEmpty == false {
-                    var queryItems = components.queryItems ?? []
-                    queryItems.removeAll { $0.name == "target_url" || $0.name == "url" }
-                    queryItems.append(URLQueryItem(name: "target_url", value: trimmedTarget))
-                    components.queryItems = queryItems
-                }
+            var queryItems = components.queryItems ?? []
+            let existingTargetURLString = queryItems.first {
+                $0.name == "target_url" || $0.name == "url"
+            }?.value
+            let targetURLForRoute = resolvedTargetURLString ?? marketTargetURLString(from: existingTargetURLString, sportType: sportType)
+
+            if let targetURLForRoute {
+                queryItems.removeAll { $0.name == "target_url" || $0.name == "url" }
+                queryItems.append(URLQueryItem(name: "target_url", value: targetURLForRoute))
+                components.queryItems = queryItems
             }
             return components.url ?? baseURL
         }
 
-        return AppSchemeManager.shared.makeRouteURL(route, targetURLString: targetURLString)
+        return AppSchemeManager.shared.makeRouteURL(route, targetURLString: resolvedTargetURLString)
+    }
+
+    private func marketTargetURLString(from rawValue: String?, sportType: SportType) -> String? {
+        guard var value = rawValue?.trimmingCharacters(in: .whitespacesAndNewlines),
+              value.isEmpty == false else {
+            return nil
+        }
+
+        if value.lowercased().hasPrefix("http://") == false,
+           value.lowercased().hasPrefix("https://") == false {
+            if value.contains("://") {
+                return nil
+            }
+            value = "https://\(value)"
+        }
+
+        guard var components = URLComponents(string: value),
+              let scheme = components.scheme?.lowercased(),
+              ["http", "https"].contains(scheme) else {
+            return nil
+        }
+
+        var queryItems = components.queryItems ?? []
+        queryItems.removeAll { $0.name == "sport_type" }
+        queryItems.append(URLQueryItem(name: "sport_type", value: sportType.rawValue.lowercased()))
+        components.queryItems = queryItems
+        return components.string
     }
 
     @objc dynamic func exportCurrentLayout() {
