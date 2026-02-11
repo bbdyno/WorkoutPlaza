@@ -60,11 +60,11 @@ class MoreViewController: UIViewController {
                     self?.resetData()
                 })
             ]),
-            Section(title: NSLocalizedString("more.section.healthkit", comment: "HealthKit section title"), items: [
-                MenuItem(title: NSLocalizedString("more.healthkit.permissions", comment: "HealthKit permissions menu title"), icon: "heart.text.square", action: { [weak self] in
+            Section(title: WorkoutPlazaStrings.More.Section.healthkit, items: [
+                MenuItem(title: WorkoutPlazaStrings.More.Healthkit.permissions, icon: "heart.text.square", action: { [weak self] in
                     self?.showHealthKitPermissionManager()
                 }),
-                MenuItem(title: NSLocalizedString("more.healthkit.sync", comment: "HealthKit sync menu title"), icon: "arrow.triangle.2.circlepath", action: { [weak self] in
+                MenuItem(title: WorkoutPlazaStrings.More.Healthkit.sync, icon: "arrow.triangle.2.circlepath", action: { [weak self] in
                     self?.syncHealthKitData()
                 })
             ]),
@@ -131,12 +131,12 @@ class MoreViewController: UIViewController {
 
     private func resetData() {
         let alert = UIAlertController(
-            title: NSLocalizedString("reset.all.data", comment: "Reset all data"),
-            message: NSLocalizedString("reset.all.confirm", comment: "Confirm all data reset"),
+            title: WorkoutPlazaStrings.Reset.All.data,
+            message: WorkoutPlazaStrings.Reset.All.confirm,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: NSLocalizedString("common.no", comment: "No"), style: .cancel))
-        alert.addAction(UIAlertAction(title: NSLocalizedString("common.yes", comment: "Yes"), style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.no, style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.yes, style: .destructive) { [weak self] _ in
             self?.performAllResetAndResync()
         })
         present(alert, animated: true)
@@ -144,21 +144,21 @@ class MoreViewController: UIViewController {
 
     private func performAllResetAndResync() {
         AppDataManager.shared.resetAllInAppData()
-        syncHealthKitAfterReset(additionalMessage: NSLocalizedString("reset.all.completed", comment: ""))
+        syncHealthKitAfterReset(additionalMessage: WorkoutPlazaStrings.Reset.All.completed)
     }
 
     private func syncHealthKitAfterReset(additionalMessage: String? = nil) {
         WorkoutManager.shared.requestAuthorization { [weak self] success, error in
             guard success else {
                 DispatchQueue.main.async {
-                    let message = [additionalMessage, NSLocalizedString("reset.healthkit.sync.failed", comment: "")].compactMap { $0 }.joined(separator: "\n")
+                    let message = [additionalMessage, WorkoutPlazaStrings.Reset.Healthkit.Sync.failed].compactMap { $0 }.joined(separator: "\n")
                     self?.showResetResultAlert(message: message)
                 }
                 return
             }
             WorkoutManager.shared.fetchWorkouts { workouts in
                 DispatchQueue.main.async {
-                    let resyncText = String(format: NSLocalizedString("reset.running.resynced", comment: ""), workouts.count)
+                    let resyncText = WorkoutPlazaStrings.Reset.Running.resynced(workouts.count)
                     let message = [additionalMessage, resyncText].compactMap { $0 }.joined(separator: "\n")
                     self?.showResetResultAlert(message: message)
                 }
@@ -168,7 +168,7 @@ class MoreViewController: UIViewController {
 
     private func showResetResultAlert(message: String) {
         let alert = UIAlertController(
-            title: NSLocalizedString("reset.result.title", comment: "Reset result alert title"),
+            title: WorkoutPlazaStrings.Reset.Result.title,
             message: message,
             preferredStyle: .alert
         )
@@ -219,17 +219,16 @@ class MoreViewController: UIViewController {
                 return
             }
 
-            let messageFormat = NSLocalizedString("more.healthkit.permission.status", comment: "HealthKit permission status message format")
             let statusText = self.localizedHealthKitStatus(state)
-            let message = String(format: messageFormat, statusText)
+            let message = WorkoutPlazaStrings.More.Healthkit.Permission.status(statusText)
 
             let alert = UIAlertController(
-                title: NSLocalizedString("more.healthkit.permission.title", comment: "HealthKit permission manager title"),
+                title: WorkoutPlazaStrings.More.Healthkit.Permission.title,
                 message: message,
                 preferredStyle: .alert
             )
             alert.addAction(UIAlertAction(
-                title: NSLocalizedString("more.healthkit.permission.request", comment: "Request HealthKit permission action"),
+                title: WorkoutPlazaStrings.More.Healthkit.Permission.request,
                 style: .default
             ) { [weak self] _ in
                 self?.requestHealthKitPermission()
@@ -256,8 +255,7 @@ class MoreViewController: UIViewController {
                 WorkoutManager.shared.authorizationState { [weak self] state in
                     guard let self = self else { return }
                     let status = self.localizedHealthKitStatus(state)
-                    let format = NSLocalizedString("more.healthkit.permission.updated", comment: "HealthKit permission updated message format")
-                    self.showToast(String(format: format, status))
+                    self.showToast(WorkoutPlazaStrings.More.Healthkit.Permission.updated(status))
                 }
             }
         }
@@ -271,7 +269,7 @@ class MoreViewController: UIViewController {
                 return
             }
 
-            self.showToast(NSLocalizedString("more.healthkit.sync.in.progress", comment: "HealthKit sync in progress"))
+            self.showToast(WorkoutPlazaStrings.More.Healthkit.Sync.In.progress)
             WorkoutManager.shared.requestAuthorization { [weak self] _, error in
                 DispatchQueue.main.async {
                     guard let self = self else { return }
@@ -283,10 +281,9 @@ class MoreViewController: UIViewController {
                     WorkoutManager.shared.fetchWorkouts { workouts in
                         DispatchQueue.main.async {
                             let routeCount = workouts.filter(\.hasRoute).count
-                            let messageFormat = NSLocalizedString("more.healthkit.sync.completed.message", comment: "HealthKit sync completed message format")
-                            let message = String(format: messageFormat, workouts.count, routeCount)
+                            let message = WorkoutPlazaStrings.More.Healthkit.Sync.Completed.message(workouts.count, routeCount)
                             let alert = UIAlertController(
-                                title: NSLocalizedString("more.healthkit.sync.completed.title", comment: "HealthKit sync completed title"),
+                                title: WorkoutPlazaStrings.More.Healthkit.Sync.Completed.title,
                                 message: message,
                                 preferredStyle: .alert
                             )
@@ -302,20 +299,20 @@ class MoreViewController: UIViewController {
     private func localizedHealthKitStatus(_ state: HealthKitAuthorizationState) -> String {
         switch state {
         case .notAvailable:
-            return NSLocalizedString("more.healthkit.status.not.available", comment: "HealthKit unavailable status")
+            return WorkoutPlazaStrings.More.Healthkit.Status.Not.available
         case .requestNeeded:
-            return NSLocalizedString("more.healthkit.status.request.needed", comment: "HealthKit request needed status")
+            return WorkoutPlazaStrings.More.Healthkit.Status.Request.needed
         case .authorized:
-            return NSLocalizedString("more.healthkit.status.authorized", comment: "HealthKit authorized status")
+            return WorkoutPlazaStrings.More.Healthkit.Status.authorized
         case .unknown:
-            return NSLocalizedString("more.healthkit.status.unknown", comment: "HealthKit unknown status")
+            return WorkoutPlazaStrings.More.Healthkit.Status.unknown
         }
     }
 
     private func showHealthKitUnavailableAlert() {
         let alert = UIAlertController(
-            title: NSLocalizedString("more.healthkit.unavailable.title", comment: "HealthKit unavailable title"),
-            message: NSLocalizedString("more.healthkit.unavailable.message", comment: "HealthKit unavailable message"),
+            title: WorkoutPlazaStrings.More.Healthkit.Unavailable.title,
+            message: WorkoutPlazaStrings.More.Healthkit.Unavailable.message,
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))

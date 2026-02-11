@@ -20,19 +20,17 @@ class DeveloperSettingsViewController: UIViewController {
 
     // MARK: - Data
 
-    private struct SettingItem {
-        let title: String
-        let isOn: () -> Bool
-        let onToggle: (Bool) -> Void
+    private enum Row {
+        case toggle(title: String, isOn: () -> Bool, onToggle: (Bool) -> Void)
+        case action(title: String, isDestructive: Bool, action: () -> Void)
     }
 
     private struct Section {
         let title: String?
-        let items: [SettingItem]
+        let rows: [Row]
     }
 
     private var sections: [Section] = []
-    private var actionSections: [(title: String, action: () -> Void)] = []
 
     // MARK: - Lifecycle
 
@@ -46,46 +44,70 @@ class DeveloperSettingsViewController: UIViewController {
 
     private func setupData() {
         sections = [
-            Section(title: WorkoutPlazaStrings.Dev.Widget.edit, items: [
-                SettingItem(
+            Section(title: WorkoutPlazaStrings.Dev.Widget.edit, rows: [
+                .toggle(
                     title: WorkoutPlazaStrings.Dev.Pinch.resize,
                     isOn: { DevSettings.shared.isPinchToResizeEnabled },
                     onToggle: { DevSettings.shared.isPinchToResizeEnabled = $0 }
                 )
+            ]),
+            Section(title: WorkoutPlazaStrings.Dev.Browser.section, rows: [
+                .toggle(
+                    title: WorkoutPlazaStrings.Dev.Browser.addressbar,
+                    isOn: { DevSettings.shared.isInAppBrowserAddressBarVisible },
+                    onToggle: { DevSettings.shared.isInAppBrowserAddressBarVisible = $0 }
+                ),
+                .toggle(
+                    title: WorkoutPlazaStrings.Dev.Browser.toolbar,
+                    isOn: { DevSettings.shared.isInAppBrowserToolbarVisible },
+                    onToggle: { DevSettings.shared.isInAppBrowserToolbarVisible = $0 }
+                ),
+                .toggle(
+                    title: WorkoutPlazaStrings.Dev.Browser.Presentation.sheet,
+                    isOn: { DevSettings.shared.isInAppBrowserPresentedAsSheet },
+                    onToggle: { DevSettings.shared.isInAppBrowserPresentedAsSheet = $0 }
+                ),
+                .action(title: WorkoutPlazaStrings.Dev.Browser.test, isDestructive: false, action: { [weak self] in
+                    self?.showInAppBrowserTestPrompt()
+                })
+            ]),
+            Section(title: WorkoutPlazaStrings.Dev.Section.data, rows: [
+                .action(title: WorkoutPlazaStrings.Dev.Reset.userdefaults, isDestructive: true, action: { [weak self] in
+                    self?.confirmAndRun(
+                        title: WorkoutPlazaStrings.Dev.Reset.userdefaults,
+                        message: WorkoutPlazaStrings.Dev.Reset.Userdefaults.confirm,
+                        completionMessage: WorkoutPlazaStrings.Dev.Reset.Userdefaults.completed
+                    ) {
+                        AppDataManager.shared.resetUserDefaultsData()
+                    }
+                }),
+                .action(title: WorkoutPlazaStrings.Dev.Reset.localdb, isDestructive: true, action: { [weak self] in
+                    self?.confirmAndRun(
+                        title: WorkoutPlazaStrings.Dev.Reset.localdb,
+                        message: WorkoutPlazaStrings.Dev.Reset.Localdb.confirm,
+                        completionMessage: WorkoutPlazaStrings.Dev.Reset.Localdb.completed
+                    ) {
+                        AppDataManager.shared.resetLocalDBData()
+                    }
+                }),
+                .action(title: WorkoutPlazaStrings.Dev.Reset.appdata, isDestructive: true, action: { [weak self] in
+                    self?.confirmAndRun(
+                        title: WorkoutPlazaStrings.Dev.Reset.appdata,
+                        message: WorkoutPlazaStrings.Dev.Reset.Appdata.confirm,
+                        completionMessage: WorkoutPlazaStrings.Dev.Reset.Appdata.completed
+                    ) {
+                        AppDataManager.shared.resetAllInAppData()
+                    }
+                }),
+                .action(title: WorkoutPlazaStrings.Dev.Migration.rerun, isDestructive: false, action: { [weak self] in
+                    self?.runMigration()
+                })
+            ]),
+            Section(title: WorkoutPlazaStrings.Dev.Section.appscheme, rows: [
+                .action(title: WorkoutPlazaStrings.Dev.Appscheme.test, isDestructive: false, action: { [weak self] in
+                    self?.showAppSchemeTestPrompt()
+                })
             ])
-        ]
-
-        actionSections = [
-            (title: NSLocalizedString("dev.reset.userdefaults", comment: "Reset UserDefaults"), action: { [weak self] in
-                self?.confirmAndRun(
-                    title: NSLocalizedString("dev.reset.userdefaults", comment: "Reset UserDefaults"),
-                    message: NSLocalizedString("dev.reset.userdefaults.confirm", comment: "Confirm reset UserDefaults"),
-                    completionMessage: NSLocalizedString("dev.reset.userdefaults.completed", comment: "Reset UserDefaults completed")
-                ) {
-                    AppDataManager.shared.resetUserDefaultsData()
-                }
-            }),
-            (title: NSLocalizedString("dev.reset.localdb", comment: "Reset Local DB"), action: { [weak self] in
-                self?.confirmAndRun(
-                    title: NSLocalizedString("dev.reset.localdb", comment: "Reset Local DB"),
-                    message: NSLocalizedString("dev.reset.localdb.confirm", comment: "Confirm reset Local DB"),
-                    completionMessage: NSLocalizedString("dev.reset.localdb.completed", comment: "Reset Local DB completed")
-                ) {
-                    AppDataManager.shared.resetLocalDBData()
-                }
-            }),
-            (title: NSLocalizedString("dev.reset.appdata", comment: "Reset In-App Data"), action: { [weak self] in
-                self?.confirmAndRun(
-                    title: NSLocalizedString("dev.reset.appdata", comment: "Reset In-App Data"),
-                    message: NSLocalizedString("dev.reset.appdata.confirm", comment: "Confirm reset In-App Data"),
-                    completionMessage: NSLocalizedString("dev.reset.appdata.completed", comment: "Reset In-App Data completed")
-                ) {
-                    AppDataManager.shared.resetAllInAppData()
-                }
-            }),
-            (title: WorkoutPlazaStrings.Dev.Migration.rerun, action: { [weak self] in
-                self?.runMigration()
-            })
         ]
     }
 
@@ -96,8 +118,8 @@ class DeveloperSettingsViewController: UIViewController {
         action: @escaping () -> Void
     ) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: NSLocalizedString("common.no", comment: "No"), style: .cancel))
-        alert.addAction(UIAlertAction(title: NSLocalizedString("common.yes", comment: "Yes"), style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.no, style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.yes, style: .destructive) { [weak self] _ in
             action()
             self?.showActionResultAlert(message: completionMessage)
         })
@@ -106,7 +128,7 @@ class DeveloperSettingsViewController: UIViewController {
 
     private func showActionResultAlert(message: String) {
         let alert = UIAlertController(
-            title: NSLocalizedString("reset.result.title", comment: "Reset result alert title"),
+            title: WorkoutPlazaStrings.Reset.Result.title,
             message: message,
             preferredStyle: .alert
         )
@@ -172,6 +194,127 @@ class DeveloperSettingsViewController: UIViewController {
         present(alert, animated: true)
     }
 
+    private func showInAppBrowserTestPrompt() {
+        let alert = UIAlertController(
+            title: WorkoutPlazaStrings.Dev.Browser.test,
+            message: WorkoutPlazaStrings.Dev.Browser.Prompt.message,
+            preferredStyle: .alert
+        )
+        alert.addTextField { textField in
+            let exampleURL = WorkoutPlazaStrings.Dev.Browser.Prompt.placeholder
+            textField.placeholder = exampleURL
+            textField.text = exampleURL
+            textField.keyboardType = .URL
+            textField.autocorrectionType = .no
+            textField.autocapitalizationType = .none
+            textField.clearButtonMode = .whileEditing
+        }
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default) { [weak self] _ in
+            guard let self else { return }
+            guard let rawValue = alert.textFields?.first?.text,
+                  let url = normalizedWebURL(from: rawValue) else {
+                self.showSimpleAlert(
+                    title: WorkoutPlazaStrings.Dev.Browser.Invalid.title,
+                    message: WorkoutPlazaStrings.Dev.Browser.Invalid.message
+                )
+                return
+            }
+            presentInAppBrowser(with: url)
+        })
+        present(alert, animated: true)
+    }
+
+    private func showAppSchemeTestPrompt() {
+        let alert = UIAlertController(
+            title: WorkoutPlazaStrings.Dev.Appscheme.test,
+            message: WorkoutPlazaStrings.Dev.Appscheme.Prompt.message,
+            preferredStyle: .alert
+        )
+        alert.addTextField { textField in
+            textField.placeholder = WorkoutPlazaStrings.Dev.Appscheme.Prompt.placeholder
+            textField.text = WorkoutPlazaStrings.Dev.Appscheme.Prompt.default
+            textField.keyboardType = .URL
+            textField.autocorrectionType = .no
+            textField.autocapitalizationType = .none
+            textField.clearButtonMode = .whileEditing
+        }
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default) { [weak self] _ in
+            guard let self else { return }
+            guard let rawValue = alert.textFields?.first?.text,
+                  let url = normalizedAnyURL(from: rawValue) else {
+                self.showSimpleAlert(
+                    title: WorkoutPlazaStrings.Dev.Appscheme.Invalid.title,
+                    message: WorkoutPlazaStrings.Dev.Appscheme.Invalid.message
+                )
+                return
+            }
+
+            let rootViewController = self.tabBarController ?? self.view.window?.rootViewController ?? self
+            let handled = AppSchemeManager.shared.handle(url, rootViewController: rootViewController)
+            if handled == false {
+                self.showSimpleAlert(
+                    title: WorkoutPlazaStrings.Dev.Appscheme.Unhandled.title,
+                    message: WorkoutPlazaStrings.Dev.Appscheme.Unhandled.message
+                )
+            }
+        })
+        present(alert, animated: true)
+    }
+
+    private func presentInAppBrowser(with url: URL) {
+        let configuration = makeInAppBrowserConfigurationForTesting()
+        let browser = InAppBrowserViewController(url: url, configuration: configuration)
+        let navigationController = UINavigationController(rootViewController: browser)
+        navigationController.modalPresentationStyle = modalPresentationStyle(for: configuration)
+        present(navigationController, animated: true)
+    }
+
+    private func makeInAppBrowserConfigurationForTesting() -> InAppBrowserConfiguration {
+        var configuration = InAppBrowserConfiguration.default
+        configuration.showsAddressBar = DevSettings.shared.isInAppBrowserAddressBarVisible
+        configuration.showsBottomToolbar = DevSettings.shared.isInAppBrowserToolbarVisible
+        configuration.presentationStyle = DevSettings.shared.isInAppBrowserPresentedAsSheet ? .pageSheet : .fullScreen
+        return configuration
+    }
+
+    private func modalPresentationStyle(for configuration: InAppBrowserConfiguration) -> UIModalPresentationStyle {
+        switch configuration.presentationStyle {
+        case .fullScreen:
+            return .fullScreen
+        case .pageSheet:
+            return .pageSheet
+        }
+    }
+
+    private func showSimpleAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
+        present(alert, animated: true)
+    }
+
+    private func normalizedWebURL(from rawValue: String) -> URL? {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else { return nil }
+
+        if let url = URL(string: trimmed),
+           let scheme = url.scheme?.lowercased(),
+           ["http", "https"].contains(scheme) {
+            return url
+        }
+
+        if trimmed.contains("://") { return nil }
+        return URL(string: "https://\(trimmed)")
+    }
+
+    private func normalizedAnyURL(from rawValue: String) -> URL? {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else { return nil }
+        guard let url = URL(string: trimmed), url.scheme?.isEmpty == false else { return nil }
+        return url
+    }
+
     private func setupUI() {
         view.backgroundColor = ColorSystem.background
         title = WorkoutPlazaStrings.Dev.title
@@ -192,56 +335,46 @@ class DeveloperSettingsViewController: UIViewController {
 
 extension DeveloperSettingsViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return sections.count + 1
+        return sections.count
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if section < sections.count {
-            return sections[section].items.count
-        } else {
-            return actionSections.count
-        }
+        return sections[section].rows.count
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        if section < sections.count {
-            return sections[section].title
-        } else {
-            return WorkoutPlazaStrings.Dev.Section.data
-        }
+        return sections[section].title
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        let row = sections[indexPath.section].rows[indexPath.row]
 
-        if indexPath.section < sections.count {
-            let item = sections[indexPath.section].items[indexPath.row]
-
+        switch row {
+        case let .toggle(title, isOn, _):
             var config = cell.defaultContentConfiguration()
-            config.text = item.title
+            config.text = title
             config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
             config.textProperties.color = ColorSystem.mainText
             cell.contentConfiguration = config
 
             let toggle = UISwitch()
-            toggle.isOn = item.isOn()
-            toggle.tag = indexPath.row
+            toggle.isOn = isOn()
+            toggle.tag = (indexPath.section * 1000) + indexPath.row
             toggle.onTintColor = ColorSystem.primaryGreen
             toggle.addTarget(self, action: #selector(switchToggled(_:)), for: .valueChanged)
             cell.accessoryView = toggle
+            cell.accessoryType = .none
 
             cell.selectionStyle = .none
-        } else {
-            let action = actionSections[indexPath.row]
-            let resetActionCount = 3
-            let isDestructiveReset = indexPath.row < resetActionCount
-
+        case let .action(title, isDestructive, _):
             var config = cell.defaultContentConfiguration()
-            config.text = action.title
+            config.text = title
             config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
-            config.textProperties.color = isDestructiveReset ? .systemRed : ColorSystem.primaryGreen
+            config.textProperties.color = isDestructive ? .systemRed : ColorSystem.primaryGreen
             cell.contentConfiguration = config
 
+            cell.accessoryView = nil
             cell.selectionStyle = .default
             cell.accessoryType = .disclosureIndicator
         }
@@ -252,9 +385,14 @@ extension DeveloperSettingsViewController: UITableViewDataSource {
     }
 
     @objc private func switchToggled(_ sender: UISwitch) {
-        let indexPath = IndexPath(row: sender.tag, section: 0)
-        let item = sections[indexPath.section].items[indexPath.row]
-        item.onToggle(sender.isOn)
+        let sectionIndex = sender.tag / 1000
+        let row = sender.tag % 1000
+        guard sectionIndex >= 0, sectionIndex < sections.count else { return }
+        guard row >= 0, row < sections[sectionIndex].rows.count else { return }
+
+        let targetRow = sections[sectionIndex].rows[row]
+        guard case let .toggle(_, _, onToggle) = targetRow else { return }
+        onToggle(sender.isOn)
     }
 }
 
@@ -263,10 +401,8 @@ extension DeveloperSettingsViewController: UITableViewDataSource {
 extension DeveloperSettingsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-
-        if indexPath.section >= sections.count {
-            let action = actionSections[indexPath.row]
-            action.action()
-        }
+        let row = sections[indexPath.section].rows[indexPath.row]
+        guard case let .action(_, _, action) = row else { return }
+        action()
     }
 }
