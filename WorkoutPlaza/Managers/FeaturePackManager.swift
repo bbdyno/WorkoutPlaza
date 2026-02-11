@@ -58,12 +58,14 @@ final class FeaturePackManager {
         let isEnabled: Bool
         let title: String
         let destination: String?
+        let url: String?
     }
 
     struct WidgetMarketButtonConfig {
         let isEnabled: Bool
         let title: String
         let destination: String?
+        let url: String?
     }
 
     func setupAutoUpdate() {
@@ -89,38 +91,89 @@ final class FeaturePackManager {
         isFeatureEnabled(feature(for: key))
     }
 
-    func templateMarketButtonConfig() -> TemplateMarketButtonConfig {
+    func templateMarketButtonConfig(for sportType: SportType? = nil) -> TemplateMarketButtonConfig {
         let feature = feature(for: .templateMarket)
-        let enabled = isFeatureEnabled(feature)
-        let title = feature?.payload?["button_title"]?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let destination = feature?.payload?["destination"]?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let enabled = isFeatureEnabled(feature, for: sportType)
+        let destination = trimmedPayloadValue(payloadValue(in: feature?.payload, keys: ["destination"]))
+        let url = trimmedPayloadValue(payloadValue(in: feature?.payload, keys: ["url"]))
 
         return TemplateMarketButtonConfig(
             isEnabled: enabled,
-            title: (title?.isEmpty == false)
-                ? title!
-                : NSLocalizedString("feature.pack.market.button", comment: "Template market button title"),
-            destination: (destination?.isEmpty == false) ? destination : nil
+            title: NSLocalizedString("feature.pack.market.button", comment: "Template market button title"),
+            destination: destination,
+            url: url
         )
     }
 
-    func widgetMarketButtonConfig() -> WidgetMarketButtonConfig {
+    func widgetMarketButtonConfig(for sportType: SportType? = nil) -> WidgetMarketButtonConfig {
         let feature = feature(for: .widgetMarket)
-        let enabled = isFeatureEnabled(feature)
-        let title = feature?.payload?["button_title"]?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let destination = feature?.payload?["destination"]?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let enabled = isFeatureEnabled(feature, for: sportType)
+        let destination = trimmedPayloadValue(payloadValue(in: feature?.payload, keys: ["destination"]))
+        let url = trimmedPayloadValue(payloadValue(in: feature?.payload, keys: ["url"]))
 
         return WidgetMarketButtonConfig(
             isEnabled: enabled,
-            title: (title?.isEmpty == false)
-                ? title!
-                : NSLocalizedString("feature.pack.widget.market.button", comment: "Widget market button title"),
-            destination: (destination?.isEmpty == false) ? destination : nil
+            title: NSLocalizedString("feature.pack.widget.market.button", comment: "Widget market button title"),
+            destination: destination,
+            url: url
         )
+    }
+
+    private func trimmedPayloadValue(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              trimmed.isEmpty == false else {
+            return nil
+        }
+        return trimmed
+    }
+
+    private func payloadValue(in payload: [String: String]?, keys: [String]) -> String? {
+        guard let payload else { return nil }
+
+        for key in keys {
+            if let value = payload[key] {
+                return value
+            }
+        }
+
+        var normalizedPayload: [String: String] = [:]
+        for (key, value) in payload {
+            normalizedPayload[normalizedPayloadKey(key)] = value
+        }
+
+        for key in keys {
+            if let value = normalizedPayload[normalizedPayloadKey(key)] {
+                return value
+            }
+        }
+
+        return nil
+    }
+
+    private func normalizedPayloadKey(_ key: String) -> String {
+        key.lowercased()
+            .replacingOccurrences(of: "_", with: "")
+            .replacingOccurrences(of: "-", with: "")
+    }
+
+    private func configuredSportType(from payload: [String: String]?) -> SportType? {
+        guard let rawValue = trimmedPayloadValue(payload?["sportType"]) else {
+            return nil
+        }
+
+        if let exact = SportType(rawValue: rawValue) {
+            return exact
+        }
+
+        let normalized = rawValue.lowercased()
+        return SportType.allCases.first { $0.rawValue.lowercased() == normalized }
+    }
+
+    private func isFeatureEnabled(_ feature: FeatureConfig?, for sportType: SportType?) -> Bool {
+        guard isFeatureEnabled(feature) else { return false }
+        guard let sportType else { return true }
+        guard let configuredSportType = configuredSportType(from: feature?.payload) else { return true }
+        return configuredSportType == sportType
     }
 
     private func feature(for key: FeatureKey) -> FeatureConfig? {

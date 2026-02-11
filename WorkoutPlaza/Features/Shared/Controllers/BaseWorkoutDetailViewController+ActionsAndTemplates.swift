@@ -27,7 +27,7 @@ extension BaseWorkoutDetailViewController {
         guard !widgets.isEmpty else { return }
 
         var widgetActions: [ToolSheetHeaderAction] = []
-        let marketConfig = FeaturePackManager.shared.widgetMarketButtonConfig()
+        let marketConfig = FeaturePackManager.shared.widgetMarketButtonConfig(for: getSportType())
         if marketConfig.isEnabled {
             widgetActions.append(
                 ToolSheetHeaderAction(title: marketConfig.title, iconName: "storefront") { [weak self] in

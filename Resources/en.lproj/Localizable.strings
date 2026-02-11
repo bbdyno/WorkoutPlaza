@@ -431,8 +431,8 @@
 "dev.browser.invalid.title" = "Invalid URL";
 "dev.browser.invalid.message" = "Please enter a URL with http or https.";
 "dev.appscheme.test" = "App Scheme Test";
-"dev.appscheme.prompt.message" = "Enter a scheme URL to run.\nExample: workoutplaza://more\nExample: workoutplaza://browser?url=https://example.com";
-"dev.appscheme.prompt.placeholder" = "workoutplaza://browser?url=https://example.com";
+"dev.appscheme.prompt.message" = "Enter a scheme URL to run.\nExample: workoutplaza://more\nExample: workoutplaza://browser?target_url=https://example.com";
+"dev.appscheme.prompt.placeholder" = "workoutplaza://browser?target_url=https://example.com";
 "dev.appscheme.prompt.default" = "workoutplaza://more";
 "dev.appscheme.invalid.title" = "Invalid Scheme URL";
 "dev.appscheme.invalid.message" = "Please enter a valid URL format.";

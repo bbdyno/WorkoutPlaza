@@ -30,6 +30,62 @@ final class AppSchemeManager {
         case widgetMarket = "widget-market"
     }
 
+    struct BrowserRouteOptions {
+        let showsAddressBar: Bool?
+        let showsBottomToolbar: Bool?
+        let presentationStyle: InAppBrowserConfiguration.PresentationStyle?
+
+        init(
+            showsAddressBar: Bool? = nil,
+            showsBottomToolbar: Bool? = nil,
+            presentationStyle: InAppBrowserConfiguration.PresentationStyle? = nil
+        ) {
+            self.showsAddressBar = showsAddressBar
+            self.showsBottomToolbar = showsBottomToolbar
+            self.presentationStyle = presentationStyle
+        }
+    }
+
+    func makeRouteURL(
+        _ route: Route,
+        targetURLString: String? = nil,
+        browserOptions: BrowserRouteOptions? = nil
+    ) -> URL? {
+        var components = URLComponents()
+        components.scheme = scheme
+        components.host = route.rawValue
+
+        var queryItems: [URLQueryItem] = []
+        if let targetURLString {
+            let trimmedTarget = targetURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard trimmedTarget.isEmpty == false else { return nil }
+            queryItems.append(URLQueryItem(name: "target_url", value: trimmedTarget))
+        }
+
+        if let browserOptions {
+            if let showsAddressBar = browserOptions.showsAddressBar {
+                queryItems.append(URLQueryItem(name: "shows_address_bar", value: showsAddressBar ? "true" : "false"))
+            }
+            if let showsBottomToolbar = browserOptions.showsBottomToolbar {
+                queryItems.append(URLQueryItem(name: "shows_bottom_toolbar", value: showsBottomToolbar ? "true" : "false"))
+            }
+            if let presentationStyle = browserOptions.presentationStyle {
+                let value = presentationStyle == .pageSheet ? "page_sheet" : "full_screen"
+                queryItems.append(URLQueryItem(name: "presentation_style", value: value))
+            }
+        }
+
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
+        return components.url
+    }
+
+    func makeBrowserRouteURL(
+        targetURLString: String,
+        options: BrowserRouteOptions = BrowserRouteOptions()
+    ) -> URL? {
+        makeRouteURL(.browser, targetURLString: targetURLString, browserOptions: options)
+    }
+
     /// Returns true when the URL is a supported `workoutplaza://` route.
     @discardableResult
     func handle(_ url: URL, rootViewController: UIViewController?) -> Bool {
@@ -57,17 +113,17 @@ final class AppSchemeManager {
                 WPLog.warning("Missing or invalid url query for browser route:", url.absoluteString)
                 return false
             }
-            return presentBrowser(with: targetURL, rootViewController: rootViewController)
+            return presentBrowser(with: targetURL, route: .browser, routeURL: url, rootViewController: rootViewController)
         case .templateMarket:
             if let targetURL = targetWebURL(from: url) {
-                return presentBrowser(with: targetURL, rootViewController: rootViewController)
+                return presentBrowser(with: targetURL, route: .templateMarket, routeURL: url, rootViewController: rootViewController)
             }
             _ = selectTab(index: 2, rootViewController: rootViewController)
             NotificationCenter.default.post(name: .didOpenTemplateMarketDeepLink, object: nil, userInfo: ["url": url])
             return true
         case .widgetMarket:
             if let targetURL = targetWebURL(from: url) {
-                return presentBrowser(with: targetURL, rootViewController: rootViewController)
+                return presentBrowser(with: targetURL, route: .widgetMarket, routeURL: url, rootViewController: rootViewController)
             }
             _ = selectTab(index: 2, rootViewController: rootViewController)
             NotificationCenter.default.post(name: .didOpenWidgetMarketDeepLink, object: nil, userInfo: ["url": url])
@@ -124,35 +180,110 @@ final class AppSchemeManager {
     }
 
     private func targetWebURL(from url: URL) -> URL? {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let queryItems = components.queryItems else {
-            return nil
-        }
-
-        let keys = ["url", "target", "target_url"]
-        for key in keys {
-            guard let value = queryItems.first(where: { $0.name == key })?.value,
-                  let targetURL = URL(string: value),
-                  let scheme = targetURL.scheme?.lowercased(),
-                  ["http", "https"].contains(scheme) else {
-                continue
-            }
-            return targetURL
-        }
-        return nil
+        let queryItems = queryItems(from: url)
+        guard let value = queryItems.first(where: { $0.name == "target_url" })?.value else { return nil }
+        return normalizedWebURL(from: value)
     }
 
-    private func presentBrowser(with url: URL, rootViewController: UIViewController?) -> Bool {
+    private func presentBrowser(with url: URL, route: Route, routeURL: URL, rootViewController: UIViewController?) -> Bool {
         guard let rootViewController else { return false }
         guard let presenter = topMostViewController(from: rootViewController) else { return false }
 
         DispatchQueue.main.async {
-            let browser = InAppBrowserViewController(url: url, configuration: .default)
+            let configuration = self.browserConfiguration(for: route, routeURL: routeURL)
+            let browser = InAppBrowserViewController(url: url, configuration: configuration)
             let navigationController = UINavigationController(rootViewController: browser)
-            navigationController.modalPresentationStyle = .fullScreen
+            navigationController.modalPresentationStyle = self.modalPresentationStyle(for: configuration.presentationStyle)
             presenter.present(navigationController, animated: true)
         }
         return true
+    }
+
+    private func queryItems(from url: URL) -> [URLQueryItem] {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems else {
+            return []
+        }
+        return queryItems
+    }
+
+    private func normalizedWebURL(from rawValue: String) -> URL? {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else { return nil }
+
+        if let directURL = URL(string: trimmed),
+           let scheme = directURL.scheme?.lowercased(),
+           ["http", "https"].contains(scheme) {
+            return directURL
+        }
+
+        if trimmed.contains("://") {
+            return nil
+        }
+
+        return URL(string: "https://\(trimmed)")
+    }
+
+    private func browserConfiguration(for route: Route, routeURL: URL) -> InAppBrowserConfiguration {
+        var configuration = InAppBrowserConfiguration.default
+        switch route {
+        case .browser:
+            configuration.showsAddressBar = DevSettings.shared.isInAppBrowserAddressBarVisible
+            configuration.showsBottomToolbar = DevSettings.shared.isInAppBrowserToolbarVisible
+            configuration.presentationStyle = DevSettings.shared.isInAppBrowserPresentedAsSheet ? .pageSheet : .fullScreen
+        case .templateMarket, .widgetMarket:
+            configuration.showsAddressBar = false
+            configuration.showsBottomToolbar = false
+            configuration.presentationStyle = .pageSheet
+        default:
+            break
+        }
+
+        let queryItems = queryItems(from: routeURL)
+        if let showsAddressBar = boolQueryValue(for: "shows_address_bar", queryItems: queryItems) {
+            configuration.showsAddressBar = showsAddressBar
+        }
+        if let showsBottomToolbar = boolQueryValue(for: "shows_bottom_toolbar", queryItems: queryItems) {
+            configuration.showsBottomToolbar = showsBottomToolbar
+        }
+        if let presentationStyle = presentationStyleQueryValue(for: "presentation_style", queryItems: queryItems) {
+            configuration.presentationStyle = presentationStyle
+        }
+
+        return configuration
+    }
+
+    private func boolQueryValue(for key: String, queryItems: [URLQueryItem]) -> Bool? {
+        guard let rawValue = queryItems.first(where: { $0.name == key })?.value else { return nil }
+        let normalized = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if ["true", "1", "yes", "on"].contains(normalized) { return true }
+        if ["false", "0", "no", "off"].contains(normalized) { return false }
+        return nil
+    }
+
+    private func presentationStyleQueryValue(
+        for key: String,
+        queryItems: [URLQueryItem]
+    ) -> InAppBrowserConfiguration.PresentationStyle? {
+        guard let rawValue = queryItems.first(where: { $0.name == key })?.value else { return nil }
+        let normalized = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        switch normalized {
+        case "full_screen":
+            return .fullScreen
+        case "page_sheet":
+            return .pageSheet
+        default:
+            return nil
+        }
+    }
+
+    private func modalPresentationStyle(for presentationStyle: InAppBrowserConfiguration.PresentationStyle) -> UIModalPresentationStyle {
+        switch presentationStyle {
+        case .fullScreen:
+            return .fullScreen
+        case .pageSheet:
+            return .pageSheet
+        }
     }
 
     private func selectTab(index: Int, rootViewController: UIViewController?) -> Bool {
