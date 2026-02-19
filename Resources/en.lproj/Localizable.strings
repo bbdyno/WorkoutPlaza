@@ -373,6 +373,7 @@
 "more.export.data" = "Export Data";
 "more.reset.data" = "Reset Data";
 "more.version.info" = "Version Info";
+"more.view.walkthrough" = "View Walkthrough";
 "more.contact.developer" = "Contact Developer";
 "more.rate.app" = "Rate App";
 "more.developer.settings" = "Developer Settings";
@@ -417,6 +418,17 @@
 "more.healthkit.sync.in.progress" = "Syncing HealthKit data...";
 "more.healthkit.sync.completed.title" = "Sync Complete";
 "more.healthkit.sync.completed.message" = "Total workouts synced: %d\nWorkouts with route data: %d";
+
+// Walkthrough
+"walkthrough.action.next" = "Next";
+"walkthrough.action.skip" = "Skip";
+"walkthrough.action.start" = "Get Started";
+"walkthrough.page.record.title" = "Start Logging Right Away";
+"walkthrough.page.record.description" = "Pick Running or Climbing from Home and save your workout in seconds.";
+"walkthrough.page.design.title" = "Design Cards Your Way";
+"walkthrough.page.design.description" = "Combine widgets, fonts, and backgrounds to create a sharing card style you like.";
+"walkthrough.page.stats.title" = "Track with Stats and Sync";
+"walkthrough.page.stats.description" = "Review trends by date and manage records faster with HealthKit sync.";
 
 // Developer Settings
 "dev.title" = "Developer Settings";
