@@ -19,6 +19,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // Use Tab Bar Controller as root
         let tabBarController = MainTabBarController()
+        tabBarController.suppressInitialWalkthrough = connectionOptions.urlContexts.isEmpty == false
         window?.rootViewController = tabBarController
 
         window?.makeKeyAndVisible()

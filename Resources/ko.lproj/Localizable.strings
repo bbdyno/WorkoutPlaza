@@ -371,6 +371,7 @@
 "more.export.data" = "데이터 내보내기";
 "more.reset.data" = "데이터 초기화";
 "more.version.info" = "버전 정보";
+"more.view.walkthrough" = "사용법 보기";
 "more.contact.developer" = "개발자에게 문의";
 "more.rate.app" = "앱 평가하기";
 "more.developer.settings" = "개발자 설정";
@@ -415,6 +416,17 @@
 "more.healthkit.sync.in.progress" = "HealthKit 데이터 동기화 중...";
 "more.healthkit.sync.completed.title" = "동기화 완료";
 "more.healthkit.sync.completed.message" = "동기화된 전체 운동 수: %d\n경로 데이터 포함 운동 수: %d";
+
+// Walkthrough
+"walkthrough.action.next" = "다음";
+"walkthrough.action.skip" = "건너뛰기";
+"walkthrough.action.start" = "시작하기";
+"walkthrough.page.record.title" = "운동부터 바로 기록";
+"walkthrough.page.record.description" = "홈 화면에서 러닝/클라이밍을 선택하고 기록을 빠르게 저장할 수 있어요.";
+"walkthrough.page.design.title" = "카드를 원하는 스타일로";
+"walkthrough.page.design.description" = "위젯, 폰트, 배경을 조합해 공유용 카드를 자유롭게 꾸며보세요.";
+"walkthrough.page.stats.title" = "통계와 동기화로 관리";
+"walkthrough.page.stats.description" = "기간별 통계를 확인하고 HealthKit 동기화로 기록을 한 번에 관리하세요.";
 
 // Developer Settings
 "dev.title" = "개발자 설정";

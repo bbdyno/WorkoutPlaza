@@ -46,12 +46,7 @@ class MoreViewController: UIViewController {
     // MARK: - Setup
 
     private func setupData() {
-        sections = [
-            Section(title: WorkoutPlazaStrings.More.Section.Developer.info, items: [
-                MenuItem(title: WorkoutPlazaStrings.More.Github.developer, icon: "link", action: { [weak self] in
-                    self?.openDeveloperGitHubProfile()
-                })
-            ]),
+        var configuredSections: [Section] = [
             Section(title: WorkoutPlazaStrings.More.Section.card, items: [
                 MenuItem(title: WorkoutPlazaStrings.More.Saved.cards, icon: "square.stack.3d.forward.dottedline", action: { [weak self] in
                     self?.showSavedCards()
@@ -77,6 +72,9 @@ class MoreViewController: UIViewController {
                 MenuItem(title: WorkoutPlazaStrings.More.Version.info, icon: "info.circle", action: { [weak self] in
                     self?.showVersionInfo()
                 }),
+                MenuItem(title: NSLocalizedString("more.view.walkthrough", comment: ""), icon: "book.pages", action: { [weak self] in
+                    self?.showWalkthrough()
+                }),
                 MenuItem(title: WorkoutPlazaStrings.More.Contact.developer, icon: "envelope", action: { [weak self] in
                     self?.contactDeveloper()
                 }),
@@ -88,13 +86,27 @@ class MoreViewController: UIViewController {
                 MenuItem(title: WorkoutPlazaStrings.More.Open.Source.licenses, icon: "doc.text", action: { [weak self] in
                     self?.showLicenses()
                 })
+            ])
+        ]
+
+        #if DEBUG
+        configuredSections.insert(
+            Section(title: WorkoutPlazaStrings.More.Section.Developer.info, items: [
+                MenuItem(title: WorkoutPlazaStrings.More.Github.developer, icon: "link", action: { [weak self] in
+                    self?.openDeveloperGitHubProfile()
+                })
             ]),
-            Section(title: WorkoutPlazaStrings.More.Section.developer, items: [
+            at: 0
+        )
+
+        configuredSections.append(Section(title: WorkoutPlazaStrings.More.Section.developer, items: [
                 MenuItem(title: WorkoutPlazaStrings.More.Developer.settings, icon: "wrench.and.screwdriver", action: { [weak self] in
                     self?.showDeveloperSettings()
                 })
-            ])
-        ]
+            ]))
+        #endif
+
+        sections = configuredSections
     }
 
     private func setupUI() {
@@ -192,6 +204,21 @@ class MoreViewController: UIViewController {
         )
         alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
+    }
+
+    private func showWalkthrough() {
+        if let mainTabBarController = tabBarController as? MainTabBarController {
+            mainTabBarController.presentWalkthrough(force: true)
+            return
+        }
+
+        let walkthroughVC = WalkthroughViewController()
+        walkthroughVC.modalPresentationStyle = .fullScreen
+        walkthroughVC.onFinish = { [weak walkthroughVC] in
+            WalkthroughManager.markCompleted()
+            walkthroughVC?.dismiss(animated: true)
+        }
+        present(walkthroughVC, animated: true)
     }
 
     private func contactDeveloper() {

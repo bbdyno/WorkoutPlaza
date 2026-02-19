@@ -8,6 +8,9 @@
 import UIKit
 
 class MainTabBarController: UITabBarController {
+    var suppressInitialWalkthrough = false
+
+    private var hasEvaluatedInitialWalkthrough = false
 
     // MARK: - Lifecycle
 
@@ -15,6 +18,11 @@ class MainTabBarController: UITabBarController {
         super.viewDidLoad()
         setupTabs()
         setupAppearance()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        presentInitialWalkthroughIfNeeded()
     }
 
     // MARK: - Setup
@@ -66,5 +74,38 @@ class MainTabBarController: UITabBarController {
 
         tabBar.tintColor = ColorSystem.primaryBlue
         tabBar.unselectedItemTintColor = ColorSystem.subText
+    }
+
+    private func presentInitialWalkthroughIfNeeded() {
+        guard hasEvaluatedInitialWalkthrough == false else { return }
+
+        if suppressInitialWalkthrough {
+            hasEvaluatedInitialWalkthrough = true
+            return
+        }
+
+        guard WalkthroughManager.shouldPresentOnLaunch else {
+            hasEvaluatedInitialWalkthrough = true
+            return
+        }
+
+        guard presentedViewController == nil else { return }
+
+        hasEvaluatedInitialWalkthrough = true
+        presentWalkthrough(force: true)
+    }
+
+    func presentWalkthrough(force: Bool = false) {
+        guard force || WalkthroughManager.shouldPresentOnLaunch else { return }
+        guard presentedViewController == nil else { return }
+
+        let walkthroughVC = WalkthroughViewController()
+        walkthroughVC.modalPresentationStyle = .fullScreen
+        walkthroughVC.onFinish = { [weak walkthroughVC] in
+            WalkthroughManager.markCompleted()
+            walkthroughVC?.dismiss(animated: true)
+        }
+
+        present(walkthroughVC, animated: true)
     }
 }
