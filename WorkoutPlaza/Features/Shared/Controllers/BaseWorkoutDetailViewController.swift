@@ -248,21 +248,21 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     // Common Buttons
     lazy var aspectRatioButton: UIButton = createToolbarButton(systemName: "", action: #selector(cycleAspectRatio))
-    lazy var layoutTemplateButton: UIButton = createToolbarButton(systemName: "square.grid.2x2", action: #selector(showTemplateMenu))
-    lazy var addWidgetButton: UIButton = createToolbarButton(systemName: "plus", action: #selector(showAddWidgetMenuBase))
-    lazy var shareImageButton: UIButton = createToolbarButton(systemName: "square.and.arrow.up", action: #selector(shareImage))
-    lazy var selectPhotoButton: UIButton = createToolbarButton(systemName: "photo", action: #selector(selectPhoto))
-    lazy var textPathButton: UIButton = createToolbarButton(systemName: "pencil.and.outline", action: #selector(showTextPathInput))
-    lazy var backgroundTemplateButton: UIButton = createToolbarButton(systemName: "paintbrush", action: #selector(changeTemplate))
-    
-    lazy var colorPickerButton: UIButton = createToolbarButton(systemName: "paintpalette", action: #selector(showColorPicker))
-    lazy var fontPickerButton: UIButton = createToolbarButton(systemName: "textformat", action: #selector(showFontPicker))
+    lazy var layoutTemplateButton: UIButton = createToolbarButton(systemName: "icon.grid.four", action: #selector(showTemplateMenu))
+    lazy var addWidgetButton: UIButton = createToolbarButton(systemName: "icon.plus", action: #selector(showAddWidgetMenuBase))
+    lazy var shareImageButton: UIButton = createToolbarButton(systemName: "icon.share", action: #selector(shareImage))
+    lazy var selectPhotoButton: UIButton = createToolbarButton(systemName: "icon.image", action: #selector(selectPhoto))
+    lazy var textPathButton: UIButton = createToolbarButton(systemName: "icon.pencil", action: #selector(showTextPathInput))
+    lazy var backgroundTemplateButton: UIButton = createToolbarButton(systemName: "icon.paint.brush", action: #selector(changeTemplate))
+
+    lazy var colorPickerButton: UIButton = createToolbarButton(systemName: "icon.palette", action: #selector(showColorPicker))
+    lazy var fontPickerButton: UIButton = createToolbarButton(systemName: "icon.text.aa", action: #selector(showFontPicker))
     lazy var alignmentButton: UIButton = createToolbarButton(systemName: WidgetContentAlignment.left.symbolName, action: #selector(cycleAlignmentForSelection))
-    lazy var deleteItemButton: UIButton = createToolbarButton(systemName: "trash", action: #selector(deleteSelectedItem))
-    
-    lazy var groupButton: UIButton = createToolbarButton(systemName: "rectangle.stack.badge.plus", action: #selector(groupSelectedWidgets))
-    lazy var ungroupButton: UIButton = createToolbarButton(systemName: "rectangle.stack.badge.minus", action: #selector(ungroupSelectedWidget))
-    lazy var cancelMultiSelectButton: UIButton = createToolbarButton(systemName: "xmark", action: #selector(exitMultiSelectMode))
+    lazy var deleteItemButton: UIButton = createToolbarButton(systemName: "icon.trash", action: #selector(deleteSelectedItem))
+
+    lazy var groupButton: UIButton = createToolbarButton(systemName: "icon.grid.four", action: #selector(groupSelectedWidgets))
+    lazy var ungroupButton: UIButton = createToolbarButton(systemName: "icon.grid.four", action: #selector(ungroupSelectedWidget))
+    lazy var cancelMultiSelectButton: UIButton = createToolbarButton(systemName: "icon.x", action: #selector(exitMultiSelectMode))
 
     lazy var toastLabel: UILabel = {
         let label = UILabel()
@@ -313,7 +313,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     lazy var textPathConfirmButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "checkmark.circle.fill"), for: .normal)
+        button.setImage(UIImage(named: "icon.check.circle.fill"), for: .normal)
         button.tintColor = .white
         button.backgroundColor = UIColor.white.withAlphaComponent(0.3)
         button.layer.cornerRadius = 20
@@ -323,7 +323,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     lazy var textPathRedrawButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "arrow.counterclockwise"), for: .normal)
+        button.setImage(UIImage(named: "icon.arrow.counterclockwise"), for: .normal)
         button.tintColor = .white
         button.backgroundColor = UIColor.white.withAlphaComponent(0.3)
         button.layer.cornerRadius = 20
@@ -442,7 +442,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     // Subclasses can override if needed
     func setupNavigationButtons() {
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left"),
+            image: UIImage(named: "icon.caret.left"),
             style: .plain,
             target: self,
             action: #selector(backButtonTapped)

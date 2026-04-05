@@ -36,14 +36,14 @@ class StatsControlCell: UICollectionViewCell {
 
     private let prevButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        button.setImage(UIImage(named: "icon.caret.left"), for: .normal)
         button.tintColor = ColorSystem.mainText
         return button
     }()
 
     private let nextButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "chevron.right"), for: .normal)
+        button.setImage(UIImage(named: "icon.caret.right"), for: .normal)
         button.tintColor = ColorSystem.mainText
         return button
     }()

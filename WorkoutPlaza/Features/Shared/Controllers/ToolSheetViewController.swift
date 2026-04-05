@@ -108,7 +108,7 @@ class ToolSheetViewController: UIViewController {
             navigationItem.leftBarButtonItems = toolbarActions.enumerated().map { index, action in
                 let button = UIBarButtonItem(
                     title: action.title,
-                    image: UIImage(systemName: action.iconName),
+                    image: UIImage(named: action.iconName) ?? UIImage(systemName: action.iconName),
                     target: self,
                     action: #selector(toolbarActionTapped(_:))
                 )
@@ -299,7 +299,7 @@ private class ToolSheetCell: UICollectionViewCell {
 
     private let checkmarkView: UIImageView = {
         let iv = UIImageView()
-        iv.image = UIImage(systemName: "checkmark.circle.fill")
+        iv.image = UIImage(named: "icon.check.circle.fill")
         iv.tintColor = ColorSystem.mainText
         iv.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 14)
         iv.isHidden = true
@@ -448,7 +448,7 @@ private class ToolSheetCell: UICollectionViewCell {
         } else {
             // Icon mode (default)
             iconImageView.isHidden = false
-            iconImageView.image = UIImage(systemName: item.iconName)
+            iconImageView.image = UIImage(named: item.iconName) ?? UIImage(systemName: item.iconName)
             descriptionLabel.isHidden = false
             descriptionLabel.text = item.description
             previewContainerView.isHidden = true

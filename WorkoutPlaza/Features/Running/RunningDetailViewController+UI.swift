@@ -20,7 +20,7 @@ extension RunningDetailViewController {
     
     override func setupTopRightToolbar() {
         super.setupTopRightToolbar()
-        let importOthersButton = createToolbarButton(systemName: "person.badge.plus", action: #selector(showImportOthersRecordMenu))
+        let importOthersButton = createToolbarButton(systemName: "icon.user.plus", action: #selector(showImportOthersRecordMenu))
         topRightToolbar.addArrangedSubview(importOthersButton)
     }
 }

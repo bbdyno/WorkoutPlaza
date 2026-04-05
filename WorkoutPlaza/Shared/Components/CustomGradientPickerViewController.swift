@@ -310,8 +310,7 @@ class CustomGradientPickerViewController: UIViewController {
             button.layer.borderWidth = 2
             button.layer.borderColor = UIColor.clear.cgColor
 
-            let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-            button.setImage(UIImage(systemName: direction.iconName, withConfiguration: config), for: .normal)
+            button.setImage(UIImage(systemName: direction.iconName), for: .normal)
             button.tintColor = .label
 
             button.addTarget(self, action: #selector(directionButtonTapped(_:)), for: .touchUpInside)

@@ -59,14 +59,14 @@ class RunningStatsCell: UICollectionViewCell {
 
     private let prevButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        btn.setImage(UIImage(named: "icon.caret.left"), for: .normal)
         btn.tintColor = ColorSystem.mainText
         return btn
     }()
 
     private let nextButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "chevron.right"), for: .normal)
+        btn.setImage(UIImage(named: "icon.caret.right"), for: .normal)
         btn.tintColor = ColorSystem.mainText
         return btn
     }()
@@ -268,7 +268,7 @@ class RunningStatsCell: UICollectionViewCell {
         card.layer.cornerRadius = 20
 
         let iconView = UIImageView()
-        iconView.image = UIImage(systemName: icon)
+        iconView.image = UIImage(named: icon) ?? UIImage(systemName: icon)
         iconView.tintColor = color
         iconView.contentMode = .scaleAspectFit
 
@@ -363,7 +363,7 @@ class RunningStatsCell: UICollectionViewCell {
         stack.alignment = .fill
 
         let countLabel = createStatRow(
-            icon: "figure.run",
+            icon: "icon.person.run",
             title: WorkoutPlazaStrings.Statistics.Running.count,
             value: WorkoutPlazaStrings.Statistics.Summary.count(count)
         )
@@ -402,7 +402,7 @@ class RunningStatsCell: UICollectionViewCell {
         row.layer.cornerRadius = 8
 
         let iconView = UIImageView()
-        iconView.image = UIImage(systemName: icon)
+        iconView.image = UIImage(named: icon) ?? UIImage(systemName: icon)
         iconView.tintColor = .white
         iconView.contentMode = .scaleAspectFit
 
@@ -460,7 +460,7 @@ class RunningStatsCell: UICollectionViewCell {
         row.layer.cornerRadius = 8
 
         let iconView = UIImageView()
-        iconView.image = UIImage(systemName: "figure.run")
+        iconView.image = UIImage(named: "icon.person.run")
         iconView.tintColor = .white
         iconView.contentMode = .scaleAspectFit
 

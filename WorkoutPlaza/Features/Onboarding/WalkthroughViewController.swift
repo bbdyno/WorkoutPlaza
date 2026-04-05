@@ -183,7 +183,7 @@ private final class WalkthroughArtworkView: UIView {
 
         // Location
         let pinAttach = NSTextAttachment()
-        pinAttach.image = UIImage(systemName: "mappin.and.ellipse")?.withTintColor(ColorSystem.subText)
+        pinAttach.image = UIImage(named: "icon.map.pin.line")?.withTintColor(ColorSystem.subText)
         let pinStr = NSMutableAttributedString(attachment: pinAttach)
         pinStr.append(NSAttributedString(string: " Seoul, Korea", attributes: [
             .font: AppFont.bodySemiBold(11),
@@ -234,10 +234,10 @@ private final class WalkthroughArtworkView: UIView {
         containerView.addSubview(toolbar)
         contentViews.append(toolbar)
 
-        let toolIcons = ["paintpalette.fill", "textformat", "text.alignleft", "trash"]
+        let toolIcons = ["icon.palette", "icon.text.aa", "text.alignleft", "icon.trash"]
         for iconName in toolIcons {
             let btn = UIView()
-            let img = UIImageView(image: UIImage(systemName: iconName))
+            let img = UIImageView(image: UIImage(named: iconName) ?? UIImage(systemName: iconName))
             img.tintColor = ColorSystem.subText
             img.contentMode = .scaleAspectFit
             btn.addSubview(img)

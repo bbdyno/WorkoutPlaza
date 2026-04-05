@@ -127,7 +127,7 @@ class ImportWorkoutViewController: UIViewController {
     }()
 
     private let templateChevronImageView: UIImageView = {
-        let iv = UIImageView(image: UIImage(systemName: "chevron.right"))
+        let iv = UIImageView(image: UIImage(named: "icon.caret.right"))
         iv.tintColor = ColorSystem.subText
         iv.contentMode = .scaleAspectFit
         return iv
@@ -135,7 +135,7 @@ class ImportWorkoutViewController: UIViewController {
 
     private let clearTemplateButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        button.setImage(UIImage(named: "icon.x.circle.fill"), for: .normal)
         button.tintColor = ColorSystem.subText
         button.isHidden = true
         return button

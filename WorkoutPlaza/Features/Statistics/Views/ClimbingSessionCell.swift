@@ -32,8 +32,7 @@ class ClimbingSessionCell: UIView {
         backgroundColor = ColorSystem.mainText.withAlphaComponent(0.06)
         layer.cornerRadius = 12
 
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        iconView.image = UIImage(systemName: "figure.climbing", withConfiguration: config)
+        iconView.image = UIImage(named: "icon.mountains")
         iconView.tintColor = ColorSystem.mainText
         iconView.contentMode = .scaleAspectFit
 
@@ -49,8 +48,7 @@ class ClimbingSessionCell: UIView {
         gradeLabel.font = .systemFont(ofSize: 12)
         gradeLabel.textColor = ColorSystem.subText
         
-        let chevronConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-        chevronView.image = UIImage(systemName: "chevron.right", withConfiguration: chevronConfig)
+        chevronView.image = UIImage(named: "icon.caret.right")
         chevronView.tintColor = .tertiaryLabel
         chevronView.contentMode = .scaleAspectFit
         

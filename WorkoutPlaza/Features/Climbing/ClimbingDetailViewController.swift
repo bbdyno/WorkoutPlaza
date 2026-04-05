@@ -114,13 +114,13 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
         }
 
         templateActions.append(
-            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Climbing.import, iconName: "square.and.arrow.down") { [weak self] in
+            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Climbing.import, iconName: "icon.download") { [weak self] in
                 self?.importTemplate()
             }
         )
 
         templateActions.append(
-            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Climbing.export, iconName: "square.and.arrow.up") { [weak self] in
+            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Climbing.export, iconName: "icon.share") { [weak self] in
                 self?.exportCurrentLayout()
             }
         )

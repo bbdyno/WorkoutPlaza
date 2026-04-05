@@ -60,7 +60,7 @@ class StatsSummaryCell: UICollectionViewCell {
     func configure(title: String, value: String, icon: String, color: UIColor) {
         titleLabel.text = title
         valueLabel.text = value
-        iconImageView.image = UIImage(systemName: icon)
+        iconImageView.image = UIImage(named: icon) ?? UIImage(systemName: icon)
         iconContainer.backgroundColor = color
     }
 }

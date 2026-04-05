@@ -102,8 +102,7 @@ class SportSelectorViewController: UIViewController {
         card.layer.borderColor = sport.themeColor.withAlphaComponent(0.3).cgColor
 
         let iconView = UIImageView()
-        let config = UIImage.SymbolConfiguration(pointSize: 40, weight: .medium)
-        iconView.image = UIImage(systemName: sport.iconName, withConfiguration: config)
+        iconView.image = UIImage(named: sport.iconName)
         iconView.tintColor = sport.themeColor
         iconView.contentMode = .scaleAspectFit
 
@@ -119,7 +118,7 @@ class SportSelectorViewController: UIViewController {
         descriptionLabel.numberOfLines = 2
 
         let arrowView = UIImageView()
-        arrowView.image = UIImage(systemName: "chevron.right")
+        arrowView.image = UIImage(named: "icon.caret.right")
         arrowView.tintColor = sport.themeColor
         arrowView.contentMode = .scaleAspectFit
 

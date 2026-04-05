@@ -50,7 +50,7 @@ final class InAppBrowserViewController: UIViewController {
     let topContainerView = UIView()
 
     let sslIconView: UIImageView = {
-        let imageView = UIImageView(image: UIImage(systemName: "lock.fill"))
+        let imageView = UIImageView(image: UIImage(named: "icon.lock.fill"))
         imageView.tintColor = ColorSystem.mainText
         imageView.contentMode = .scaleAspectFit
         return imageView
@@ -80,7 +80,7 @@ final class InAppBrowserViewController: UIViewController {
 
     let addressToggleButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "arrow.up.left.and.arrow.down.right"), for: .normal)
+        button.setImage(UIImage(named: "icon.arrows.out"), for: .normal)
         button.tintColor = .secondaryLabel
         return button
     }()
@@ -117,11 +117,11 @@ final class InAppBrowserViewController: UIViewController {
         return stack
     }()
 
-    lazy var backButton = makeToolbarButton(systemName: "chevron.backward", label: WorkoutPlazaStrings.Browser.Action.back)
-    lazy var forwardButton = makeToolbarButton(systemName: "chevron.forward", label: WorkoutPlazaStrings.Browser.Action.forward)
-    lazy var reloadStopButton = makeToolbarButton(systemName: "arrow.clockwise", label: WorkoutPlazaStrings.Browser.Action.reload)
-    lazy var shareButton = makeToolbarButton(systemName: "square.and.arrow.up", label: WorkoutPlazaStrings.Browser.Action.share)
-    lazy var safariButton = makeToolbarButton(systemName: "safari", label: WorkoutPlazaStrings.Browser.Action.openSafari)
+    lazy var backButton = makeToolbarButton(systemName: "icon.caret.left", label: WorkoutPlazaStrings.Browser.Action.back)
+    lazy var forwardButton = makeToolbarButton(systemName: "icon.caret.right", label: WorkoutPlazaStrings.Browser.Action.forward)
+    lazy var reloadStopButton = makeToolbarButton(systemName: "icon.arrow.clockwise", label: WorkoutPlazaStrings.Browser.Action.reload)
+    lazy var shareButton = makeToolbarButton(systemName: "icon.share", label: WorkoutPlazaStrings.Browser.Action.share)
+    lazy var safariButton = makeToolbarButton(systemName: "icon.compass", label: WorkoutPlazaStrings.Browser.Action.openSafari)
 
     // MARK: - UI: Error
 

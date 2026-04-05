@@ -55,15 +55,15 @@ class WorkoutTypeWidget: BaseStatWidget {
         // 아이콘 설정
         switch workoutType {
         case WorkoutPlazaStrings.Workout.running:
-            typeIconImageView.image = UIImage(systemName: "figure.run")
+            typeIconImageView.image = UIImage(named: "icon.person.run")
         case WorkoutPlazaStrings.Workout.cycling:
-            typeIconImageView.image = UIImage(systemName: "bicycle")
+            typeIconImageView.image = UIImage(named: "icon.bicycle")
         case WorkoutPlazaStrings.Workout.walking:
-            typeIconImageView.image = UIImage(systemName: "figure.walk")
+            typeIconImageView.image = UIImage(named: "icon.person.walk")
         case WorkoutPlazaStrings.Workout.hiking:
-            typeIconImageView.image = UIImage(systemName: "figure.hiking")
+            typeIconImageView.image = UIImage(named: "icon.person.hike")
         default:
-            typeIconImageView.image = UIImage(systemName: "figure.mixed.cardio")
+            typeIconImageView.image = UIImage(named: "icon.heartbeat")
         }
     }
 }

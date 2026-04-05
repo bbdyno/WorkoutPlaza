@@ -32,8 +32,7 @@ class RecentRecordsSheetViewController: UIViewController {
 
     private let closeButton: UIButton = {
         let button = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .bold)
-        button.setImage(UIImage(systemName: "xmark", withConfiguration: config), for: .normal)
+        button.setImage(UIImage(named: "icon.x"), for: .normal)
         button.tintColor = ColorSystem.subText
         button.backgroundColor = ColorSystem.divider
         button.layer.cornerRadius = 15
@@ -106,8 +105,7 @@ class RecentRecordsSheetViewController: UIViewController {
         card.layer.cornerCurve = .continuous
 
         let iconImageView = UIImageView()
-        let iconConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
-        iconImageView.image = UIImage(systemName: workout.sportType.iconName, withConfiguration: iconConfig)
+        iconImageView.image = UIImage(named: workout.sportType.iconName)
         iconImageView.tintColor = ColorSystem.controlTint
         iconImageView.contentMode = .scaleAspectFit
 

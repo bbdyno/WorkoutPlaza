@@ -80,8 +80,7 @@ class RunningListViewController: UIViewController {
         config.cornerStyle = .capsule
         config.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20)
 
-        let imageConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
-        config.image = UIImage(systemName: "square.and.arrow.down", withConfiguration: imageConfig)
+        config.image = UIImage(named: "icon.download")
         config.imagePadding = 8
         config.title = WorkoutPlazaStrings.Import.external
 
@@ -262,7 +261,7 @@ class RunningListViewController: UIViewController {
 
         // 닫기 버튼 추가
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "xmark"),
+            image: UIImage(named: "icon.x"),
             style: .plain,
             target: self,
             action: #selector(dismissSheet)
@@ -560,7 +559,7 @@ extension RunningListViewController: UITableViewDelegate, UITableViewDataSource 
                 self?.showShareOptions(for: healthKitWorkout, at: indexPath)
                 completionHandler(true)
             }
-            shareAction.image = UIImage(systemName: "square.and.arrow.up")
+            shareAction.image = UIImage(named: "icon.share")
             shareAction.backgroundColor = ColorSystem.controlTint
             actions.append(shareAction)
         }
@@ -571,7 +570,7 @@ extension RunningListViewController: UITableViewDelegate, UITableViewDataSource 
                 self?.confirmDeleteExternalWorkout(externalWorkout, at: indexPath)
                 completionHandler(true)
             }
-            deleteAction.image = UIImage(systemName: "trash")
+            deleteAction.image = UIImage(named: "icon.trash")
             actions.append(deleteAction)
         }
 

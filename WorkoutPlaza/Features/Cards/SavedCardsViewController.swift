@@ -229,9 +229,8 @@ private class CardCell: UICollectionViewCell {
         formatter.setLocalizedDateFormatFromTemplate("MMMMd")
         dateLabel.text = formatter.string(from: card.workoutDate)
 
-        let iconName = card.sportType == .running ? "figure.run" : "figure.climbing"
-        let config = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
-        sportTypeIcon.image = UIImage(systemName: iconName, withConfiguration: config)
+        let iconName = card.sportType == .running ? "icon.person.run" : "icon.mountains"
+        sportTypeIcon.image = UIImage(named: iconName)
         sportTypeIcon.tintColor = ColorSystem.mainText
     }
 }
@@ -298,14 +297,14 @@ class CardDetailViewController: UIViewController {
         title = formatter.string(from: card.workoutDate)
 
         let shareButton = UIBarButtonItem(
-            image: UIImage(systemName: "square.and.arrow.up"),
+            image: UIImage(named: "icon.share"),
             style: .plain,
             target: self,
             action: #selector(shareTapped)
         )
 
         let deleteButton = UIBarButtonItem(
-            image: UIImage(systemName: "trash"),
+            image: UIImage(named: "icon.trash"),
             style: .plain,
             target: self,
             action: #selector(deleteTapped)

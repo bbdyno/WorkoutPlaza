@@ -65,7 +65,7 @@ final class SpeechBubbleEditViewController: UIViewController {
         config.baseForegroundColor = ColorSystem.mainText
         config.cornerStyle = .medium
         config.title = NSLocalizedString("bubble.edit.font", comment: "폰트")
-        config.image = UIImage(systemName: "textformat")
+        config.image = UIImage(named: "icon.text.aa")
         config.imagePadding = 6
         let btn = UIButton(configuration: config)
         return btn
@@ -295,7 +295,7 @@ private final class ColorRowView: UIView {
     }()
 
     private let chevron: UIImageView = {
-        let iv = UIImageView(image: UIImage(systemName: "chevron.right"))
+        let iv = UIImageView(image: UIImage(named: "icon.caret.right"))
         iv.tintColor = ColorSystem.subText
         iv.contentMode = .scaleAspectFit
         return iv

@@ -99,7 +99,7 @@ class LocationWidget: UIView, Selectable, WidgetContentAlignable {
         backgroundColor = .clear
 
         // Setup icon
-        iconImageView.image = UIImage(systemName: "location.fill")
+        iconImageView.image = UIImage(named: "icon.map.pin.fill")
 
         // Add to stack
         containerStack.addArrangedSubview(iconImageView)

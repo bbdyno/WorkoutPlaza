@@ -207,7 +207,7 @@ final class ProUpgradeViewController: UIViewController {
     private func makeFeatureRow(icon: String, title: String, desc: String) -> UIView {
         let row = UIView()
 
-        let iconView = UIImageView(image: UIImage(systemName: icon))
+        let iconView = UIImageView(image: UIImage(named: icon) ?? UIImage(systemName: icon))
         iconView.tintColor = ColorSystem.mainText
         iconView.contentMode = .scaleAspectFit
 

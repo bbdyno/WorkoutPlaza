@@ -255,7 +255,7 @@ class HomeDashboardViewController: UIViewController {
         runningHeader.alignment = .center
 
         let runningIcon = UIImageView()
-        runningIcon.image = UIImage(systemName: "figure.run")
+        runningIcon.image = UIImage(named: "icon.person.run")
         runningIcon.tintColor = ColorSystem.controlTint
         runningIcon.contentMode = .scaleAspectFit
         runningIcon.snp.makeConstraints { make in make.width.height.equalTo(16) }
@@ -309,7 +309,7 @@ class HomeDashboardViewController: UIViewController {
         climbingHeader.alignment = .center
 
         let climbingIcon = UIImageView()
-        climbingIcon.image = UIImage(systemName: "figure.climbing")
+        climbingIcon.image = UIImage(named: "icon.mountains")
         climbingIcon.tintColor = ColorSystem.controlTint
         climbingIcon.contentMode = .scaleAspectFit
         climbingIcon.snp.makeConstraints { make in make.width.height.equalTo(16) }
@@ -505,8 +505,7 @@ class HomeDashboardViewController: UIViewController {
         containerView.layer.cornerCurve = .continuous
 
         let iconImageView = UIImageView()
-        let iconConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
-        iconImageView.image = UIImage(systemName: workout.sportType.iconName, withConfiguration: iconConfig)
+        iconImageView.image = UIImage(named: workout.sportType.iconName)
         iconImageView.tintColor = ColorSystem.controlTint
         iconImageView.contentMode = .scaleAspectFit
 

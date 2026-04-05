@@ -152,13 +152,13 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         }
 
         templateActions.append(
-            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.action, iconName: "square.and.arrow.down") { [weak self] in
+            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.action, iconName: "icon.download") { [weak self] in
                 self?.importTemplate()
             }
         )
 
         templateActions.append(
-            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.Export.action, iconName: "square.and.arrow.up") { [weak self] in
+            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.Export.action, iconName: "icon.share") { [weak self] in
                 self?.exportCurrentLayout()
             }
         )

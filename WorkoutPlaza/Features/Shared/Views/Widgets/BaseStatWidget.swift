@@ -255,7 +255,7 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
 
         titleLabel.isHidden = true
         iconImageView.isHidden = false
-        iconImageView.image = UIImage(systemName: iconName)
+        iconImageView.image = UIImage(named: iconName) ?? UIImage(systemName: iconName)
         unitLabel.isHidden = !hasUnit
 
         iconImageView.snp.remakeConstraints { make in

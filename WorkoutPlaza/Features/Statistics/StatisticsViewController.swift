@@ -662,7 +662,7 @@ class StatisticsViewController: UIViewController {
 
         return [
             StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Sent.routes, value: "\(sentRoutes)", icon: "checkmark.circle", color: ColorSystem.primaryGreen),
-            StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Total.routes, value: "\(totalRoutes)", icon: "figure.climbing", color: ColorSystem.primaryGreen),
+            StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Total.routes, value: "\(totalRoutes)", icon: "icon.mountains", color: ColorSystem.primaryGreen),
             StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.Success.rate, value: String(format: "%.0f", successRate), icon: "percent", color: ColorSystem.primaryGreen),
             StatsSummaryItem(title: WorkoutPlazaStrings.Statistics.visits, value: WorkoutPlazaStrings.Statistics.Summary.count(totalVisits), icon: "location", color: ColorSystem.primaryGreen)
         ]
@@ -850,7 +850,7 @@ extension StatisticsViewController: UICollectionViewDataSource {
             let item = filteredItems[indexPath.item]
             if let workout = item.data as? WorkoutData {
                 cell.configure(
-                    icon: "figure.run",
+                    icon: "icon.person.run",
                     title: WorkoutPlazaStrings.Workout.running,
                     subtitle: String(format: "%.1fkm", workout.distance / 1000),
                     date: workout.startDate,
@@ -858,7 +858,7 @@ extension StatisticsViewController: UICollectionViewDataSource {
                 )
             } else if let externalWorkout = item.data as? ExternalWorkout {
                 cell.configure(
-                    icon: "figure.run",
+                    icon: "icon.person.run",
                     title: WorkoutPlazaStrings.Workout.running,
                     subtitle: String(format: "%.1fkm", externalWorkout.workoutData.distance / 1000),
                     date: externalWorkout.workoutData.startDate,
@@ -867,7 +867,7 @@ extension StatisticsViewController: UICollectionViewDataSource {
             } else if let session = item.data as? ClimbingData {
                 let displayName = session.gymDisplayName.isEmpty ? WorkoutPlazaStrings.Workout.climbing : session.gymDisplayName
                 cell.configure(
-                    icon: "figure.climbing",
+                    icon: "icon.mountains",
                     title: displayName,
                     subtitle: WorkoutPlazaStrings.Statistics.Climbing.Sent.count(session.sentRoutes),
                     date: session.sessionDate,
@@ -949,7 +949,7 @@ extension StatisticsViewController: UICollectionViewDelegate {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             guard let self = self else { return nil }
 
-            let deleteAction = UIAction(title: WorkoutPlazaStrings.Common.delete, image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+            let deleteAction = UIAction(title: WorkoutPlazaStrings.Common.delete, image: UIImage(named: "icon.trash"), attributes: .destructive) { _ in
                 self.deleteItem(at: indexPath, item: item)
             }
 

@@ -492,7 +492,7 @@ class TextPathDrawingOverlay: UIView {
 
     private let modeButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "scribble"), for: .normal)
+        button.setImage(UIImage(named: "icon.scribble"), for: .normal)
         button.tintColor = .white
         button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
         button.layer.cornerRadius = 20
@@ -557,7 +557,7 @@ class TextPathDrawingOverlay: UIView {
 
     private let confirmButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "checkmark.circle.fill"), for: .normal)
+        button.setImage(UIImage(named: "icon.check.circle.fill"), for: .normal)
         button.tintColor = .white
         button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
         button.layer.cornerRadius = 25
@@ -567,7 +567,7 @@ class TextPathDrawingOverlay: UIView {
 
     private let cancelButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        button.setImage(UIImage(named: "icon.x.circle.fill"), for: .normal)
         button.tintColor = .systemRed
         button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
         button.layer.cornerRadius = 25
@@ -577,7 +577,7 @@ class TextPathDrawingOverlay: UIView {
 
     private let redrawButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "arrow.counterclockwise"), for: .normal)
+        button.setImage(UIImage(named: "icon.arrow.counterclockwise"), for: .normal)
         button.tintColor = .white
         button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
         button.layer.cornerRadius = 20
@@ -705,7 +705,7 @@ class TextPathDrawingOverlay: UIView {
             make.height.equalTo(40)
         }
 
-        let sizeIcon = UIImageView(image: UIImage(systemName: "textformat.size"))
+        let sizeIcon = UIImageView(image: UIImage(named: "icon.text.aa"))
         sizeIcon.tintColor = .white
         sizeIcon.contentMode = .scaleAspectFit
         sizeContainer.addSubview(sizeIcon)
@@ -841,8 +841,10 @@ class TextPathDrawingOverlay: UIView {
     }
 
     private func updateModeButton() {
-        let iconName = currentDrawingMode == .freeform ? "scribble" : "line.diagonal"
-        modeButton.setImage(UIImage(systemName: iconName), for: .normal)
+        let image = currentDrawingMode == .freeform
+            ? UIImage(named: "icon.scribble")
+            : UIImage(systemName: "line.diagonal")
+        modeButton.setImage(image, for: .normal)
     }
 
     @objc private func colorButtonMainTapped() {

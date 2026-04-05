@@ -92,13 +92,13 @@ class ColorPaletteView: UIView {
         addSubview(moreButton)
 
         // Font button
-        fontButton.setImage(UIImage(systemName: "textformat"), for: .normal)
+        fontButton.setImage(UIImage(named: "icon.text.aa"), for: .normal)
         fontButton.tintColor = .label
         fontButton.addTarget(self, action: #selector(fontButtonTapped), for: .touchUpInside)
         addSubview(fontButton)
 
         // Delete button
-        deleteButton.setImage(UIImage(systemName: "trash"), for: .normal)
+        deleteButton.setImage(UIImage(named: "icon.trash"), for: .normal)
         deleteButton.tintColor = .systemRed
         deleteButton.addTarget(self, action: #selector(deleteButtonTapped), for: .touchUpInside)
         addSubview(deleteButton)

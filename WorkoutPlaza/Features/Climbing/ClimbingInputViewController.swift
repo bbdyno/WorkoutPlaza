@@ -83,7 +83,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
     private func setupNavigationBar() {
         title = WorkoutPlazaStrings.Climbing.title
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "xmark"),
+            image: UIImage(named: "icon.x"),
             style: .plain,
             target: self,
             action: #selector(dismissTapped)
@@ -836,7 +836,7 @@ class RouteCell: UITableViewCell {
         disciplineSegment.selectedSegmentIndex = 0
         disciplineSegment.addTarget(self, action: #selector(disciplineChanged), for: .valueChanged)
 
-        deleteButton.setImage(UIImage(systemName: "trash"), for: .normal)
+        deleteButton.setImage(UIImage(named: "icon.trash"), for: .normal)
         deleteButton.tintColor = ColorSystem.error
         deleteButton.addTarget(self, action: #selector(deleteTapped), for: .touchUpInside)
 
@@ -875,7 +875,7 @@ class RouteCell: UITableViewCell {
         }
         
         customColorButton = UIButton(type: .system)
-        customColorButton.setImage(UIImage(systemName: "pencil.circle.fill"), for: .normal)
+        customColorButton.setImage(UIImage(named: "icon.pencil.circle.fill"), for: .normal)
         customColorButton.tintColor = ColorSystem.mainText
         customColorButton.addTarget(self, action: #selector(customColorTapped), for: .touchUpInside)
         colorStack.addArrangedSubview(customColorButton)

@@ -31,8 +31,7 @@ class SportSelectorSheetViewController: UIViewController {
 
     private let closeButton: UIButton = {
         let button = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .bold)
-        button.setImage(UIImage(systemName: "xmark", withConfiguration: config), for: .normal)
+        button.setImage(UIImage(named: "icon.x"), for: .normal)
         button.tintColor = ColorSystem.subText
         button.backgroundColor = ColorSystem.divider
         button.layer.cornerRadius = 15
@@ -106,8 +105,7 @@ class SportSelectorSheetViewController: UIViewController {
         iconContainer.layer.cornerRadius = 22
 
         let iconImageView = UIImageView()
-        let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
-        iconImageView.image = UIImage(systemName: sport.iconName, withConfiguration: config)
+        iconImageView.image = UIImage(named: sport.iconName)
         iconImageView.tintColor = sport.themeColor
         iconImageView.contentMode = .scaleAspectFit
 
@@ -117,8 +115,7 @@ class SportSelectorSheetViewController: UIViewController {
         titleLabel.textColor = ColorSystem.mainText
 
         let chevron = UIImageView()
-        let chevronConfig = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
-        chevron.image = UIImage(systemName: "chevron.right", withConfiguration: chevronConfig)
+        chevron.image = UIImage(named: "icon.caret.right")
         chevron.tintColor = ColorSystem.subText
         chevron.contentMode = .scaleAspectFit
 

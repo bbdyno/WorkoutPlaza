@@ -507,7 +507,7 @@ extension BackgroundImageEditorViewController: UIColorPickerViewControllerDelega
 class CustomColorCell: UICollectionViewCell {
     private let iconImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(systemName: "eyedropper.halffull")
+        imageView.image = UIImage(named: "icon.eyedropper")
         imageView.tintColor = ColorSystem.mainText
         imageView.contentMode = .scaleAspectFit
         return imageView

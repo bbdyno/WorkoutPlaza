@@ -233,12 +233,12 @@ extension GymPickerViewController: UITableViewDataSource {
             if indexPath.row == 0 {
                 cell.textLabel?.text = WorkoutPlazaStrings.Gym.Action.custom
                 cell.textLabel?.textColor = ColorSystem.mainText
-                cell.imageView?.image = UIImage(systemName: "plus.circle.fill")
+                cell.imageView?.image = UIImage(named: "icon.plus.circle.fill")
                 cell.imageView?.tintColor = ColorSystem.mainText
             } else {
                 cell.textLabel?.text = WorkoutPlazaStrings.Gym.Action.sync
                 cell.textLabel?.textColor = ColorSystem.mainText
-                cell.imageView?.image = UIImage(systemName: "arrow.clockwise.circle.fill")
+                cell.imageView?.image = UIImage(named: "icon.arrow.clockwise.circle.fill")
                 cell.imageView?.tintColor = ColorSystem.mainText
             }
 
@@ -298,7 +298,7 @@ extension GymPickerViewController: UITableViewDelegate {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
             let deleteAction = UIAction(
                 title: WorkoutPlazaStrings.Common.delete,
-                image: UIImage(systemName: "trash"),
+                image: UIImage(named: "icon.trash"),
                 attributes: .destructive
             ) { [weak self] _ in
                 self?.deleteCustomGym(gym)

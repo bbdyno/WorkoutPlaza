@@ -56,14 +56,14 @@ class CustomCalendarView: UIView {
 
     private let prevOpenButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        btn.setImage(UIImage(named: "icon.caret.left"), for: .normal)
         btn.tintColor = .label
         return btn
     }()
 
     private let nextOpenButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "chevron.right"), for: .normal)
+        btn.setImage(UIImage(named: "icon.caret.right"), for: .normal)
         btn.tintColor = .label
         return btn
     }()

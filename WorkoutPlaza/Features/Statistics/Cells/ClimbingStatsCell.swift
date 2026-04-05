@@ -55,14 +55,14 @@ class ClimbingStatsCell: UICollectionViewCell {
 
     private let prevButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        button.setImage(UIImage(named: "icon.caret.left"), for: .normal)
         button.tintColor = ColorSystem.mainText
         return button
     }()
 
     private let nextButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "chevron.right"), for: .normal)
+        button.setImage(UIImage(named: "icon.caret.right"), for: .normal)
         button.tintColor = ColorSystem.mainText
         return button
     }()
@@ -219,7 +219,7 @@ class ClimbingStatsCell: UICollectionViewCell {
 
         let summaryItems = [
             (WorkoutPlazaStrings.Statistics.Sent.routes, "\(stats.sentRoutes)", "checkmark.circle", ColorSystem.primaryGreen),
-            (WorkoutPlazaStrings.Statistics.Total.routes, "\(stats.totalRoutes)", "figure.climbing", ColorSystem.primaryGreen),
+            (WorkoutPlazaStrings.Statistics.Total.routes, "\(stats.totalRoutes)", "icon.mountains", ColorSystem.primaryGreen),
             (WorkoutPlazaStrings.Statistics.Success.rate, String(format: "%.0f", stats.successRate), "percent", ColorSystem.primaryGreen),
             (WorkoutPlazaStrings.Statistics.visits, WorkoutPlazaStrings.Statistics.Summary.count(stats.visitCount), "location", ColorSystem.primaryGreen)
         ]
@@ -391,7 +391,7 @@ class ClimbingStatsCell: UICollectionViewCell {
         card.layer.cornerRadius = 20
 
         let iconView = UIImageView()
-        iconView.image = UIImage(systemName: icon)
+        iconView.image = UIImage(named: icon) ?? UIImage(systemName: icon)
         iconView.tintColor = color
         iconView.contentMode = .scaleAspectFit
 
@@ -540,7 +540,7 @@ class ClimbingStatsCell: UICollectionViewCell {
         stack.spacing = 8
         stack.alignment = .fill
 
-        let countLabel = createStatRow(icon: "figure.climbing", title: WorkoutPlazaStrings.Statistics.Sent.count, value: "\(sessions.count)")
+        let countLabel = createStatRow(icon: "icon.mountains", title: WorkoutPlazaStrings.Statistics.Sent.count, value: "\(sessions.count)")
         let routesLabel = createStatRow(icon: "checkmark.circle", title: WorkoutPlazaStrings.Statistics.Total.sent, value: "\(sessions.reduce(0) { $0 + $1.sentRoutes })")
 
         stack.addArrangedSubview(countLabel)
@@ -581,7 +581,7 @@ class ClimbingStatsCell: UICollectionViewCell {
         row.clipsToBounds = true
 
         let iconView = UIImageView()
-        iconView.image = UIImage(systemName: icon)
+        iconView.image = UIImage(named: icon) ?? UIImage(systemName: icon)
         iconView.tintColor = .white
         iconView.contentMode = .scaleAspectFit
 

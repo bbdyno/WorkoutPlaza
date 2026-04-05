@@ -36,8 +36,7 @@ class ExternalRunningWorkoutCell: UIView {
         backgroundColor = ColorSystem.mainText.withAlphaComponent(0.06)
         layer.cornerRadius = 12
 
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        iconView.image = UIImage(systemName: "figure.run", withConfiguration: config)
+        iconView.image = UIImage(named: "icon.person.run")
         iconView.tintColor = ColorSystem.mainText
         iconView.contentMode = .scaleAspectFit
 

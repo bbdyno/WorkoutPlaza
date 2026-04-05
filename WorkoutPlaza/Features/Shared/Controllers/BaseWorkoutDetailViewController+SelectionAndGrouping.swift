@@ -237,8 +237,7 @@ extension BaseWorkoutDetailViewController {
     }
 
     private func updateToolbarButtonIcon(_ button: UIButton, systemName: String) {
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
-        button.setImage(UIImage(systemName: systemName, withConfiguration: config), for: .normal)
+        button.setImage(UIImage(named: systemName) ?? UIImage(systemName: systemName), for: .normal)
     }
 
     @objc func showColorPicker() {

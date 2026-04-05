@@ -290,7 +290,7 @@ extension InAppBrowserViewController {
 
     func updateSSLIcon(for url: URL?) {
         let isSecure = url?.scheme?.lowercased() == "https"
-        sslIconView.image = UIImage(systemName: isSecure ? "lock.fill" : "lock.open.fill")
+        sslIconView.image = isSecure ? UIImage(named: "icon.lock.fill") : UIImage(systemName: "lock.open.fill")
         sslIconView.tintColor = isSecure ? ColorSystem.mainText : ColorSystem.subText
         sslIconView.accessibilityLabel = isSecure ? WorkoutPlazaStrings.Browser.Ssl.secure : WorkoutPlazaStrings.Browser.Ssl.insecure
     }
@@ -320,15 +320,15 @@ extension InAppBrowserViewController {
         backButton.isEnabled = state.canGoBack
         forwardButton.isEnabled = state.canGoForward
 
-        let reloadSymbol = state.isLoading ? "xmark" : "arrow.clockwise"
         let reloadLabel = state.isLoading ? WorkoutPlazaStrings.Browser.Action.stop : WorkoutPlazaStrings.Browser.Action.reload
-        reloadStopButton.setImage(UIImage(systemName: reloadSymbol), for: .normal)
+        let reloadImage = state.isLoading ? UIImage(named: "icon.x") : UIImage(named: "icon.arrow.clockwise")
+        reloadStopButton.setImage(reloadImage, for: .normal)
         reloadStopButton.accessibilityLabel = reloadLabel
     }
 
     func makeToolbarButton(systemName: String, label: String) -> UIButton {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: systemName), for: .normal)
+        button.setImage(UIImage(named: systemName), for: .normal)
         button.tintColor = .label
         button.accessibilityLabel = label
         return button

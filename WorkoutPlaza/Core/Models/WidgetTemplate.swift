@@ -273,20 +273,20 @@ enum WidgetType: String, Codable, CaseIterable {
     var iconName: String {
         switch self {
         case .routeMap: return "map"
-        case .distance: return "figure.run"
+        case .distance: return "icon.person.run"
         case .duration: return "timer"
         case .pace: return "speedometer"
         case .speed: return "gauge.high"
         case .calories: return "flame"
         case .heartRate: return "heart.fill"
         case .date: return "calendar"
-        case .text: return "textformat"
+        case .text: return "icon.text.aa"
         case .location: return "location"
         case .currentDateTime: return "clock"
-        case .composite: return "square.grid.2x2"
+        case .composite: return "icon.grid.four"
         case .speechBubble: return "message.fill"
         case .climbingGym: return "building.2"
-        case .climbingDiscipline: return "figure.climbing"
+        case .climbingDiscipline: return "icon.mountains"
         case .climbingSession: return "checkmark.circle"
         case .climbingRoutesByColor: return "list.bullet.circle"
         case .gymLogo: return "photo.circle"
@@ -327,7 +327,7 @@ enum WidgetType: String, Codable, CaseIterable {
     private static func sampleGymForLogoPreview() -> ClimbingGym {
         let allGyms = ClimbingGymManager.shared.getAllGyms()
         let placeholderSource: ClimbingGym.LogoSource = {
-            if let data = UIImage(systemName: "building.2.fill")?.pngData() {
+            if let data = UIImage(named: "icon.buildings.fill")?.pngData() {
                 return .imageData(data)
             }
             return .none

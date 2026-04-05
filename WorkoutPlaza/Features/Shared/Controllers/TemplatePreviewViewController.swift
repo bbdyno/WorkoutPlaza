@@ -261,7 +261,7 @@ class TemplatePreviewViewController: UIViewController {
     private func createWidgetRow(for item: WidgetItem) -> UIView {
         let container = UIView()
 
-        let iconImageView = UIImageView(image: UIImage(systemName: item.type.iconName))
+        let iconImageView = UIImageView(image: UIImage(named: item.type.iconName) ?? UIImage(systemName: item.type.iconName))
         iconImageView.tintColor = ColorSystem.mainText
         iconImageView.contentMode = .scaleAspectFit
 

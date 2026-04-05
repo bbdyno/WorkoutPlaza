@@ -216,7 +216,7 @@ extension RunningDetailViewController {
             title: WorkoutPlazaStrings.Widget.Title.Avg.cadence,
             value: "165",
             unit: "spm",
-            icon: "figure.run",
+            icon: "icon.person.run",
             color: ColorSystem.mainText
         )
         addWidget(cadenceWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 30, y: 940))
@@ -238,7 +238,7 @@ extension RunningDetailViewController {
         widget.valueLabel.text = value
         widget.unitLabel.text = unit
         
-        let iconView = UIImageView(image: UIImage(systemName: icon))
+        let iconView = UIImageView(image: UIImage(named: icon) ?? UIImage(systemName: icon))
         iconView.tintColor = color
         iconView.contentMode = .scaleAspectFit
         

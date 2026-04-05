@@ -72,7 +72,7 @@ class GymPickerCell: UITableViewCell {
         infoLabel.textColor = .secondaryLabel
 
         // Checkmark
-        checkmarkImageView.image = UIImage(systemName: "checkmark")
+        checkmarkImageView.image = UIImage(named: "icon.check")
         checkmarkImageView.tintColor = ColorSystem.mainText
         checkmarkImageView.contentMode = .scaleAspectFit
 

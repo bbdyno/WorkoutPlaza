@@ -33,8 +33,7 @@ class RunningWorkoutCell: UIView {
         backgroundColor = ColorSystem.mainText.withAlphaComponent(0.06)
         layer.cornerRadius = 12
 
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        iconView.image = UIImage(systemName: "figure.run", withConfiguration: config)
+        iconView.image = UIImage(named: "icon.person.run")
         iconView.tintColor = ColorSystem.mainText
         iconView.contentMode = .scaleAspectFit
 
@@ -53,7 +52,7 @@ class RunningWorkoutCell: UIView {
         paceLabel.font = .systemFont(ofSize: 12)
         paceLabel.textColor = ColorSystem.subText
         
-        chevronView.image = UIImage(systemName: "chevron.right")
+        chevronView.image = UIImage(named: "icon.caret.right")
         chevronView.tintColor = .tertiaryLabel
         chevronView.contentMode = .scaleAspectFit
         

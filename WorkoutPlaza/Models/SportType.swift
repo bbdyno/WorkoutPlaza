@@ -22,8 +22,8 @@ enum SportType: String, Codable, CaseIterable {
 
     var iconName: String {
         switch self {
-        case .running: return "figure.run"
-        case .climbing: return "figure.climbing"
+        case .running: return "icon.person.run"
+        case .climbing: return "icon.mountains"
         }
     }
 

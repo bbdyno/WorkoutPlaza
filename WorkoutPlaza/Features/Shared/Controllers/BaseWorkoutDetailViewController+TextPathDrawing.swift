@@ -76,7 +76,7 @@ extension BaseWorkoutDetailViewController {
 
         // Reset mode button icon
         if let modeButton = textPathDrawingToolbar.viewWithTag(9003) as? UIButton {
-            modeButton.setImage(UIImage(systemName: "scribble"), for: .normal)
+            modeButton.setImage(UIImage(named: "icon.scribble"), for: .normal)
         }
 
         // Clear drawing view
@@ -248,8 +248,10 @@ extension BaseWorkoutDetailViewController {
         isTextPathStraightLineMode.toggle()
 
         // 아이콘 업데이트
-        let iconName = isTextPathStraightLineMode ? "line.diagonal" : "scribble"
-        sender.setImage(UIImage(systemName: iconName), for: .normal)
+        let image = isTextPathStraightLineMode
+            ? UIImage(systemName: "line.diagonal")
+            : UIImage(named: "icon.scribble")
+        sender.setImage(image, for: .normal)
     }
 
     func hideAllTextPathPanels(except viewToKeep: UIView? = nil) {

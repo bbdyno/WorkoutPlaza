@@ -70,7 +70,7 @@ class RecentSessionCell: UICollectionViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     func configure(icon: String, title: String, subtitle: String, date: Date, color: UIColor) {
-        iconImageView.image = UIImage(systemName: icon)
+        iconImageView.image = UIImage(named: icon) ?? UIImage(systemName: icon)
         iconContainer.backgroundColor = color
         titleLabel.text = title
         subtitleLabel.text = subtitle

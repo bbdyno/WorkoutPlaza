@@ -281,7 +281,7 @@ extension BaseWorkoutDetailViewController {
         modeLabel.textAlignment = .center
 
         let textPathModeMainButton = UIButton(type: .system)
-        textPathModeMainButton.setImage(UIImage(systemName: "scribble"), for: .normal)
+        textPathModeMainButton.setImage(UIImage(named: "icon.scribble"), for: .normal)
         textPathModeMainButton.tintColor = .white
         textPathModeMainButton.backgroundColor = UIColor.white.withAlphaComponent(0.2)
         textPathModeMainButton.layer.cornerRadius = 16
@@ -370,11 +370,11 @@ extension BaseWorkoutDetailViewController {
         }
 
         // Add indicators
-        let leftIndicator = UIImageView(image: UIImage(systemName: "chevron.left"))
+        let leftIndicator = UIImageView(image: UIImage(named: "icon.caret.left"))
         leftIndicator.tintColor = UIColor.white.withAlphaComponent(0.5)
         leftIndicator.contentMode = .scaleAspectFit
         
-        let rightIndicator = UIImageView(image: UIImage(systemName: "chevron.right"))
+        let rightIndicator = UIImageView(image: UIImage(named: "icon.caret.right"))
         rightIndicator.tintColor = UIColor.white.withAlphaComponent(0.5)
         rightIndicator.contentMode = .scaleAspectFit
         
@@ -453,7 +453,7 @@ extension BaseWorkoutDetailViewController {
         fontSizeLabel.textAlignment = .center
         fontSizeLabel.tag = 999
 
-        let sizeIcon = UIImageView(image: UIImage(systemName: "textformat.size"))
+        let sizeIcon = UIImageView(image: UIImage(named: "icon.text.aa"))
         sizeIcon.tintColor = .white
         sizeIcon.contentMode = .scaleAspectFit
         
@@ -518,8 +518,7 @@ extension BaseWorkoutDetailViewController {
 
     func createToolbarButton(systemName: String, action: Selector) -> UIButton {
         let button = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
-        button.setImage(UIImage(systemName: systemName, withConfiguration: config), for: .normal)
+        button.setImage(UIImage(named: systemName) ?? UIImage(systemName: systemName), for: .normal)
         button.tintColor = .white
         button.backgroundColor = UIColor(white: 0.3, alpha: 0.8)
         button.layer.cornerRadius = 22

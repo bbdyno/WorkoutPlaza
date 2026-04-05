@@ -14,7 +14,6 @@ class StatsSummaryCard: UIView {
     
     private let iconView: UIImageView = {
         let view = UIImageView()
-        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
         view.contentMode = .scaleAspectFit
         return view
     }()
@@ -57,8 +56,7 @@ class StatsSummaryCard: UIView {
         backgroundColor = color.withAlphaComponent(0.1)
         layer.cornerRadius = 16
         
-        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
-        iconView.image = UIImage(systemName: icon, withConfiguration: config)
+        iconView.image = UIImage(named: icon) ?? UIImage(systemName: icon)
         iconView.tintColor = color
         
         titleLabel.text = title

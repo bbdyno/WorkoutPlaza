@@ -67,8 +67,7 @@ class ResizeHandleView: UIView {
             layer.addSublayer(circleLayer)
 
             let iconImageView = UIImageView()
-            let config = UIImage.SymbolConfiguration(pointSize: iconFontSize, weight: .semibold)
-            iconImageView.image = UIImage(systemName: "arrow.trianglehead.2.clockwise.rotate.90", withConfiguration: config)
+            iconImageView.image = UIImage(named: "icon.arrows.clockwise")
             iconImageView.tintColor = .white
             iconImageView.contentMode = .center
             iconImageView.frame = CGRect(x: 0, y: 0, width: handleSize, height: handleSize)
@@ -95,8 +94,7 @@ class ResizeHandleView: UIView {
             layer.addSublayer(circleLayer)
 
             let iconImageView = UIImageView()
-            let config = UIImage.SymbolConfiguration(pointSize: iconFontSize, weight: .semibold)
-            iconImageView.image = UIImage(systemName: "arrow.up.left.and.arrow.down.right", withConfiguration: config)
+            iconImageView.image = UIImage(named: "icon.arrows.out")
             iconImageView.tintColor = .white
             iconImageView.contentMode = .center
             iconImageView.frame = CGRect(x: 0, y: 0, width: handleSize, height: handleSize)

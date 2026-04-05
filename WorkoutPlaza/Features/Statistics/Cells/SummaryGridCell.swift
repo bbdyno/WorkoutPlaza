@@ -73,7 +73,7 @@ class SummaryGridCell: UICollectionViewCell {
         iconContainer.layer.cornerRadius = 12
 
         let iconImageView = UIImageView()
-        iconImageView.image = UIImage(systemName: item.icon)
+        iconImageView.image = UIImage(named: item.icon) ?? UIImage(systemName: item.icon)
         iconImageView.tintColor = item.color
         iconImageView.contentMode = .scaleAspectFit
 

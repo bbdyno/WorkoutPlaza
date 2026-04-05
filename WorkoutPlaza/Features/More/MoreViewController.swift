@@ -97,10 +97,10 @@ class MoreViewController: UIViewController {
         // ── 데이터 ────────────────────────────────────────────────
         configuredSections.append(Section(title: WorkoutPlazaStrings.More.Section.data, items: [
             MenuItem(title: WorkoutPlazaStrings.More.Export.data,
-                     icon: "square.and.arrow.up",
+                     icon: "icon.share",
                      badge: isPro ? nil : "PRO",
                      action: { [weak self] in self?.exportData() }),
-            MenuItem(title: WorkoutPlazaStrings.More.Reset.data, icon: "trash", action: { [weak self] in
+            MenuItem(title: WorkoutPlazaStrings.More.Reset.data, icon: "icon.trash", action: { [weak self] in
                 self?.resetData()
             })
         ]))
@@ -552,14 +552,14 @@ extension MoreViewController: UITableViewDataSource {
         var config = cell.defaultContentConfiguration()
         config.text = item.title
         config.textProperties.font = AppFont.bodySemiBold(16)
-        config.image = UIImage(systemName: item.icon)
+        config.image = UIImage(named: item.icon) ?? UIImage(systemName: item.icon)
 
         // Pro 업그레이드 셀 강조
         if item.icon == "crown.fill" {
             config.textProperties.color = ColorSystem.mainText
             config.imageProperties.tintColor = ColorSystem.mainText
             cell.accessoryType = .disclosureIndicator
-        } else if item.icon == "trash" {
+        } else if item.icon == "icon.trash" {
             config.textProperties.color = .systemRed
             config.imageProperties.tintColor = .systemRed
             cell.accessoryType = .none
@@ -641,7 +641,7 @@ private final class TipProductCell: UITableViewCell {
 
     func configure(title: String, icon: String, price: String?) {
         // SF Symbol → emoji fallback
-        if let img = UIImage(systemName: icon) {
+        if let img = UIImage(named: icon) ?? UIImage(systemName: icon) {
             let attachment = NSTextAttachment(image: img)
             let imgString = NSAttributedString(attachment: attachment)
             let attrString = NSMutableAttributedString()
