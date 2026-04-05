@@ -438,6 +438,7 @@ extension BaseWorkoutDetailViewController {
         labels: [UILabel], labelIndex: Int, axis: SpacingAxis
     ) -> Int {
         var idx = labelIndex
+        let snapThreshold = LayoutConstants.snapStep + 1 // 그리드 단위 + 1pt 여유
 
         // 이동 위젯 포함 전체를 축 기준 정렬
         var allViews = others + [movedView]
@@ -446,73 +447,164 @@ extension BaseWorkoutDetailViewController {
         })
 
         guard allViews.count >= 3,
-              let movedIdx = allViews.firstIndex(where: { $0 === movedView }),
-              movedIdx > 0, movedIdx < allViews.count - 1 else {
+              let movedIdx = allViews.firstIndex(where: { $0 === movedView }) else {
             return idx
         }
 
-        // 이동 위젯 양쪽 gap
-        let left = allViews[movedIdx - 1].frame
-        let right = allViews[movedIdx + 1].frame
         let movedFrame = movedView.frame
 
-        let leftGap: CGFloat
-        let rightGap: CGFloat
+        // Case 1: 양쪽에 위젯이 있을 때 — 좌우 gap 균등화
+        if movedIdx > 0 && movedIdx < allViews.count - 1 {
+            let left = allViews[movedIdx - 1].frame
+            let right = allViews[movedIdx + 1].frame
 
-        if axis == .horizontal {
-            leftGap = movedFrame.minX - left.maxX
-            rightGap = right.minX - movedFrame.maxX
-        } else {
-            leftGap = movedFrame.minY - left.maxY
-            rightGap = right.minY - movedFrame.maxY
+            let leftGap = axis == .horizontal ? movedFrame.minX - left.maxX : movedFrame.minY - left.maxY
+            let rightGap = axis == .horizontal ? right.minX - movedFrame.maxX : right.minY - movedFrame.maxY
+
+            if leftGap > 0 && rightGap > 0 && abs(leftGap - rightGap) <= snapThreshold {
+                let equalGap = (leftGap + rightGap) / 2
+                var c = movedView.center
+                if axis == .horizontal {
+                    c.x = left.maxX + equalGap + movedFrame.width / 2
+                } else {
+                    c.y = left.maxY + equalGap + movedFrame.height / 2
+                }
+                movedView.center = c
+
+                idx = showEqualSpacingLabels(
+                    labels: labels, idx: idx, gap: equalGap, axis: axis,
+                    leftEdge: axis == .horizontal ? left.maxX : left.maxY,
+                    movedView: movedView,
+                    rightEdge: axis == .horizontal ? right.minX : right.minY
+                )
+
+                if let selectable = movedView as? Selectable, selectable.isSelected {
+                    selectable.positionResizeHandles()
+                }
+                return idx
+            }
         }
 
-        guard leftGap > 0 && rightGap > 0 else { return idx }
+        // Case 2: 맨 끝에 있을 때 — 다른 인접 쌍의 gap과 일치하는지 체크
+        // 이동 위젯 제외한 다른 위젯들의 인접 gap 수집
+        let othersSorted = others.sorted(by: {
+            axis == .horizontal ? $0.frame.midX < $1.frame.midX : $0.frame.midY < $1.frame.midY
+        })
 
-        // 양쪽 gap이 비슷하면 정확히 동일하게 스냅
-        if abs(leftGap - rightGap) <= threshold {
-            let equalGap = (leftGap + rightGap) / 2
-            var c = movedView.center
+        var referenceGaps: [CGFloat] = []
+        for i in 0..<(othersSorted.count - 1) {
+            let a = othersSorted[i].frame
+            let b = othersSorted[i + 1].frame
+            let gap = axis == .horizontal ? b.minX - a.maxX : b.minY - a.maxY
+            if gap > 3 { referenceGaps.append(gap) }
+        }
 
-            if axis == .horizontal {
-                c.x = left.maxX + equalGap + movedFrame.width / 2
-            } else {
-                c.y = left.maxY + equalGap + movedFrame.height / 2
-            }
-            movedView.center = c
+        guard !referenceGaps.isEmpty else { return idx }
 
-            // 양쪽 gap 라벨 표시
-            if idx < labels.count {
-                if axis == .horizontal {
-                    showSpacingLabel(labels[idx], gap: equalGap,
-                                     from: left.maxX, to: movedView.frame.minX,
-                                     midY: movedView.frame.midY)
-                } else {
-                    showSpacingLabelVertical(labels[idx], gap: equalGap,
-                                            from: left.maxY, to: movedView.frame.minY,
-                                            midX: movedView.frame.midX)
+        // 이동 위젯의 인접 gap과 참조 gap 비교
+        if movedIdx > 0 {
+            let neighbor = allViews[movedIdx - 1].frame
+            let myGap = axis == .horizontal ? movedFrame.minX - neighbor.maxX : movedFrame.minY - neighbor.maxY
+
+            for refGap in referenceGaps {
+                if myGap > 0 && abs(myGap - refGap) <= snapThreshold {
+                    var c = movedView.center
+                    if axis == .horizontal {
+                        c.x = neighbor.maxX + refGap + movedFrame.width / 2
+                    } else {
+                        c.y = neighbor.maxY + refGap + movedFrame.height / 2
+                    }
+                    movedView.center = c
+
+                    if idx < labels.count {
+                        if axis == .horizontal {
+                            showSpacingLabel(labels[idx], gap: refGap,
+                                             from: neighbor.maxX, to: movedView.frame.minX,
+                                             midY: movedView.frame.midY)
+                        } else {
+                            showSpacingLabelVertical(labels[idx], gap: refGap,
+                                                    from: neighbor.maxY, to: movedView.frame.minY,
+                                                    midX: movedView.frame.midX)
+                        }
+                        idx += 1
+                    }
+
+                    if let selectable = movedView as? Selectable, selectable.isSelected {
+                        selectable.positionResizeHandles()
+                    }
+                    return idx
                 }
-                idx += 1
             }
-            if idx < labels.count {
-                if axis == .horizontal {
-                    showSpacingLabel(labels[idx], gap: equalGap,
-                                     from: movedView.frame.maxX, to: right.minX,
-                                     midY: movedView.frame.midY)
-                } else {
-                    showSpacingLabelVertical(labels[idx], gap: equalGap,
-                                            from: movedView.frame.maxY, to: right.minY,
-                                            midX: movedView.frame.midX)
-                }
-                idx += 1
-            }
+        }
 
-            if let selectable = movedView as? Selectable, selectable.isSelected {
-                selectable.positionResizeHandles()
+        if movedIdx < allViews.count - 1 {
+            let neighbor = allViews[movedIdx + 1].frame
+            let myGap = axis == .horizontal ? neighbor.minX - movedFrame.maxX : neighbor.minY - movedFrame.maxY
+
+            for refGap in referenceGaps {
+                if myGap > 0 && abs(myGap - refGap) <= snapThreshold {
+                    var c = movedView.center
+                    if axis == .horizontal {
+                        c.x = neighbor.minX - refGap - movedFrame.width / 2
+                    } else {
+                        c.y = neighbor.minY - refGap - movedFrame.height / 2
+                    }
+                    movedView.center = c
+
+                    if idx < labels.count {
+                        if axis == .horizontal {
+                            showSpacingLabel(labels[idx], gap: refGap,
+                                             from: movedView.frame.maxX, to: neighbor.minX,
+                                             midY: movedView.frame.midY)
+                        } else {
+                            showSpacingLabelVertical(labels[idx], gap: refGap,
+                                                    from: movedView.frame.maxY, to: neighbor.minY,
+                                                    midX: movedView.frame.midX)
+                        }
+                        idx += 1
+                    }
+
+                    if let selectable = movedView as? Selectable, selectable.isSelected {
+                        selectable.positionResizeHandles()
+                    }
+                    return idx
+                }
             }
         }
 
         return idx
+    }
+
+    private func showEqualSpacingLabels(
+        labels: [UILabel], idx: Int, gap: CGFloat, axis: SpacingAxis,
+        leftEdge: CGFloat, movedView: UIView, rightEdge: CGFloat
+    ) -> Int {
+        var i = idx
+        if i < labels.count {
+            if axis == .horizontal {
+                showSpacingLabel(labels[i], gap: gap,
+                                 from: leftEdge, to: movedView.frame.minX,
+                                 midY: movedView.frame.midY)
+            } else {
+                showSpacingLabelVertical(labels[i], gap: gap,
+                                        from: leftEdge, to: movedView.frame.minY,
+                                        midX: movedView.frame.midX)
+            }
+            i += 1
+        }
+        if i < labels.count {
+            if axis == .horizontal {
+                showSpacingLabel(labels[i], gap: gap,
+                                 from: movedView.frame.maxX, to: rightEdge,
+                                 midY: movedView.frame.midY)
+            } else {
+                showSpacingLabelVertical(labels[i], gap: gap,
+                                        from: movedView.frame.maxY, to: rightEdge,
+                                        midX: movedView.frame.midX)
+            }
+            i += 1
+        }
+        return i
     }
 
     private func showSpacingLabelVertical(_ label: UILabel, gap: CGFloat, from: CGFloat, to: CGFloat, midX: CGFloat) {
