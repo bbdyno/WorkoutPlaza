@@ -351,54 +351,38 @@ extension RunningDetailViewController {
         }
     }
 
-    // MARK: - Catalog-based Widget Helpers
+    // MARK: - WidgetType-based Widget Helpers
 
-    /// Check whether any widget belonging to the given singleton group is already on canvas.
-    internal func isWidgetGroupOnCanvas(_ singletonGroup: String) -> Bool {
-        switch singletonGroup {
-        case "distance":
-            return widgets.contains(where: { $0 is DistanceWidget })
-        case "duration":
-            return widgets.contains(where: { $0 is DurationWidget })
-        case "pace":
-            return widgets.contains(where: { $0 is PaceWidget })
-        case "speed":
-            return widgets.contains(where: { $0 is SpeedWidget })
-        case "calories":
-            return widgets.contains(where: { $0 is CaloriesWidget })
-        case "heartRate":
-            return widgets.contains(where: { $0 is HeartRateWidget })
-        case "date":
-            return widgets.contains(where: { $0 is DateWidget })
-        case "currentDateTime":
-            return widgets.contains(where: { $0 is CurrentDateTimeWidget })
-        case "routeMap":
-            return routeMapView != nil
-        case "location":
-            return widgets.contains(where: { $0 is LocationWidget })
-        default:
-            return false
+    /// Check whether any widget of the same base type is already on canvas.
+    internal func isWidgetTypeGroupOnCanvas(_ type: WidgetType) -> Bool {
+        switch type.baseType {
+        case .distance: return widgets.contains(where: { $0 is DistanceWidget })
+        case .duration: return widgets.contains(where: { $0 is DurationWidget })
+        case .pace: return widgets.contains(where: { $0 is PaceWidget })
+        case .speed: return widgets.contains(where: { $0 is SpeedWidget })
+        case .calories: return widgets.contains(where: { $0 is CaloriesWidget })
+        case .heartRate: return widgets.contains(where: { $0 is HeartRateWidget })
+        case .date: return widgets.contains(where: { $0 is DateWidget })
+        case .currentDateTime: return widgets.contains(where: { $0 is CurrentDateTimeWidget })
+        case .routeMap: return routeMapView != nil
+        case .location: return widgets.contains(where: { $0 is LocationWidget })
+        case .text, .composite, .speechBubble: return false  // Multiple allowed
+        default: return false
         }
     }
 
-    /// Create a widget from a catalog definition, applying the correct display mode.
-    internal func addWidgetFromCatalog(_ definition: CatalogWidgetItem) {
-        guard let widgetType = definition.widgetType else {
-            WPLog.warning("Unknown catalog dataType: \(definition.dataType)")
+    /// Create a widget from a WidgetType, applying the correct display mode.
+    internal func addWidgetOfType(_ type: WidgetType) {
+        guard let singleType = SingleWidgetType(rawValue: type.baseType.rawValue) ??
+              SingleWidgetType.allCases.first(where: {
+                  $0.rawValue.caseInsensitiveCompare(type.baseType.rawValue) == .orderedSame
+              }) else {
+            WPLog.warning("No SingleWidgetType for: \(type.rawValue)")
             return
         }
-        // Use baseType for SingleWidgetType lookup (same widget class)
-        guard let singleType = SingleWidgetType(rawValue: widgetType.baseType.rawValue) ??
-              SingleWidgetType.allCases.first(where: { $0.rawValue.caseInsensitiveCompare(widgetType.baseType.rawValue) == .orderedSame }) else {
-            WPLog.warning("No SingleWidgetType for baseType: \(widgetType.baseType.rawValue)")
-            return
-        }
-
         addSingleWidgetFromAvailableData(singleType)
-
-        // Apply inherent display mode from the specific WidgetType
         if let lastWidget = widgets.last as? BaseStatWidget {
-            lastWidget.setDisplayMode(widgetType.inherentDisplayMode)
+            lastWidget.setDisplayMode(type.inherentDisplayMode)
         }
     }
 

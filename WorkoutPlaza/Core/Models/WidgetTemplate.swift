@@ -336,6 +336,14 @@ enum WidgetType: String, Codable, CaseIterable {
         return baseType
     }
 
+    var layoutDescription: String {
+        switch inherentDisplayMode {
+        case .text: return "텍스트"
+        case .textUnified: return "컴팩트"
+        case .icon: return "아이콘"
+        }
+    }
+
     var displayName: String {
         switch baseType {
         case .routeMap: return WorkoutPlazaStrings.Widget.Route.map
@@ -458,69 +466,75 @@ enum WidgetType: String, Codable, CaseIterable {
 
     /// 샘플 데이터로 실제 위젯을 렌더링하는 미리보기 클로저. nil이면 아이콘 모드 유지.
     var previewProvider: (() -> UIView)? {
-        let size = CGSize(width: 140, height: 65)
-        // Compact/icon variants delegate to catalog-based preview
+        let size: CGSize
+        switch self.inherentDisplayMode {
+        case .icon: size = CGSize(width: 160, height: 50)
+        case .textUnified: size = CGSize(width: 140, height: 55)
+        case .text: size = CGSize(width: 140, height: 65)
+        }
+
         switch self {
-        case .distanceCompact, .distanceIcon,
-             .durationCompact, .durationIcon,
-             .paceCompact, .paceIcon,
-             .speedCompact, .speedIcon,
-             .caloriesCompact, .caloriesIcon,
-             .heartRateCompact, .heartRateIcon,
-             .dateCompact, .dateIcon:
-            return nil
-        case .distance:
+        case .distance, .distanceCompact, .distanceIcon:
             return {
                 let w = DistanceWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(distance: 5230)
+                w.setDisplayMode(self.inherentDisplayMode)
                 return w
             }
-        case .duration:
+        case .duration, .durationCompact, .durationIcon:
             return {
                 let w = DurationWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(duration: 1860)
+                w.setDisplayMode(self.inherentDisplayMode)
                 return w
             }
-        case .pace:
+        case .pace, .paceCompact, .paceIcon:
             return {
                 let w = PaceWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(pace: 5.42)
+                w.setDisplayMode(self.inherentDisplayMode)
                 return w
             }
-        case .speed:
+        case .speed, .speedCompact, .speedIcon:
             return {
                 let w = SpeedWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(speed: 11.2)
+                w.setDisplayMode(self.inherentDisplayMode)
                 return w
             }
-        case .calories:
+        case .calories, .caloriesCompact, .caloriesIcon:
             return {
                 let w = CaloriesWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(calories: 320)
+                w.setDisplayMode(self.inherentDisplayMode)
                 return w
             }
-        case .heartRate:
+        case .heartRate, .heartRateCompact, .heartRateIcon:
             return {
                 let w = HeartRateWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(heartRate: 155)
+                w.setDisplayMode(self.inherentDisplayMode)
                 return w
             }
-        case .date:
+        case .date, .dateCompact, .dateIcon:
             return {
                 let w = DateWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(startDate: Date())
-                w.titleLabel.isHidden = true
-                w.valueLabel.textAlignment = .center
-                w.valueLabel.snp.remakeConstraints { make in
-                    make.center.equalToSuperview()
-                    make.leading.trailing.equalToSuperview().inset(LayoutConstants.standardPadding)
+                w.setDisplayMode(self.inherentDisplayMode)
+                if self.inherentDisplayMode == .text {
+                    w.titleLabel.isHidden = true
+                    w.valueLabel.textAlignment = .center
+                    w.valueLabel.snp.remakeConstraints { make in
+                        make.center.equalToSuperview()
+                        make.leading.trailing.equalToSuperview().inset(LayoutConstants.standardPadding)
+                    }
                 }
                 return w
             }

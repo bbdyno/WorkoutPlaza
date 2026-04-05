@@ -163,41 +163,39 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             }
         )
 
-        // Widgets — driven by WidgetCatalog
+        // Widgets — driven by WidgetType
         var widgetItems: [ToolSheetItem] = []
         let hasData = workoutData != nil || importedWorkoutData != nil || externalWorkout != nil
 
-        let catalogWidgets = WidgetCatalogManager.shared.widgets(for: .running)
+        // Running widget types to show in the picker
+        let runningWidgetTypes: [WidgetType] = [
+            .distance, .distanceCompact, .distanceIcon,
+            .duration, .durationCompact, .durationIcon,
+            .pace, .paceCompact, .paceIcon,
+            .speed, .speedCompact, .speedIcon,
+            .calories, .caloriesCompact, .caloriesIcon,
+            .heartRate, .heartRateCompact, .heartRateIcon,
+            .date, .dateIcon,
+            .routeMap,
+            .location,
+            .currentDateTime,
+            .text,
+            .composite,
+        ]
 
-        for definition in catalogWidgets {
-            // Speech Bubble has special handling — append it separately at the end
-            if definition.dataType.caseInsensitiveCompare(WidgetType.speechBubble.rawValue) == .orderedSame {
-                continue
-            }
-
-            let added: Bool
-            if let group = definition.singletonGroup {
-                added = isWidgetGroupOnCanvas(group)
-            } else {
-                added = false
-            }
-
-            let enabled: Bool
-            if !hasData {
-                enabled = false
-            } else {
-                enabled = !added
-            }
+        for type in runningWidgetTypes {
+            let added = isWidgetTypeGroupOnCanvas(type)
+            let enabled = hasData && !added
 
             widgetItems.append(ToolSheetItem(
-                title: definition.localizedName,
-                description: definition.localizedDescription,
-                iconName: definition.iconName,
+                title: type.displayName,
+                description: type.layoutDescription,
+                iconName: type.iconName,
                 isEnabled: enabled,
                 isAdded: added,
-                previewProvider: definition.previewProvider,
+                previewProvider: type.previewProvider,
                 action: { [weak self] in
-                    self?.addWidgetFromCatalog(definition)
+                    self?.addWidgetOfType(type)
                 }
             ))
         }
