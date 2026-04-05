@@ -34,6 +34,29 @@ enum FontStyle: String, CaseIterable {
     // RIDIBatang
     case ridiBatang = "리디바탕"
 
+    // Paytone One
+    case paytoneOne = "Paytone One"
+
+    // Space Mono
+    case spaceMonoRegular = "Space Mono"
+    case spaceMonoBold = "Space Mono Bold"
+
+    // Caveat
+    case caveatRegular = "Caveat"
+    case caveatBold = "Caveat Bold"
+
+    // Gaegu
+    case gaeguRegular = "가구"
+    case gaeguBold = "가구 Bold"
+
+    // Pretendard
+    case pretendardRegular = "프리텐다드"
+    case pretendardBold = "프리텐다드 Bold"
+
+    // Montserrat
+    case montserratRegular = "Montserrat"
+    case montserratBold = "Montserrat Bold"
+
     var displayName: String {
         return rawValue
     }
@@ -41,7 +64,8 @@ enum FontStyle: String, CaseIterable {
     /// Pro 전용 폰트 여부. true이면 미구매 사용자에게 잠금 표시.
     var isProOnly: Bool {
         switch self {
-        case .system, .alata, .bebasNeue, .gmarketSansMedium, .paperlogyRegular:
+        case .system, .alata, .bebasNeue, .gmarketSansMedium, .paperlogyRegular,
+             .pretendardRegular, .montserratRegular:
             return false
         default:
             return true
@@ -92,6 +116,40 @@ enum FontStyle: String, CaseIterable {
         // RIDIBatang
         case .ridiBatang:
             return "RIDIBatang"
+
+        // Paytone One
+        case .paytoneOne:
+            return "PaytoneOne-Regular"
+
+        // Space Mono
+        case .spaceMonoRegular:
+            return "SpaceMono-Regular"
+        case .spaceMonoBold:
+            return "SpaceMono-Bold"
+
+        // Caveat
+        case .caveatRegular:
+            return "Caveat-Regular"
+        case .caveatBold:
+            return "Caveat-Bold"
+
+        // Gaegu
+        case .gaeguRegular:
+            return "Gaegu-Regular"
+        case .gaeguBold:
+            return "Gaegu-Bold"
+
+        // Pretendard
+        case .pretendardRegular:
+            return "Pretendard-Regular"
+        case .pretendardBold:
+            return "Pretendard-Bold"
+
+        // Montserrat
+        case .montserratRegular:
+            return "Montserrat-Regular"
+        case .montserratBold:
+            return "Montserrat-Bold"
         }
     }
 
