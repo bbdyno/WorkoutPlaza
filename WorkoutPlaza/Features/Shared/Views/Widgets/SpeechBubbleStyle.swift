@@ -32,9 +32,10 @@ enum SpeechBubbleStyle: String, Codable, CaseIterable {
         }
     }
 
-    /// 무료 사용자에게 제공되는 기본 스타일
+    /// 유료 기능 여부 (FeatureGate에서 제어)
     var isProRequired: Bool {
-        self != .roundedBubble
+        guard FeatureGate.proSpeechBubbleStyles else { return false }
+        return self != .roundedBubble
     }
 
     // MARK: - Layout

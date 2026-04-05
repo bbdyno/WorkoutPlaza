@@ -61,8 +61,9 @@ enum FontStyle: String, CaseIterable {
         return rawValue
     }
 
-    /// Pro 전용 폰트 여부. true이면 미구매 사용자에게 잠금 표시.
+    /// 유료 기능 여부 (FeatureGate에서 제어)
     var isProOnly: Bool {
+        guard FeatureGate.proFonts else { return false }
         switch self {
         case .system, .alata, .bebasNeue, .gmarketSansMedium, .paperlogyRegular,
              .pretendardRegular, .montserratRegular:

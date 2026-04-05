@@ -378,7 +378,7 @@ class RunningListViewController: UIViewController {
     }
 
     private func handleGPXImportTapped() {
-        guard PurchaseManager.shared.isEffectivelyPro else {
+        guard FeatureGate.canAccess(FeatureGate.gpxImport) else {
             showProUpgradePrompt(for: "gpx_import")
             return
         }
