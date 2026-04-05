@@ -274,15 +274,30 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
     // Override other actions as needed or rely on Base if generic enough
     override func doneButtonTapped() {
         saveCurrentDesign { [weak self] success in
+            guard let self = self else { return }
             if success {
-                self?.hasUnsavedChanges = false
-                let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.completed, message: WorkoutPlazaStrings.Alert.Card.Design.saved, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
-                self?.present(alert, animated: true)
+                self.hasUnsavedChanges = false
+                let alert = UIAlertController(
+                    title: WorkoutPlazaStrings.Alert.Save.completed,
+                    message: WorkoutPlazaStrings.Alert.Card.Design.saved,
+                    preferredStyle: .actionSheet
+                )
+                alert.addAction(UIAlertAction(title: NSLocalizedString("share.image", comment: ""), style: .default) { _ in
+                    self.shareAsImage()
+                })
+                alert.addAction(UIAlertAction(title: NSLocalizedString("share.sticker", comment: ""), style: .default) { _ in
+                    self.shareAsSticker()
+                })
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.done, style: .cancel))
+                if let popover = alert.popoverPresentationController {
+                    popover.sourceView = self.view
+                    popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+                }
+                self.present(alert, animated: true)
             } else {
                 let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.failed, message: WorkoutPlazaStrings.Alert.Card.Design.Save.error, preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
-                self?.present(alert, animated: true)
+                self.present(alert, animated: true)
             }
         }
     }
@@ -328,21 +343,6 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         }
 
         present(alert, animated: true)
-    }
-
-    private func shareAsImage() {
-        selectionManager.deselectAll()
-        instructionLabel.isHidden = true
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self = self else { return }
-
-            if let image = self.captureContentView() {
-                self.presentShareSheet(image: image)
-            }
-
-            self.instructionLabel.isHidden = false
-        }
     }
 
     private func shareAsWplazaFile(creatorName: String?) {

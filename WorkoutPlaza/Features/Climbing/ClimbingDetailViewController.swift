@@ -220,16 +220,31 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
     }
 
     override func doneButtonTapped() {
-         saveCurrentDesign { [weak self] success in
+        saveCurrentDesign { [weak self] success in
+            guard let self = self else { return }
             if success {
-                self?.hasUnsavedChanges = false
-                let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.completed, message: WorkoutPlazaStrings.Alert.Card.Design.saved, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
-                self?.present(alert, animated: true)
+                self.hasUnsavedChanges = false
+                let alert = UIAlertController(
+                    title: WorkoutPlazaStrings.Alert.Save.completed,
+                    message: WorkoutPlazaStrings.Alert.Card.Design.saved,
+                    preferredStyle: .actionSheet
+                )
+                alert.addAction(UIAlertAction(title: NSLocalizedString("share.image", comment: ""), style: .default) { _ in
+                    self.shareAsImage()
+                })
+                alert.addAction(UIAlertAction(title: NSLocalizedString("share.sticker", comment: ""), style: .default) { _ in
+                    self.shareAsSticker()
+                })
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.done, style: .cancel))
+                if let popover = alert.popoverPresentationController {
+                    popover.sourceView = self.view
+                    popover.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+                }
+                self.present(alert, animated: true)
             } else {
                 let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.failed, message: WorkoutPlazaStrings.Alert.Card.Design.Save.error, preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
-                self?.present(alert, animated: true)
+                self.present(alert, animated: true)
             }
         }
     }

@@ -1112,7 +1112,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         shareImageButton.showsMenuAsPrimaryAction = true
     }
 
-    private func shareAsImage() {
+    func shareAsImage() {
         selectionManager.deselectAll()
         instructionLabel.isHidden = true
 
@@ -1127,7 +1127,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         }
     }
 
-    private func shareAsSticker() {
+    func shareAsSticker() {
         guard FeatureGate.canAccess(FeatureGate.transparentExport) else {
             let proVC = ProUpgradeViewController()
             proVC.triggerFeature = "transparent_export"
