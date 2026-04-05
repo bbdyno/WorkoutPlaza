@@ -195,7 +195,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
                 iconName: definition.iconName,
                 isEnabled: enabled,
                 isAdded: added,
-                previewProvider: definition.widgetType?.previewProvider,
+                previewProvider: definition.previewProvider,
                 action: { [weak self] in
                     self?.addWidgetFromCatalog(definition)
                 }

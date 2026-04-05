@@ -5,7 +5,7 @@
 //  JSON 기반 위젯 카탈로그 — 위젯 종류를 데이터로 정의
 //
 
-import Foundation
+import UIKit
 
 // MARK: - Catalog Data Model
 
@@ -53,6 +53,89 @@ struct CatalogWidgetItem: Codable {
 
     var displayMode: WidgetDisplayMode {
         WidgetDisplayMode(rawValue: layout) ?? .text
+    }
+
+    /// 카탈로그 항목의 레이아웃(text/compact/icon)을 반영한 프리뷰 생성
+    var previewProvider: (() -> UIView)? {
+        guard let type = widgetType else { return nil }
+        let mode = displayMode
+        let size: CGSize
+        switch mode {
+        case .icon:
+            size = CGSize(width: 160, height: 50)
+        case .textUnified:
+            size = CGSize(width: 140, height: 55)
+        case .text:
+            size = CGSize(width: 140, height: 65)
+        }
+
+        switch type {
+        case .distance:
+            return { Self.makeStatPreview(DistanceWidget(), distance: 5230, mode: mode, size: size) }
+        case .duration:
+            return { Self.makeStatPreview(DurationWidget(), duration: 1860, mode: mode, size: size) }
+        case .pace:
+            return { Self.makeStatPreview(PaceWidget(), pace: 5.42, mode: mode, size: size) }
+        case .speed:
+            return { Self.makeStatPreview(SpeedWidget(), speed: 11.2, mode: mode, size: size) }
+        case .calories:
+            return { Self.makeStatPreview(CaloriesWidget(), calories: 320, mode: mode, size: size) }
+        case .heartRate:
+            return { Self.makeStatPreview(HeartRateWidget(), heartRate: 155, mode: mode, size: size) }
+        case .date:
+            return { Self.makeStatPreview(DateWidget(), mode: mode, size: size) }
+        default:
+            return type.previewProvider
+        }
+    }
+
+    private static func makeStatPreview(_ widget: DistanceWidget, distance: Double, mode: WidgetDisplayMode, size: CGSize) -> UIView {
+        widget.frame = CGRect(origin: .zero, size: size)
+        widget.configure(distance: distance)
+        widget.setDisplayMode(mode)
+        return widget
+    }
+
+    private static func makeStatPreview(_ widget: DurationWidget, duration: TimeInterval, mode: WidgetDisplayMode, size: CGSize) -> UIView {
+        widget.frame = CGRect(origin: .zero, size: size)
+        widget.configure(duration: duration)
+        widget.setDisplayMode(mode)
+        return widget
+    }
+
+    private static func makeStatPreview(_ widget: PaceWidget, pace: Double, mode: WidgetDisplayMode, size: CGSize) -> UIView {
+        widget.frame = CGRect(origin: .zero, size: size)
+        widget.configure(pace: pace)
+        widget.setDisplayMode(mode)
+        return widget
+    }
+
+    private static func makeStatPreview(_ widget: SpeedWidget, speed: Double, mode: WidgetDisplayMode, size: CGSize) -> UIView {
+        widget.frame = CGRect(origin: .zero, size: size)
+        widget.configure(speed: speed)
+        widget.setDisplayMode(mode)
+        return widget
+    }
+
+    private static func makeStatPreview(_ widget: CaloriesWidget, calories: Double, mode: WidgetDisplayMode, size: CGSize) -> UIView {
+        widget.frame = CGRect(origin: .zero, size: size)
+        widget.configure(calories: calories)
+        widget.setDisplayMode(mode)
+        return widget
+    }
+
+    private static func makeStatPreview(_ widget: HeartRateWidget, heartRate: Double, mode: WidgetDisplayMode, size: CGSize) -> UIView {
+        widget.frame = CGRect(origin: .zero, size: size)
+        widget.configure(heartRate: heartRate)
+        widget.setDisplayMode(mode)
+        return widget
+    }
+
+    private static func makeStatPreview(_ widget: DateWidget, mode: WidgetDisplayMode, size: CGSize) -> UIView {
+        widget.frame = CGRect(origin: .zero, size: size)
+        widget.configure(startDate: Date())
+        widget.setDisplayMode(mode)
+        return widget
     }
 }
 
