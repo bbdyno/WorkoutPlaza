@@ -260,29 +260,54 @@ extension BaseWorkoutDetailViewController {
     }
 
     @objc func showFontPicker() {
-        // Check both multi-select and single selection modes
         let selectedItems = selectionManager.getSelectedItems()
         let hasValidSelection = !selectedItems.isEmpty || selectionManager.currentlySelectedItem != nil
-
         guard hasValidSelection else { return }
 
-        let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Font.style, message: nil, preferredStyle: .actionSheet)
+        let sampleText = "Aa 가나다 123"
+        var fontItems: [ToolSheetItem] = []
 
         for fontStyle in FontStyle.allCases {
-            actionSheet.addAction(UIAlertAction(title: fontStyle.displayName, style: .default) { [weak self] _ in
-                self?.applyFontToSelection(fontStyle)
-            })
+            let proLocked = fontStyle.isProOnly && !PurchaseManager.shared.isEffectivelyPro
+            fontItems.append(ToolSheetItem(
+                title: fontStyle.displayName,
+                description: proLocked ? "Pro" : "",
+                iconName: "icon.text.aa",
+                isEnabled: true,
+                isAdded: false,
+                previewProvider: {
+                    let label = UILabel()
+                    label.text = sampleText
+                    label.font = fontStyle.font(size: 18, weight: .regular)
+                    label.textColor = .white
+                    label.textAlignment = .center
+                    label.frame = CGRect(origin: .zero, size: CGSize(width: 140, height: 40))
+                    return label
+                },
+                action: { [weak self] in
+                    if proLocked {
+                        let proVC = ProUpgradeViewController()
+                        proVC.triggerFeature = "pro_font"
+                        let nav = UINavigationController(rootViewController: proVC)
+                        nav.modalPresentationStyle = .pageSheet
+                        if let sheet = nav.sheetPresentationController {
+                            sheet.detents = [.large()]
+                            sheet.prefersGrabberVisible = true
+                        }
+                        self?.present(nav, animated: true)
+                    } else {
+                        self?.presentedViewController?.dismiss(animated: true) {
+                            self?.applyFontToSelection(fontStyle)
+                        }
+                    }
+                }
+            ))
         }
 
-        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
-
-        // iPad support
-        if let popover = actionSheet.popoverPresentationController {
-            popover.sourceView = fontPickerButton
-            popover.sourceRect = fontPickerButton.bounds
-        }
-
-        present(actionSheet, animated: true)
+        let sections = [ToolSheetSection(title: "폰트 선택", items: fontItems, columnCount: 2)]
+        let sheetVC = ToolSheetViewController(sections: sections, toolbarActions: [])
+        sheetVC.title = "폰트 선택"
+        presentAsSheet(sheetVC)
     }
 
     @objc func cycleAlignmentForSelection() {
