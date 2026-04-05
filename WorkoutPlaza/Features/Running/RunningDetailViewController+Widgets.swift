@@ -354,21 +354,34 @@ extension RunningDetailViewController {
 
     // MARK: - WidgetType-based Widget Helpers
 
-    /// Check whether any widget of the same base type is already on canvas.
+    /// 특정 WidgetType(레이아웃 포함)이 캔버스에 이미 있는지 체크
     internal func isWidgetTypeGroupOnCanvas(_ type: WidgetType) -> Bool {
+        let mode = type.inherentDisplayMode
         switch type.baseType {
-        case .distance: return widgets.contains(where: { $0 is DistanceWidget })
-        case .duration: return widgets.contains(where: { $0 is DurationWidget })
-        case .pace: return widgets.contains(where: { $0 is PaceWidget })
-        case .speed: return widgets.contains(where: { $0 is SpeedWidget })
-        case .calories: return widgets.contains(where: { $0 is CaloriesWidget })
-        case .heartRate: return widgets.contains(where: { $0 is HeartRateWidget })
-        case .date: return widgets.contains(where: { $0 is DateWidget })
-        case .currentDateTime: return widgets.contains(where: { $0 is CurrentDateTimeWidget })
-        case .routeMap: return routeMapView != nil
-        case .location: return widgets.contains(where: { $0 is LocationWidget })
-        case .text, .composite, .speechBubble: return false  // Multiple allowed
-        default: return false
+        case .distance:
+            return widgets.contains(where: { ($0 as? DistanceWidget)?.displayMode == mode })
+        case .duration:
+            return widgets.contains(where: { ($0 as? DurationWidget)?.displayMode == mode })
+        case .pace:
+            return widgets.contains(where: { ($0 as? PaceWidget)?.displayMode == mode })
+        case .speed:
+            return widgets.contains(where: { ($0 as? SpeedWidget)?.displayMode == mode })
+        case .calories:
+            return widgets.contains(where: { ($0 as? CaloriesWidget)?.displayMode == mode })
+        case .heartRate:
+            return widgets.contains(where: { ($0 as? HeartRateWidget)?.displayMode == mode })
+        case .date:
+            return widgets.contains(where: { ($0 as? DateWidget)?.displayMode == mode })
+        case .currentDateTime:
+            return widgets.contains(where: { $0 is CurrentDateTimeWidget })
+        case .routeMap:
+            return routeMapView != nil
+        case .location:
+            return widgets.contains(where: { $0 is LocationWidget })
+        case .text, .composite, .speechBubble:
+            return false
+        default:
+            return false
         }
     }
 
