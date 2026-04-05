@@ -134,7 +134,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
                     self?.createWidget(for: item, frame: frame)
                 }),
                 action: { [weak self] in
-                    self?.dismiss(animated: true) {
+                    self?.presentedViewController?.dismiss(animated: true) {
                         self?.applyWidgetTemplate(template)
                     }
                 }
