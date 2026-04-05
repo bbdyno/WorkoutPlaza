@@ -296,9 +296,7 @@ extension BaseWorkoutDetailViewController {
                         }
                         self?.present(nav, animated: true)
                     } else {
-                        self?.presentedViewController?.dismiss(animated: true) {
-                            self?.applyFontToSelection(fontStyle)
-                        }
+                        self?.applyFontToSelection(fontStyle)
                     }
                 }
             ))
