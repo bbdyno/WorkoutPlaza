@@ -283,8 +283,7 @@ private class ToolSheetCell: UICollectionViewCell {
 
     private let previewContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(white: 0.08, alpha: 1.0)
-        view.layer.cornerRadius = 8
+        view.backgroundColor = .clear
         view.clipsToBounds = true
         view.isHidden = true
         return view

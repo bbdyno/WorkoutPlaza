@@ -93,9 +93,9 @@ struct WidgetTemplate: Codable {
     func thumbnailProvider(widgetFactory: @escaping (WidgetItem, CGRect) -> UIView?) -> (() -> UIView) {
         return { [self] in
             let canvasView = UIView()
-            canvasView.backgroundColor = .white
+            canvasView.backgroundColor = ColorSystem.cardBackground
             canvasView.clipsToBounds = true
-            canvasView.layer.cornerRadius = 4
+            canvasView.layer.cornerRadius = 8
 
             let templateCanvasSize = self.resolvedCanvasSize
             let renderCanvasSize = self.thumbnailRenderCanvasSize(for: templateCanvasSize)
@@ -110,6 +110,9 @@ struct WidgetTemplate: Codable {
                 if let widget = widgetFactory(item, frame) {
                     widget.isUserInteractionEnabled = false
                     widget.clipsToBounds = true
+                    if let selectable = widget as? Selectable {
+                        selectable.applyColor(.white)
+                    }
                     canvasView.addSubview(widget)
                 }
             }
@@ -480,6 +483,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(distance: 5230)
                 w.setDisplayMode(self.inherentDisplayMode)
+                w.applyColor(.white)
                 return w
             }
         case .duration, .durationCompact, .durationIcon:
@@ -488,6 +492,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(duration: 1860)
                 w.setDisplayMode(self.inherentDisplayMode)
+                w.applyColor(.white)
                 return w
             }
         case .pace, .paceCompact, .paceIcon:
@@ -496,6 +501,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(pace: 5.42)
                 w.setDisplayMode(self.inherentDisplayMode)
+                w.applyColor(.white)
                 return w
             }
         case .speed, .speedCompact, .speedIcon:
@@ -504,6 +510,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(speed: 11.2)
                 w.setDisplayMode(self.inherentDisplayMode)
+                w.applyColor(.white)
                 return w
             }
         case .calories, .caloriesCompact, .caloriesIcon:
@@ -512,6 +519,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(calories: 320)
                 w.setDisplayMode(self.inherentDisplayMode)
+                w.applyColor(.white)
                 return w
             }
         case .heartRate, .heartRateCompact, .heartRateIcon:
@@ -520,6 +528,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(heartRate: 155)
                 w.setDisplayMode(self.inherentDisplayMode)
+                w.applyColor(.white)
                 return w
             }
         case .date, .dateCompact, .dateIcon:
@@ -528,6 +537,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(startDate: Date())
                 w.setDisplayMode(self.inherentDisplayMode)
+                w.applyColor(.white)
                 if self.inherentDisplayMode == .text {
                     w.titleLabel.isHidden = true
                     w.valueLabel.textAlignment = .center
@@ -543,6 +553,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 let w = CurrentDateTimeWidget()
                 w.frame = CGRect(origin: .zero, size: CGSize(width: 160, height: 65))
                 w.configure(date: Date())
+                w.applyColor(.white)
                 w.titleLabel.isHidden = true
                 return w
             }
@@ -551,6 +562,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 let w = TextWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(text: WorkoutPlazaStrings.Widget.text)
+                w.applyColor(.white)
                 return w
             }
         case .climbingGym:
@@ -568,6 +580,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 } else {
                     w.configure(gymName: WorkoutPlazaStrings.Widget.Climbing.gym)
                 }
+                w.applyColor(.white)
                 return w
             }
         case .climbingDiscipline:
@@ -575,6 +588,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 let w = ClimbingDisciplineWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(discipline: .bouldering)
+                w.applyColor(.white)
                 return w
             }
         case .climbingSession:
@@ -582,6 +596,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 let w = ClimbingSessionWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(sent: 8, total: 12)
+                w.applyColor(.white)
                 return w
             }
         case .routeMap:
@@ -604,12 +619,14 @@ enum WidgetType: String, Codable, CaseIterable {
                     CLLocation(latitude: baseLat + 0.007, longitude: baseLon + 0.0035),
                 ]
                 w.setRoute(sampleLocations)
+                w.applyColor(.white)
                 return w
             }
         case .location:
             return {
                 let w = LocationWidget(frame: CGRect(origin: .zero, size: size))
                 w.configure(withText: "서울특별시")
+                w.applyColor(.white)
                 return w
             }
         case .climbingRoutesByColor:
