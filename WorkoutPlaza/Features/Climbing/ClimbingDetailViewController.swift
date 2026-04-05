@@ -138,12 +138,12 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo
         ]
         let climbingRecordItems = climbingRecordTypes.map { makeClimbingWidgetItem(for: $0) }
-        let climbingRecordSection = ToolSheetSection(title: "클라이밍 기록", items: climbingRecordItems)
+        let climbingRecordSection = ToolSheetSection(title: NSLocalizedString("section.climbing.record", comment: ""), items: climbingRecordItems)
 
         // --- Section 2: 텍스트 ---
         let textTypes: [WidgetType] = [.text, .composite, .date]
         let textItems = textTypes.map { makeClimbingWidgetItem(for: $0) }
-        let textSection = ToolSheetSection(title: "텍스트", items: textItems)
+        let textSection = ToolSheetSection(title: NSLocalizedString("section.text", comment: ""), items: textItems)
 
         // --- Section 3: 말풍선 (Speech Bubble) — inline, no separate picker ---
         var bubbleItems: [ToolSheetItem] = []
@@ -151,13 +151,13 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             let proRequired = style.isProRequired && !PurchaseManager.shared.isEffectivelyPro
             bubbleItems.append(ToolSheetItem(
                 title: style.displayName,
-                description: proRequired ? "Pro" : "말풍선",
+                description: proRequired ? "Pro" : NSLocalizedString("section.speech.bubble", comment: ""),
                 iconName: WidgetType.speechBubble.iconName,
                 isEnabled: true,
                 isAdded: false,
                 previewProvider: {
                     let payload = SpeechBubblePayload(
-                        text: style == .shoutBubble ? "와!" : (style == .thoughtBubble ? "오늘도..." : "오늘도 달렸다!"),
+                        text: style == .shoutBubble ? NSLocalizedString("bubble.preview.shout", comment: "") : (style == .thoughtBubble ? NSLocalizedString("bubble.preview.thought", comment: "") : NSLocalizedString("bubble.preview.default", comment: "")),
                         style: style,
                         bubbleColorHex: "#FFFFFF",
                         borderColorHex: "#000000",
@@ -188,7 +188,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
                 }
             ))
         }
-        let bubbleSection = ToolSheetSection(title: "말풍선", items: bubbleItems)
+        let bubbleSection = ToolSheetSection(title: NSLocalizedString("section.speech.bubble", comment: ""), items: bubbleItems)
 
         let widgetSections = [climbingRecordSection, textSection, bubbleSection]
         return (templateItems, widgetSections, templateActions)

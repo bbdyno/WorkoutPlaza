@@ -670,3 +670,39 @@
 "gpx.error.noRoute" = "GPX 파일에 경로 데이터가 없습니다.";
 "gpx.error.insufficient" = "경로 데이터가 너무 적습니다. 최소 2개 이상의 위치 정보가 필요합니다.";
 
+// Widget Layout Description
+"layout.text" = "텍스트";
+"layout.compact" = "컴팩트";
+"layout.icon" = "아이콘";
+
+// Widget Section Titles
+"section.record.widgets" = "기록 위젯";
+"section.route.location" = "경로/위치";
+"section.text" = "텍스트";
+"section.speech.bubble" = "말풍선";
+"section.climbing.record" = "클라이밍 기록";
+
+// Speech Bubble Preview
+"bubble.preview.default" = "오늘도 달렸다!";
+"bubble.preview.shout" = "와!";
+"bubble.preview.thought" = "오늘도...";
+
+// Font Picker
+"font.picker.title" = "폰트 선택";
+
+// Undo
+"undo.empty" = "되돌릴 작업이 없습니다";
+"undo.done" = "되돌리기 완료";
+
+// Share Menu
+"share.image" = "이미지 공유";
+"share.sticker" = "스티커 내보내기";
+"share.layout" = "레이아웃 내보내기";
+
+// Route Widget Prompt
+"route.no.data.title" = "경로 없음";
+"route.gpx.prompt" = "GPS 경로 데이터가 없습니다.\nGPX 파일을 임포트하여 경로를 추가할 수 있습니다.";
+"route.gpx.import" = "GPX 임포트";
+"route.gpx.no.route" = "GPX 파일에 경로 데이터가 포함되어 있지 않습니다.";
+"route.gpx.parse.failed" = "GPX 파싱 실패";
+

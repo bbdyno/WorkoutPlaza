@@ -184,17 +184,17 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             .date, .dateIcon,
         ]
         let recordItems = recordTypes.map { makeWidgetItem(for: $0, hasData: hasData) }
-        let recordSection = ToolSheetSection(title: "기록 위젯", items: recordItems)
+        let recordSection = ToolSheetSection(title: NSLocalizedString("section.record.widgets", comment: ""), items: recordItems)
 
         // --- Section 2: 경로/위치 (Route & Location) ---
         let routeTypes: [WidgetType] = [.routeMap, .location, .currentDateTime]
         let routeItems = routeTypes.map { makeWidgetItem(for: $0, hasData: hasData) }
-        let routeSection = ToolSheetSection(title: "경로/위치", items: routeItems)
+        let routeSection = ToolSheetSection(title: NSLocalizedString("section.route.location", comment: ""), items: routeItems)
 
         // --- Section 3: 텍스트 (Text) ---
         let textTypes: [WidgetType] = [.text, .composite]
         let textItems = textTypes.map { makeWidgetItem(for: $0, hasData: hasData) }
-        let textSection = ToolSheetSection(title: "텍스트", items: textItems)
+        let textSection = ToolSheetSection(title: NSLocalizedString("section.text", comment: ""), items: textItems)
 
         // --- Section 4: 말풍선 (Speech Bubble) — inline, no separate picker ---
         var bubbleItems: [ToolSheetItem] = []
@@ -202,13 +202,13 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             let proRequired = style.isProRequired && !PurchaseManager.shared.isEffectivelyPro
             bubbleItems.append(ToolSheetItem(
                 title: style.displayName,
-                description: proRequired ? "Pro" : "말풍선",
+                description: proRequired ? "Pro" : NSLocalizedString("section.speech.bubble", comment: ""),
                 iconName: WidgetType.speechBubble.iconName,
                 isEnabled: hasData,
                 isAdded: false,
                 previewProvider: {
                     let payload = SpeechBubblePayload(
-                        text: style == .shoutBubble ? "와!" : (style == .thoughtBubble ? "오늘도..." : "오늘도 달렸다!"),
+                        text: style == .shoutBubble ? NSLocalizedString("bubble.preview.shout", comment: "") : (style == .thoughtBubble ? NSLocalizedString("bubble.preview.thought", comment: "") : NSLocalizedString("bubble.preview.default", comment: "")),
                         style: style,
                         bubbleColorHex: "#FFFFFF",
                         borderColorHex: "#000000",
@@ -239,7 +239,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
                 }
             ))
         }
-        let bubbleSection = ToolSheetSection(title: "말풍선", items: bubbleItems)
+        let bubbleSection = ToolSheetSection(title: NSLocalizedString("section.speech.bubble", comment: ""), items: bubbleItems)
 
         let widgetSections = [recordSection, routeSection, textSection, bubbleSection]
         return (templateItems, widgetSections, templateActions)
@@ -789,8 +789,8 @@ extension RunningDetailViewController {
 
             guard !workoutData.route.isEmpty else {
                 let alert = UIAlertController(
-                    title: "경로 없음",
-                    message: "GPX 파일에 경로 데이터가 포함되어 있지 않습니다.",
+                    title: NSLocalizedString("route.no.data.title", comment: ""),
+                    message: NSLocalizedString("route.gpx.no.route", comment: ""),
                     preferredStyle: .alert
                 )
                 alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
@@ -820,8 +820,8 @@ extension RunningDetailViewController {
         } catch {
             WPLog.error("GPX parsing failed: \(error)")
             let alert = UIAlertController(
-                title: "GPX 파싱 실패",
-                message: "파일을 읽을 수 없습니다: \(error.localizedDescription)",
+                title: NSLocalizedString("route.gpx.parse.failed", comment: ""),
+                message: error.localizedDescription,
                 preferredStyle: .alert
             )
             alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))

@@ -1398,10 +1398,10 @@ extension RunningDetailViewController {
             // Pro 사용자: GPX 파일 임포트 유도
             let alert = UIAlertController(
                 title: WorkoutPlazaStrings.Running.No.Route.title,
-                message: "GPS 경로 데이터가 없습니다.\nGPX 파일을 임포트하여 경로를 추가할 수 있습니다.",
+                message: NSLocalizedString("route.gpx.prompt", comment: ""),
                 preferredStyle: .alert
             )
-            alert.addAction(UIAlertAction(title: "GPX 임포트", style: .default) { [weak self] _ in
+            alert.addAction(UIAlertAction(title: NSLocalizedString("route.gpx.import", comment: ""), style: .default) { [weak self] _ in
                 self?.showGPXFilePicker()
             })
             alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))

@@ -343,9 +343,9 @@ enum WidgetType: String, Codable, CaseIterable {
 
     var layoutDescription: String {
         switch inherentDisplayMode {
-        case .text: return "텍스트"
-        case .textUnified: return "컴팩트"
-        case .icon: return "아이콘"
+        case .text: return NSLocalizedString("layout.text", comment: "")
+        case .textUnified: return NSLocalizedString("layout.compact", comment: "")
+        case .icon: return NSLocalizedString("layout.icon", comment: "")
         }
     }
 

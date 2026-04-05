@@ -669,5 +669,41 @@
 "gpx.error.noRoute" = "No route data found in the GPX file.";
 "gpx.error.insufficient" = "Insufficient route data. At least 2 location points are required.";
 
+// Widget Layout Description
+"layout.text" = "Text";
+"layout.compact" = "Compact";
+"layout.icon" = "Icon";
+
+// Widget Section Titles
+"section.record.widgets" = "Record Widgets";
+"section.route.location" = "Route / Location";
+"section.text" = "Text";
+"section.speech.bubble" = "Speech Bubble";
+"section.climbing.record" = "Climbing Record";
+
+// Speech Bubble Preview
+"bubble.preview.default" = "Great run!";
+"bubble.preview.shout" = "Wow!";
+"bubble.preview.thought" = "Hmm...";
+
+// Font Picker
+"font.picker.title" = "Select Font";
+
+// Undo
+"undo.empty" = "Nothing to undo";
+"undo.done" = "Undo complete";
+
+// Share Menu
+"share.image" = "Share Image";
+"share.sticker" = "Export Sticker";
+"share.layout" = "Export Layout";
+
+// Route Widget Prompt
+"route.no.data.title" = "No Route";
+"route.gpx.prompt" = "No GPS route data available.\nImport a GPX file to add a route.";
+"route.gpx.import" = "Import GPX";
+"route.gpx.no.route" = "The GPX file does not contain route data.";
+"route.gpx.parse.failed" = "GPX Parse Failed";
+
 // Tip Supporter Badge
 "tip.supporter.badge" = "Supporter";

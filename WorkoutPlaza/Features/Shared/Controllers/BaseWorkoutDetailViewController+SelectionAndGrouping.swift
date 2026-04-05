@@ -302,9 +302,9 @@ extension BaseWorkoutDetailViewController {
             ))
         }
 
-        let sections = [ToolSheetSection(title: "폰트 선택", items: fontItems, columnCount: 2)]
+        let sections = [ToolSheetSection(title: NSLocalizedString("font.picker.title", comment: ""), items: fontItems, columnCount: 2)]
         let sheetVC = ToolSheetViewController(sections: sections, toolbarActions: [])
-        sheetVC.title = "폰트 선택"
+        sheetVC.title = NSLocalizedString("font.picker.title", comment: "")
         presentAsSheet(sheetVC)
     }
 

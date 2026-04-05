@@ -535,7 +535,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     @objc func performUndo() {
         guard let snapshot = undoStack.popLast() else {
-            showToast("되돌릴 작업이 없습니다")
+            showToast(NSLocalizedString("undo.empty", comment: ""))
             return
         }
 
@@ -553,7 +553,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         hasUnsavedChanges = true
         undoButton.isEnabled = !undoStack.isEmpty
-        showToast("되돌리기 완료")
+        showToast(NSLocalizedString("undo.done", comment: ""))
     }
 
     /// 현재 캔버스 → SavedCardDesign 스냅샷 (이미지 제외)
@@ -1098,13 +1098,13 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     func setupShareMenu() {
         let menu = UIMenu(children: [
-            UIAction(title: "이미지 공유", image: UIImage(named: "icon.image")) { [weak self] _ in
+            UIAction(title: NSLocalizedString("share.image", comment: ""), image: UIImage(named: "icon.image")) { [weak self] _ in
                 self?.shareAsImage()
             },
-            UIAction(title: "스티커 내보내기", image: UIImage(named: "icon.download")) { [weak self] _ in
+            UIAction(title: NSLocalizedString("share.sticker", comment: ""), image: UIImage(named: "icon.download")) { [weak self] _ in
                 self?.shareAsSticker()
             },
-            UIAction(title: "레이아웃 내보내기", image: UIImage(named: "icon.share")) { [weak self] _ in
+            UIAction(title: NSLocalizedString("share.layout", comment: ""), image: UIImage(named: "icon.share")) { [weak self] _ in
                 self?.exportCurrentLayout()
             }
         ])
