@@ -16,8 +16,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     enum Constants {
         static let canvasBackgroundColor = UIColor.white
         static let canvasBorderColor = UIColor(white: 0.9, alpha: 1.0).cgColor
-        static let centerGuideColor = ColorSystem.mainText.withAlphaComponent(0.85)
+        static let centerGuideColor = UIColor.systemYellow.withAlphaComponent(0.5)
         static let centerGuideThickness: CGFloat = 1
+        static let alignGuideColor = UIColor.systemCyan.withAlphaComponent(0.7)
         static let centerSnapThreshold: CGFloat = 10
         static let centerGuideDisplayDuration: TimeInterval = 0.7
 
@@ -88,7 +89,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     // Alignment guide views
     var _alignmentGuideViews: [UIView]?
-    var _spacingLabels: [UILabel]?
+    var _spacingLabels: [UIView]?
 
     // Undo
     private var undoStack: [SavedCardDesign] = []
@@ -288,19 +289,31 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     lazy var verticalCenterGuideView: UIView = {
         let view = UIView()
-        view.backgroundColor = Constants.centerGuideColor
+        view.backgroundColor = .clear
         view.alpha = 0
         view.isHidden = true
         view.isUserInteractionEnabled = false
+        let dash = CAShapeLayer()
+        dash.strokeColor = Constants.centerGuideColor.cgColor
+        dash.lineDashPattern = [4, 4]
+        dash.lineWidth = 1
+        dash.name = "dashLine"
+        view.layer.addSublayer(dash)
         return view
     }()
 
     lazy var horizontalCenterGuideView: UIView = {
         let view = UIView()
-        view.backgroundColor = Constants.centerGuideColor
+        view.backgroundColor = .clear
         view.alpha = 0
         view.isHidden = true
         view.isUserInteractionEnabled = false
+        let dash = CAShapeLayer()
+        dash.strokeColor = Constants.centerGuideColor.cgColor
+        dash.lineDashPattern = [4, 4]
+        dash.lineWidth = 1
+        dash.name = "dashLine"
+        view.layer.addSublayer(dash)
         return view
     }()
 

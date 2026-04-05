@@ -246,6 +246,20 @@ extension BaseWorkoutDetailViewController {
                 guideView.alpha = 0
                 guideView.isHidden = false
             }
+            // 점선 path 업데이트
+            if let dash = guideView.layer.sublayers?.first(where: { $0.name == "dashLine" }) as? CAShapeLayer {
+                let path = UIBezierPath()
+                let bounds = guideView.bounds
+                if bounds.width <= 2 { // 세로 가이드
+                    path.move(to: CGPoint(x: 0.5, y: 0))
+                    path.addLine(to: CGPoint(x: 0.5, y: bounds.height))
+                } else { // 가로 가이드
+                    path.move(to: CGPoint(x: 0, y: 0.5))
+                    path.addLine(to: CGPoint(x: bounds.width, y: 0.5))
+                }
+                dash.path = path.cgPath
+                dash.frame = bounds
+            }
         }
 
         let animations = {
@@ -272,12 +286,19 @@ extension BaseWorkoutDetailViewController {
 
     var alignmentGuideViews: [UIView] {
         if let existing = _alignmentGuideViews { return existing }
+        let color = Constants.alignGuideColor
         var views: [UIView] = []
         for _ in 0..<6 {
             let v = UIView()
-            v.backgroundColor = ColorSystem.primaryBlue.withAlphaComponent(0.6)
+            v.backgroundColor = .clear
             v.isHidden = true
             v.isUserInteractionEnabled = false
+            let dash = CAShapeLayer()
+            dash.strokeColor = color.cgColor
+            dash.lineDashPattern = [3, 3]
+            dash.lineWidth = 1
+            dash.name = "alignDash"
+            v.layer.addSublayer(dash)
             contentView.addSubview(v)
             views.append(v)
         }
@@ -285,21 +306,48 @@ extension BaseWorkoutDetailViewController {
         return views
     }
 
-    var spacingLabels: [UILabel] {
+    var spacingLabels: [UIView] {
         if let existing = _spacingLabels { return existing }
-        var labels: [UILabel] = []
+        let color = Constants.alignGuideColor
+        var views: [UIView] = []
         for _ in 0..<4 {
-            let l = UILabel()
-            l.font = AppFont.statRegular(9)
-            l.textColor = ColorSystem.primaryBlue
-            l.textAlignment = .center
-            l.isHidden = true
-            l.isUserInteractionEnabled = false
-            contentView.addSubview(l)
-            labels.append(l)
+            // 'I' 형태 간격 표시 뷰 (양쪽 세리프 + 중앙선 + 라벨)
+            let container = UIView()
+            container.backgroundColor = .clear
+            container.isHidden = true
+            container.isUserInteractionEnabled = false
+
+            let line = CAShapeLayer()
+            line.strokeColor = color.cgColor
+            line.lineDashPattern = [2, 2]
+            line.lineWidth = 1
+            line.name = "spacingLine"
+            container.layer.addSublayer(line)
+
+            let leftSerif = CAShapeLayer()
+            leftSerif.strokeColor = color.cgColor
+            leftSerif.lineWidth = 1
+            leftSerif.name = "leftSerif"
+            container.layer.addSublayer(leftSerif)
+
+            let rightSerif = CAShapeLayer()
+            rightSerif.strokeColor = color.cgColor
+            rightSerif.lineWidth = 1
+            rightSerif.name = "rightSerif"
+            container.layer.addSublayer(rightSerif)
+
+            let label = UILabel()
+            label.font = AppFont.statRegular(8)
+            label.textColor = color
+            label.textAlignment = .center
+            label.tag = 999
+            container.addSubview(label)
+
+            contentView.addSubview(container)
+            views.append(container)
         }
-        _spacingLabels = labels
-        return labels
+        _spacingLabels = views
+        return views
     }
 
     func applyWidgetAlignmentSnap(to movedView: UIView, phase: WidgetMovePhase) {
@@ -384,7 +432,7 @@ extension BaseWorkoutDetailViewController {
         // 등간격 스냅
         applyEqualSpacingSnap(to: movedView, others: others, phase: phase)
 
-        // 가이드라인 표시/숨김
+        // 가이드라인 표시/숨김 (점선)
         let guideViews = alignmentGuideViews
         for (i, gv) in guideViews.enumerated() {
             if i < guides.count {
@@ -393,6 +441,20 @@ extension BaseWorkoutDetailViewController {
                     gv.frame = CGRect(x: g.position - 0.5, y: g.minExtent, width: 1, height: g.maxExtent - g.minExtent)
                 } else {
                     gv.frame = CGRect(x: g.minExtent, y: g.position - 0.5, width: g.maxExtent - g.minExtent, height: 1)
+                }
+                // 점선 path 업데이트
+                if let dash = gv.layer.sublayers?.first(where: { $0.name == "alignDash" }) as? CAShapeLayer {
+                    let path = UIBezierPath()
+                    let b = gv.bounds
+                    if g.isVertical {
+                        path.move(to: CGPoint(x: 0.5, y: 0))
+                        path.addLine(to: CGPoint(x: 0.5, y: b.height))
+                    } else {
+                        path.move(to: CGPoint(x: 0, y: 0.5))
+                        path.addLine(to: CGPoint(x: b.width, y: 0.5))
+                    }
+                    dash.path = path.cgPath
+                    dash.frame = b
                 }
                 contentView.bringSubviewToFront(gv)
                 gv.isHidden = false
@@ -435,7 +497,7 @@ extension BaseWorkoutDetailViewController {
 
     private func checkEqualSpacing(
         movedView: UIView, others: [UIView], threshold: CGFloat,
-        labels: [UILabel], labelIndex: Int, axis: SpacingAxis
+        labels: [UIView], labelIndex: Int, axis: SpacingAxis
     ) -> Int {
         var idx = labelIndex
         let snapThreshold = LayoutConstants.snapStep + 1 // 그리드 단위 + 1pt 여유
@@ -576,7 +638,7 @@ extension BaseWorkoutDetailViewController {
     }
 
     private func showEqualSpacingLabels(
-        labels: [UILabel], idx: Int, gap: CGFloat, axis: SpacingAxis,
+        labels: [UIView], idx: Int, gap: CGFloat, axis: SpacingAxis,
         leftEdge: CGFloat, movedView: UIView, rightEdge: CGFloat
     ) -> Int {
         var i = idx
@@ -607,18 +669,76 @@ extension BaseWorkoutDetailViewController {
         return i
     }
 
-    private func showSpacingLabelVertical(_ label: UILabel, gap: CGFloat, from: CGFloat, to: CGFloat, midX: CGFloat) {
-        label.text = "\(Int(gap))"
-        label.frame = CGRect(x: midX - 20, y: from, width: 40, height: to - from)
-        label.isHidden = false
-        contentView.bringSubviewToFront(label)
+    /// 수평 'I' 형태 간격 표시: |---gap---|
+    private func showSpacingLabel(_ container: UIView, gap: CGFloat, from: CGFloat, to: CGFloat, midY: CGFloat) {
+        let serifH: CGFloat = 8
+        container.frame = CGRect(x: from, y: midY - serifH, width: to - from, height: serifH * 2)
+        let w = to - from
+        let h = serifH * 2
+
+        if let line = container.layer.sublayers?.first(where: { $0.name == "spacingLine" }) as? CAShapeLayer {
+            let p = UIBezierPath()
+            p.move(to: CGPoint(x: 0, y: h / 2))
+            p.addLine(to: CGPoint(x: w, y: h / 2))
+            line.path = p.cgPath
+            line.frame = CGRect(x: 0, y: 0, width: w, height: h)
+        }
+        if let serif = container.layer.sublayers?.first(where: { $0.name == "leftSerif" }) as? CAShapeLayer {
+            let p = UIBezierPath()
+            p.move(to: CGPoint(x: 0.5, y: 2))
+            p.addLine(to: CGPoint(x: 0.5, y: h - 2))
+            serif.path = p.cgPath
+            serif.frame = CGRect(x: 0, y: 0, width: 1, height: h)
+        }
+        if let serif = container.layer.sublayers?.first(where: { $0.name == "rightSerif" }) as? CAShapeLayer {
+            let p = UIBezierPath()
+            p.move(to: CGPoint(x: 0.5, y: 2))
+            p.addLine(to: CGPoint(x: 0.5, y: h - 2))
+            serif.path = p.cgPath
+            serif.frame = CGRect(x: w - 1, y: 0, width: 1, height: h)
+        }
+        if let label = container.viewWithTag(999) as? UILabel {
+            label.text = "\(Int(gap))"
+            label.frame = CGRect(x: 0, y: 0, width: w, height: h)
+        }
+        container.isHidden = false
+        contentView.bringSubviewToFront(container)
     }
 
-    private func showSpacingLabel(_ label: UILabel, gap: CGFloat, from: CGFloat, to: CGFloat, midY: CGFloat) {
-        label.text = "\(Int(gap))"
-        label.frame = CGRect(x: from, y: midY - 8, width: to - from, height: 16)
-        label.isHidden = false
-        contentView.bringSubviewToFront(label)
+    /// 수직 'I' 형태 간격 표시
+    private func showSpacingLabelVertical(_ container: UIView, gap: CGFloat, from: CGFloat, to: CGFloat, midX: CGFloat) {
+        let serifW: CGFloat = 8
+        container.frame = CGRect(x: midX - serifW, y: from, width: serifW * 2, height: to - from)
+        let w = serifW * 2
+        let h = to - from
+
+        if let line = container.layer.sublayers?.first(where: { $0.name == "spacingLine" }) as? CAShapeLayer {
+            let p = UIBezierPath()
+            p.move(to: CGPoint(x: w / 2, y: 0))
+            p.addLine(to: CGPoint(x: w / 2, y: h))
+            line.path = p.cgPath
+            line.frame = CGRect(x: 0, y: 0, width: w, height: h)
+        }
+        if let serif = container.layer.sublayers?.first(where: { $0.name == "leftSerif" }) as? CAShapeLayer {
+            let p = UIBezierPath()
+            p.move(to: CGPoint(x: 2, y: 0.5))
+            p.addLine(to: CGPoint(x: w - 2, y: 0.5))
+            serif.path = p.cgPath
+            serif.frame = CGRect(x: 0, y: 0, width: w, height: 1)
+        }
+        if let serif = container.layer.sublayers?.first(where: { $0.name == "rightSerif" }) as? CAShapeLayer {
+            let p = UIBezierPath()
+            p.move(to: CGPoint(x: 2, y: 0.5))
+            p.addLine(to: CGPoint(x: w - 2, y: 0.5))
+            serif.path = p.cgPath
+            serif.frame = CGRect(x: 0, y: h - 1, width: w, height: 1)
+        }
+        if let label = container.viewWithTag(999) as? UILabel {
+            label.text = "\(Int(gap))"
+            label.frame = CGRect(x: 0, y: 0, width: w, height: h)
+        }
+        container.isHidden = false
+        contentView.bringSubviewToFront(container)
     }
 
     private func hideSpacingLabels() {
