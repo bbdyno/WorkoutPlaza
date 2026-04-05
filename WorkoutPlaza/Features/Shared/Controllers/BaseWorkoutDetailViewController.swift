@@ -85,6 +85,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     var centerGuideHideWorkItem: DispatchWorkItem?
     var restoreCanvasTransform: RestoreCanvasTransform = .identity
 
+    // Undo
+    private var undoStack: [SavedCardDesign] = []
+    private let maxUndoSteps = 20
+
     // Background State
     var backgroundTransform: BackgroundTransform?
 
@@ -255,6 +259,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     lazy var textPathButton: UIButton = createToolbarButton(systemName: "icon.pencil", action: #selector(showTextPathInput))
     lazy var backgroundTemplateButton: UIButton = createToolbarButton(systemName: "icon.paint.brush", action: #selector(changeTemplate))
 
+    lazy var undoButton: UIButton = createToolbarButton(systemName: "icon.arrow.counterclockwise", action: #selector(performUndo))
     lazy var colorPickerButton: UIButton = createToolbarButton(systemName: "icon.palette", action: #selector(showColorPicker))
     lazy var fontPickerButton: UIButton = createToolbarButton(systemName: "icon.text.aa", action: #selector(showFontPicker))
     lazy var alignmentButton: UIButton = createToolbarButton(systemName: WidgetContentAlignment.left.symbolName, action: #selector(cycleAlignmentForSelection))
@@ -456,6 +461,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     
     @objc dynamic func setupTopRightToolbar() {
+        topRightToolbar.addArrangedSubview(undoButton)
         topRightToolbar.addArrangedSubview(addWidgetButton)
         topRightToolbar.addArrangedSubview(textPathButton)
         topRightToolbar.addArrangedSubview(layoutTemplateButton)
@@ -494,6 +500,177 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     @objc func doneButtonTapped() {
         // Implement save logic in subclasses
+    }
+
+    // MARK: - Undo
+
+    /// 현재 캔버스 상태를 undo 스택에 저장 (변경 직전에 호출)
+    func pushUndoSnapshot() {
+        guard let snapshot = createCurrentSnapshot() else { return }
+        undoStack.append(snapshot)
+        if undoStack.count > maxUndoSteps {
+            undoStack.removeFirst()
+        }
+        undoButton.isEnabled = true
+    }
+
+    @objc func performUndo() {
+        guard let snapshot = undoStack.popLast() else {
+            showToast("되돌릴 작업이 없습니다")
+            return
+        }
+
+        // 현재 위젯 모두 제거
+        widgets.forEach { $0.removeFromSuperview() }
+        clearCustomWidgets()
+        widgets.removeAll()
+        selectionManager.deselectAll()
+
+        // 스냅샷에서 복원
+        configureRestoreCanvasTransform(savedCanvasSize: snapshot.canvasSize)
+        restoreWidgets(from: snapshot)
+        restoreBackground(from: snapshot)
+        resetRestoreCanvasTransform()
+
+        hasUnsavedChanges = true
+        undoButton.isEnabled = !undoStack.isEmpty
+        showToast("되돌리기 완료")
+    }
+
+    /// 현재 캔버스 → SavedCardDesign 스냅샷 (이미지 제외)
+    private func createCurrentSnapshot() -> SavedCardDesign? {
+        selectionManager.deselectAll()
+
+        var allWidgets: [UIView] = widgets
+        for group in templateGroups {
+            allWidgets.append(contentsOf: group.groupedItems)
+        }
+
+        let savedWidgets = allWidgets.compactMap { widget -> SavedWidgetState? in
+            let identifier = (widget as? Selectable)?.itemIdentifier ?? UUID().uuidString
+            let definitionID = WidgetIdentity.definitionID(for: widget)
+            let savedType = definitionID?.rawValue ?? String(describing: type(of: widget))
+
+            var text: String?
+            var fontName: String?
+            var fontSize: CGFloat?
+            var fontStyle: String?
+            var textColor: String?
+            var pathPoints: [[CGFloat]]?
+            var workoutDate: Date?
+            var additionalText: String?
+            var widgetPayload: String?
+            var statFontScale: CGFloat?
+            var statTitleBaseFontSize: CGFloat?
+            var statValueBaseFontSize: CGFloat?
+            var statUnitBaseFontSize: CGFloat?
+            var contentAlignment: String?
+
+            if let selectable = widget as? Selectable {
+                fontStyle = selectable.currentFontStyle.rawValue
+            }
+            if let alignable = widget as? WidgetContentAlignable {
+                contentAlignment = alignable.contentAlignment.rawValue
+            }
+            if let textWidget = widget as? TextWidget { text = textWidget.textLabel.text }
+            if let locationWidget = widget as? LocationWidget {
+                additionalText = locationWidget.locationText
+                textColor = locationWidget.currentColor.toHex()
+            }
+            if let compositeWidget = widget as? CompositeWidget {
+                widgetPayload = compositeWidget.encodedPayloadString()
+            }
+            if let bubbleWidget = widget as? SpeechBubbleWidget {
+                text = bubbleWidget.payload.text
+                textColor = bubbleWidget.payload.textColorHex
+                widgetPayload = bubbleWidget.payload.encoded()
+            }
+            if let statWidget = widget as? BaseStatWidget {
+                textColor = statWidget.currentColor.toHex()
+                statFontScale = statWidget.calculateScaleFactor()
+                statTitleBaseFontSize = statWidget.baseFontSizes["title"] ?? LayoutConstants.titleFontSize
+                statValueBaseFontSize = statWidget.baseFontSizes["value"] ?? LayoutConstants.valueFontSize
+                statUnitBaseFontSize = statWidget.baseFontSizes["unit"] ?? LayoutConstants.unitFontSize
+            }
+
+            let rotation: CGFloat = (widget as? Selectable)?.rotation ?? 0
+
+            return SavedWidgetState(
+                identifier: identifier, type: savedType, definitionID: definitionID?.rawValue,
+                frame: widget.frame, initialSize: (widget as? BaseStatWidget)?.initialSize,
+                statFontScale: statFontScale, statTitleBaseFontSize: statTitleBaseFontSize,
+                statValueBaseFontSize: statValueBaseFontSize, statUnitBaseFontSize: statUnitBaseFontSize,
+                text: text, fontName: fontName, fontSize: fontSize, fontStyle: fontStyle,
+                textColor: textColor, backgroundColor: widget.backgroundColor?.toHex(),
+                rotation: rotation, zIndex: 0, pathPoints: pathPoints, workoutDate: workoutDate,
+                numericValue: nil, additionalText: additionalText, displayMode: nil,
+                contentAlignment: contentAlignment, widgetPayload: widgetPayload
+            )
+        }
+
+        let savedGroups = templateGroups.compactMap { group -> SavedGroupState? in
+            let widgetIds = group.groupedItems.compactMap { ($0 as? Selectable)?.itemIdentifier }
+            return SavedGroupState(
+                identifier: group.groupId, type: group.groupType.rawValue,
+                frame: group.frame, ownerName: group.ownerName, widgetIdentifiers: widgetIds
+            )
+        }
+
+        var bgType: BackgroundType = .solid
+        var bgData: Data?
+        var gradientStyleString: String?
+        var gradientColorsHex: [String]?
+
+        if !backgroundImageView.isHidden && backgroundImageView.image != nil {
+            bgType = .image
+            bgData = backgroundImageView.image?.jpegData(compressionQuality: 0.5)
+        } else if !backgroundTemplateView.isHidden {
+            bgType = .gradient
+            gradientStyleString = backgroundTemplateView.currentStyle.rawValue
+            if backgroundTemplateView.currentStyle == .custom,
+               let customColors = backgroundTemplateView.customColors {
+                gradientColorsHex = customColors.compactMap { $0.toHex() }
+            }
+        }
+
+        return SavedCardDesign(
+            backgroundType: bgType, backgroundColor: nil, backgroundImageData: bgData,
+            widgets: savedWidgets, canvasSize: contentView.bounds.size,
+            aspectRatio: currentAspectRatio, gradientColors: gradientColorsHex,
+            gradientStyle: gradientStyleString, groups: savedGroups
+        )
+    }
+
+    private func restoreWidgets(from design: SavedCardDesign) {
+        for savedWidget in design.widgets {
+            if let widget = createWidgetFromSavedState(savedWidget) {
+                let frame = frameForRestoredWidget(savedWidget, widget: widget)
+                widget.frame = frame
+                if let statWidget = widget as? BaseStatWidget {
+                    statWidget.initialSize = savedWidget.initialSize ?? frame.size
+                }
+                contentView.addSubview(widget)
+                widgets.append(widget)
+                applyCommonWidgetStyles(to: widget, from: savedWidget)
+                if let selectable = widget as? Selectable {
+                    selectionManager.registerItem(selectable)
+                }
+            }
+        }
+    }
+
+    private func restoreBackground(from design: SavedCardDesign) {
+        if design.backgroundType == .image, let data = design.backgroundImageData {
+            backgroundImageView.image = UIImage(data: data)
+            backgroundImageView.isHidden = false
+            backgroundTemplateView.isHidden = true
+        } else if design.backgroundType == .gradient {
+            backgroundImageView.isHidden = true
+            backgroundTemplateView.isHidden = false
+        } else {
+            backgroundImageView.isHidden = true
+            backgroundTemplateView.isHidden = true
+        }
     }
     
     @objc dynamic func saveCurrentDesign(completion: ((Bool) -> Void)? = nil) {

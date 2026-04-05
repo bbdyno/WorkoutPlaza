@@ -253,6 +253,7 @@ extension RunningDetailViewController {
     }
     
     internal func addWidget(_ widget: UIView, size: CGSize, position: CGPoint) {
+        pushUndoSnapshot()
         contentView.addSubview(widget)
         contentView.bringSubviewToFront(widget)
         widgets.append(widget)

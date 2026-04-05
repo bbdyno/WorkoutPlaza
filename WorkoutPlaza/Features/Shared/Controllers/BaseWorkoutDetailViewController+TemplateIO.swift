@@ -27,6 +27,7 @@ extension BaseWorkoutDetailViewController {
     /// Override in subclasses to create workout-specific widgets
 
     func applyWidgetTemplate(_ template: WidgetTemplate) {
+        pushUndoSnapshot()
         // Clear existing widgets
         widgets.forEach { $0.removeFromSuperview() }
         clearCustomWidgets()

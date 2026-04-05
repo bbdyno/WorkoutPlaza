@@ -9,7 +9,7 @@ import UIKit
 
 extension BaseWorkoutDetailViewController {
 
-    private func configureRestoreCanvasTransform(savedCanvasSize: CGSize) {
+    func configureRestoreCanvasTransform(savedCanvasSize: CGSize) {
         let currentCanvasSize = contentView.bounds.size
         guard savedCanvasSize.width > 0,
               savedCanvasSize.height > 0,
@@ -30,7 +30,7 @@ extension BaseWorkoutDetailViewController {
         )
     }
 
-    private func resetRestoreCanvasTransform() {
+    func resetRestoreCanvasTransform() {
         restoreCanvasTransform = .identity
     }
 
