@@ -173,8 +173,6 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             let enabled: Bool
             if !hasData {
                 enabled = false
-            } else if (type == .routeMap || type == .location) && !hasRoute {
-                enabled = false
             } else {
                 enabled = !added
             }
@@ -720,6 +718,13 @@ extension RunningDetailViewController {
             url.stopAccessingSecurityScopedResource()
         }
 
+        let ext = url.pathExtension.lowercased()
+
+        if ext == "gpx" || ext == "xml" {
+            handleGPXFileForRoute(at: url)
+            return
+        }
+
         do {
             let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
@@ -731,6 +736,54 @@ extension RunningDetailViewController {
         } catch {
             WPLog.error("Failed to load workout file: \(error)")
             showFileLoadError()
+        }
+    }
+
+    private func handleGPXFileForRoute(at url: URL) {
+        do {
+            let data = try Data(contentsOf: url)
+            let parser = GPXParser()
+            let workoutData = try parser.parse(data: data)
+
+            guard !workoutData.route.isEmpty else {
+                let alert = UIAlertController(
+                    title: "경로 없음",
+                    message: "GPX 파일에 경로 데이터가 포함되어 있지 않습니다.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
+                present(alert, animated: true)
+                return
+            }
+
+            let locations = workoutData.route.map {
+                CLLocation(
+                    coordinate: CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon),
+                    altitude: $0.alt ?? 0,
+                    horizontalAccuracy: 10,
+                    verticalAccuracy: 10,
+                    timestamp: $0.timestamp ?? Date()
+                )
+            }
+
+            let mapView = RouteMapView()
+            mapView.setRoute(locations)
+            routeMapView = mapView
+            let size = mapView.calculateOptimalSize(maxDimension: 250)
+            let centerX = (contentView.bounds.width - size.width) / 2
+            let centerY = (contentView.bounds.height - size.height) / 2
+            addWidget(mapView, size: size, position: CGPoint(x: centerX, y: centerY))
+
+            WPLog.info("GPX route added: \(locations.count) points from \(url.lastPathComponent)")
+        } catch {
+            WPLog.error("GPX parsing failed: \(error)")
+            let alert = UIAlertController(
+                title: "GPX 파싱 실패",
+                message: "파일을 읽을 수 없습니다: \(error.localizedDescription)",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
+            present(alert, animated: true)
         }
     }
 

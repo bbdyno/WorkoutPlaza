@@ -323,12 +323,9 @@ extension RunningDetailViewController {
     }
     
     internal func canAddWidget(_ type: SingleWidgetType) -> Bool {
-        let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? (externalWorkout?.workoutData.route.isEmpty == false)
-
         switch type {
         case .routeMap:
-            // GPS 경로 데이터가 없거나 이미 추가된 경우 비활성화
-            return routeMapView == nil && hasRoute
+            return routeMapView == nil
         case .distance:
             return !widgets.contains(where: { $0 is DistanceWidget })
         case .duration:
@@ -348,8 +345,7 @@ extension RunningDetailViewController {
         case .text:
             return true  // Multiple text widgets allowed
         case .location:
-            // GPS 경로 데이터가 없거나 이미 추가된 경우 비활성화
-            return !widgets.contains(where: { $0 is LocationWidget }) && hasRoute
+            return !widgets.contains(where: { $0 is LocationWidget })
         case .composite:
             return true
         }
@@ -360,23 +356,11 @@ extension RunningDetailViewController {
         guard workoutData != nil || importedWorkoutData != nil || externalWorkout != nil else { return }
 
         let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Widget.add, message: nil, preferredStyle: .actionSheet)
-        let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? (externalWorkout?.workoutData.route.isEmpty == false)
 
         // 1. Single Widgets
         for type in SingleWidgetType.allCases {
             let isAdded = !canAddWidget(type)
-            var title = type.displayName
-
-            // GPS 관련 위젯에 상태 표시
-            if type == .routeMap || type == .location {
-                if !hasRoute {
-                    title = "\(type.displayName) (\(WorkoutPlazaStrings.Running.No.gps))"
-                } else if isAdded {
-                    title = "✓ \(type.displayName)"
-                }
-            } else if isAdded {
-                title = "✓ \(type.rawValue)"
-            }
+            var title = isAdded ? "✓ \(type.displayName)" : type.displayName
 
             let action = UIAlertAction(title: title, style: .default) { [weak self] _ in
                 self?.addSingleWidgetFromAvailableData(type)
@@ -413,13 +397,7 @@ extension RunningDetailViewController {
         switch type {
         case .routeMap:
             guard data.hasRoute else {
-                let alert = UIAlertController(
-                    title: WorkoutPlazaStrings.Running.No.Route.title,
-                    message: WorkoutPlazaStrings.Running.No.Route.message,
-                    preferredStyle: .alert
-                )
-                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
-                present(alert, animated: true)
+                showRouteImportPrompt()
                 return
             }
 
@@ -480,14 +458,7 @@ extension RunningDetailViewController {
 
         case .location:
             guard let firstLocation = data.route.first else {
-                // Show error if no GPS data
-                let alert = UIAlertController(
-                    title: WorkoutPlazaStrings.Running.No.Location.title,
-                    message: WorkoutPlazaStrings.Running.No.Route.message,
-                    preferredStyle: .alert
-                )
-                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
-                present(alert, animated: true)
+                showRouteImportPrompt()
                 return
             }
 
@@ -549,13 +520,7 @@ extension RunningDetailViewController {
         switch type {
         case .routeMap:
             guard imported.hasRoute else {
-                let alert = UIAlertController(
-                    title: WorkoutPlazaStrings.Running.No.Route.title,
-                    message: WorkoutPlazaStrings.Running.No.Route.message,
-                    preferredStyle: .alert
-                )
-                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
-                present(alert, animated: true)
+                showRouteImportPrompt()
                 return
             }
 
@@ -616,13 +581,7 @@ extension RunningDetailViewController {
 
         case .location:
             guard let firstLocation = imported.routeLocations.first else {
-                let alert = UIAlertController(
-                    title: WorkoutPlazaStrings.Running.No.Location.title,
-                    message: WorkoutPlazaStrings.Running.No.Route.message,
-                    preferredStyle: .alert
-                )
-                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
-                present(alert, animated: true)
+                showRouteImportPrompt()
                 return
             }
 
@@ -692,13 +651,7 @@ extension RunningDetailViewController {
         switch type {
         case .routeMap:
             guard hasRoute else {
-                let alert = UIAlertController(
-                    title: WorkoutPlazaStrings.Running.No.Route.title,
-                    message: WorkoutPlazaStrings.Running.No.Route.message,
-                    preferredStyle: .alert
-                )
-                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
-                present(alert, animated: true)
+                showRouteImportPrompt()
                 return
             }
 
@@ -758,13 +711,7 @@ extension RunningDetailViewController {
 
         case .location:
             guard let firstLocation = routeLocations.first else {
-                let alert = UIAlertController(
-                    title: WorkoutPlazaStrings.Running.No.Location.title,
-                    message: WorkoutPlazaStrings.Running.No.Route.message,
-                    preferredStyle: .alert
-                )
-                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
-                present(alert, animated: true)
+                showRouteImportPrompt()
                 return
             }
 
@@ -1393,5 +1340,45 @@ extension RunningDetailViewController {
         backgroundTemplateView.isHidden = true
         dimOverlay.isHidden = true
         view.backgroundColor = .systemGroupedBackground
+    }
+
+    // MARK: - Route Import Prompt (Pro Gate)
+
+    internal func showRouteImportPrompt() {
+        if PurchaseManager.shared.isEffectivelyPro {
+            // Pro 사용자: GPX 파일 임포트 유도
+            let alert = UIAlertController(
+                title: WorkoutPlazaStrings.Running.No.Route.title,
+                message: "GPS 경로 데이터가 없습니다.\nGPX 파일을 임포트하여 경로를 추가할 수 있습니다.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "GPX 임포트", style: .default) { [weak self] _ in
+                self?.showGPXFilePicker()
+            })
+            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+            present(alert, animated: true)
+        } else {
+            // Free 사용자: Pro 구독 유도
+            let proVC = ProUpgradeViewController()
+            proVC.triggerFeature = "gpx_import"
+            let nav = UINavigationController(rootViewController: proVC)
+            nav.modalPresentationStyle = .pageSheet
+            if let sheet = nav.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.prefersGrabberVisible = true
+            }
+            present(nav, animated: true)
+        }
+    }
+
+    private func showGPXFilePicker() {
+        let types = [
+            UTType(filenameExtension: "gpx") ?? .xml,
+            .xml
+        ]
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: types)
+        picker.delegate = self
+        picker.allowsMultipleSelection = false
+        present(picker, animated: true)
     }
 }
