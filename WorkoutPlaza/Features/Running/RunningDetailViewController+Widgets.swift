@@ -129,7 +129,7 @@ extension RunningDetailViewController {
         let data = external.workoutData
         let widgetSize = CGSize(width: 160, height: 80)
         let hasRoute = !data.route.isEmpty
-        let startY: CGFloat = hasRoute ? 350 : 100
+        let startY: CGFloat = hasRoute ? 250 : 60
 
         // 1. 거리 위젯
         let distanceWidget = DistanceWidget()
@@ -139,7 +139,7 @@ extension RunningDetailViewController {
         // 2. 시간 위젯
         let durationWidget = DurationWidget()
         durationWidget.configure(duration: data.duration)
-        addWidget(durationWidget, size: widgetSize, position: CGPoint(x: 210, y: startY))
+        addWidget(durationWidget, size: widgetSize, position: CGPoint(x: 200, y: startY))
 
         // 3. 페이스 위젯
         let paceWidget = PaceWidget()
@@ -150,7 +150,7 @@ extension RunningDetailViewController {
     private func createDefaultWidgetsFromImported(_ imported: ImportedWorkoutData) {
         let data = imported.originalData
         let widgetSize = CGSize(width: 160, height: 80)
-        let startY: CGFloat = imported.hasRoute ? 350 : 100
+        let startY: CGFloat = imported.hasRoute ? 250 : 60
 
         // 1. 거리 위젯
         let distanceWidget = DistanceWidget()
@@ -160,7 +160,7 @@ extension RunningDetailViewController {
         // 2. 시간 위젯
         let durationWidget = DurationWidget()
         durationWidget.configure(duration: data.duration)
-        addWidget(durationWidget, size: widgetSize, position: CGPoint(x: 210, y: startY))
+        addWidget(durationWidget, size: widgetSize, position: CGPoint(x: 200, y: startY))
 
         // 3. 페이스 위젯
         let paceWidget = PaceWidget()
@@ -172,7 +172,7 @@ extension RunningDetailViewController {
         let widgetSize = CGSize(width: 160, height: 80)
 
         // GPS 경로가 없으면 위젯을 더 위쪽에 배치
-        let startY: CGFloat = data.hasRoute ? 350 : 100
+        let startY: CGFloat = data.hasRoute ? 250 : 60
 
         // 1. 거리 위젯
         let distanceWidget = DistanceWidget()
@@ -182,7 +182,7 @@ extension RunningDetailViewController {
         // 2. 시간 위젯
         let durationWidget = DurationWidget()
         durationWidget.configure(duration: data.duration)
-        addWidget(durationWidget, size: widgetSize, position: CGPoint(x: 210, y: startY))
+        addWidget(durationWidget, size: widgetSize, position: CGPoint(x: 200, y: startY))
 
         // 3. 페이스 위젯
         let paceWidget = PaceWidget()
@@ -199,7 +199,7 @@ extension RunningDetailViewController {
             icon: "heart.fill",
             color: .systemRed
         )
-        addWidget(heartRateWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 30, y: 820))
+        addWidget(heartRateWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 30, y: 370))
         
         // 9. 고도 변화 위젯 (데모용)
         let elevationWidget = createCustomWidget(
@@ -209,7 +209,7 @@ extension RunningDetailViewController {
             icon: "arrow.up.right",
             color: ColorSystem.mainText
         )
-        addWidget(elevationWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 210, y: 820))
+        addWidget(elevationWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 200, y: 370))
 
         // 10. 케이던스 위젯 (데모용)
         let cadenceWidget = createCustomWidget(
@@ -219,7 +219,7 @@ extension RunningDetailViewController {
             icon: "icon.person.run",
             color: ColorSystem.mainText
         )
-        addWidget(cadenceWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 30, y: 940))
+        addWidget(cadenceWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 30, y: 460))
 
         // 11. 스트라이드 위젯 (데모용)
         let strideWidget = createCustomWidget(
@@ -229,7 +229,7 @@ extension RunningDetailViewController {
             icon: "arrow.left.and.right",
             color: ColorSystem.mainText
         )
-        addWidget(strideWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 210, y: 940))
+        addWidget(strideWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 200, y: 460))
     }
     
     internal func createCustomWidget(title: String, value: String, unit: String, icon: String, color: UIColor) -> UIView {

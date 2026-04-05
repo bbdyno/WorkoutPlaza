@@ -65,7 +65,7 @@ struct WidgetTemplate: Codable {
     }
 
     private var resolvedCanvasSize: CGSize {
-        let fallback = CGSize(width: 414, height: 700)
+        let fallback = CGSize(width: 414, height: 552)
         guard let canvasSize else { return fallback }
 
         let width = canvasSize.width
@@ -403,7 +403,7 @@ enum WidgetType: String, Codable, CaseIterable {
 
     /// 샘플 데이터로 실제 위젯을 렌더링하는 미리보기 클로저. nil이면 아이콘 모드 유지.
     var previewProvider: (() -> UIView)? {
-        let size = CGSize(width: 140, height: 56)
+        let size = CGSize(width: 140, height: 65)
         switch self {
         case .distance:
             return {
@@ -463,7 +463,7 @@ enum WidgetType: String, Codable, CaseIterable {
         case .currentDateTime:
             return {
                 let w = CurrentDateTimeWidget()
-                w.frame = CGRect(origin: .zero, size: CGSize(width: 160, height: 56))
+                w.frame = CGRect(origin: .zero, size: CGSize(width: 160, height: 65))
                 w.configure(date: Date())
                 w.titleLabel.isHidden = true
                 return w
@@ -508,7 +508,7 @@ enum WidgetType: String, Codable, CaseIterable {
             }
         case .routeMap:
             return {
-                let w = RouteMapView(frame: CGRect(origin: .zero, size: CGSize(width: 80, height: 56)))
+                let w = RouteMapView(frame: CGRect(origin: .zero, size: CGSize(width: 100, height: 75)))
                 // 샘플 GPS: 구불구불한 경로
                 let baseLat = 37.5665
                 let baseLon = 126.9780
@@ -536,8 +536,8 @@ enum WidgetType: String, Codable, CaseIterable {
             }
         case .climbingRoutesByColor:
             return {
-                let w = ClimbingRoutesByColorWidget(frame: CGRect(origin: .zero, size: CGSize(width: 140, height: 80)))
-                w.initialSize = CGSize(width: 140, height: 80)
+                let w = ClimbingRoutesByColorWidget(frame: CGRect(origin: .zero, size: CGSize(width: 140, height: 90)))
+                w.initialSize = CGSize(width: 140, height: 90)
                 // 샘플 루트 데이터
                 let sampleRoutes: [ClimbingRoute] = {
                     var routes: [ClimbingRoute] = []
@@ -568,8 +568,9 @@ enum WidgetType: String, Codable, CaseIterable {
             }
         case .composite:
             return {
+                let compositeSize = CGSize(width: 140, height: 90)
                 let w = CompositeWidget()
-                w.frame = CGRect(origin: .zero, size: size)
+                w.frame = CGRect(origin: .zero, size: compositeSize)
                 w.configure(payload: CompositeWidgetPayload(
                     title: WorkoutPlazaStrings.Widget.composite,
                     primaryText: "5.20 km",
@@ -579,7 +580,7 @@ enum WidgetType: String, Codable, CaseIterable {
             }
         case .speechBubble:
             return {
-                let bubbleSize = CGSize(width: 140, height: 80)
+                let bubbleSize = CGSize(width: 140, height: 90)
                 let w = SpeechBubbleWidget()
                 w.frame = CGRect(origin: .zero, size: bubbleSize)
                 w.initialSize = bubbleSize
@@ -612,34 +613,34 @@ extension WidgetTemplate {
         items: [
             WidgetItem(
                 type: .routeMap,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.10),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.845, height: 0.357),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.05),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.40),
                 color: "#007AFF",
                 font: nil
             ),
             WidgetItem(
                 type: .distance,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.50),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.386, height: 0.114),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.48),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.42, height: 0.15),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .duration,
-                positionRatio: WidgetItem.PositionRatio(x: 0.507, y: 0.50),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.386, height: 0.114),
+                positionRatio: WidgetItem.PositionRatio(x: 0.51, y: 0.48),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.42, height: 0.15),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .pace,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.671),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.386, height: 0.114),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.66),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.42, height: 0.15),
                 color: nil,
                 font: "System"
             )
         ],
-        canvasSize: CanvasSize(width: 414, height: 700)
+        canvasSize: CanvasSize(width: 414, height: 552)
     )
 
     static let detailedStats = WidgetTemplate(
@@ -650,48 +651,48 @@ extension WidgetTemplate {
         items: [
             WidgetItem(
                 type: .routeMap,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.10),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.845, height: 0.286),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.05),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.35),
                 color: "#007AFF",
                 font: nil
             ),
             WidgetItem(
                 type: .distance,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.429),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.266, height: 0.10),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.43),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.27, height: 0.13),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .duration,
-                positionRatio: WidgetItem.PositionRatio(x: 0.374, y: 0.429),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.266, height: 0.10),
+                positionRatio: WidgetItem.PositionRatio(x: 0.37, y: 0.43),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.27, height: 0.13),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .pace,
-                positionRatio: WidgetItem.PositionRatio(x: 0.676, y: 0.429),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.266, height: 0.10),
+                positionRatio: WidgetItem.PositionRatio(x: 0.67, y: 0.43),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.27, height: 0.13),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .speed,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.557),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.266, height: 0.10),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.59),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.27, height: 0.13),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .calories,
-                positionRatio: WidgetItem.PositionRatio(x: 0.374, y: 0.557),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.266, height: 0.10),
+                positionRatio: WidgetItem.PositionRatio(x: 0.37, y: 0.59),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.27, height: 0.13),
                 color: nil,
                 font: "System"
             )
         ],
-        canvasSize: CanvasSize(width: 414, height: 700)
+        canvasSize: CanvasSize(width: 414, height: 552)
     )
 
     static let minimal = WidgetTemplate(
@@ -702,27 +703,27 @@ extension WidgetTemplate {
         items: [
             WidgetItem(
                 type: .routeMap,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.143),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.845, height: 0.429),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.08),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.50),
                 color: "#007AFF",
                 font: nil
             ),
             WidgetItem(
                 type: .distance,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.614),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.411, height: 0.129),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.62),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.42, height: 0.16),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .duration,
-                positionRatio: WidgetItem.PositionRatio(x: 0.531, y: 0.614),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.411, height: 0.129),
+                positionRatio: WidgetItem.PositionRatio(x: 0.51, y: 0.62),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.42, height: 0.16),
                 color: nil,
                 font: "System"
             )
         ],
-        canvasSize: CanvasSize(width: 414, height: 700)
+        canvasSize: CanvasSize(width: 414, height: 552)
     )
 
     // MARK: - Climbing Templates
@@ -735,34 +736,34 @@ extension WidgetTemplate {
         items: [
             WidgetItem(
                 type: .climbingGym,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.10),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.845, height: 0.114),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.08),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.14),
                 color: "#FF9500",
                 font: "System"
             ),
             WidgetItem(
                 type: .climbingDiscipline,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.25),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.411, height: 0.114),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.25),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.42, height: 0.14),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .date,
-                positionRatio: WidgetItem.PositionRatio(x: 0.507, y: 0.25),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.411, height: 0.114),
+                positionRatio: WidgetItem.PositionRatio(x: 0.51, y: 0.25),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.42, height: 0.14),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .climbingSession,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.40),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.845, height: 0.114),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.42),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.14),
                 color: nil,
                 font: "System"
             )
         ],
-        canvasSize: CanvasSize(width: 414, height: 700)
+        canvasSize: CanvasSize(width: 414, height: 552)
     )
 
     static let detailedClimbing = WidgetTemplate(
@@ -773,41 +774,41 @@ extension WidgetTemplate {
         items: [
             WidgetItem(
                 type: .climbingGym,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.07),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.845, height: 0.10),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.05),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.12),
                 color: "#FF9500",
                 font: "System"
             ),
             WidgetItem(
                 type: .climbingDiscipline,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.20),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.411, height: 0.10),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.20),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.42, height: 0.12),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .date,
-                positionRatio: WidgetItem.PositionRatio(x: 0.507, y: 0.20),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.411, height: 0.10),
+                positionRatio: WidgetItem.PositionRatio(x: 0.51, y: 0.20),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.42, height: 0.12),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .climbingSession,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.33),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.845, height: 0.10),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.35),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.12),
                 color: nil,
                 font: "System"
             ),
             WidgetItem(
                 type: .climbingRoutesByColor,
-                positionRatio: WidgetItem.PositionRatio(x: 0.0725, y: 0.46),
-                sizeRatio: WidgetItem.SizeRatio(width: 0.845, height: 0.20),
+                positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.50),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.25),
                 color: nil,
                 font: "System"
             )
         ],
-        canvasSize: CanvasSize(width: 414, height: 700)
+        canvasSize: CanvasSize(width: 414, height: 552)
     )
 
     // Default built-in templates
