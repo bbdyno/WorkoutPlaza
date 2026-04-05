@@ -26,6 +26,15 @@ final class PurchaseManager {
 
     // MARK: - State
 
+    /// 실제 결제 상태 또는 개발자 오버라이드를 반영한 Pro 여부.
+    /// DEBUG 빌드에서 DevSettings.devOverridePro가 true이면 항상 true를 반환합니다.
+    var isEffectivelyPro: Bool {
+        #if DEBUG
+        if DevSettings.shared.devOverridePro { return true }
+        #endif
+        return isPro
+    }
+
     private(set) var isPro: Bool = false {
         didSet {
             guard oldValue != isPro else { return }

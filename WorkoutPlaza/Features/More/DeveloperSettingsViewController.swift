@@ -107,6 +107,20 @@ class DeveloperSettingsViewController: UIViewController {
                 .action(title: WorkoutPlazaStrings.Dev.Appscheme.test, isDestructive: false, action: { [weak self] in
                     self?.showAppSchemeTestPrompt()
                 })
+            ]),
+            Section(title: "구매 (IAP)", rows: [
+                .toggle(
+                    title: "Pro 강제 활성화",
+                    isOn: { DevSettings.shared.devOverridePro },
+                    onToggle: { [weak self] isOn in
+                        DevSettings.shared.devOverridePro = isOn
+                        self?.showActionResultAlert(
+                            message: isOn
+                                ? "Pro가 강제 활성화되었습니다."
+                                : "Pro 강제 활성화가 해제되었습니다."
+                        )
+                    }
+                )
             ])
         ]
     }

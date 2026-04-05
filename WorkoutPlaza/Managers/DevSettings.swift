@@ -20,6 +20,7 @@ class DevSettings {
         static let inAppBrowserAddressBarVisible = "dev_inAppBrowserAddressBarVisible"
         static let inAppBrowserToolbarVisible = "dev_inAppBrowserToolbarVisible"
         static let inAppBrowserPresentedAsSheet = "dev_inAppBrowserPresentedAsSheet"
+        static let devOverridePro = "dev_overridePro"
     }
 
     // MARK: - Properties
@@ -68,6 +69,15 @@ class DevSettings {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: Keys.inAppBrowserPresentedAsSheet)
+        }
+    }
+
+    /// 개발 중 Pro 상태를 강제로 활성화합니다. DEBUG 빌드에서만 유효합니다.
+    var devOverridePro: Bool {
+        get { UserDefaults.standard.bool(forKey: Keys.devOverridePro) }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.devOverridePro)
+            NotificationCenter.default.post(name: .wpPurchaseStatusDidChange, object: nil)
         }
     }
 }

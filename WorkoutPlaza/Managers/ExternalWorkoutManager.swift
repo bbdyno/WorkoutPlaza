@@ -198,4 +198,5 @@ class ExternalWorkoutManager {
 
 extension Notification.Name {
     static let externalWorkoutsDidChange = Notification.Name("externalWorkoutsDidChange")
+    static let didReceiveGPXFile = Notification.Name("didReceiveGPXFile")
 }

@@ -8,6 +8,7 @@
 import UIKit
 import SnapKit
 import UniformTypeIdentifiers
+import CoreLocation
 
 class RunningListViewController: UIViewController {
 
@@ -138,6 +139,13 @@ class RunningListViewController: UIViewController {
 
         NotificationCenter.default.addObserver(
             self,
+            selector: #selector(handleReceivedGPXFile(_:)),
+            name: .didReceiveGPXFile,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
             selector: #selector(handleExternalWorkoutsChanged),
             name: .externalWorkoutsDidChange,
             object: nil
@@ -155,6 +163,20 @@ class RunningListViewController: UIViewController {
     @objc private func handleExternalWorkoutsChanged() {
         loadExternalWorkouts()
         mergeAndSortWorkouts()
+    }
+
+    @objc private func handleReceivedGPXFile(_ notification: Notification) {
+        guard let url = notification.userInfo?["url"] as? URL else { return }
+
+        guard PurchaseManager.shared.isEffectivelyPro else {
+            showProUpgradePrompt(for: "gpx_import")
+            return
+        }
+
+        let shouldStopAccessing = url.startAccessingSecurityScopedResource()
+        defer { if shouldStopAccessing { url.stopAccessingSecurityScopedResource() } }
+
+        importGPXFile(at: url)
     }
 
     @objc private func handleReceivedWorkoutFile(_ notification: Notification) {
@@ -321,17 +343,81 @@ class RunningListViewController: UIViewController {
     }
 
     @objc private func showImportRecordPicker() {
-        // Use custom UTType for .wplaza files, fallback to json/data for compatibility
+        let alert = UIAlertController(title: "파일 가져오기", message: nil, preferredStyle: .actionSheet)
+
+        alert.addAction(UIAlertAction(title: "WorkoutPlaza 파일 (.wplaza)", style: .default) { [weak self] _ in
+            self?.showWplazaPicker()
+        })
+
+        let gpxTitle = PurchaseManager.shared.isEffectivelyPro
+            ? "GPS 파일 (.gpx)"
+            : "GPS 파일 (.gpx)  👑 Pro"
+        alert.addAction(UIAlertAction(title: gpxTitle, style: .default) { [weak self] _ in
+            self?.handleGPXImportTapped()
+        })
+
+        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = importFloatingButton
+            popover.sourceRect = importFloatingButton.bounds
+        }
+
+        present(alert, animated: true)
+    }
+
+    private func showWplazaPicker() {
         var contentTypes: [UTType] = [.json, .data]
         if let wplazaType = UTType("com.workoutplaza.workout") {
             contentTypes.insert(wplazaType, at: 0)
         }
-
         let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: contentTypes)
         documentPicker.delegate = self
         documentPicker.allowsMultipleSelection = false
         documentPicker.shouldShowFileExtensions = true
         present(documentPicker, animated: true)
+    }
+
+    private func handleGPXImportTapped() {
+        guard PurchaseManager.shared.isEffectivelyPro else {
+            showProUpgradePrompt(for: "gpx_import")
+            return
+        }
+        showGPXPicker()
+    }
+
+    private func showGPXPicker() {
+        let gpxType = UTType("com.topografix.gpx") ?? UTType(filenameExtension: "gpx") ?? .xml
+        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [gpxType, .xml])
+        documentPicker.delegate = self
+        documentPicker.allowsMultipleSelection = false
+        documentPicker.shouldShowFileExtensions = true
+        present(documentPicker, animated: true)
+    }
+
+    private func showProUpgradePrompt(for feature: String) {
+        let proVC = ProUpgradeViewController()
+        proVC.triggerFeature = feature
+        let nav = UINavigationController(rootViewController: proVC)
+        nav.modalPresentationStyle = .pageSheet
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(nav, animated: true)
+    }
+
+    private func importGPXFile(at url: URL) {
+        do {
+            let data = try Data(contentsOf: url)
+            let parser = GPXParser()
+            let workoutData = try parser.parse(data: data)
+
+            let shareable = ShareableWorkout(workout: workoutData)
+            openImportWorkoutViewController(with: shareable, mode: .createNew)
+        } catch {
+            showImportError(error)
+        }
     }
     
     private func requestHealthKitAuthorization() {
@@ -835,12 +921,17 @@ extension RunningListViewController: UIDocumentPickerDelegate {
             }
         }
 
-        do {
-            let shareableWorkout = try ShareManager.shared.importWorkout(from: fileURL)
-            // Open ImportWorkoutViewController with createNew mode
-            openImportWorkoutViewController(with: shareableWorkout, mode: .createNew)
-        } catch {
-            showImportError(error)
+        let ext = fileURL.pathExtension.lowercased()
+
+        if ext == "gpx" {
+            importGPXFile(at: fileURL)
+        } else {
+            do {
+                let shareableWorkout = try ShareManager.shared.importWorkout(from: fileURL)
+                openImportWorkoutViewController(with: shareableWorkout, mode: .createNew)
+            } catch {
+                showImportError(error)
+            }
         }
     }
 

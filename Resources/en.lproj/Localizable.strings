@@ -643,5 +643,10 @@
 "tip.thanks.large.title" = "New kicks, new runs!";
 "tip.thanks.large.message" = "I'm truly moved by your generous support.\nI'll do my best to make WorkoutPlaza even better.";
 
+// GPX Import
+"gpx.error.invalid" = "Invalid GPX file.";
+"gpx.error.noRoute" = "No route data found in the GPX file.";
+"gpx.error.insufficient" = "Insufficient route data. At least 2 location points are required.";
+
 // Tip Supporter Badge
 "tip.supporter.badge" = "Supporter";

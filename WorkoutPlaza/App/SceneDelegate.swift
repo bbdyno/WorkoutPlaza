@@ -46,20 +46,25 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
-        // Only handle .wplaza files
-        guard url.pathExtension.lowercased() == "wplaza" else {
+        let ext = url.pathExtension.lowercased()
+
+        if ext == "gpx" {
+            WPLog.info("Received .gpx file: \(url.lastPathComponent)")
+            NotificationCenter.default.post(
+                name: .didReceiveGPXFile,
+                object: nil,
+                userInfo: ["url": url]
+            )
+        } else if ext == "wplaza" {
+            WPLog.info("Received .wplaza file: \(url.lastPathComponent)")
+            NotificationCenter.default.post(
+                name: .didReceiveSharedWorkout,
+                object: nil,
+                userInfo: ["url": url]
+            )
+        } else {
             WPLog.warning("Unsupported incoming URL:", url.absoluteString)
-            return
         }
-
-        WPLog.info("Received .wplaza file: \(url.lastPathComponent)")
-
-        // Post notification to handle the file
-        NotificationCenter.default.post(
-            name: .didReceiveSharedWorkout,
-            object: nil,
-            userInfo: ["url": url]
-        )
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
