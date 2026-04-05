@@ -16,6 +16,7 @@ class MoreViewController: UIViewController {
     private let tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .insetGrouped)
         tv.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tv.register(TipProductCell.self, forCellReuseIdentifier: TipProductCell.reuseID)
         return tv
     }()
 
@@ -24,12 +25,28 @@ class MoreViewController: UIViewController {
     private struct MenuItem {
         let title: String
         let icon: String
+        let badge: String?
         let action: () -> Void
+
+        init(title: String, icon: String, badge: String? = nil, action: @escaping () -> Void) {
+            self.title = title
+            self.icon = icon
+            self.badge = badge
+            self.action = action
+        }
     }
 
     private struct Section {
+        enum SectionKind { case menu, tips }
         let title: String?
+        let kind: SectionKind
         let items: [MenuItem]
+
+        init(title: String? = nil, kind: SectionKind = .menu, items: [MenuItem]) {
+            self.title = title
+            self.kind = kind
+            self.items = items
+        }
     }
 
     private var sections: [Section] = []
@@ -39,56 +56,99 @@ class MoreViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupData()
         setupUI()
+        rebuildData()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(purchaseStatusChanged),
+            name: .wpPurchaseStatusDidChange,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - Setup
 
-    private func setupData() {
-        var configuredSections: [Section] = [
-            Section(title: WorkoutPlazaStrings.More.Section.card, items: [
-                MenuItem(title: WorkoutPlazaStrings.More.Saved.cards, icon: "square.stack.3d.forward.dottedline", action: { [weak self] in
-                    self?.showSavedCards()
-                })
-            ]),
-            Section(title: WorkoutPlazaStrings.More.Section.data, items: [
-                MenuItem(title: WorkoutPlazaStrings.More.Export.data, icon: "square.and.arrow.up", action: { [weak self] in
-                    self?.exportData()
-                }),
-                MenuItem(title: WorkoutPlazaStrings.More.Reset.data, icon: "trash", action: { [weak self] in
-                    self?.resetData()
-                })
-            ]),
-            Section(title: WorkoutPlazaStrings.More.Section.healthkit, items: [
-                MenuItem(title: WorkoutPlazaStrings.More.Healthkit.permissions, icon: "heart.text.square", action: { [weak self] in
-                    self?.showHealthKitPermissionManager()
-                }),
-                MenuItem(title: WorkoutPlazaStrings.More.Healthkit.sync, icon: "arrow.triangle.2.circlepath", action: { [weak self] in
-                    self?.syncHealthKitData()
-                })
-            ]),
-            Section(title: WorkoutPlazaStrings.More.Section.App.info, items: [
-                MenuItem(title: WorkoutPlazaStrings.More.Version.info, icon: "info.circle", action: { [weak self] in
-                    self?.showVersionInfo()
-                }),
-                MenuItem(title: NSLocalizedString("more.view.walkthrough", comment: ""), icon: "book.pages", action: { [weak self] in
-                    self?.showWalkthrough()
-                }),
-                MenuItem(title: WorkoutPlazaStrings.More.Contact.developer, icon: "envelope", action: { [weak self] in
-                    self?.contactDeveloper()
-                }),
-                MenuItem(title: WorkoutPlazaStrings.More.Rate.app, icon: "star", action: { [weak self] in
-                    self?.rateApp()
-                })
-            ]),
-            Section(title: nil, items: [
-                MenuItem(title: WorkoutPlazaStrings.More.Open.Source.licenses, icon: "doc.text", action: { [weak self] in
-                    self?.showLicenses()
-                })
-            ])
-        ]
+    private func rebuildData() {
+        let isPro = PurchaseManager.shared.isPro
 
+        var configuredSections: [Section] = []
+
+        // ── Pro 배너 (비구매자만 표시) ─────────────────────────────
+        if !isPro {
+            configuredSections.append(Section(title: nil, items: [
+                MenuItem(title: NSLocalizedString("more.pro.upgrade.cell", comment: ""),
+                         icon: "crown.fill",
+                         action: { [weak self] in self?.showProUpgrade(trigger: nil) })
+            ]))
+        }
+
+        // ── 카드 ──────────────────────────────────────────────────
+        configuredSections.append(Section(title: WorkoutPlazaStrings.More.Section.card, items: [
+            MenuItem(title: WorkoutPlazaStrings.More.Saved.cards, icon: "square.stack.3d.forward.dottedline", action: { [weak self] in
+                self?.showSavedCards()
+            })
+        ]))
+
+        // ── 데이터 ────────────────────────────────────────────────
+        configuredSections.append(Section(title: WorkoutPlazaStrings.More.Section.data, items: [
+            MenuItem(title: WorkoutPlazaStrings.More.Export.data,
+                     icon: "square.and.arrow.up",
+                     badge: isPro ? nil : "PRO",
+                     action: { [weak self] in self?.exportData() }),
+            MenuItem(title: WorkoutPlazaStrings.More.Reset.data, icon: "trash", action: { [weak self] in
+                self?.resetData()
+            })
+        ]))
+
+        // ── HealthKit ─────────────────────────────────────────────
+        configuredSections.append(Section(title: WorkoutPlazaStrings.More.Section.healthkit, items: [
+            MenuItem(title: WorkoutPlazaStrings.More.Healthkit.permissions, icon: "heart.text.square", action: { [weak self] in
+                self?.showHealthKitPermissionManager()
+            }),
+            MenuItem(title: WorkoutPlazaStrings.More.Healthkit.sync, icon: "arrow.triangle.2.circlepath", action: { [weak self] in
+                self?.syncHealthKitData()
+            })
+        ]))
+
+        // ── 앱 정보 ───────────────────────────────────────────────
+        configuredSections.append(Section(title: WorkoutPlazaStrings.More.Section.App.info, items: [
+            MenuItem(title: WorkoutPlazaStrings.More.Version.info, icon: "info.circle", action: { [weak self] in
+                self?.showVersionInfo()
+            }),
+            MenuItem(title: NSLocalizedString("more.view.walkthrough", comment: ""), icon: "book.pages", action: { [weak self] in
+                self?.showWalkthrough()
+            }),
+            MenuItem(title: WorkoutPlazaStrings.More.Contact.developer, icon: "envelope", action: { [weak self] in
+                self?.contactDeveloper()
+            }),
+            MenuItem(title: WorkoutPlazaStrings.More.Rate.app, icon: "star", action: { [weak self] in
+                self?.rateApp()
+            })
+        ]))
+
+        // ── 라이센스 ──────────────────────────────────────────────
+        configuredSections.append(Section(title: nil, items: [
+            MenuItem(title: WorkoutPlazaStrings.More.Open.Source.licenses, icon: "doc.text", action: { [weak self] in
+                self?.showLicenses()
+            })
+        ]))
+
+        // ── 개발자 후원 ───────────────────────────────────────────
+        let tipTitle = PurchaseManager.shared.isSupporter
+            ? NSLocalizedString("more.tip.section.supporter", comment: "")
+            : NSLocalizedString("more.tip.section", comment: "")
+        configuredSections.append(Section(title: tipTitle, kind: .tips, items: [
+            MenuItem(title: NSLocalizedString("tip.product.small", comment: ""),  icon: "cup.and.saucer",     action: { [weak self] in self?.purchaseTip(PurchaseManager.ProductID.tipSmall) }),
+            MenuItem(title: NSLocalizedString("tip.product.medium", comment: ""), icon: "drop.fill",           action: { [weak self] in self?.purchaseTip(PurchaseManager.ProductID.tipMedium) }),
+            MenuItem(title: NSLocalizedString("tip.product.large", comment: ""),  icon: "shoeprints.fill",     action: { [weak self] in self?.purchaseTip(PurchaseManager.ProductID.tipLarge) })
+        ]))
+
+        // ── DEBUG ─────────────────────────────────────────────────
         #if DEBUG
         configuredSections.insert(
             Section(title: WorkoutPlazaStrings.More.Section.Developer.info, items: [
@@ -98,15 +158,15 @@ class MoreViewController: UIViewController {
             ]),
             at: 0
         )
-
         configuredSections.append(Section(title: WorkoutPlazaStrings.More.Section.developer, items: [
-                MenuItem(title: WorkoutPlazaStrings.More.Developer.settings, icon: "wrench.and.screwdriver", action: { [weak self] in
-                    self?.showDeveloperSettings()
-                })
-            ]))
+            MenuItem(title: WorkoutPlazaStrings.More.Developer.settings, icon: "wrench.and.screwdriver", action: { [weak self] in
+                self?.showDeveloperSettings()
+            })
+        ]))
         #endif
 
         sections = configuredSections
+        tableView.reloadData()
     }
 
     private func setupUI() {
@@ -118,10 +178,57 @@ class MoreViewController: UIViewController {
         tableView.dataSource = self
         tableView.backgroundColor = ColorSystem.background
         tableView.separatorColor = ColorSystem.divider
-        
+
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
+        }
+    }
+
+    // MARK: - Purchase Status
+
+    @objc private func purchaseStatusChanged() {
+        rebuildData()
+    }
+
+    // MARK: - Pro Upgrade
+
+    private func showProUpgrade(trigger: String?) {
+        let vc = ProUpgradeViewController()
+        vc.triggerFeature = trigger
+        let nav = UINavigationController(rootViewController: vc)
+        nav.modalPresentationStyle = .pageSheet
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(nav, animated: true)
+    }
+
+    // MARK: - Tips
+
+    private func purchaseTip(_ productID: String) {
+        Task {
+            do {
+                let outcome = try await PurchaseManager.shared.purchase(productID)
+                guard case .success(let product) = outcome else { return }
+
+                PurchaseManager.shared.recordTip(product: product)
+
+                let tier: TipThankYouViewController.Tier
+                switch productID {
+                case PurchaseManager.ProductID.tipSmall:  tier = .small
+                case PurchaseManager.ProductID.tipMedium: tier = .medium
+                default:                                   tier = .large
+                }
+
+                let thanksVC = TipThankYouViewController(tier: tier)
+                thanksVC.onDismiss = { [weak self] in self?.rebuildData() }
+                present(thanksVC, animated: true)
+
+            } catch {
+                showToast(error.localizedDescription)
+            }
         }
     }
 
@@ -133,6 +240,11 @@ class MoreViewController: UIViewController {
     }
 
     private func exportData() {
+        guard PurchaseManager.shared.isPro else {
+            showProUpgrade(trigger: "export")
+            return
+        }
+
         let alert = UIAlertController(
             title: WorkoutPlazaStrings.More.Export.data,
             message: WorkoutPlazaStrings.More.Export.message,
@@ -140,7 +252,6 @@ class MoreViewController: UIViewController {
         )
         alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
         alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.More.Export.action, style: .default) { _ in
-            // TODO: Implement export
             self.showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
         })
         present(alert, animated: true)
@@ -339,14 +450,10 @@ class MoreViewController: UIViewController {
 
     private func localizedHealthKitStatus(_ state: HealthKitAuthorizationState) -> String {
         switch state {
-        case .notAvailable:
-            return WorkoutPlazaStrings.More.Healthkit.Status.Not.available
-        case .requestNeeded:
-            return WorkoutPlazaStrings.More.Healthkit.Status.Request.needed
-        case .authorized:
-            return WorkoutPlazaStrings.More.Healthkit.Status.authorized
-        case .unknown:
-            return WorkoutPlazaStrings.More.Healthkit.Status.unknown
+        case .notAvailable:  return WorkoutPlazaStrings.More.Healthkit.Status.Not.available
+        case .requestNeeded: return WorkoutPlazaStrings.More.Healthkit.Status.Request.needed
+        case .authorized:    return WorkoutPlazaStrings.More.Healthkit.Status.authorized
+        case .unknown:       return WorkoutPlazaStrings.More.Healthkit.Status.unknown
         }
     }
 
@@ -418,38 +525,68 @@ class MoreViewController: UIViewController {
 
 extension MoreViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return sections.count
+        sections.count
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return sections[section].items.count
+        sections[section].items.count
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return sections[section].title
+        sections[section].title
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let item = sections[indexPath.section].items[indexPath.row]
+        let section = sections[indexPath.section]
+        let item = section.items[indexPath.row]
 
+        if section.kind == .tips {
+            let cell = tableView.dequeueReusableCell(withIdentifier: TipProductCell.reuseID, for: indexPath) as! TipProductCell
+            let productID = [PurchaseManager.ProductID.tipSmall, PurchaseManager.ProductID.tipMedium, PurchaseManager.ProductID.tipLarge][indexPath.row]
+            let product = PurchaseManager.shared.product(for: productID)
+            cell.configure(title: item.title, icon: item.icon, price: product?.displayPrice)
+            return cell
+        }
+
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         var config = cell.defaultContentConfiguration()
         config.text = item.title
         config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
         config.image = UIImage(systemName: item.icon)
 
-        if item.icon == "trash" {
+        // Pro 업그레이드 셀 강조
+        if item.icon == "crown.fill" {
+            config.textProperties.color = ColorSystem.primaryBlue
+            config.imageProperties.tintColor = ColorSystem.primaryBlue
+            cell.accessoryType = .disclosureIndicator
+        } else if item.icon == "trash" {
             config.textProperties.color = .systemRed
             config.imageProperties.tintColor = .systemRed
+            cell.accessoryType = .none
         } else {
             config.textProperties.color = ColorSystem.mainText
             config.imageProperties.tintColor = ColorSystem.mainText
+            cell.accessoryType = .disclosureIndicator
         }
-        
+
+        // PRO 배지
+        if let badge = item.badge {
+            let badgeLabel = UILabel()
+            badgeLabel.text = badge
+            badgeLabel.font = .systemFont(ofSize: 10, weight: .bold)
+            badgeLabel.textColor = .white
+            badgeLabel.backgroundColor = ColorSystem.primaryBlue
+            badgeLabel.layer.cornerRadius = 5
+            badgeLabel.clipsToBounds = true
+            badgeLabel.textAlignment = .center
+            badgeLabel.frame = CGRect(x: 0, y: 0, width: 36, height: 20)
+            cell.accessoryView = badgeLabel
+        } else {
+            cell.accessoryView = nil
+        }
+
         cell.contentConfiguration = config
-        cell.accessoryType = .disclosureIndicator
-        cell.backgroundColor = .secondarySystemGroupedBackground // Dark card look
-        
+        cell.backgroundColor = .secondarySystemGroupedBackground
         return cell
     }
 }
@@ -459,7 +596,61 @@ extension MoreViewController: UITableViewDataSource {
 extension MoreViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let item = sections[indexPath.section].items[indexPath.row]
-        item.action()
+        sections[indexPath.section].items[indexPath.row].action()
+    }
+}
+
+// MARK: - TipProductCell
+
+private final class TipProductCell: UITableViewCell {
+    static let reuseID = "TipProductCell"
+
+    private let iconLabel  = UILabel()
+    private let titleLabel = UILabel()
+    private let priceLabel = UILabel()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        backgroundColor = .secondarySystemGroupedBackground
+
+        iconLabel.font  = .systemFont(ofSize: 22)
+        iconLabel.textAlignment = .center
+
+        titleLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        titleLabel.textColor = ColorSystem.mainText
+
+        priceLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        priceLabel.textColor = ColorSystem.primaryBlue
+        priceLabel.setContentHuggingPriority(.required, for: .horizontal)
+
+        let stack = UIStackView(arrangedSubviews: [iconLabel, titleLabel, priceLabel])
+        stack.axis = .horizontal
+        stack.spacing = 12
+        stack.alignment = .center
+
+        contentView.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.top.bottom.equalToSuperview().inset(12)
+        }
+
+        iconLabel.snp.makeConstraints { make in make.width.equalTo(28) }
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(title: String, icon: String, price: String?) {
+        // SF Symbol → emoji fallback
+        if let img = UIImage(systemName: icon) {
+            let attachment = NSTextAttachment(image: img)
+            let imgString = NSAttributedString(attachment: attachment)
+            let attrString = NSMutableAttributedString()
+            attrString.append(imgString)
+            iconLabel.attributedText = attrString
+        } else {
+            iconLabel.text = icon
+        }
+        titleLabel.text = title
+        priceLabel.text = price ?? "—"
     }
 }

@@ -587,3 +587,61 @@
 
 // Text Path Guide
 "textpath.guide" = "Drag on the screen to\ndraw a text path";
+
+// ── In-App Purchase ───────────────────────────────────────────────────
+
+// Common
+"common.close" = "Close";
+"common.error" = "Error";
+
+// Purchase Errors
+"purchase.error.notFound" = "Product information could not be loaded.";
+"purchase.error.verification" = "Purchase verification failed.";
+"purchase.error.unknown" = "An unknown error occurred.";
+
+// Pro Upgrade Sheet
+"pro.upgrade.subtitle" = "Unlock all premium features forever with a single purchase.";
+"pro.upgrade.oneTime" = "One-time payment · Keep forever";
+"pro.upgrade.buy" = "Buy Now";
+"pro.upgrade.restore" = "Restore Purchases";
+"pro.upgrade.pending" = "Your purchase is awaiting approval.";
+"pro.upgrade.noPurchaseFound" = "No previous purchases found to restore.";
+"pro.upgrade.success.title" = "Welcome to Pro!";
+"pro.upgrade.success.message" = "All premium features are now unlocked. Thank you!";
+
+// Pro Features
+"pro.feature.fonts.title" = "Premium Fonts";
+"pro.feature.fonts.desc" = "Unlock all fonts including BebasNeue, Explora, RIDIBatang and more";
+"pro.feature.templates.title" = "Premium Templates";
+"pro.feature.templates.desc" = "All built-in templates plus unlimited custom template saves";
+"pro.feature.watermark.title" = "Remove Watermark";
+"pro.feature.watermark.desc" = "Remove the WorkoutPlaza logo from shared cards";
+"pro.feature.export.title" = "Data Export";
+"pro.feature.export.desc" = "Export workout records as files";
+
+// More — Pro Banner
+"more.pro.upgrade.cell" = "Upgrade to Lifetime Pro";
+
+// More — Tip Section
+"more.tip.section" = "Support Developer";
+"more.tip.section.supporter" = "Support Developer ❤️";
+
+// Tip Products
+"tip.product.small" = "Recovery Drink";
+"tip.product.medium" = "Liquid Chalk";
+"tip.product.large" = "New Laces";
+
+// Tip Thank You — Small
+"tip.thanks.small.title" = "Thanks for the coffee!";
+"tip.thanks.small.message" = "Your small support means a lot.\nIt motivates me to keep building great things.";
+
+// Tip Thank You — Medium
+"tip.thanks.medium.title" = "Chalk up! Thank you :)";
+"tip.thanks.medium.message" = "Your support helps me push harder on development.\nThank you from the bottom of my heart!";
+
+// Tip Thank You — Large
+"tip.thanks.large.title" = "New kicks, new runs!";
+"tip.thanks.large.message" = "I'm truly moved by your generous support.\nI'll do my best to make WorkoutPlaza even better.";
+
+// Tip Supporter Badge
+"tip.supporter.badge" = "Supporter";

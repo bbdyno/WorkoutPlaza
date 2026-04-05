@@ -128,6 +128,17 @@ extension BaseWorkoutDetailViewController {
         present(picker, animated: true)
     }
     
+    // MARK: - Watermark Pro Gating
+
+    /// Pro 여부에 따라 워터마크 노출 상태를 업데이트
+    func updateWatermarkVisibility() {
+        watermarkImageView.isHidden = PurchaseManager.shared.isPro
+    }
+
+    @objc func handlePurchaseStatusChanged() {
+        updateWatermarkVisibility()
+    }
+
     /// 현재 배경의 밝기에 따라 워터마크 색상을 자동으로 조정
     func updateWatermarkColorForBackground() {
         var isBackgroundLight = true // Default to light

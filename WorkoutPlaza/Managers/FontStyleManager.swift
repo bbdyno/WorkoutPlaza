@@ -38,6 +38,16 @@ enum FontStyle: String, CaseIterable {
         return rawValue
     }
 
+    /// Pro 전용 폰트 여부. true이면 미구매 사용자에게 잠금 표시.
+    var isProOnly: Bool {
+        switch self {
+        case .system, .alata, .bebasNeue, .gmarketSansMedium, .paperlogyRegular:
+            return false
+        default:
+            return true
+        }
+    }
+
     var fontName: String {
         switch self {
         case .system:

@@ -376,9 +376,13 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Add observer for widget move notification
         NotificationCenter.default.addObserver(self, selector: #selector(handleWidgetDidMove(_:)), name: .widgetDidMove, object: nil)
 
+        // Pro 구매 상태 변경 시 워터마크 실시간 반영
+        NotificationCenter.default.addObserver(self, selector: #selector(handlePurchaseStatusChanged), name: .wpPurchaseStatusDidChange, object: nil)
+
         // Initial button state
         aspectRatioButton.setTitle(currentAspectRatio.displayName, for: .normal)
         updateToolbarItemsState()
+        updateWatermarkVisibility()
     }
 
     override func viewWillAppear(_ animated: Bool) {

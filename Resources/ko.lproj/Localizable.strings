@@ -585,3 +585,62 @@
 
 // Text Path Guide
 "textpath.guide" = "화면을 드래그하여\n텍스트 경로를 그려주세요";
+
+// ── In-App Purchase ───────────────────────────────────────────────────
+
+// Common
+"common.close" = "닫기";
+"common.error" = "오류";
+
+// Purchase Errors
+"purchase.error.notFound" = "상품 정보를 불러올 수 없습니다.";
+"purchase.error.verification" = "구매 검증에 실패했습니다.";
+"purchase.error.unknown" = "알 수 없는 오류가 발생했습니다.";
+
+// Pro Upgrade Sheet
+"pro.upgrade.subtitle" = "한 번의 구매로 모든 프리미엄 기능을 영구적으로 사용하세요.";
+"pro.upgrade.oneTime" = "일회 결제 · 평생 소장";
+"pro.upgrade.buy" = "지금 구매하기";
+"pro.upgrade.restore" = "구매 복원";
+"pro.upgrade.pending" = "결제 승인 대기 중입니다.";
+"pro.upgrade.noPurchaseFound" = "복원할 구매 내역이 없습니다.";
+"pro.upgrade.success.title" = "Pro 업그레이드 완료!";
+"pro.upgrade.success.message" = "이제 모든 프리미엄 기능을 사용할 수 있습니다. 감사합니다!";
+
+// Pro Features
+"pro.feature.fonts.title" = "프리미엄 폰트";
+"pro.feature.fonts.desc" = "BebasNeue, Explora, 리디바탕 등 모든 폰트 잠금 해제";
+"pro.feature.templates.title" = "프리미엄 템플릿";
+"pro.feature.templates.desc" = "모든 빌트인 템플릿 및 커스텀 템플릿 무제한 저장";
+"pro.feature.watermark.title" = "워터마크 제거";
+"pro.feature.watermark.desc" = "공유 카드에서 WorkoutPlaza 로고 제거";
+"pro.feature.export.title" = "데이터 내보내기";
+"pro.feature.export.desc" = "운동 기록을 파일로 내보내기";
+
+// More — Pro Banner
+"more.pro.upgrade.cell" = "Lifetime Pro로 업그레이드";
+
+// More — Tip Section
+"more.tip.section" = "개발자 후원";
+"more.tip.section.supporter" = "개발자 후원 ❤️";
+
+// Tip Products
+"tip.product.small" = "Recovery Drink";
+"tip.product.medium" = "Liquid Chalk";
+"tip.product.large" = "New Laces";
+
+// Tip Thank You — Small
+"tip.thanks.small.title" = "한 잔의 커피 감사해요!";
+"tip.thanks.small.message" = "작은 후원이 개발자에게 큰 힘이 됩니다.\n덕분에 더 좋은 앱을 만들어 갈게요.";
+
+// Tip Thank You — Medium
+"tip.thanks.medium.title" = "손에 쏙! 고마워요 :)";
+"tip.thanks.medium.message" = "당신의 후원 덕분에 더 열심히 개발할 수 있어요.\n진심으로 감사합니다!";
+
+// Tip Thank You — Large
+"tip.thanks.large.title" = "새 신발을 신고 달려볼게요!";
+"tip.thanks.large.message" = "이렇게 큰 응원을 보내주셔서 너무 감사합니다.\nWorkoutPlaza가 더욱 성장할 수 있도록 최선을 다할게요.";
+
+// Tip Supporter Badge
+"tip.supporter.badge" = "후원자";
+
