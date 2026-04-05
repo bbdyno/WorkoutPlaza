@@ -49,6 +49,9 @@ enum FeatureGate {
     /// 고해상도 내보내기
     static var highResExport: Bool { false }
 
+    /// 투명 배경 스티커 내보내기
+    static var transparentExport: Bool { true }
+
     // MARK: - Helper
 
     /// 특정 기능이 유료인지 체크 + 현재 사용자가 접근 가능한지

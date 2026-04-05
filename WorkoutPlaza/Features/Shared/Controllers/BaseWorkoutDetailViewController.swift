@@ -1083,6 +1083,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             UIAction(title: "이미지 공유", image: UIImage(named: "icon.image")) { [weak self] _ in
                 self?.shareAsImage()
             },
+            UIAction(title: "스티커 내보내기", image: UIImage(named: "icon.download")) { [weak self] _ in
+                self?.shareAsSticker()
+            },
             UIAction(title: "레이아웃 내보내기", image: UIImage(named: "icon.share")) { [weak self] _ in
                 self?.exportCurrentLayout()
             }
@@ -1105,6 +1108,66 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             self.instructionLabel.isHidden = false
         }
     }
+
+    private func shareAsSticker() {
+        guard FeatureGate.canAccess(FeatureGate.transparentExport) else {
+            let proVC = ProUpgradeViewController()
+            proVC.triggerFeature = "transparent_export"
+            let nav = UINavigationController(rootViewController: proVC)
+            nav.modalPresentationStyle = .pageSheet
+            if let sheet = nav.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.prefersGrabberVisible = true
+            }
+            present(nav, animated: true)
+            return
+        }
+
+        selectionManager.deselectAll()
+        instructionLabel.isHidden = true
+
+        // 배경 요소 숨김
+        let bgImageWasHidden = backgroundImageView.isHidden
+        let bgTemplateWasHidden = backgroundTemplateView.isHidden
+        let dimWasHidden = dimOverlay.isHidden
+        let watermarkWasHidden = watermarkImageView.isHidden
+        let originalBgColor = contentView.backgroundColor
+        let originalContainerBgColor = canvasContainerView.backgroundColor
+
+        backgroundImageView.isHidden = true
+        backgroundTemplateView.isHidden = true
+        dimOverlay.isHidden = true
+        watermarkImageView.isHidden = true
+        contentView.backgroundColor = .clear
+        canvasContainerView.backgroundColor = .clear
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+
+            if let image = self.captureContentView(),
+               let pngData = image.pngData() {
+                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("sticker_\(Int(Date().timeIntervalSince1970)).png")
+                try? pngData.write(to: tempURL)
+
+                let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
+                if let popover = activityVC.popoverPresentationController {
+                    popover.sourceView = self.shareImageButton
+                    popover.sourceRect = self.shareImageButton.bounds
+                }
+                self.present(activityVC, animated: true)
+            }
+
+            // 배경 원복
+            self.backgroundImageView.isHidden = bgImageWasHidden
+            self.backgroundTemplateView.isHidden = bgTemplateWasHidden
+            self.dimOverlay.isHidden = dimWasHidden
+            self.watermarkImageView.isHidden = watermarkWasHidden
+            self.contentView.backgroundColor = originalBgColor
+            self.canvasContainerView.backgroundColor = originalContainerBgColor
+            self.instructionLabel.isHidden = false
+        }
+    }
+
     @objc dynamic func selectPhoto() {
         let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Background.select, message: nil, preferredStyle: .actionSheet)
         
