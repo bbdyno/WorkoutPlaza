@@ -385,6 +385,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         NotificationCenter.default.addObserver(self, selector: #selector(handlePurchaseStatusChanged), name: .wpPurchaseStatusDidChange, object: nil)
 
         // Initial button state
+        setupShareMenu()
         updateToolbarItemsState()
         updateWatermarkVisibility()
     }
@@ -1074,23 +1075,20 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
 
     @objc dynamic func shareImage() {
-        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        // setupShareMenu()에서 UIMenu로 처리
+    }
 
-        actionSheet.addAction(UIAlertAction(title: "이미지 공유", style: .default) { [weak self] _ in
-            self?.shareAsImage()
-        })
-
-        actionSheet.addAction(UIAlertAction(title: "레이아웃 내보내기", style: .default) { [weak self] _ in
-            self?.exportCurrentLayout()
-        })
-
-        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
-
-        if let popover = actionSheet.popoverPresentationController {
-            popover.sourceView = shareImageButton
-            popover.sourceRect = shareImageButton.bounds
-        }
-        present(actionSheet, animated: true)
+    func setupShareMenu() {
+        let menu = UIMenu(children: [
+            UIAction(title: "이미지 공유", image: UIImage(named: "icon.image")) { [weak self] _ in
+                self?.shareAsImage()
+            },
+            UIAction(title: "레이아웃 내보내기", image: UIImage(named: "icon.share")) { [weak self] _ in
+                self?.exportCurrentLayout()
+            }
+        ])
+        shareImageButton.menu = menu
+        shareImageButton.showsMenuAsPrimaryAction = true
     }
 
     private func shareAsImage() {
