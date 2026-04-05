@@ -7,8 +7,8 @@
 
 import UIKit
 
-/// Active Card 운동 앱의 색상 디자인 시스템
-/// 텍스트 정보보다 시각적 수치와 카드의 세련미를 강조하는 색상 시스템
+/// 블랙 & 화이트 기반 모노크롬 디자인 시스템
+/// 스포츠별 액센트 컬러(Blue/Green)로 포인트를 주는 미니멀 컬러 시스템
 enum ColorSystem {
 
     // MARK: - Core Brand Colors
@@ -25,19 +25,19 @@ enum ColorSystem {
 
     // MARK: - Common Control Tint
 
-    /// 공통 컨트롤 틴트: 다크 그레이 (세그먼트 컨트롤, 피커 등)
+    /// 공통 컨트롤 틴트: 블랙 (라이트) / 화이트 (다크)
     static var controlTint: UIColor {
         WorkoutPlazaAsset.controlTint.color
     }
 
     // MARK: - Interface & Typography
 
-    /// Background: 매우 밝은 그레이 (라이트) / 진한 검정 (다크)
+    /// Background: 순백 (라이트) / 순흑 (다크)
     static var background: UIColor {
         WorkoutPlazaAsset.background.color
     }
 
-    /// Main Text: 가독성을 위한 짙은 차콜 (라이트) / 밝은 화이트 (다크)
+    /// Main Text: 순흑 (라이트) / 순백 (다크)
     static var mainText: UIColor {
         WorkoutPlazaAsset.mainText.color
     }
@@ -52,7 +52,7 @@ enum ColorSystem {
         WorkoutPlazaAsset.divider.color
     }
 
-    /// Card Background: 순수 화이트 (라이트) / 진한 그레이 (다크)
+    /// Card Background: 연한 그레이 #F5F5F5 (라이트) / 진한 그레이 #1A1A1A (다크)
     static var cardBackground: UIColor {
         WorkoutPlazaAsset.cardBackground.color
     }
@@ -69,7 +69,7 @@ enum ColorSystem {
 
     // MARK: - Shadow Colors
 
-    /// Card Shadow: Blue 색상이 미세하게 섞인 그림자
+    /// Card Shadow: 순수 블랙 @8% opacity
     static var cardShadow: UIColor {
         WorkoutPlazaAsset.cardShadow.color
     }
