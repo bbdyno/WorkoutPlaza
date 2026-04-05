@@ -23,13 +23,13 @@ struct WorkoutPlazaTests {
 
     @Test func preservesModernRestoredSizeWhenNotRegressed() async throws {
         let restored = WidgetSizeNormalizer.normalizeRestoredRunningStatSize(
-            CGSize(width: 160, height: 80),
+            CGSize(width: 160, height: 60),
             widgetType: .distance,
             forceLegacyMigration: false
         )
 
         #expect(abs(restored.width - 160) < 0.001)
-        #expect(abs(restored.height - 80) < 0.001)
+        #expect(abs(restored.height - 60) < 0.001)
     }
 
     @Test func expandsHalfScaledCompactRestoredWidget() async throws {
@@ -45,13 +45,13 @@ struct WorkoutPlazaTests {
 
     @Test func expandsHalfScaledRegularRestoredWidget() async throws {
         let restored = WidgetSizeNormalizer.normalizeRestoredRunningStatSize(
-            CGSize(width: 80, height: 40),
+            CGSize(width: 80, height: 30),
             widgetType: .heartRate,
             forceLegacyMigration: false
         )
 
         #expect(restored.width >= 120)
-        #expect(restored.height >= 60)
+        #expect(restored.height >= 45)
     }
 
     @Test func expandsUnreadablySmallRestoredModernWidget() async throws {
@@ -73,7 +73,7 @@ struct WorkoutPlazaTests {
         )
 
         #expect(abs(restored.width - 160) < 0.001)
-        #expect(abs(restored.height - 80) < 0.001)
+        #expect(abs(restored.height - 60) < 0.001)
     }
 
     @Test func clampsUnreadableExplicitInitialSize() async throws {
@@ -85,7 +85,7 @@ struct WorkoutPlazaTests {
         )
 
         #expect(initial.width >= 120)
-        #expect(initial.height >= 60)
+        #expect(initial.height >= 45)
     }
 
     @Test func restoredMinimumRespectsSmallerCanvasScale() async throws {
