@@ -83,7 +83,12 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     var currentAspectRatio: AspectRatio = .portrait3_4
     var hasUnsavedChanges: Bool = false
     var centerGuideHideWorkItem: DispatchWorkItem?
+    var alignGuideHideWorkItem: DispatchWorkItem?
     var restoreCanvasTransform: RestoreCanvasTransform = .identity
+
+    // Alignment guide views
+    var _alignmentGuideViews: [UIView]?
+    var _spacingLabels: [UILabel]?
 
     // Undo
     private var undoStack: [SavedCardDesign] = []

@@ -269,16 +269,11 @@ extension BaseWorkoutDetailViewController {
     // MARK: - Widget-to-Widget Alignment Snap
 
     private static let alignSnapThreshold: CGFloat = 6
-    private static let maxAlignGuides = 6
 
-    /// 재사용 가능한 정렬 가이드 뷰 풀
-    private var alignmentGuideViews: [UIView] {
-        let key = "alignmentGuideViews"
-        if let existing = objc_getAssociatedObject(self, key) as? [UIView] {
-            return existing
-        }
+    var alignmentGuideViews: [UIView] {
+        if let existing = _alignmentGuideViews { return existing }
         var views: [UIView] = []
-        for _ in 0..<Self.maxAlignGuides {
+        for _ in 0..<6 {
             let v = UIView()
             v.backgroundColor = ColorSystem.primaryBlue.withAlphaComponent(0.6)
             v.isHidden = true
@@ -286,15 +281,12 @@ extension BaseWorkoutDetailViewController {
             contentView.addSubview(v)
             views.append(v)
         }
-        objc_setAssociatedObject(self, key, views, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        _alignmentGuideViews = views
         return views
     }
 
-    private var spacingLabels: [UILabel] {
-        let key = "spacingLabels"
-        if let existing = objc_getAssociatedObject(self, key) as? [UILabel] {
-            return existing
-        }
+    var spacingLabels: [UILabel] {
+        if let existing = _spacingLabels { return existing }
         var labels: [UILabel] = []
         for _ in 0..<4 {
             let l = UILabel()
@@ -306,7 +298,7 @@ extension BaseWorkoutDetailViewController {
             contentView.addSubview(l)
             labels.append(l)
         }
-        objc_setAssociatedObject(self, key, labels, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        _spacingLabels = labels
         return labels
     }
 
@@ -411,85 +403,82 @@ extension BaseWorkoutDetailViewController {
             }
         }
 
-        if phase == .ended {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.centerGuideDisplayDuration) { [weak self] in
-                self?.hideAlignmentGuides()
-                self?.hideSpacingLabels()
-            }
-        }
+        // 가이드/라벨 자동 숨김 스케줄
+        scheduleAlignGuideHide()
     }
 
     // MARK: - Equal Spacing Snap
 
     private func applyEqualSpacingSnap(to movedView: UIView, others: [UIView], phase: WidgetMovePhase) {
-        let threshold = Self.alignSnapThreshold
+        let threshold: CGFloat = 8
         let labels = spacingLabels
         var labelIndex = 0
-        let movedFrame = movedView.frame
 
-        // 인접 위젯 쌍 간 gap을 구하고, 이동 위젯이 동일 gap으로 배치될 수 있는지 확인
-        // X축: 위젯들을 X 기준 정렬 후 인접 쌍의 gap 계산
-        let xSorted = others.sorted(by: { $0.frame.midX < $1.frame.midX })
+        // 이동 위젯 포함 전체를 X 기준 정렬
+        var allViews = others + [movedView]
+        allViews.sort(by: { $0.frame.midX < $1.frame.midX })
 
-        if xSorted.count >= 2 {
-            // 인접 위젯 쌍의 gap들
-            for i in 0..<(xSorted.count - 1) {
-                let leftFrame = xSorted[i].frame
-                let rightFrame = xSorted[i + 1].frame
-                let pairGap = rightFrame.minX - leftFrame.maxX
-                guard pairGap > 5 else { continue }
+        guard allViews.count >= 3 else {
+            labels.forEach { $0.isHidden = true }
+            return
+        }
 
-                // 이동 위젯이 맨 왼쪽에 올 때: movedView — gap — xSorted[0]
-                if i == 0 {
-                    let myGap = xSorted[0].frame.minX - movedFrame.maxX
-                    if abs(myGap - pairGap) <= threshold && myGap > 0 {
-                        var c = movedView.center
-                        c.x = xSorted[0].frame.minX - pairGap - movedFrame.width / 2
-                        movedView.center = c
-                        if labelIndex < labels.count {
-                            showSpacingLabel(labels[labelIndex], gap: pairGap,
-                                             from: movedView.frame.maxX, to: xSorted[0].frame.minX,
-                                             midY: movedView.frame.midY)
-                            labelIndex += 1
-                        }
-                        break
-                    }
-                }
+        let movedIdx = allViews.firstIndex(where: { $0 === movedView }) ?? 0
 
-                // 이동 위젯이 맨 오른쪽에 올 때: xSorted[last] — gap — movedView
-                if i == xSorted.count - 2 {
-                    let myGap = movedFrame.minX - xSorted.last!.frame.maxX
-                    if abs(myGap - pairGap) <= threshold && myGap > 0 {
-                        var c = movedView.center
-                        c.x = xSorted.last!.frame.maxX + pairGap + movedFrame.width / 2
-                        movedView.center = c
-                        if labelIndex < labels.count {
-                            showSpacingLabel(labels[labelIndex], gap: pairGap,
-                                             from: xSorted.last!.frame.maxX, to: movedView.frame.minX,
-                                             midY: movedView.frame.midY)
-                            labelIndex += 1
-                        }
-                        break
-                    }
-                }
+        // 이동 위젯의 좌/우 인접 위젯과의 gap 계산
+        // 다른 인접 쌍의 gap과 비교하여 일치하면 스냅
+        var snapped = false
 
-                // 이동 위젯이 두 위젯 사이에 올 때
-                let gapLeft = movedFrame.minX - leftFrame.maxX
-                let gapRight = rightFrame.minX - movedFrame.maxX
-                if abs(gapLeft - gapRight) <= threshold && gapLeft > 0 && gapRight > 0 {
-                    let targetGap = (gapLeft + gapRight) / 2
+        // 좌측 gap (movedView와 왼쪽 위젯)
+        if movedIdx > 0 {
+            let leftNeighbor = allViews[movedIdx - 1]
+            let leftGap = movedView.frame.minX - leftNeighbor.frame.maxX
+
+            // 다른 인접 쌍의 gap 중 일치하는 것 찾기
+            for i in 0..<(allViews.count - 1) {
+                guard i != movedIdx - 1 && i != movedIdx else { continue }
+                let a = allViews[i].frame
+                let b = allViews[i + 1].frame
+                let refGap = b.minX - a.maxX
+                guard refGap > 5 else { continue }
+
+                if abs(leftGap - refGap) <= threshold {
                     var c = movedView.center
-                    c.x = leftFrame.maxX + targetGap + movedFrame.width / 2
+                    c.x = leftNeighbor.frame.maxX + refGap + movedView.frame.width / 2
                     movedView.center = c
+
                     if labelIndex < labels.count {
-                        showSpacingLabel(labels[labelIndex], gap: targetGap,
-                                         from: leftFrame.maxX, to: movedView.frame.minX,
+                        showSpacingLabel(labels[labelIndex], gap: refGap,
+                                         from: leftNeighbor.frame.maxX, to: movedView.frame.minX,
                                          midY: movedView.frame.midY)
                         labelIndex += 1
                     }
+                    snapped = true
+                    break
+                }
+            }
+        }
+
+        // 우측 gap (movedView와 오른쪽 위젯)
+        if !snapped && movedIdx < allViews.count - 1 {
+            let rightNeighbor = allViews[movedIdx + 1]
+            let rightGap = rightNeighbor.frame.minX - movedView.frame.maxX
+
+            for i in 0..<(allViews.count - 1) {
+                guard i != movedIdx && !(i == movedIdx - 1 && i + 1 == movedIdx) else { continue }
+                let a = allViews[i].frame
+                let b = allViews[i + 1].frame
+                let refGap = b.minX - a.maxX
+                guard refGap > 5 else { continue }
+
+                if abs(rightGap - refGap) <= threshold {
+                    var c = movedView.center
+                    c.x = rightNeighbor.frame.minX - refGap - movedView.frame.width / 2
+                    movedView.center = c
+
                     if labelIndex < labels.count {
-                        showSpacingLabel(labels[labelIndex], gap: targetGap,
-                                         from: movedView.frame.maxX, to: rightFrame.minX,
+                        showSpacingLabel(labels[labelIndex], gap: refGap,
+                                         from: movedView.frame.maxX, to: rightNeighbor.frame.minX,
                                          midY: movedView.frame.midY)
                         labelIndex += 1
                     }
@@ -498,7 +487,6 @@ extension BaseWorkoutDetailViewController {
             }
         }
 
-        // 사용하지 않은 라벨 숨김
         for i in labelIndex..<labels.count {
             labels[i].isHidden = true
         }
@@ -515,8 +503,18 @@ extension BaseWorkoutDetailViewController {
         spacingLabels.forEach { $0.isHidden = true }
     }
 
+    private func scheduleAlignGuideHide() {
+        alignGuideHideWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.hideAlignmentGuides()
+            self?.hideSpacingLabels()
+        }
+        alignGuideHideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+    }
+
     private func hideAlignmentGuides() {
-        UIView.animate(withDuration: 0.12) {
+        UIView.animate(withDuration: 0.15) {
             self.alignmentGuideViews.forEach { $0.alpha = 0 }
         } completion: { _ in
             self.alignmentGuideViews.forEach { $0.isHidden = true }
