@@ -168,6 +168,7 @@ extension BaseWorkoutDetailViewController {
         let phaseRaw = notification.userInfo?[WidgetMoveNotificationUserInfoKey.phase] as? String
         let phase = WidgetMovePhase(rawValue: phaseRaw ?? WidgetMovePhase.ended.rawValue) ?? .ended
         applyCenterStickySnap(to: movedView, phase: phase)
+        applyWidgetAlignmentSnap(to: movedView, phase: phase)
     }
 
     private func applyCenterStickySnap(to movedView: UIView, phase: WidgetMovePhase) {
@@ -265,4 +266,210 @@ extension BaseWorkoutDetailViewController {
         }
     }
 
+    // MARK: - Widget-to-Widget Alignment Snap
+
+    private static let alignSnapThreshold: CGFloat = 6
+    private static let maxAlignGuides = 6
+
+    /// 재사용 가능한 정렬 가이드 뷰 풀
+    private var alignmentGuideViews: [UIView] {
+        let key = "alignmentGuideViews"
+        if let existing = objc_getAssociatedObject(self, key) as? [UIView] {
+            return existing
+        }
+        var views: [UIView] = []
+        for _ in 0..<Self.maxAlignGuides {
+            let v = UIView()
+            v.backgroundColor = ColorSystem.primaryBlue.withAlphaComponent(0.6)
+            v.isHidden = true
+            v.isUserInteractionEnabled = false
+            contentView.addSubview(v)
+            views.append(v)
+        }
+        objc_setAssociatedObject(self, key, views, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return views
+    }
+
+    private var spacingLabels: [UILabel] {
+        let key = "spacingLabels"
+        if let existing = objc_getAssociatedObject(self, key) as? [UILabel] {
+            return existing
+        }
+        var labels: [UILabel] = []
+        for _ in 0..<4 {
+            let l = UILabel()
+            l.font = AppFont.statRegular(9)
+            l.textColor = ColorSystem.primaryBlue
+            l.textAlignment = .center
+            l.isHidden = true
+            l.isUserInteractionEnabled = false
+            contentView.addSubview(l)
+            labels.append(l)
+        }
+        objc_setAssociatedObject(self, key, labels, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return labels
+    }
+
+    func applyWidgetAlignmentSnap(to movedView: UIView, phase: WidgetMovePhase) {
+        let others = widgets.filter { $0 !== movedView && $0.superview === contentView }
+        guard !others.isEmpty else {
+            hideAlignmentGuides()
+            return
+        }
+
+        let threshold = Self.alignSnapThreshold
+        var snappedCenter = movedView.center
+        let movedFrame = movedView.frame
+
+        struct GuideInfo {
+            let isVertical: Bool // true=세로선(X축 정렬), false=가로선(Y축 정렬)
+            let position: CGFloat
+            let minExtent: CGFloat
+            let maxExtent: CGFloat
+        }
+        var guides: [GuideInfo] = []
+
+        for other in others {
+            let of = other.frame
+
+            // X축 정렬 (세로 가이드라인)
+            let xPairs: [(CGFloat, CGFloat)] = [
+                (movedFrame.minX, of.minX),   // leading-leading
+                (movedFrame.midX, of.midX),   // center-center
+                (movedFrame.maxX, of.maxX),   // trailing-trailing
+            ]
+            for (moved, target) in xPairs {
+                if abs(moved - target) <= threshold {
+                    let offset = target - moved
+                    snappedCenter.x += offset
+                    let minY = min(movedFrame.minY, of.minY)
+                    let maxY = max(movedFrame.maxY, of.maxY)
+                    guides.append(GuideInfo(isVertical: true, position: target, minExtent: minY, maxExtent: maxY))
+                    break
+                }
+            }
+
+            // Y축 정렬 (가로 가이드라인)
+            let yPairs: [(CGFloat, CGFloat)] = [
+                (movedFrame.minY, of.minY),   // top-top
+                (movedFrame.midY, of.midY),   // center-center
+                (movedFrame.maxY, of.maxY),   // bottom-bottom
+            ]
+            for (moved, target) in yPairs {
+                if abs(moved - target) <= threshold {
+                    let offset = target - moved
+                    snappedCenter.y += offset
+                    let minX = min(movedFrame.minX, of.minX)
+                    let maxX = max(movedFrame.maxX, of.maxX)
+                    guides.append(GuideInfo(isVertical: false, position: target, minExtent: minX, maxExtent: maxX))
+                    break
+                }
+            }
+        }
+
+        // 스냅 적용
+        if snappedCenter != movedView.center {
+            movedView.center = snappedCenter
+            if let selectable = movedView as? Selectable, selectable.isSelected {
+                selectable.positionResizeHandles()
+            }
+        }
+
+        // 등간격 스냅
+        applyEqualSpacingSnap(to: movedView, others: others, phase: phase)
+
+        // 가이드라인 표시
+        let guideViews = alignmentGuideViews
+        for (i, gv) in guideViews.enumerated() {
+            if i < guides.count {
+                let g = guides[i]
+                if g.isVertical {
+                    gv.frame = CGRect(x: g.position - 0.5, y: g.minExtent, width: 1, height: g.maxExtent - g.minExtent)
+                } else {
+                    gv.frame = CGRect(x: g.minExtent, y: g.position - 0.5, width: g.maxExtent - g.minExtent, height: 1)
+                }
+                contentView.bringSubviewToFront(gv)
+                gv.isHidden = false
+                gv.alpha = 1
+            } else {
+                gv.isHidden = true
+            }
+        }
+
+        if phase == .ended {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.centerGuideDisplayDuration) { [weak self] in
+                self?.hideAlignmentGuides()
+            }
+        }
+    }
+
+    // MARK: - Equal Spacing Snap
+
+    private func applyEqualSpacingSnap(to movedView: UIView, others: [UIView], phase: WidgetMovePhase) {
+        let threshold = Self.alignSnapThreshold
+        let labels = spacingLabels
+        var labelIndex = 0
+
+        // 수평 등간격 (X축)
+        var xSorted = others.map { $0.frame }.sorted(by: { $0.midX < $1.midX })
+        let movedFrame = movedView.frame
+
+        for i in 0..<xSorted.count {
+            let gap = xSorted[i].minX - (i > 0 ? xSorted[i-1].maxX : 0)
+            guard gap > 0 else { continue }
+
+            // 이동 중인 위젯이 왼쪽에 올 때
+            let leftGap = xSorted[i].minX - movedFrame.maxX
+            if abs(leftGap - gap) <= threshold && leftGap > 0 {
+                var newCenter = movedView.center
+                newCenter.x = xSorted[i].minX - gap - movedFrame.width / 2
+                movedView.center = newCenter
+                if labelIndex < labels.count {
+                    let l = labels[labelIndex]
+                    l.text = "\(Int(gap))"
+                    l.frame = CGRect(x: movedFrame.maxX, y: movedFrame.midY - 8, width: gap, height: 16)
+                    l.isHidden = false
+                    contentView.bringSubviewToFront(l)
+                    labelIndex += 1
+                }
+                break
+            }
+
+            // 오른쪽에 올 때
+            let rightGap = movedFrame.minX - xSorted[i].maxX
+            if abs(rightGap - gap) <= threshold && rightGap > 0 {
+                var newCenter = movedView.center
+                newCenter.x = xSorted[i].maxX + gap + movedFrame.width / 2
+                movedView.center = newCenter
+                if labelIndex < labels.count {
+                    let l = labels[labelIndex]
+                    l.text = "\(Int(gap))"
+                    l.frame = CGRect(x: xSorted[i].maxX, y: movedFrame.midY - 8, width: gap, height: 16)
+                    l.isHidden = false
+                    contentView.bringSubviewToFront(l)
+                    labelIndex += 1
+                }
+                break
+            }
+        }
+
+        // 사용하지 않은 라벨 숨김
+        for i in labelIndex..<labels.count {
+            labels[i].isHidden = true
+        }
+
+        if phase == .ended {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.centerGuideDisplayDuration) { [weak self] in
+                self?.spacingLabels.forEach { $0.isHidden = true }
+            }
+        }
+    }
+
+    private func hideAlignmentGuides() {
+        UIView.animate(withDuration: 0.12) {
+            self.alignmentGuideViews.forEach { $0.alpha = 0 }
+        } completion: { _ in
+            self.alignmentGuideViews.forEach { $0.isHidden = true }
+        }
+    }
 }
