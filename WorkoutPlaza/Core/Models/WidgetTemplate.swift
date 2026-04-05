@@ -110,7 +110,9 @@ struct WidgetTemplate: Codable {
                 if let widget = widgetFactory(item, frame) {
                     widget.isUserInteractionEnabled = false
                     widget.clipsToBounds = true
-                    if let selectable = widget as? Selectable {
+                    if let statWidget = widget as? BaseStatWidget {
+                        statWidget.forceWhiteForPreview()
+                    } else if let selectable = widget as? Selectable {
                         selectable.applyColor(.white)
                     }
                     canvasView.addSubview(widget)
@@ -483,7 +485,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(distance: 5230)
                 w.setDisplayMode(self.inherentDisplayMode)
-                w.applyColor(.white)
+                w.forceWhiteForPreview()
                 return w
             }
         case .duration, .durationCompact, .durationIcon:
@@ -492,7 +494,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(duration: 1860)
                 w.setDisplayMode(self.inherentDisplayMode)
-                w.applyColor(.white)
+                w.forceWhiteForPreview()
                 return w
             }
         case .pace, .paceCompact, .paceIcon:
@@ -501,7 +503,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(pace: 5.42)
                 w.setDisplayMode(self.inherentDisplayMode)
-                w.applyColor(.white)
+                w.forceWhiteForPreview()
                 return w
             }
         case .speed, .speedCompact, .speedIcon:
@@ -510,7 +512,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(speed: 11.2)
                 w.setDisplayMode(self.inherentDisplayMode)
-                w.applyColor(.white)
+                w.forceWhiteForPreview()
                 return w
             }
         case .calories, .caloriesCompact, .caloriesIcon:
@@ -519,7 +521,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(calories: 320)
                 w.setDisplayMode(self.inherentDisplayMode)
-                w.applyColor(.white)
+                w.forceWhiteForPreview()
                 return w
             }
         case .heartRate, .heartRateCompact, .heartRateIcon:
@@ -528,7 +530,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(heartRate: 155)
                 w.setDisplayMode(self.inherentDisplayMode)
-                w.applyColor(.white)
+                w.forceWhiteForPreview()
                 return w
             }
         case .date, .dateCompact, .dateIcon:
@@ -580,7 +582,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 } else {
                     w.configure(gymName: WorkoutPlazaStrings.Widget.Climbing.gym)
                 }
-                w.applyColor(.white)
+                w.forceWhiteForPreview()
                 return w
             }
         case .climbingDiscipline:
@@ -588,7 +590,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 let w = ClimbingDisciplineWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(discipline: .bouldering)
-                w.applyColor(.white)
+                w.forceWhiteForPreview()
                 return w
             }
         case .climbingSession:
@@ -596,7 +598,7 @@ enum WidgetType: String, Codable, CaseIterable {
                 let w = ClimbingSessionWidget()
                 w.frame = CGRect(origin: .zero, size: size)
                 w.configure(sent: 8, total: 12)
-                w.applyColor(.white)
+                w.forceWhiteForPreview()
                 return w
             }
         case .routeMap:

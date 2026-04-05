@@ -511,6 +511,14 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         selectionDelegate?.itemWasSelected(self)
     }
 
+    /// 프리뷰용: 모든 라벨/아이콘을 순수 흰색으로 강제
+    func forceWhiteForPreview() {
+        titleLabel.textColor = .white
+        valueLabel.textColor = .white
+        unitLabel.textColor = .white
+        iconImageView.tintColor = .white
+    }
+
     // MARK: - Selectable Methods
     func applyColor(_ color: UIColor) {
         currentColor = color
