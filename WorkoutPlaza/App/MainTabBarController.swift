@@ -34,8 +34,8 @@ class MainTabBarController: UITabBarController {
         homeNav.navigationBar.prefersLargeTitles = true
         homeNav.tabBarItem = UITabBarItem(
             title: NSLocalizedString("tab.home", comment: ""),
-            image: UIImage(systemName: "house"),
-            selectedImage: UIImage(systemName: "house.fill")
+            image: UIImage(named: "icon.tab.home"),
+            selectedImage: UIImage(named: "icon.tab.home.fill")
         )
 
         // Tab 2: Statistics (통계)
@@ -44,8 +44,8 @@ class MainTabBarController: UITabBarController {
         statsNav.navigationBar.prefersLargeTitles = true
         statsNav.tabBarItem = UITabBarItem(
             title: NSLocalizedString("tab.statistics", comment: ""),
-            image: UIImage(systemName: "chart.bar"),
-            selectedImage: UIImage(systemName: "chart.bar.fill")
+            image: UIImage(named: "icon.tab.stats"),
+            selectedImage: UIImage(named: "icon.tab.stats.fill")
         )
 
         // Tab 3: More (더보기)
@@ -54,18 +54,22 @@ class MainTabBarController: UITabBarController {
         moreNav.navigationBar.prefersLargeTitles = true
         moreNav.tabBarItem = UITabBarItem(
             title: NSLocalizedString("tab.more", comment: ""),
-            image: UIImage(systemName: "ellipsis.circle"),
-            selectedImage: UIImage(systemName: "ellipsis.circle.fill")
+            image: UIImage(named: "icon.tab.more"),
+            selectedImage: UIImage(named: "icon.tab.more.fill")
         )
 
         viewControllers = [homeNav, statsNav, moreNav]
     }
 
     private func setupAppearance() {
-        // Tab bar appearance
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor.systemBackground
+        appearance.backgroundColor = ColorSystem.background
+
+        let itemAppearance = UITabBarItemAppearance()
+        itemAppearance.normal.titleTextAttributes = [.font: AppFont.bodySemiBold(10)]
+        itemAppearance.selected.titleTextAttributes = [.font: AppFont.bodyBold(10)]
+        appearance.stackedLayoutAppearance = itemAppearance
 
         tabBar.standardAppearance = appearance
         if #available(iOS 15.0, *) {

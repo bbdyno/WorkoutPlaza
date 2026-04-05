@@ -42,7 +42,7 @@ class RunningListViewController: UIViewController {
         let label = UILabel()
         label.text = WorkoutPlazaStrings.Running.empty
         label.textColor = ColorSystem.subText
-        label.font = .systemFont(ofSize: 16)
+        label.font = AppFont.body(16)
         label.textAlignment = .center
         label.isHidden = true
         return label
@@ -59,11 +59,11 @@ class RunningListViewController: UIViewController {
         // Modern styling
         let normalAttributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: ColorSystem.subText,
-            .font: UIFont.systemFont(ofSize: 14, weight: .semibold)
+            .font: AppFont.bodySemiBold(14)
         ]
         let selectedAttributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: UIColor.white,
-            .font: UIFont.systemFont(ofSize: 14, weight: .bold)
+            .font: AppFont.bodyBold(14)
         ]
         sc.setTitleTextAttributes(normalAttributes, for: .normal)
         sc.setTitleTextAttributes(selectedAttributes, for: .selected)
@@ -710,7 +710,7 @@ class WorkoutCell: UITableViewCell {
     private let cardContainer: UIView = {
         let view = UIView()
         view.backgroundColor = ColorSystem.cardBackground
-        view.layer.cornerRadius = 16
+        view.layer.cornerRadius = 20
         view.layer.cornerCurve = .continuous
         view.layer.masksToBounds = false
 
@@ -733,21 +733,21 @@ class WorkoutCell: UITableViewCell {
 
     private let dateLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.font = AppFont.bodyBold(20)
         label.textColor = ColorSystem.mainText
         return label
     }()
 
     private let timeLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.font = AppFont.bodySemiBold(14)
         label.textColor = ColorSystem.subText
         return label
     }()
 
     private let distanceLabel: UILabel = {
         let label = UILabel()
-        label.font = .monospacedDigitSystemFont(ofSize: 28, weight: .bold)
+        label.font = AppFont.mono(28)
         label.textColor = ColorSystem.mainText
         return label
     }()
@@ -755,28 +755,28 @@ class WorkoutCell: UITableViewCell {
     private let distanceUnitLabel: UILabel = {
         let label = UILabel()
         label.text = "km"
-        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.font = AppFont.statRegular(14)
         label.textColor = ColorSystem.subText
         return label
     }()
 
     private let durationLabel: UILabel = {
         let label = UILabel()
-        label.font = .monospacedDigitSystemFont(ofSize: 16, weight: .semibold)
+        label.font = AppFont.mono(16)
         label.textColor = ColorSystem.mainText
         return label
     }()
 
     private let paceLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14)
+        label.font = AppFont.body(14)
         label.textColor = ColorSystem.subText
         return label
     }()
 
     private let sourceBadge: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 10, weight: .semibold)
+        label.font = AppFont.bodySemiBold(10)
         label.textColor = .white
         label.textAlignment = .center
         label.layer.cornerRadius = 8

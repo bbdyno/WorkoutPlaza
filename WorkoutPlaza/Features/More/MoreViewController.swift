@@ -489,7 +489,7 @@ class MoreViewController: UIViewController {
 
         let toast = UILabel()
         toast.text = message
-        toast.font = .systemFont(ofSize: 14, weight: .medium)
+        toast.font = AppFont.bodySemiBold(14)
         toast.textColor = .white
         toast.backgroundColor = UIColor.black.withAlphaComponent(0.7)
         toast.textAlignment = .center
@@ -551,7 +551,7 @@ extension MoreViewController: UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         var config = cell.defaultContentConfiguration()
         config.text = item.title
-        config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
+        config.textProperties.font = AppFont.bodySemiBold(16)
         config.image = UIImage(systemName: item.icon)
 
         // Pro 업그레이드 셀 강조
@@ -573,7 +573,7 @@ extension MoreViewController: UITableViewDataSource {
         if let badge = item.badge {
             let badgeLabel = UILabel()
             badgeLabel.text = badge
-            badgeLabel.font = .systemFont(ofSize: 10, weight: .bold)
+            badgeLabel.font = AppFont.bodyBold(10)
             badgeLabel.textColor = ColorSystem.background
             badgeLabel.backgroundColor = ColorSystem.mainText
             badgeLabel.layer.cornerRadius = 5
@@ -613,13 +613,13 @@ private final class TipProductCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         backgroundColor = .secondarySystemGroupedBackground
 
-        iconLabel.font  = .systemFont(ofSize: 22)
+        iconLabel.font  = AppFont.body(22)
         iconLabel.textAlignment = .center
 
-        titleLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        titleLabel.font = AppFont.bodySemiBold(15)
         titleLabel.textColor = ColorSystem.mainText
 
-        priceLabel.font = .systemFont(ofSize: 14, weight: .semibold)
+        priceLabel.font = AppFont.bodySemiBold(14)
         priceLabel.textColor = ColorSystem.mainText
         priceLabel.setContentHuggingPriority(.required, for: .horizontal)
 

@@ -126,7 +126,7 @@ private final class WalkthroughArtworkView: UIView {
     private func makeStatCard(emoji: String, title: String, mainValue: String, subValue: String, color: UIColor) -> UIView {
         let card = UIView()
         card.backgroundColor = ColorSystem.cardBackground
-        card.layer.cornerRadius = 14
+        card.layer.cornerRadius = 20
         card.layer.borderWidth = 1
         card.layer.borderColor = ColorSystem.divider.cgColor
 
@@ -159,7 +159,7 @@ private final class WalkthroughArtworkView: UIView {
         // Canvas
         let canvas = UIView()
         canvas.backgroundColor = ColorSystem.cardBackground
-        canvas.layer.cornerRadius = 14
+        canvas.layer.cornerRadius = 20
         canvas.layer.borderWidth = 1
         canvas.layer.borderColor = ColorSystem.divider.cgColor
         containerView.addSubview(canvas)
@@ -186,7 +186,7 @@ private final class WalkthroughArtworkView: UIView {
         pinAttach.image = UIImage(systemName: "mappin.and.ellipse")?.withTintColor(ColorSystem.subText)
         let pinStr = NSMutableAttributedString(attachment: pinAttach)
         pinStr.append(NSAttributedString(string: " Seoul, Korea", attributes: [
-            .font: UIFont.systemFont(ofSize: 11, weight: .medium),
+            .font: AppFont.bodySemiBold(11),
             .foregroundColor: ColorSystem.subText
         ]))
         let locLabel = UILabel()
@@ -276,7 +276,7 @@ private final class WalkthroughArtworkView: UIView {
         // Chart area
         let chartContainer = UIView()
         chartContainer.backgroundColor = ColorSystem.cardBackground
-        chartContainer.layer.cornerRadius = 14
+        chartContainer.layer.cornerRadius = 20
         chartContainer.layer.borderWidth = 1
         chartContainer.layer.borderColor = ColorSystem.divider.cgColor
         containerView.addSubview(chartContainer)
@@ -345,7 +345,14 @@ private final class WalkthroughArtworkView: UIView {
     private func makeLabel(_ text: String, size: CGFloat, weight: UIFont.Weight, color: UIColor) -> UILabel {
         let label = UILabel()
         label.text = text
-        label.font = .systemFont(ofSize: size, weight: weight)
+        switch weight {
+        case .bold, .heavy, .black:
+            label.font = AppFont.bodyBold(size)
+        case .semibold, .medium:
+            label.font = AppFont.bodySemiBold(size)
+        default:
+            label.font = AppFont.body(size)
+        }
         label.textColor = color
         return label
     }
@@ -404,7 +411,7 @@ final class WalkthroughViewController: UIViewController {
 
     private let skipButton: UIButton = {
         let button = UIButton(type: .system)
-        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        button.titleLabel?.font = AppFont.bodySemiBold(15)
         button.setTitleColor(ColorSystem.subText, for: .normal)
         button.setTitle(NSLocalizedString("walkthrough.action.skip", comment: ""), for: .normal)
         return button
@@ -420,10 +427,11 @@ final class WalkthroughViewController: UIViewController {
 
     private let primaryButton: UIButton = {
         let button = UIButton(type: .system)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .bold)
+        button.titleLabel?.font = AppFont.bodyBold(17)
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = ColorSystem.mainText
-        button.layer.cornerRadius = 14
+        button.layer.cornerRadius = 24
+        button.layer.cornerCurve = .continuous
         button.layer.masksToBounds = true
         return button
     }()
@@ -587,7 +595,7 @@ private final class WalkthroughPageCell: UICollectionViewCell {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 30, weight: .bold)
+        label.font = AppFont.bodyBold(30)
         label.textColor = ColorSystem.mainText
         label.textAlignment = .center
         label.numberOfLines = 2
@@ -596,7 +604,7 @@ private final class WalkthroughPageCell: UICollectionViewCell {
 
     private let descriptionLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 17, weight: .medium)
+        label.font = AppFont.bodySemiBold(17)
         label.textColor = ColorSystem.subText
         label.textAlignment = .center
         label.numberOfLines = 0

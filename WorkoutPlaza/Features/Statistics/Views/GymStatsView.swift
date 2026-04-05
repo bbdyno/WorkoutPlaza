@@ -48,7 +48,7 @@ class GymStatsView: UIView {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = WorkoutPlazaStrings.Gym.Stats.title
-        label.font = .systemFont(ofSize: 18, weight: .semibold)
+        label.font = AppFont.bodySemiBold(18)
         label.textColor = ColorSystem.mainText
         return label
     }()
@@ -76,7 +76,7 @@ class GymStatsView: UIView {
 
     private func setupUI() {
         backgroundColor = ColorSystem.cardBackground
-        layer.cornerRadius = 16
+        layer.cornerRadius = 20
         layer.cornerCurve = .continuous
 
         addSubview(titleLabel)
@@ -121,7 +121,7 @@ class GymStatsView: UIView {
 
             let emptyLabel = UILabel()
             emptyLabel.text = WorkoutPlazaStrings.Gym.Stats.empty
-            emptyLabel.font = .systemFont(ofSize: 14, weight: .medium)
+            emptyLabel.font = AppFont.bodySemiBold(14)
             emptyLabel.textColor = ColorSystem.subText
             emptyLabel.textAlignment = .center
 
@@ -157,13 +157,13 @@ class GymStatsView: UIView {
 
         let nameLabel = UILabel()
         nameLabel.text = gymStat.gymName.isEmpty ? WorkoutPlazaStrings.Statistics.Gym.fallback : gymStat.gymName
-        nameLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        nameLabel.font = AppFont.bodySemiBold(16)
         nameLabel.textColor = ColorSystem.mainText
         nameLabel.numberOfLines = 1
 
         let visitLabel = UILabel()
         visitLabel.text = WorkoutPlazaStrings.Gym.Stats.summary(gymStat.visitCount, gymStat.sentRoutes, gymStat.totalRoutes)
-        visitLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        visitLabel.font = AppFont.body(13)
         visitLabel.textColor = ColorSystem.subText
 
         infoStack.addArrangedSubview(nameLabel)
@@ -244,7 +244,7 @@ class GymStatsView: UIView {
 
         let countLabel = UILabel()
         countLabel.text = "\(count)"
-        countLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        countLabel.font = AppFont.statRegular(12)
         countLabel.textColor = ColorSystem.subText
 
         container.addArrangedSubview(dot)

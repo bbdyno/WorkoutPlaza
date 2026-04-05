@@ -59,8 +59,10 @@ let project = Project(
                     "Gaegu-Regular.ttf",
                     "Gaegu-Bold.ttf",
                     "Pretendard-Regular.otf",
+                    "Pretendard-SemiBold.otf",
                     "Pretendard-Bold.otf",
                     "Montserrat-Regular.ttf",
+                    "Montserrat-SemiBold.ttf",
                     "Montserrat-Bold.ttf"
                 ],
                 "NSHealthShareUsageDescription": "운동 기록과 경로를 확인하기 위해 HealthKit 데이터 접근이 필요합니다.",

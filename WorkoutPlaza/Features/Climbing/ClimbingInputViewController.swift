@@ -187,7 +187,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
             let footerView = UIView()
             let label = UILabel()
             label.text = WorkoutPlazaStrings.Climbing.Gym.Select.hint
-            label.font = .systemFont(ofSize: 14, weight: .regular)
+            label.font = AppFont.body(14)
             label.textColor = ColorSystem.subText
             label.textAlignment = .center
             label.numberOfLines = 0
@@ -237,7 +237,7 @@ class ClimbingInputViewController: UIViewController, UITableViewDelegate, UITabl
                 let textField = UITextField()
                 textField.placeholder = WorkoutPlazaStrings.Climbing.Gym.Name.placeholder
                 textField.text = customGymName
-                textField.font = .systemFont(ofSize: 17)
+                textField.font = AppFont.body(17)
                 textField.textColor = ColorSystem.mainText
                 textField.clearButtonMode = .whileEditing
                 textField.returnKeyType = .done
@@ -532,7 +532,7 @@ class ClimbingHeaderCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .clear
         
-        textField.font = .systemFont(ofSize: 34, weight: .bold) // Large Title style
+        textField.font = AppFont.bodyBold(34) // Large Title style
         textField.textColor = ColorSystem.mainText
         textField.placeholder = "Gym Name"
         textField.borderStyle = .none
@@ -631,7 +631,7 @@ class DisciplineSelectionCell: UITableViewCell {
             btn.setTitle(discipline.displayName, for: .normal)
             btn.setTitleColor(ColorSystem.subText, for: .normal)
             btn.setTitleColor(.white, for: .selected)
-            btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+            btn.titleLabel?.font = AppFont.bodySemiBold(15)
 
             // Initial state
             btn.backgroundColor = ColorSystem.background
@@ -669,12 +669,12 @@ class DisciplineSelectionCell: UITableViewCell {
                     btn.layer.shadowOffset = CGSize(width: 0, height: 2)
                     btn.layer.shadowOpacity = 0.3
                     btn.layer.shadowRadius = 4
-                    btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .bold)
+                    btn.titleLabel?.font = AppFont.bodyBold(15)
                 } else {
                     btn.backgroundColor = ColorSystem.background
                     btn.transform = .identity
                     btn.layer.shadowOpacity = 0
-                    btn.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+                    btn.titleLabel?.font = AppFont.bodySemiBold(15)
                 }
             }
         }
@@ -709,8 +709,9 @@ private class ButtonCell: UITableViewCell {
         selectionStyle = .none
         backgroundColor = .clear
 
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        button.layer.cornerRadius = 12
+        button.titleLabel?.font = AppFont.bodySemiBold(17)
+        button.layer.cornerRadius = 24
+        button.layer.cornerCurve = .continuous
         button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
 
         contentView.addSubview(button)
@@ -810,7 +811,7 @@ class RouteCell: UITableViewCell {
         // Card Container
         contentView.addSubview(containerView)
         containerView.backgroundColor = ColorSystem.cardBackground
-        containerView.layer.cornerRadius = 12
+        containerView.layer.cornerRadius = 20
         containerView.layer.cornerCurve = .continuous
         // containerView.layer.shadowColor = UIColor.black.cgColor
         // containerView.layer.shadowOpacity = 0.05
@@ -828,7 +829,7 @@ class RouteCell: UITableViewCell {
         headerStack.spacing = 8
         headerStack.alignment = .center
         
-        headerLabel.font = .systemFont(ofSize: 17, weight: .bold)
+        headerLabel.font = AppFont.bodyBold(17)
         headerLabel.textColor = ColorSystem.mainText
 
         // Discipline Segment
@@ -848,7 +849,7 @@ class RouteCell: UITableViewCell {
 
         // Color Section Label
         colorSectionLabel.text = WorkoutPlazaStrings.Climbing.Grade.tape
-        colorSectionLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+        colorSectionLabel.font = AppFont.bodySemiBold(11)
         colorSectionLabel.textColor = ColorSystem.subText
         containerView.addSubview(colorSectionLabel)
 
@@ -883,7 +884,7 @@ class RouteCell: UITableViewCell {
 
         // Grade
         gradeLabel.text = WorkoutPlazaStrings.Climbing.Grade.optional
-        gradeLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+        gradeLabel.font = AppFont.bodySemiBold(11)
         gradeLabel.textColor = ColorSystem.subText
 
         gradeField.font = .monospacedSystemFont(ofSize: 16, weight: .medium)
@@ -903,10 +904,10 @@ class RouteCell: UITableViewCell {
 
         // Attempts
         attemptsLabel.text = "ATTEMPTS"
-        attemptsLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+        attemptsLabel.font = AppFont.bodySemiBold(11)
         attemptsLabel.textColor = ColorSystem.subText
 
-        attemptsValueLabel.font = .monospacedDigitSystemFont(ofSize: 18, weight: .medium)
+        attemptsValueLabel.font = AppFont.monoRegular(18)
         attemptsValueLabel.textColor = ColorSystem.mainText
         attemptsValueLabel.textAlignment = .center
 
@@ -925,7 +926,7 @@ class RouteCell: UITableViewCell {
 
         // Sent Switch
         sentLabel.text = WorkoutPlazaStrings.Climbing.sent
-        sentLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        sentLabel.font = AppFont.bodySemiBold(15)
         sentLabel.textColor = ColorSystem.mainText
 
         sentSwitch.onTintColor = ColorSystem.success

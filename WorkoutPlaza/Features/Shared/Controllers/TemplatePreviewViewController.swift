@@ -31,7 +31,7 @@ class TemplatePreviewViewController: UIViewController {
     private let canvasContainerView: UIView = {
         let view = UIView()
         view.backgroundColor = .white
-        view.layer.cornerRadius = 12
+        view.layer.cornerRadius = 20
         view.layer.cornerCurve = .continuous
         view.clipsToBounds = true
         view.layer.shadowColor = UIColor.black.cgColor
@@ -51,7 +51,7 @@ class TemplatePreviewViewController: UIViewController {
 
     private let templateNameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.font = AppFont.bodyBold(20)
         label.textColor = ColorSystem.mainText
         label.textAlignment = .center
         return label
@@ -59,7 +59,7 @@ class TemplatePreviewViewController: UIViewController {
 
     private let templateDescriptionLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14)
+        label.font = AppFont.body(14)
         label.textColor = ColorSystem.subText
         label.textAlignment = .center
         label.numberOfLines = 0
@@ -69,7 +69,7 @@ class TemplatePreviewViewController: UIViewController {
     private let widgetListHeaderLabel: UILabel = {
         let label = UILabel()
         label.text = WorkoutPlazaStrings.Template.Preview.widgets
-        label.font = .systemFont(ofSize: 15, weight: .bold)
+        label.font = AppFont.bodyBold(15)
         label.textColor = ColorSystem.mainText
         return label
     }()
@@ -85,10 +85,10 @@ class TemplatePreviewViewController: UIViewController {
     private let applyButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle(WorkoutPlazaStrings.Button.apply, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .bold)
+        button.titleLabel?.font = AppFont.bodyBold(17)
         button.setTitleColor(ColorSystem.background, for: .normal)
         button.backgroundColor = ColorSystem.mainText
-        button.layer.cornerRadius = 12
+        button.layer.cornerRadius = 24
         button.layer.cornerCurve = .continuous
         return button
     }()
@@ -96,7 +96,7 @@ class TemplatePreviewViewController: UIViewController {
     private let incompatibleLabel: UILabel = {
         let label = UILabel()
         label.text = WorkoutPlazaStrings.Template.Incompatible.message
-        label.font = .systemFont(ofSize: 14)
+        label.font = AppFont.body(14)
         label.textColor = .systemRed
         label.textAlignment = .center
         label.numberOfLines = 0
@@ -176,7 +176,7 @@ class TemplatePreviewViewController: UIViewController {
 
         let widgetListContainer = UIView()
         widgetListContainer.backgroundColor = ColorSystem.cardBackground
-        widgetListContainer.layer.cornerRadius = 12
+        widgetListContainer.layer.cornerRadius = 20
         widgetListContainer.layer.cornerCurve = .continuous
         widgetListContainer.addSubview(widgetListStackView)
         widgetListStackView.snp.makeConstraints { make in
@@ -267,7 +267,7 @@ class TemplatePreviewViewController: UIViewController {
 
         let label = UILabel()
         label.text = item.type.displayName
-        label.font = .systemFont(ofSize: 14)
+        label.font = AppFont.body(14)
         label.textColor = ColorSystem.mainText
 
         container.addSubview(iconImageView)

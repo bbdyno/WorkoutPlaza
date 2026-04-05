@@ -53,7 +53,7 @@ class HomeDashboardViewController: UIViewController {
     private let subtitleLabel: UILabel = {
         let label = UILabel()
         label.text = WorkoutPlazaStrings.Home.description
-        label.font = .systemFont(ofSize: 16)
+        label.font = AppFont.body(16)
         label.textColor = .black
         label.textAlignment = .center
         return label
@@ -71,7 +71,7 @@ class HomeDashboardViewController: UIViewController {
     private let runningWeeklyCard: UIView = {
         let view = UIView()
         view.backgroundColor = ColorSystem.cardBackground
-        view.layer.cornerRadius = 16
+        view.layer.cornerRadius = 20
         view.layer.cornerCurve = .continuous
         return view
     }()
@@ -79,7 +79,7 @@ class HomeDashboardViewController: UIViewController {
     private let climbingWeeklyCard: UIView = {
         let view = UIView()
         view.backgroundColor = ColorSystem.cardBackground
-        view.layer.cornerRadius = 16
+        view.layer.cornerRadius = 20
         view.layer.cornerCurve = .continuous
         return view
     }()
@@ -95,10 +95,10 @@ class HomeDashboardViewController: UIViewController {
     private let addWorkoutButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle(WorkoutPlazaStrings.Button.Add.workout, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        button.titleLabel?.font = AppFont.bodySemiBold(16)
         button.backgroundColor = ColorSystem.mainText
         button.setTitleColor(ColorSystem.background, for: .normal)
-        button.layer.cornerRadius = 16
+        button.layer.cornerRadius = 24
         button.layer.cornerCurve = .continuous
         button.layer.shadowColor = ColorSystem.mainText.cgColor
         button.layer.shadowOpacity = 0.3
@@ -120,7 +120,7 @@ class HomeDashboardViewController: UIViewController {
     // Recent records toggle
     private let recordsToggleButton: UIButton = {
         let button = UIButton(type: .system)
-        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+        button.titleLabel?.font = AppFont.bodySemiBold(14)
         button.setTitleColor(ColorSystem.subText, for: .normal)
         return button
     }()
@@ -199,7 +199,7 @@ class HomeDashboardViewController: UIViewController {
         // Weekly Summary Section
         let weeklySectionLabel = UILabel()
         weeklySectionLabel.text = WorkoutPlazaStrings.Home.This.week
-        weeklySectionLabel.font = .systemFont(ofSize: 20, weight: .semibold)
+        weeklySectionLabel.font = AppFont.bodySemiBold(20)
         weeklySectionLabel.textColor = ColorSystem.mainText
 
         contentStackView.addArrangedSubview(weeklySectionLabel)
@@ -217,7 +217,7 @@ class HomeDashboardViewController: UIViewController {
 
         let sectionLabel = UILabel()
         sectionLabel.text = WorkoutPlazaStrings.Home.Recent.records
-        sectionLabel.font = .systemFont(ofSize: 20, weight: .semibold)
+        sectionLabel.font = AppFont.bodySemiBold(20)
         sectionLabel.textColor = ColorSystem.mainText
 
         sectionHeaderView.addSubview(sectionLabel)
@@ -262,21 +262,21 @@ class HomeDashboardViewController: UIViewController {
 
         let runningTitleLabel = UILabel()
         runningTitleLabel.text = WorkoutPlazaStrings.Workout.running
-        runningTitleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        runningTitleLabel.font = AppFont.bodySemiBold(13)
         runningTitleLabel.textColor = ColorSystem.subText
 
         runningHeader.addArrangedSubview(runningIcon)
         runningHeader.addArrangedSubview(runningTitleLabel)
 
-        runningWeeklyDistanceLabel.font = .systemFont(ofSize: 28, weight: .heavy)
+        runningWeeklyDistanceLabel.font = AppFont.stat(28)
         runningWeeklyDistanceLabel.textColor = ColorSystem.mainText
         runningWeeklyDistanceLabel.text = "0.0 km"
 
-        runningWeeklyCountLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        runningWeeklyCountLabel.font = AppFont.statRegular(12)
         runningWeeklyCountLabel.textColor = ColorSystem.subText
         runningWeeklyCountLabel.text = WorkoutPlazaStrings.Zero.times
 
-        runningWeeklyTimeLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        runningWeeklyTimeLabel.font = AppFont.statRegular(12)
         runningWeeklyTimeLabel.textColor = ColorSystem.subText
         runningWeeklyTimeLabel.text = WorkoutPlazaStrings.Zero.minutes
 
@@ -316,21 +316,21 @@ class HomeDashboardViewController: UIViewController {
 
         let climbingTitleLabel = UILabel()
         climbingTitleLabel.text = WorkoutPlazaStrings.Workout.climbing
-        climbingTitleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        climbingTitleLabel.font = AppFont.bodySemiBold(13)
         climbingTitleLabel.textColor = ColorSystem.subText
 
         climbingHeader.addArrangedSubview(climbingIcon)
         climbingHeader.addArrangedSubview(climbingTitleLabel)
 
-        climbingWeeklyRoutesLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        climbingWeeklyRoutesLabel.font = AppFont.stat(22)
         climbingWeeklyRoutesLabel.textColor = ColorSystem.mainText
         climbingWeeklyRoutesLabel.text = WorkoutPlazaStrings.Zero.routes
 
-        climbingWeeklyVisitLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        climbingWeeklyVisitLabel.font = AppFont.statRegular(12)
         climbingWeeklyVisitLabel.textColor = ColorSystem.subText
         climbingWeeklyVisitLabel.text = WorkoutPlazaStrings.Zero.visits
 
-        climbingWeeklySentLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        climbingWeeklySentLabel.font = AppFont.statRegular(12)
         climbingWeeklySentLabel.textColor = ColorSystem.subText
         climbingWeeklySentLabel.text = WorkoutPlazaStrings.Sent.zero
 
@@ -477,12 +477,12 @@ class HomeDashboardViewController: UIViewController {
     private func createPlaceholderView() -> UIView {
         let placeholder = UIView()
         placeholder.backgroundColor = ColorSystem.cardBackground
-        placeholder.layer.cornerRadius = 16
+        placeholder.layer.cornerRadius = 20
         placeholder.layer.cornerCurve = .continuous
 
         let placeholderLabel = UILabel()
         placeholderLabel.text = WorkoutPlazaStrings.Home.No.records
-        placeholderLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        placeholderLabel.font = AppFont.bodySemiBold(14)
         placeholderLabel.textColor = ColorSystem.subText
         placeholderLabel.textAlignment = .center
 
@@ -501,7 +501,7 @@ class HomeDashboardViewController: UIViewController {
     private func createRecordView(for workout: (sportType: SportType, data: Any, date: Date), index: Int) -> UIView {
         let containerView = UIView()
         containerView.backgroundColor = ColorSystem.cardBackground
-        containerView.layer.cornerRadius = 14
+        containerView.layer.cornerRadius = 20
         containerView.layer.cornerCurve = .continuous
 
         let iconImageView = UIImageView()
@@ -511,15 +511,15 @@ class HomeDashboardViewController: UIViewController {
         iconImageView.contentMode = .scaleAspectFit
 
         let titleLabel = UILabel()
-        titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        titleLabel.font = AppFont.bodySemiBold(15)
         titleLabel.textColor = ColorSystem.mainText
 
         let subtitleLabel = UILabel()
-        subtitleLabel.font = .systemFont(ofSize: 13)
+        subtitleLabel.font = AppFont.body(13)
         subtitleLabel.textColor = ColorSystem.subText
 
         let dateLabel = UILabel()
-        dateLabel.font = .systemFont(ofSize: 12)
+        dateLabel.font = AppFont.body(12)
         dateLabel.textColor = ColorSystem.subText
 
         // Configure based on workout type

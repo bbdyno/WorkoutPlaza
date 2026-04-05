@@ -33,7 +33,7 @@ class SavedCardsViewController: UIViewController {
     private let emptyLabel: UILabel = {
         let label = UILabel()
         label.text = WorkoutPlazaStrings.Saved.Cards.Empty.message
-        label.font = .systemFont(ofSize: 16)
+        label.font = AppFont.body(16)
         label.textColor = .secondaryLabel
         label.textAlignment = .center
         label.numberOfLines = 0
@@ -157,7 +157,7 @@ private class CardCell: UICollectionViewCell {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 13, weight: .medium)
+        label.font = AppFont.bodySemiBold(13)
         label.textColor = .label
         label.numberOfLines = 1
         return label
@@ -165,7 +165,7 @@ private class CardCell: UICollectionViewCell {
 
     private let dateLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 11)
+        label.font = AppFont.body(11)
         label.textColor = .secondaryLabel
         return label
     }()

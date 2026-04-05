@@ -24,7 +24,7 @@ class RecentRecordsSheetViewController: UIViewController {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = WorkoutPlazaStrings.Home.Recent.records
-        label.font = .systemFont(ofSize: 18, weight: .bold)
+        label.font = AppFont.bodyBold(18)
         label.textColor = ColorSystem.mainText
         label.textAlignment = .center
         return label
@@ -102,7 +102,7 @@ class RecentRecordsSheetViewController: UIViewController {
 
         let card = UIView()
         card.backgroundColor = ColorSystem.cardBackground
-        card.layer.cornerRadius = 14
+        card.layer.cornerRadius = 20
         card.layer.cornerCurve = .continuous
 
         let iconImageView = UIImageView()
@@ -112,15 +112,15 @@ class RecentRecordsSheetViewController: UIViewController {
         iconImageView.contentMode = .scaleAspectFit
 
         let titleLabel = UILabel()
-        titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        titleLabel.font = AppFont.bodySemiBold(15)
         titleLabel.textColor = ColorSystem.mainText
 
         let subtitleLabel = UILabel()
-        subtitleLabel.font = .systemFont(ofSize: 13)
+        subtitleLabel.font = AppFont.body(13)
         subtitleLabel.textColor = ColorSystem.subText
 
         let dateLabel = UILabel()
-        dateLabel.font = .systemFont(ofSize: 12)
+        dateLabel.font = AppFont.body(12)
         dateLabel.textColor = ColorSystem.subText
 
         switch workout.sportType {

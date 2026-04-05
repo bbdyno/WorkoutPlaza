@@ -60,7 +60,7 @@ class WorkoutLegendView: UIView {
         
         let label = UILabel()
         label.text = text
-        label.font = .systemFont(ofSize: 12)
+        label.font = AppFont.body(12)
         label.textColor = ColorSystem.subText
         
         stack.addArrangedSubview(dot)

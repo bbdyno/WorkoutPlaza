@@ -49,7 +49,7 @@ class CustomCalendarView: UIView {
 
     private let monthLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.font = AppFont.bodyBold(20)
         label.textColor = .label
         return label
     }()
@@ -119,7 +119,7 @@ class CustomCalendarView: UIView {
         for day in weekDays {
             let label = UILabel()
             label.text = day
-            label.font = .systemFont(ofSize: 13, weight: .semibold)
+            label.font = AppFont.bodySemiBold(13)
             label.textColor = ColorSystem.subText
             label.textAlignment = .center
             weekDayStack.addArrangedSubview(label)
@@ -263,7 +263,7 @@ class CustomCalendarDayCell: UICollectionViewCell {
         selectionBackground.isHidden = true
         contentView.addSubview(selectionBackground)
 
-        dayLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        dayLabel.font = AppFont.bodySemiBold(15)
         dayLabel.textColor = ColorSystem.mainText
         dayLabel.textAlignment = .center
         contentView.addSubview(dayLabel)
@@ -275,7 +275,7 @@ class CustomCalendarDayCell: UICollectionViewCell {
         contentView.addSubview(dotStackView)
 
         plusLabel.text = "+"
-        plusLabel.font = .systemFont(ofSize: 10, weight: .bold)
+        plusLabel.font = AppFont.bodyBold(10)
         plusLabel.textColor = ColorSystem.subText
         plusLabel.textAlignment = .center
         plusLabel.isHidden = true

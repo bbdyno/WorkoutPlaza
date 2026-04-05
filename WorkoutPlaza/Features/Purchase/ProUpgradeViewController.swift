@@ -32,7 +32,7 @@ final class ProUpgradeViewController: UIViewController {
     private let crownLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "👑"
-        lbl.font = .systemFont(ofSize: 56)
+        lbl.font = AppFont.body(56)
         lbl.textAlignment = .center
         return lbl
     }()
@@ -40,7 +40,7 @@ final class ProUpgradeViewController: UIViewController {
     private let titleLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "Lifetime Pro"
-        lbl.font = .systemFont(ofSize: 28, weight: .bold)
+        lbl.font = AppFont.bodyBold(28)
         lbl.textAlignment = .center
         lbl.textColor = ColorSystem.mainText
         return lbl
@@ -49,7 +49,7 @@ final class ProUpgradeViewController: UIViewController {
     private let subtitleLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = NSLocalizedString("pro.upgrade.subtitle", comment: "")
-        lbl.font = .systemFont(ofSize: 15)
+        lbl.font = AppFont.body(15)
         lbl.textColor = ColorSystem.subText
         lbl.textAlignment = .center
         lbl.numberOfLines = 0
@@ -59,7 +59,7 @@ final class ProUpgradeViewController: UIViewController {
     private let featuresCard: UIView = {
         let v = UIView()
         v.backgroundColor = .secondarySystemGroupedBackground
-        v.layer.cornerRadius = 16
+        v.layer.cornerRadius = 20
         return v
     }()
 
@@ -73,7 +73,7 @@ final class ProUpgradeViewController: UIViewController {
 
     private let priceLabel: UILabel = {
         let lbl = UILabel()
-        lbl.font = .systemFont(ofSize: 22, weight: .bold)
+        lbl.font = AppFont.stat(22)
         lbl.textAlignment = .center
         lbl.textColor = ColorSystem.mainText
         return lbl
@@ -82,7 +82,7 @@ final class ProUpgradeViewController: UIViewController {
     private let priceDescLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = NSLocalizedString("pro.upgrade.oneTime", comment: "")
-        lbl.font = .systemFont(ofSize: 13)
+        lbl.font = AppFont.body(13)
         lbl.textColor = ColorSystem.subText
         lbl.textAlignment = .center
         return lbl
@@ -91,9 +91,10 @@ final class ProUpgradeViewController: UIViewController {
     private let buyButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle(NSLocalizedString("pro.upgrade.buy", comment: ""), for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 17, weight: .bold)
+        btn.titleLabel?.font = AppFont.bodyBold(17)
         btn.setTitleColor(.white, for: .normal)
-        btn.layer.cornerRadius = 16
+        btn.layer.cornerRadius = 24
+        btn.layer.cornerCurve = .continuous
         btn.clipsToBounds = true
         return btn
     }()
@@ -101,7 +102,7 @@ final class ProUpgradeViewController: UIViewController {
     private let restoreButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle(NSLocalizedString("pro.upgrade.restore", comment: ""), for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 14)
+        btn.titleLabel?.font = AppFont.body(14)
         btn.setTitleColor(ColorSystem.subText, for: .normal)
         return btn
     }()
@@ -212,12 +213,12 @@ final class ProUpgradeViewController: UIViewController {
 
         let titleLbl = UILabel()
         titleLbl.text = title
-        titleLbl.font = .systemFont(ofSize: 15, weight: .semibold)
+        titleLbl.font = AppFont.bodySemiBold(15)
         titleLbl.textColor = ColorSystem.mainText
 
         let descLbl = UILabel()
         descLbl.text = desc
-        descLbl.font = .systemFont(ofSize: 13)
+        descLbl.font = AppFont.body(13)
         descLbl.textColor = ColorSystem.subText
         descLbl.numberOfLines = 0
 
@@ -245,7 +246,7 @@ final class ProUpgradeViewController: UIViewController {
         gradient.colors = [ColorSystem.mainText.cgColor, ColorSystem.mainText.cgColor]
         gradient.startPoint = CGPoint(x: 0, y: 0.5)
         gradient.endPoint   = CGPoint(x: 1, y: 0.5)
-        gradient.cornerRadius = 16
+        gradient.cornerRadius = 24
 
         buyButton.layoutIfNeeded()
         gradient.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width - 40, height: 56)
@@ -339,7 +340,7 @@ final class ProUpgradeViewController: UIViewController {
     private func showToast(_ message: String) {
         let toast = UILabel()
         toast.text = message
-        toast.font = .systemFont(ofSize: 14, weight: .medium)
+        toast.font = AppFont.bodySemiBold(14)
         toast.textColor = .white
         toast.backgroundColor = UIColor.black.withAlphaComponent(0.75)
         toast.textAlignment = .center

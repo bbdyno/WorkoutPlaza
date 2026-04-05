@@ -18,6 +18,22 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(windowScene: windowScene)
         window?.overrideUserInterfaceStyle = .dark
 
+        // Global navigation bar font
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.configureWithOpaqueBackground()
+        navAppearance.backgroundColor = ColorSystem.background
+        navAppearance.titleTextAttributes = [
+            .foregroundColor: ColorSystem.mainText,
+            .font: AppFont.bodyBold(17)
+        ]
+        navAppearance.largeTitleTextAttributes = [
+            .foregroundColor: ColorSystem.mainText,
+            .font: AppFont.bodyBold(34)
+        ]
+        UINavigationBar.appearance().standardAppearance = navAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
+        UINavigationBar.appearance().tintColor = ColorSystem.mainText
+
         // Use Tab Bar Controller as root
         let tabBarController = MainTabBarController()
         tabBarController.suppressInitialWalkthrough = connectionOptions.urlContexts.isEmpty == false

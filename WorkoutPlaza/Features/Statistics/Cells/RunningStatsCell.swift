@@ -29,7 +29,7 @@ class RunningStatsCell: UICollectionViewCell {
         var configuration = UIButton.Configuration.plain()
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
         button.configuration = configuration
-        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        button.titleLabel?.font = AppFont.bodySemiBold(14)
         button.setTitleColor(ColorSystem.background, for: .normal)
         button.layer.cornerRadius = 16
         button.layer.cornerCurve = .continuous
@@ -73,7 +73,7 @@ class RunningStatsCell: UICollectionViewCell {
 
     private let dateLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.font = AppFont.bodySemiBold(16)
         label.textColor = ColorSystem.mainText
         label.textAlignment = .center
         return label
@@ -82,7 +82,7 @@ class RunningStatsCell: UICollectionViewCell {
     // Chart View
     private let chartTitleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.font = AppFont.bodySemiBold(16)
         label.textColor = ColorSystem.mainText
         return label
     }()
@@ -113,7 +113,7 @@ class RunningStatsCell: UICollectionViewCell {
 
     private func setupUI() {
         contentView.backgroundColor = ColorSystem.cardBackground
-        contentView.layer.cornerRadius = 16
+        contentView.layer.cornerRadius = 20
         contentView.layer.cornerCurve = .continuous
 
         // Sport Picker Button
@@ -265,7 +265,7 @@ class RunningStatsCell: UICollectionViewCell {
     private func createSummaryCard(title: String, value: String, icon: String, color: UIColor) -> UIView {
         let card = UIView()
         card.backgroundColor = color.withAlphaComponent(0.1)
-        card.layer.cornerRadius = 12
+        card.layer.cornerRadius = 20
 
         let iconView = UIImageView()
         iconView.image = UIImage(systemName: icon)
@@ -274,13 +274,13 @@ class RunningStatsCell: UICollectionViewCell {
 
         let valueLabel = UILabel()
         valueLabel.text = value
-        valueLabel.font = .systemFont(ofSize: 14, weight: .bold)
+        valueLabel.font = AppFont.statSemiBold(14)
         valueLabel.textColor = ColorSystem.mainText
         valueLabel.adjustsFontSizeToFitWidth = true
 
         let titleLabel = UILabel()
         titleLabel.text = title
-        titleLabel.font = .systemFont(ofSize: 10, weight: .medium)
+        titleLabel.font = AppFont.bodySemiBold(10)
         titleLabel.textColor = ColorSystem.subText
 
         card.addSubview(iconView)
@@ -310,7 +310,7 @@ class RunningStatsCell: UICollectionViewCell {
 
         let container = UIView()
         container.backgroundColor = UIColor.black.withAlphaComponent(0.85)
-        container.layer.cornerRadius = 12
+        container.layer.cornerRadius = 20
         container.layer.cornerCurve = .continuous
 
         let stack = UIStackView()
@@ -354,7 +354,7 @@ class RunningStatsCell: UICollectionViewCell {
 
         let container = UIView()
         container.backgroundColor = UIColor.black.withAlphaComponent(0.85)
-        container.layer.cornerRadius = 12
+        container.layer.cornerRadius = 20
         container.layer.cornerCurve = .continuous
 
         let stack = UIStackView()
@@ -407,11 +407,11 @@ class RunningStatsCell: UICollectionViewCell {
         iconView.contentMode = .scaleAspectFit
 
         let titleLabel = UILabel()
-        titleLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        titleLabel.font = AppFont.bodySemiBold(14)
         titleLabel.textColor = UIColor.white.withAlphaComponent(0.8)
 
         let valueLabel = UILabel()
-        valueLabel.font = .systemFont(ofSize: 18, weight: .semibold)
+        valueLabel.font = AppFont.statSemiBold(18)
         valueLabel.textColor = .white
 
         titleLabel.text = title
@@ -468,13 +468,13 @@ class RunningStatsCell: UICollectionViewCell {
         let timeLabel = UILabel()
         let paceLabel = UILabel()
 
-        distanceLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        distanceLabel.font = AppFont.statSemiBold(16)
         distanceLabel.textColor = .white
 
-        timeLabel.font = .systemFont(ofSize: 12)
+        timeLabel.font = AppFont.body(12)
         timeLabel.textColor = UIColor.white.withAlphaComponent(0.8)
 
-        paceLabel.font = .systemFont(ofSize: 12)
+        paceLabel.font = AppFont.body(12)
         paceLabel.textColor = UIColor.white.withAlphaComponent(0.8)
 
         let textStack = UIStackView(arrangedSubviews: [distanceLabel, timeLabel, paceLabel])

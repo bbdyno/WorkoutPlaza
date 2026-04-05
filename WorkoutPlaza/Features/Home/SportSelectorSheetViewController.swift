@@ -23,7 +23,7 @@ class SportSelectorSheetViewController: UIViewController {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = WorkoutPlazaStrings.Sport.Selector.Sheet.title
-        label.font = .systemFont(ofSize: 18, weight: .bold)
+        label.font = AppFont.bodyBold(18)
         label.textColor = ColorSystem.mainText
         label.textAlignment = .center
         return label
@@ -96,7 +96,7 @@ class SportSelectorSheetViewController: UIViewController {
     private func createSportCard(for sport: SportType) -> UIView {
         let card = UIView()
         card.backgroundColor = ColorSystem.cardBackground
-        card.layer.cornerRadius = 14
+        card.layer.cornerRadius = 20
         card.layer.cornerCurve = .continuous
         card.layer.borderWidth = 1
         card.layer.borderColor = ColorSystem.divider.cgColor
@@ -113,7 +113,7 @@ class SportSelectorSheetViewController: UIViewController {
 
         let titleLabel = UILabel()
         titleLabel.text = sport.displayName
-        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        titleLabel.font = AppFont.bodySemiBold(16)
         titleLabel.textColor = ColorSystem.mainText
 
         let chevron = UIImageView()

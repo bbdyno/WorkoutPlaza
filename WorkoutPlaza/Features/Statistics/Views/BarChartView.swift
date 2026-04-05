@@ -166,7 +166,7 @@ class BarChartView: UIView {
             }
 
             let yLabel = UILabel()
-            yLabel.font = .systemFont(ofSize: 10, weight: .medium)
+            yLabel.font = AppFont.statRegular(10)
             yLabel.textColor = ColorSystem.subText
             yLabel.textAlignment = .right
             yLabel.text = "\(yValue)km"
@@ -189,7 +189,7 @@ class BarChartView: UIView {
 
             if showValueLabels && dataPoint.value > 0 {
                 let valueLabel = UILabel()
-                valueLabel.font = .systemFont(ofSize: 10, weight: .medium)
+                valueLabel.font = AppFont.statRegular(10)
                 valueLabel.textColor = ColorSystem.subText
                 valueLabel.textAlignment = .center
 
@@ -238,7 +238,7 @@ class BarChartView: UIView {
             guard index % labelInterval == 0 || index == dataPoints.count - 1 else { continue }
 
             let label = UILabel()
-            label.font = .systemFont(ofSize: 11, weight: .medium)
+            label.font = AppFont.bodySemiBold(11)
             label.textColor = ColorSystem.subText
             label.textAlignment = .center
             label.text = dataPoint.label
