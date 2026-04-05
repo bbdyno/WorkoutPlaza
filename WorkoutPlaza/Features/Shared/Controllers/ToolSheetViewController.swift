@@ -435,9 +435,6 @@ private class ToolSheetCell: UICollectionViewCell {
                 previewView.frame.origin = .zero
                 previewView.clipsToBounds = true
 
-                // Tint all labels dark for contrast on light cell background
-                Self.tintLabelsDark(in: previewView)
-
                 if let image = Self.snapshotImage(from: previewView) {
                     previewImageView.image = image
                     Self.previewImageCache.setObject(image, forKey: cacheKey)
