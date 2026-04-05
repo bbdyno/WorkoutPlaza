@@ -219,55 +219,42 @@ class WorkoutCardManager {
 // MARK: - Shared Aspect Ratio
 
 enum AspectRatio: String, CaseIterable, Codable {
-    case square1_1 = "square_1_1"
-    case portrait4_5 = "portrait_4_5"
-    case portrait9_16 = "portrait_9_16"
-    
+    case portrait3_4 = "portrait_3_4"
+
+    // 구버전 호환: 디코딩 시 이전 비율을 3:4로 매핑
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        // 이전 비율 모두 3:4로 통합
+        switch rawValue {
+        case "square_1_1", "portrait_4_5", "portrait_9_16", "portrait_3_4":
+            self = .portrait3_4
+        default:
+            self = .portrait3_4
+        }
+    }
+
     var displayName: String {
-        switch self {
-        case .square1_1: return "1:1"
-        case .portrait4_5: return "4:5"
-        case .portrait9_16: return "9:16"
-        }
+        return "3:4"
     }
-    
-    /// Height / Width (Standard for UI constraints/calculations)
+
+    /// Height / Width
     var ratio: CGFloat {
-        switch self {
-        case .square1_1: return 1.0
-        case .portrait4_5: return 5.0 / 4.0
-        case .portrait9_16: return 16.0 / 9.0
-        }
+        return 4.0 / 3.0
     }
-    
-    /// Width / Height (Inverse of ratio)
+
+    /// Width / Height
     var sizeRatio: CGFloat {
-        switch self {
-        case .square1_1: return 1.0
-        case .portrait4_5: return 4.0 / 5.0
-        case .portrait9_16: return 9.0 / 16.0
-        }
+        return 3.0 / 4.0
     }
 
-    // Base size for export (width is fixed at 1080)
+    /// 1080 × 1440 export
     var exportSize: CGSize {
-        switch self {
-        case .square1_1: return CGSize(width: 1080, height: 1080)
-        case .portrait4_5: return CGSize(width: 1080, height: 1350)
-        case .portrait9_16: return CGSize(width: 1080, height: 1920)
-        }
+        return CGSize(width: 1080, height: 1440)
     }
 
-    // Detect aspect ratio from canvas size
+    /// 어떤 캔버스 사이즈가 와도 항상 3:4 반환
     static func detect(from size: CGSize) -> AspectRatio {
-        let calculatedRatio = size.height / size.width
-        let ratios: [(AspectRatio, CGFloat)] = [
-            (.square1_1, 1.0),
-            (.portrait4_5, 1.25),
-            (.portrait9_16, 1.777)
-        ]
-        
-        // Find closest
-        return ratios.min(by: { abs($0.1 - calculatedRatio) < abs($1.1 - calculatedRatio) })?.0 ?? .square1_1
+        return .portrait3_4
     }
 }

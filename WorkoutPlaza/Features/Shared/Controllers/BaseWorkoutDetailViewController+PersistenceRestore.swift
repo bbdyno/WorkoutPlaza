@@ -71,9 +71,8 @@ extension BaseWorkoutDetailViewController {
         
         WPLog.info("Loading saved design for \(workoutId)")
         
-        // Restore Aspect Ratio
-        currentAspectRatio = design.aspectRatio
-        aspectRatioButton.setTitle(design.aspectRatio.displayName, for: .normal)
+        // Restore Aspect Ratio (항상 3:4)
+        currentAspectRatio = .portrait3_4
         updateCanvasSize()
         
         // Force layout update

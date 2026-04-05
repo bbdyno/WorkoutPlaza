@@ -128,8 +128,8 @@ extension SavedCardsViewController: UICollectionViewDelegateFlowLayout {
         let availableWidth = collectionView.bounds.width - padding - spacing
         let cellWidth = availableWidth / 2
 
-        // 9:16 aspect ratio for thumbnail
-        let cellHeight = cellWidth * (16.0 / 9.0) + 50 // Extra space for labels
+        // 3:4 aspect ratio for thumbnail
+        let cellHeight = cellWidth * (4.0 / 3.0) + 50 // Extra space for labels
         return CGSize(width: cellWidth, height: cellHeight)
     }
 }

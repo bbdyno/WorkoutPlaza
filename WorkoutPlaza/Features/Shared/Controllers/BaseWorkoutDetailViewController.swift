@@ -80,7 +80,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     // State
     var widgets: [UIView] = []
     var previousCanvasSize: CGSize = .zero
-    var currentAspectRatio: AspectRatio = .portrait4_5 // Default 4:5
+    var currentAspectRatio: AspectRatio = .portrait3_4
     var hasUnsavedChanges: Bool = false
     var centerGuideHideWorkItem: DispatchWorkItem?
     var restoreCanvasTransform: RestoreCanvasTransform = .identity
@@ -147,9 +147,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     lazy var canvasContainerView: UIView = {
         let view = UIView()
         view.backgroundColor = Constants.canvasBackgroundColor
-        view.layer.cornerRadius = 12
-        view.layer.borderWidth = 1
-        view.layer.borderColor = Constants.canvasBorderColor
+        view.layer.cornerRadius = 24
+        view.layer.cornerCurve = .continuous
+        view.layer.borderWidth = 0
         view.clipsToBounds = true
         return view
     }()
@@ -380,7 +380,6 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         NotificationCenter.default.addObserver(self, selector: #selector(handlePurchaseStatusChanged), name: .wpPurchaseStatusDidChange, object: nil)
 
         // Initial button state
-        aspectRatioButton.setTitle(currentAspectRatio.displayName, for: .normal)
         updateToolbarItemsState()
         updateWatermarkVisibility()
     }
@@ -457,7 +456,6 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     
     @objc dynamic func setupTopRightToolbar() {
-        topRightToolbar.addArrangedSubview(aspectRatioButton)
         topRightToolbar.addArrangedSubview(addWidgetButton)
         topRightToolbar.addArrangedSubview(textPathButton)
         topRightToolbar.addArrangedSubview(layoutTemplateButton)

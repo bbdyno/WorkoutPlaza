@@ -44,12 +44,8 @@ extension BaseWorkoutDetailViewController {
             templateCanvasSize = CGSize(width: 414, height: 700)
         }
 
-        // STEP 1: Change canvas aspect ratio to match template
-        let detectedAspectRatio = AspectRatio.detect(from: templateCanvasSize)
-
-        // Update aspect ratio button and canvas size
-        currentAspectRatio = detectedAspectRatio
-        aspectRatioButton.setTitle(detectedAspectRatio.displayName, for: .normal)
+        // STEP 1: 항상 3:4 비율 사용
+        currentAspectRatio = .portrait3_4
         updateCanvasSize()
 
         // Force immediate layout update

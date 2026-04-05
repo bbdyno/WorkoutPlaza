@@ -11,14 +11,7 @@ import PhotosUI
 extension BaseWorkoutDetailViewController {
 
     @objc func cycleAspectRatio() {
-        let allRatios = AspectRatio.allCases
-        if let index = allRatios.firstIndex(of: currentAspectRatio) {
-            let nextIndex = (index + 1) % allRatios.count
-            currentAspectRatio = allRatios[nextIndex]
-            aspectRatioButton.setTitle(currentAspectRatio.displayName, for: .normal)
-            updateCanvasSize()
-            showToast(WorkoutPlazaStrings.Toast.Aspect.ratio(currentAspectRatio.displayName))
-        }
+        // 비율 고정 (3:4) — 비율 전환 비활성화
     }
     
     // Abstract method to be overridden
