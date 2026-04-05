@@ -52,6 +52,7 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
 
     // MARK: - Display Mode
     var displayMode: WidgetDisplayMode = .text
+    var isPreviewMode: Bool = false
     private(set) var contentAlignment: WidgetContentAlignment = .left
     var minimumSize: CGFloat {
         minimumSizeOverride ?? minimumSizeCandidate(for: bounds.size)
@@ -511,12 +512,11 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         selectionDelegate?.itemWasSelected(self)
     }
 
-    /// 프리뷰용: 모든 라벨/아이콘을 순수 흰색으로 강제
+    /// 프리뷰용: 모든 라벨/아이콘을 순수 흰색으로 강제 (레이아웃 패스에서도 유지)
     func forceWhiteForPreview() {
-        titleLabel.textColor = .white
-        valueLabel.textColor = .white
-        unitLabel.textColor = .white
-        iconImageView.tintColor = .white
+        isPreviewMode = true
+        currentColor = .white
+        updateColors()
     }
 
     // MARK: - Selectable Methods
@@ -526,12 +526,13 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
     }
 
     func updateColors() {
+        let secondaryAlpha: CGFloat = isPreviewMode ? 1.0 : LayoutConstants.secondaryAlpha
         switch displayMode {
         case .text:
             valueLabel.textColor = currentColor
-            titleLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
-            unitLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
-            iconImageView.tintColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+            titleLabel.textColor = currentColor.withAlphaComponent(secondaryAlpha)
+            unitLabel.textColor = currentColor.withAlphaComponent(secondaryAlpha)
+            iconImageView.tintColor = currentColor.withAlphaComponent(secondaryAlpha)
         case .textUnified:
             valueLabel.textColor = currentColor
             titleLabel.textColor = currentColor
@@ -539,9 +540,9 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
             iconImageView.tintColor = currentColor
         case .icon:
             valueLabel.textColor = currentColor
-            titleLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
-            unitLabel.textColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
-            iconImageView.tintColor = currentColor.withAlphaComponent(LayoutConstants.secondaryAlpha)
+            titleLabel.textColor = currentColor.withAlphaComponent(secondaryAlpha)
+            unitLabel.textColor = currentColor.withAlphaComponent(secondaryAlpha)
+            iconImageView.tintColor = currentColor.withAlphaComponent(secondaryAlpha)
         }
     }
 
