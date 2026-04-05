@@ -291,7 +291,7 @@ extension InAppBrowserViewController {
     func updateSSLIcon(for url: URL?) {
         let isSecure = url?.scheme?.lowercased() == "https"
         sslIconView.image = UIImage(systemName: isSecure ? "lock.fill" : "lock.open.fill")
-        sslIconView.tintColor = isSecure ? .systemGreen : .systemOrange
+        sslIconView.tintColor = isSecure ? ColorSystem.mainText : ColorSystem.subText
         sslIconView.accessibilityLabel = isSecure ? WorkoutPlazaStrings.Browser.Ssl.secure : WorkoutPlazaStrings.Browser.Ssl.insecure
     }
 

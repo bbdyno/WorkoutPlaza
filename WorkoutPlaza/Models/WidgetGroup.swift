@@ -188,6 +188,6 @@ class GroupManager {
     /// - Returns: Color to use for visual feedback
     func getDragFeedbackColor(for widget: UIView, over targetGroup: TemplateGroupView) -> UIColor {
         let result = canAddWidgetToGroup(widget: widget, targetGroup: targetGroup)
-        return result.isAllowed ? .systemGreen.withAlphaComponent(0.3) : .systemRed.withAlphaComponent(0.3)
+        return result.isAllowed ? ColorSystem.mainText.withAlphaComponent(0.3) : ColorSystem.error.withAlphaComponent(0.3)
     }
 }

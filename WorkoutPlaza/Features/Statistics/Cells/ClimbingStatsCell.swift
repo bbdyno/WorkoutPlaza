@@ -29,7 +29,7 @@ class ClimbingStatsCell: UICollectionViewCell {
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
         button.configuration = configuration
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
-        button.setTitleColor(.white, for: .normal)
+        button.setTitleColor(ColorSystem.background, for: .normal)
         button.layer.cornerRadius = 16
         button.layer.cornerCurve = .continuous
         button.showsMenuAsPrimaryAction = true
@@ -41,9 +41,9 @@ class ClimbingStatsCell: UICollectionViewCell {
         let control = UISegmentedControl(items: [WorkoutPlazaStrings.Statistics.Period.month, WorkoutPlazaStrings.Statistics.Period.year, WorkoutPlazaStrings.Statistics.Period.all])
         control.selectedSegmentIndex = 0
         control.backgroundColor = ColorSystem.divider
-        control.selectedSegmentTintColor = ColorSystem.controlTint
+        control.selectedSegmentTintColor = ColorSystem.mainText
         control.setTitleTextAttributes([.foregroundColor: ColorSystem.mainText], for: .normal)
-        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        control.setTitleTextAttributes([.foregroundColor: ColorSystem.background], for: .selected)
         return control
     }()
 
@@ -513,7 +513,7 @@ class ClimbingStatsCell: UICollectionViewCell {
         }
         sportPickerButton.menu = UIMenu(children: actions)
         sportPickerButton.setTitle("\(selectedSport.displayName) ▾", for: .normal)
-        sportPickerButton.backgroundColor = ColorSystem.controlTint
+        sportPickerButton.backgroundColor = ColorSystem.mainText
     }
 
     @objc private func dismissFloatingView() {

@@ -137,7 +137,7 @@ class TemplatePreviewViewController: UIViewController {
     // MARK: - Setup
 
     private func setupUI() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = ColorSystem.background
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: WorkoutPlazaStrings.Button.close,

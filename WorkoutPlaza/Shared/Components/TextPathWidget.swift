@@ -558,7 +558,7 @@ class TextPathDrawingOverlay: UIView {
     private let confirmButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "checkmark.circle.fill"), for: .normal)
-        button.tintColor = .systemGreen
+        button.tintColor = .white
         button.backgroundColor = UIColor.white.withAlphaComponent(0.2)
         button.layer.cornerRadius = 25
         button.isHidden = true

@@ -207,27 +207,27 @@ extension RunningDetailViewController {
             value: "120",
             unit: "m",
             icon: "arrow.up.right",
-            color: .systemGreen
+            color: ColorSystem.mainText
         )
         addWidget(elevationWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 210, y: 820))
-        
+
         // 10. 케이던스 위젯 (데모용)
         let cadenceWidget = createCustomWidget(
             title: WorkoutPlazaStrings.Widget.Title.Avg.cadence,
             value: "165",
             unit: "spm",
             icon: "figure.run",
-            color: .systemBlue
+            color: ColorSystem.mainText
         )
         addWidget(cadenceWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 30, y: 940))
-        
+
         // 11. 스트라이드 위젯 (데모용)
         let strideWidget = createCustomWidget(
             title: WorkoutPlazaStrings.Widget.Title.Avg.stride,
             value: "1.12",
             unit: "m",
             icon: "arrow.left.and.right",
-            color: .systemOrange
+            color: ColorSystem.mainText
         )
         addWidget(strideWidget, size: CGSize(width: 160, height: 80), position: CGPoint(x: 210, y: 940))
     }

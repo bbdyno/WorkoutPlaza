@@ -574,7 +574,7 @@ extension MoreViewController: UITableViewDataSource {
             let badgeLabel = UILabel()
             badgeLabel.text = badge
             badgeLabel.font = .systemFont(ofSize: 10, weight: .bold)
-            badgeLabel.textColor = .white
+            badgeLabel.textColor = ColorSystem.background
             badgeLabel.backgroundColor = ColorSystem.mainText
             badgeLabel.layer.cornerRadius = 5
             badgeLabel.clipsToBounds = true

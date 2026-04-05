@@ -17,7 +17,7 @@ enum WidgetGroupType: String, Codable {
         case .myRecord:
             return ColorSystem.mainText
         case .importedRecord:
-            return .systemOrange
+            return ColorSystem.subText
         }
     }
 
