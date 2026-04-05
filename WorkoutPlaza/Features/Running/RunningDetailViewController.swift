@@ -119,7 +119,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
 
     // MARK: - Actions
     
-    override func getToolSheetItems() -> (templates: [ToolSheetItem], widgets: [ToolSheetItem], templateActions: [ToolSheetHeaderAction]) {
+    override func getToolSheetItems() -> (templates: [ToolSheetItem], widgetSections: [ToolSheetSection], templateActions: [ToolSheetHeaderAction]) {
         // Templates
         var templateItems: [ToolSheetItem] = []
 
@@ -163,12 +163,10 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             }
         )
 
-        // Widgets — driven by WidgetType
-        var widgetItems: [ToolSheetItem] = []
         let hasData = workoutData != nil || importedWorkoutData != nil || externalWorkout != nil
 
-        // Running widget types to show in the picker
-        let runningWidgetTypes: [WidgetType] = [
+        // --- Section 1: 기록 위젯 (Record Stats) ---
+        let recordTypes: [WidgetType] = [
             .distance, .distanceCompact, .distanceIcon,
             .duration, .durationCompact, .durationIcon,
             .pace, .paceCompact, .paceIcon,
@@ -176,43 +174,84 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             .calories, .caloriesCompact, .caloriesIcon,
             .heartRate, .heartRateCompact, .heartRateIcon,
             .date, .dateIcon,
-            .routeMap,
-            .location,
-            .currentDateTime,
-            .text,
-            .composite,
         ]
+        let recordItems = recordTypes.map { makeWidgetItem(for: $0, hasData: hasData) }
+        let recordSection = ToolSheetSection(title: "기록 위젯", items: recordItems)
 
-        for type in runningWidgetTypes {
-            let added = isWidgetTypeGroupOnCanvas(type)
-            let enabled = hasData && !added
+        // --- Section 2: 경로/위치 (Route & Location) ---
+        let routeTypes: [WidgetType] = [.routeMap, .location, .currentDateTime]
+        let routeItems = routeTypes.map { makeWidgetItem(for: $0, hasData: hasData) }
+        let routeSection = ToolSheetSection(title: "경로/위치", items: routeItems)
 
-            widgetItems.append(ToolSheetItem(
-                title: type.displayName,
-                description: type.layoutDescription,
-                iconName: type.iconName,
-                isEnabled: enabled,
-                isAdded: added,
-                previewProvider: type.previewProvider,
+        // --- Section 3: 텍스트 (Text) ---
+        let textTypes: [WidgetType] = [.text, .composite]
+        let textItems = textTypes.map { makeWidgetItem(for: $0, hasData: hasData) }
+        let textSection = ToolSheetSection(title: "텍스트", items: textItems)
+
+        // --- Section 4: 말풍선 (Speech Bubble) — inline, no separate picker ---
+        var bubbleItems: [ToolSheetItem] = []
+        for style in SpeechBubbleStyle.allCases {
+            let proRequired = style.isProRequired && !PurchaseManager.shared.isEffectivelyPro
+            bubbleItems.append(ToolSheetItem(
+                title: style.displayName,
+                description: proRequired ? "Pro" : "말풍선",
+                iconName: WidgetType.speechBubble.iconName,
+                isEnabled: hasData,
+                isAdded: false,
+                previewProvider: {
+                    let payload = SpeechBubblePayload(
+                        text: style == .shoutBubble ? "와!" : (style == .thoughtBubble ? "오늘도..." : "오늘도 달렸다!"),
+                        style: style,
+                        bubbleColorHex: "#FFFFFF",
+                        borderColorHex: "#000000",
+                        borderWidth: 2,
+                        textColorHex: "#000000",
+                        fontStyleRaw: FontStyle.system.rawValue,
+                        fontSize: 14
+                    )
+                    let w = SpeechBubbleWidget()
+                    w.frame = CGRect(origin: .zero, size: CGSize(width: 140, height: 90))
+                    w.configure(payload: payload)
+                    return w
+                },
                 action: { [weak self] in
-                    self?.addWidgetOfType(type)
+                    if proRequired {
+                        let proVC = ProUpgradeViewController()
+                        proVC.triggerFeature = "speech_bubble_style"
+                        let nav = UINavigationController(rootViewController: proVC)
+                        nav.modalPresentationStyle = .pageSheet
+                        if let sheet = nav.sheetPresentationController {
+                            sheet.detents = [.large()]
+                            sheet.prefersGrabberVisible = true
+                        }
+                        self?.present(nav, animated: true)
+                    } else {
+                        self?.addSpeechBubbleWidget(style: style)
+                    }
                 }
             ))
         }
+        let bubbleSection = ToolSheetSection(title: "말풍선", items: bubbleItems)
 
-        // Speech Bubble widget (shared) — kept last with special handling
-        widgetItems.append(ToolSheetItem(
-            title: WidgetType.speechBubble.displayName,
-            description: WidgetType.speechBubble.displayName,
-            iconName: WidgetType.speechBubble.iconName,
-            isEnabled: hasData,
-            isAdded: false,
+        let widgetSections = [recordSection, routeSection, textSection, bubbleSection]
+        return (templateItems, widgetSections, templateActions)
+    }
+
+    // Helper to create a ToolSheetItem from WidgetType
+    private func makeWidgetItem(for type: WidgetType, hasData: Bool) -> ToolSheetItem {
+        let added = isWidgetTypeGroupOnCanvas(type)
+        let enabled = hasData && !added
+        return ToolSheetItem(
+            title: type.displayName,
+            description: type.layoutDescription,
+            iconName: type.iconName,
+            isEnabled: enabled,
+            isAdded: added,
+            previewProvider: type.previewProvider,
             action: { [weak self] in
-                self?.showSpeechBubbleStylePicker()
+                self?.addWidgetOfType(type)
             }
-        ))
-
-        return (templateItems, widgetItems, templateActions)
+        )
     }
 
     override func refreshTemplateLibrary() {

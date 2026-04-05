@@ -81,7 +81,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
     
     // MARK: - Actions
     
-    override func getToolSheetItems() -> (templates: [ToolSheetItem], widgets: [ToolSheetItem], templateActions: [ToolSheetHeaderAction]) {
+    override func getToolSheetItems() -> (templates: [ToolSheetItem], widgetSections: [ToolSheetSection], templateActions: [ToolSheetHeaderAction]) {
         // Templates
         var templateItems: [ToolSheetItem] = []
 
@@ -125,31 +125,81 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             }
         )
 
-        // Widgets
-        var widgetItems: [ToolSheetItem] = []
-
-        let climbingWidgets: [WidgetType] = [
-            .climbingGym, .gymLogo, .climbingDiscipline,
-            .climbingSession, .climbingRoutesByColor, .text, .date, .composite
+        // --- Section 1: 클라이밍 기록 ---
+        let climbingRecordTypes: [WidgetType] = [
+            .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo
         ]
+        let climbingRecordItems = climbingRecordTypes.map { makeClimbingWidgetItem(for: $0) }
+        let climbingRecordSection = ToolSheetSection(title: "클라이밍 기록", items: climbingRecordItems)
 
-        for type in climbingWidgets {
-            let added = !canAddWidget(type)
+        // --- Section 2: 텍스트 ---
+        let textTypes: [WidgetType] = [.text, .composite, .date]
+        let textItems = textTypes.map { makeClimbingWidgetItem(for: $0) }
+        let textSection = ToolSheetSection(title: "텍스트", items: textItems)
 
-            widgetItems.append(ToolSheetItem(
-                title: type.displayName,
-                description: type.displayName,
-                iconName: type.iconName,
-                isEnabled: !added,
-                isAdded: added,
-                previewProvider: type.previewProvider,
+        // --- Section 3: 말풍선 (Speech Bubble) — inline, no separate picker ---
+        var bubbleItems: [ToolSheetItem] = []
+        for style in SpeechBubbleStyle.allCases {
+            let proRequired = style.isProRequired && !PurchaseManager.shared.isEffectivelyPro
+            bubbleItems.append(ToolSheetItem(
+                title: style.displayName,
+                description: proRequired ? "Pro" : "말풍선",
+                iconName: WidgetType.speechBubble.iconName,
+                isEnabled: true,
+                isAdded: false,
+                previewProvider: {
+                    let payload = SpeechBubblePayload(
+                        text: style == .shoutBubble ? "와!" : (style == .thoughtBubble ? "오늘도..." : "오늘도 달렸다!"),
+                        style: style,
+                        bubbleColorHex: "#FFFFFF",
+                        borderColorHex: "#000000",
+                        borderWidth: 2,
+                        textColorHex: "#000000",
+                        fontStyleRaw: FontStyle.system.rawValue,
+                        fontSize: 14
+                    )
+                    let w = SpeechBubbleWidget()
+                    w.frame = CGRect(origin: .zero, size: CGSize(width: 140, height: 90))
+                    w.configure(payload: payload)
+                    return w
+                },
                 action: { [weak self] in
-                    self?.addNewWidget(type: type)
+                    if proRequired {
+                        let proVC = ProUpgradeViewController()
+                        proVC.triggerFeature = "speech_bubble_style"
+                        let nav = UINavigationController(rootViewController: proVC)
+                        nav.modalPresentationStyle = .pageSheet
+                        if let sheet = nav.sheetPresentationController {
+                            sheet.detents = [.large()]
+                            sheet.prefersGrabberVisible = true
+                        }
+                        self?.present(nav, animated: true)
+                    } else {
+                        self?.addSpeechBubbleWidget(style: style)
+                    }
                 }
             ))
         }
+        let bubbleSection = ToolSheetSection(title: "말풍선", items: bubbleItems)
 
-        return (templateItems, widgetItems, templateActions)
+        let widgetSections = [climbingRecordSection, textSection, bubbleSection]
+        return (templateItems, widgetSections, templateActions)
+    }
+
+    // Helper to create a ToolSheetItem from WidgetType for climbing
+    private func makeClimbingWidgetItem(for type: WidgetType) -> ToolSheetItem {
+        let added = !canAddWidget(type)
+        return ToolSheetItem(
+            title: type.displayName,
+            description: type.displayName,
+            iconName: type.iconName,
+            isEnabled: !added,
+            isAdded: added,
+            previewProvider: type.previewProvider,
+            action: { [weak self] in
+                self?.addNewWidget(type: type)
+            }
+        )
     }
 
     override func refreshTemplateLibrary() {

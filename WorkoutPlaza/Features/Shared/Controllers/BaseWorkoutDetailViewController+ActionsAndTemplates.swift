@@ -16,8 +16,8 @@ extension BaseWorkoutDetailViewController {
     
     // Abstract method to be overridden
     @objc func showAddWidgetMenuBase() {
-        let (_, widgets, _) = getToolSheetItems()
-        guard !widgets.isEmpty else { return }
+        let (_, widgetSections, _) = getToolSheetItems()
+        guard !widgetSections.isEmpty else { return }
 
         var widgetActions: [ToolSheetHeaderAction] = []
         let marketConfig = FeaturePackManager.shared.widgetMarketButtonConfig(for: getSportType())
@@ -29,8 +29,7 @@ extension BaseWorkoutDetailViewController {
             )
         }
 
-        let sections = [ToolSheetSection(title: WorkoutPlazaStrings.Sheet.Widget.add, items: widgets)]
-        let sheetVC = ToolSheetViewController(sections: sections, toolbarActions: widgetActions)
+        let sheetVC = ToolSheetViewController(sections: widgetSections, toolbarActions: widgetActions)
         sheetVC.title = WorkoutPlazaStrings.Sheet.Widget.add
         presentAsSheet(sheetVC)
     }

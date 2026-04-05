@@ -833,7 +833,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     // Shared actions
 
     /// Override in subclasses to provide sport-specific templates and widgets.
-    func getToolSheetItems() -> (templates: [ToolSheetItem], widgets: [ToolSheetItem], templateActions: [ToolSheetHeaderAction]) {
+    func getToolSheetItems() -> (templates: [ToolSheetItem], widgetSections: [ToolSheetSection], templateActions: [ToolSheetHeaderAction]) {
         return ([], [], [])
     }
 
