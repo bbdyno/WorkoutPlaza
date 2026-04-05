@@ -232,7 +232,7 @@ private class CardCell: UICollectionViewCell {
         let iconName = card.sportType == .running ? "figure.run" : "figure.climbing"
         let config = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
         sportTypeIcon.image = UIImage(systemName: iconName, withConfiguration: config)
-        sportTypeIcon.tintColor = card.sportType == .running ? .systemBlue : .systemOrange
+        sportTypeIcon.tintColor = ColorSystem.mainText
     }
 }
 

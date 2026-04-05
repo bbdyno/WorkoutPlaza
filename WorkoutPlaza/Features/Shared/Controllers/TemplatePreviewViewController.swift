@@ -86,8 +86,8 @@ class TemplatePreviewViewController: UIViewController {
         let button = UIButton(type: .system)
         button.setTitle(WorkoutPlazaStrings.Button.apply, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 17, weight: .bold)
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = ColorSystem.primaryGreen
+        button.setTitleColor(ColorSystem.background, for: .normal)
+        button.backgroundColor = ColorSystem.mainText
         button.layer.cornerRadius = 12
         button.layer.cornerCurve = .continuous
         return button
@@ -262,7 +262,7 @@ class TemplatePreviewViewController: UIViewController {
         let container = UIView()
 
         let iconImageView = UIImageView(image: UIImage(systemName: item.type.iconName))
-        iconImageView.tintColor = ColorSystem.primaryGreen
+        iconImageView.tintColor = ColorSystem.mainText
         iconImageView.contentMode = .scaleAspectFit
 
         let label = UILabel()

@@ -30,12 +30,12 @@ class RunningWorkoutCell: UIView {
     }
     
     private func setupUI() {
-        backgroundColor = ColorSystem.primaryBlue.withAlphaComponent(0.1)
+        backgroundColor = ColorSystem.mainText.withAlphaComponent(0.06)
         layer.cornerRadius = 12
 
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
         iconView.image = UIImage(systemName: "figure.run", withConfiguration: config)
-        iconView.tintColor = ColorSystem.primaryBlue
+        iconView.tintColor = ColorSystem.mainText
         iconView.contentMode = .scaleAspectFit
 
         titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
@@ -45,7 +45,7 @@ class RunningWorkoutCell: UIView {
         timeLabel.textColor = ColorSystem.subText
 
         distanceLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        distanceLabel.textColor = ColorSystem.primaryBlue
+        distanceLabel.textColor = ColorSystem.mainText
         
         durationLabel.font = .systemFont(ofSize: 13)
         durationLabel.textColor = ColorSystem.subText

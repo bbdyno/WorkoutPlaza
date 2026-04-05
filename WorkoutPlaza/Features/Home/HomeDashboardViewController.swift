@@ -96,11 +96,11 @@ class HomeDashboardViewController: UIViewController {
         let button = UIButton(type: .system)
         button.setTitle(WorkoutPlazaStrings.Button.Add.workout, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
-        button.backgroundColor = ColorSystem.primaryBlue
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = ColorSystem.mainText
+        button.setTitleColor(ColorSystem.background, for: .normal)
         button.layer.cornerRadius = 16
         button.layer.cornerCurve = .continuous
-        button.layer.shadowColor = ColorSystem.primaryBlue.cgColor
+        button.layer.shadowColor = ColorSystem.mainText.cgColor
         button.layer.shadowOpacity = 0.3
         button.layer.shadowOffset = CGSize(width: 0, height: 4)
         button.layer.shadowRadius = 8

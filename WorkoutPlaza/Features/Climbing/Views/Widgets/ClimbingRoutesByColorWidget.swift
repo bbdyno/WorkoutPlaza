@@ -426,7 +426,7 @@ class ClimbingRoutesByColorWidget: UIView, Selectable, WidgetContentAlignable {
         removeSelectionBorder()
 
         let borderLayer = CAShapeLayer()
-        borderLayer.strokeColor = ColorSystem.primaryBlue.cgColor
+        borderLayer.strokeColor = ColorSystem.mainText.cgColor
         borderLayer.fillColor = nil
         borderLayer.lineWidth = 2
         borderLayer.lineDashPattern = [6, 4]

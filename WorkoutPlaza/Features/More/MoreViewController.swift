@@ -556,8 +556,8 @@ extension MoreViewController: UITableViewDataSource {
 
         // Pro 업그레이드 셀 강조
         if item.icon == "crown.fill" {
-            config.textProperties.color = ColorSystem.primaryBlue
-            config.imageProperties.tintColor = ColorSystem.primaryBlue
+            config.textProperties.color = ColorSystem.mainText
+            config.imageProperties.tintColor = ColorSystem.mainText
             cell.accessoryType = .disclosureIndicator
         } else if item.icon == "trash" {
             config.textProperties.color = .systemRed
@@ -575,7 +575,7 @@ extension MoreViewController: UITableViewDataSource {
             badgeLabel.text = badge
             badgeLabel.font = .systemFont(ofSize: 10, weight: .bold)
             badgeLabel.textColor = .white
-            badgeLabel.backgroundColor = ColorSystem.primaryBlue
+            badgeLabel.backgroundColor = ColorSystem.mainText
             badgeLabel.layer.cornerRadius = 5
             badgeLabel.clipsToBounds = true
             badgeLabel.textAlignment = .center
@@ -620,7 +620,7 @@ private final class TipProductCell: UITableViewCell {
         titleLabel.textColor = ColorSystem.mainText
 
         priceLabel.font = .systemFont(ofSize: 14, weight: .semibold)
-        priceLabel.textColor = ColorSystem.primaryBlue
+        priceLabel.textColor = ColorSystem.mainText
         priceLabel.setContentHuggingPriority(.required, for: .horizontal)
 
         let stack = UIStackView(arrangedSubviews: [iconLabel, titleLabel, priceLabel])

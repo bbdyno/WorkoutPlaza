@@ -232,14 +232,14 @@ extension GymPickerViewController: UITableViewDataSource {
 
             if indexPath.row == 0 {
                 cell.textLabel?.text = WorkoutPlazaStrings.Gym.Action.custom
-                cell.textLabel?.textColor = ColorSystem.primaryGreen
+                cell.textLabel?.textColor = ColorSystem.mainText
                 cell.imageView?.image = UIImage(systemName: "plus.circle.fill")
-                cell.imageView?.tintColor = ColorSystem.primaryGreen
+                cell.imageView?.tintColor = ColorSystem.mainText
             } else {
                 cell.textLabel?.text = WorkoutPlazaStrings.Gym.Action.sync
-                cell.textLabel?.textColor = ColorSystem.primaryGreen
+                cell.textLabel?.textColor = ColorSystem.mainText
                 cell.imageView?.image = UIImage(systemName: "arrow.clockwise.circle.fill")
-                cell.imageView?.tintColor = ColorSystem.primaryGreen
+                cell.imageView?.tintColor = ColorSystem.mainText
             }
 
             cell.textLabel?.font = .systemFont(ofSize: 17, weight: .medium)

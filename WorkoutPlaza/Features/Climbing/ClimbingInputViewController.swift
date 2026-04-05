@@ -496,7 +496,7 @@ extension ClimbingInputViewController: RouteCellDelegate {
     func routeCellDidRequestColorPicker(_ cell: RouteCell) {
         let picker = UIColorPickerViewController()
         picker.delegate = self
-        picker.selectedColor = routes[cell.tag].customColor ?? .systemBlue
+        picker.selectedColor = routes[cell.tag].customColor ?? ColorSystem.mainText
         picker.supportsAlpha = false
         picker.view.tag = cell.tag
         present(picker, animated: true)
@@ -663,9 +663,9 @@ class DisciplineSelectionCell: UITableViewCell {
             // Visual update
             UIView.animate(withDuration: 0.2) {
                 if isSelected {
-                    btn.backgroundColor = ColorSystem.primaryGreen
+                    btn.backgroundColor = ColorSystem.mainText
                     btn.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
-                    btn.layer.shadowColor = ColorSystem.primaryGreen.cgColor
+                    btn.layer.shadowColor = ColorSystem.mainText.cgColor
                     btn.layer.shadowOffset = CGSize(width: 0, height: 2)
                     btn.layer.shadowOpacity = 0.3
                     btn.layer.shadowRadius = 4
@@ -731,11 +731,11 @@ private class ButtonCell: UITableViewCell {
 
         switch style {
         case .primary:
-            button.backgroundColor = ColorSystem.primaryGreen
-            button.setTitleColor(.white, for: .normal)
+            button.backgroundColor = ColorSystem.mainText
+            button.setTitleColor(ColorSystem.background, for: .normal)
         case .secondary:
             button.backgroundColor = ColorSystem.cardBackground
-            button.setTitleColor(ColorSystem.primaryGreen, for: .normal)
+            button.setTitleColor(ColorSystem.mainText, for: .normal)
         }
     }
 

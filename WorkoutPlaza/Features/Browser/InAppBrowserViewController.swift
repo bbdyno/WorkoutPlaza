@@ -51,7 +51,7 @@ final class InAppBrowserViewController: UIViewController {
 
     let sslIconView: UIImageView = {
         let imageView = UIImageView(image: UIImage(systemName: "lock.fill"))
-        imageView.tintColor = .systemGreen
+        imageView.tintColor = ColorSystem.mainText
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
@@ -87,7 +87,7 @@ final class InAppBrowserViewController: UIViewController {
 
     let progressView: UIProgressView = {
         let progressView = UIProgressView(progressViewStyle: .bar)
-        progressView.progressTintColor = ColorSystem.primaryBlue
+        progressView.progressTintColor = ColorSystem.mainText
         progressView.trackTintColor = .clear
         progressView.alpha = 0
         return progressView
@@ -158,8 +158,8 @@ final class InAppBrowserViewController: UIViewController {
         button.setTitle(WorkoutPlazaStrings.Browser.Action.reload, for: .normal)
         button.titleLabel?.font = .preferredFont(forTextStyle: .headline)
         button.titleLabel?.adjustsFontForContentSizeCategory = true
-        button.backgroundColor = ColorSystem.primaryBlue
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = ColorSystem.mainText
+        button.setTitleColor(ColorSystem.background, for: .normal)
         button.layer.cornerRadius = 10
         button.addTarget(self, action: #selector(retryButtonTapped), for: .touchUpInside)
         return button

@@ -29,12 +29,12 @@ class ClimbingSessionCell: UIView {
     }
     
     private func setupUI() {
-        backgroundColor = ColorSystem.primaryGreen.withAlphaComponent(0.1)
+        backgroundColor = ColorSystem.mainText.withAlphaComponent(0.06)
         layer.cornerRadius = 12
 
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
         iconView.image = UIImage(systemName: "figure.climbing", withConfiguration: config)
-        iconView.tintColor = ColorSystem.primaryGreen
+        iconView.tintColor = ColorSystem.mainText
         iconView.contentMode = .scaleAspectFit
 
         titleLabel.font = .systemFont(ofSize: 15, weight: .semibold)
@@ -44,7 +44,7 @@ class ClimbingSessionCell: UIView {
         disciplineLabel.textColor = ColorSystem.subText
 
         routesLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        routesLabel.textColor = ColorSystem.primaryGreen
+        routesLabel.textColor = ColorSystem.mainText
 
         gradeLabel.font = .systemFont(ofSize: 12)
         gradeLabel.textColor = ColorSystem.subText

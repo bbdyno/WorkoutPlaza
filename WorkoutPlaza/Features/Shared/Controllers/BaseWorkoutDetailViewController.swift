@@ -16,14 +16,14 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     enum Constants {
         static let canvasBackgroundColor = UIColor.white
         static let canvasBorderColor = UIColor(white: 0.9, alpha: 1.0).cgColor
-        static let centerGuideColor = ColorSystem.primaryGreen.withAlphaComponent(0.85)
+        static let centerGuideColor = ColorSystem.mainText.withAlphaComponent(0.85)
         static let centerGuideThickness: CGFloat = 1
         static let centerSnapThreshold: CGFloat = 10
         static let centerGuideDisplayDuration: TimeInterval = 0.7
 
         static let toolbarBackgroundColor = UIColor.white.withAlphaComponent(0.95)
         static let multiSelectToolbarBackgroundColor = UIColor.white.withAlphaComponent(0.98)
-        static let multiSelectBorderColor = ColorSystem.primaryGreen.withAlphaComponent(0.5).cgColor
+        static let multiSelectBorderColor = ColorSystem.mainText.withAlphaComponent(0.5).cgColor
 
         static let toastBackgroundColor = ColorSystem.toastBackground
 
@@ -314,7 +314,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     lazy var textPathConfirmButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "checkmark.circle.fill"), for: .normal)
-        button.tintColor = .systemGreen
+        button.tintColor = .white
         button.backgroundColor = UIColor.white.withAlphaComponent(0.3)
         button.layer.cornerRadius = 20
         button.isHidden = true
@@ -400,7 +400,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         navigationController?.navigationBar.standardAppearance = appearance
         navigationController?.navigationBar.scrollEdgeAppearance = appearance
-        navigationController?.navigationBar.tintColor = ColorSystem.primaryGreen
+        navigationController?.navigationBar.tintColor = ColorSystem.mainText
     }
 
     override func viewWillDisappear(_ animated: Bool) {

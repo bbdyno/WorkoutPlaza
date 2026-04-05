@@ -114,7 +114,7 @@ class ResizeHandleView: UIView {
                 )
             ).cgPath
             circleLayer.fillColor = UIColor.white.cgColor
-            circleLayer.strokeColor = ColorSystem.primaryBlue.cgColor
+            circleLayer.strokeColor = ColorSystem.mainText.cgColor
             circleLayer.lineWidth = 2
             circleLayer.shadowColor = UIColor.black.cgColor
             circleLayer.shadowOffset = CGSize(width: 0, height: 2)

@@ -334,7 +334,7 @@ class CustomCalendarDayCell: UICollectionViewCell {
             }
         } else {
             selectionBackground.isHidden = true
-            dayLabel.textColor = isToday ? .systemBlue : ColorSystem.mainText
+            dayLabel.textColor = isToday ? ColorSystem.mainText : ColorSystem.mainText
 
             if let decorations = decorations, !decorations.isEmpty {
                 if decorations.count <= 2 {

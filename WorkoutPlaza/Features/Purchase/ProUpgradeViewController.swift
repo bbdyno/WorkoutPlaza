@@ -207,7 +207,7 @@ final class ProUpgradeViewController: UIViewController {
         let row = UIView()
 
         let iconView = UIImageView(image: UIImage(systemName: icon))
-        iconView.tintColor = ColorSystem.primaryBlue
+        iconView.tintColor = ColorSystem.mainText
         iconView.contentMode = .scaleAspectFit
 
         let titleLbl = UILabel()
@@ -242,7 +242,7 @@ final class ProUpgradeViewController: UIViewController {
 
     private func applyGradientToBuyButton() {
         let gradient = CAGradientLayer()
-        gradient.colors = [ColorSystem.primaryBlue.cgColor, ColorSystem.primaryGreen.cgColor]
+        gradient.colors = [ColorSystem.mainText.cgColor, ColorSystem.mainText.cgColor]
         gradient.startPoint = CGPoint(x: 0, y: 0.5)
         gradient.endPoint   = CGPoint(x: 1, y: 0.5)
         gradient.cornerRadius = 16

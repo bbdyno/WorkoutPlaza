@@ -52,7 +52,7 @@ class RunningListViewController: UIViewController {
         let sc = UISegmentedControl(items: [WorkoutPlazaStrings.Running.Filter.all, "HealthKit", WorkoutPlazaStrings.Running.Filter.external])
         sc.selectedSegmentIndex = 0
         sc.backgroundColor = ColorSystem.cardBackground
-        sc.selectedSegmentTintColor = ColorSystem.primaryGreen
+        sc.selectedSegmentTintColor = ColorSystem.controlTint
         sc.layer.cornerRadius = 10
         sc.layer.masksToBounds = true
 
@@ -75,8 +75,8 @@ class RunningListViewController: UIViewController {
         let button = UIButton(type: .system)
 
         var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = ColorSystem.primaryGreen
-        config.baseForegroundColor = .white
+        config.baseBackgroundColor = ColorSystem.mainText
+        config.baseForegroundColor = ColorSystem.background
         config.cornerStyle = .capsule
         config.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20)
 
@@ -561,7 +561,7 @@ extension RunningListViewController: UITableViewDelegate, UITableViewDataSource 
                 completionHandler(true)
             }
             shareAction.image = UIImage(systemName: "square.and.arrow.up")
-            shareAction.backgroundColor = ColorSystem.primaryGreen
+            shareAction.backgroundColor = ColorSystem.controlTint
             actions.append(shareAction)
         }
 
@@ -726,7 +726,7 @@ class WorkoutCell: UITableViewCell {
 
     private let accentBar: UIView = {
         let view = UIView()
-        view.backgroundColor = ColorSystem.primaryGreen
+        view.backgroundColor = ColorSystem.mainText
         view.layer.cornerRadius = 3
         return view
     }()
@@ -763,7 +763,7 @@ class WorkoutCell: UITableViewCell {
     private let durationLabel: UILabel = {
         let label = UILabel()
         label.font = .monospacedDigitSystemFont(ofSize: 16, weight: .semibold)
-        label.textColor = ColorSystem.primaryGreen
+        label.textColor = ColorSystem.mainText
         return label
     }()
 
@@ -893,7 +893,7 @@ class WorkoutCell: UITableViewCell {
         switch workout.source {
         case .healthKit:
             sourceBadge.isHidden = true
-            accentBar.backgroundColor = ColorSystem.primaryGreen
+            accentBar.backgroundColor = ColorSystem.mainText
         case .external:
             sourceBadge.isHidden = false
             sourceBadge.text = WorkoutPlazaStrings.Running.External.badge
@@ -905,7 +905,7 @@ class WorkoutCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         sourceBadge.isHidden = true
-        accentBar.backgroundColor = ColorSystem.primaryGreen
+        accentBar.backgroundColor = ColorSystem.mainText
     }
 }
 

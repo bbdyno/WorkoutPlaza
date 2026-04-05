@@ -73,7 +73,7 @@ class GymPickerCell: UITableViewCell {
 
         // Checkmark
         checkmarkImageView.image = UIImage(systemName: "checkmark")
-        checkmarkImageView.tintColor = .systemBlue
+        checkmarkImageView.tintColor = ColorSystem.mainText
         checkmarkImageView.contentMode = .scaleAspectFit
 
         // Stack for labels

@@ -20,7 +20,7 @@ class WorkoutTypeWidget: BaseStatWidget {
     private let typeIconImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = .systemBlue
+        imageView.tintColor = ColorSystem.mainText
         return imageView
     }()
     

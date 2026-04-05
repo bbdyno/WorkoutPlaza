@@ -59,8 +59,8 @@ class CustomGradientPickerViewController: UIViewController {
 
     weak var delegate: CustomGradientPickerDelegate?
 
-    private var startColor: UIColor = ColorSystem.primaryBlue
-    private var endColor: UIColor = ColorSystem.primaryGreen
+    private var startColor: UIColor = ColorSystem.mainText
+    private var endColor: UIColor = ColorSystem.subText
     private var selectedDirection: GradientDirection = .topLeftToBottomRight
 
     // MARK: - UI Components
@@ -133,8 +133,8 @@ class CustomGradientPickerViewController: UIViewController {
         let button = UIButton(type: .system)
         button.setTitle(WorkoutPlazaStrings.Gradient.change, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
-        button.backgroundColor = .systemBlue
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = ColorSystem.mainText
+        button.setTitleColor(ColorSystem.background, for: .normal)
         button.layer.cornerRadius = 8
         return button
     }()
@@ -171,8 +171,8 @@ class CustomGradientPickerViewController: UIViewController {
         let button = UIButton(type: .system)
         button.setTitle(WorkoutPlazaStrings.Gradient.change, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
-        button.backgroundColor = .systemBlue
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = ColorSystem.mainText
+        button.setTitleColor(ColorSystem.background, for: .normal)
         button.layer.cornerRadius = 8
         return button
     }()
@@ -188,8 +188,8 @@ class CustomGradientPickerViewController: UIViewController {
         let button = UIButton(type: .system)
         button.setTitle(WorkoutPlazaStrings.Button.apply, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        button.backgroundColor = .systemBlue
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = ColorSystem.mainText
+        button.setTitleColor(ColorSystem.background, for: .normal)
         button.layer.cornerRadius = 12
         return button
     }()
@@ -378,9 +378,9 @@ class CustomGradientPickerViewController: UIViewController {
     private func updateDirectionSelection() {
         for button in directionButtons {
             let isSelected = button.tag == selectedDirection.rawValue
-            button.layer.borderColor = isSelected ? UIColor.systemBlue.cgColor : UIColor.clear.cgColor
-            button.backgroundColor = isSelected ? UIColor.systemBlue.withAlphaComponent(0.1) : .secondarySystemBackground
-            button.tintColor = isSelected ? .systemBlue : .label
+            button.layer.borderColor = isSelected ? ColorSystem.mainText.cgColor : UIColor.clear.cgColor
+            button.backgroundColor = isSelected ? ColorSystem.mainText.withAlphaComponent(0.1) : .secondarySystemBackground
+            button.tintColor = isSelected ? ColorSystem.mainText : .label
         }
     }
 

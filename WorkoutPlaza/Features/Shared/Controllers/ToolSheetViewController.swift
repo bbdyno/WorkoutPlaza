@@ -300,7 +300,7 @@ private class ToolSheetCell: UICollectionViewCell {
     private let checkmarkView: UIImageView = {
         let iv = UIImageView()
         iv.image = UIImage(systemName: "checkmark.circle.fill")
-        iv.tintColor = .systemGreen
+        iv.tintColor = ColorSystem.mainText
         iv.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 14)
         iv.isHidden = true
         return iv

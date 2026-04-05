@@ -299,7 +299,7 @@ class ColorSwatchCell: UICollectionViewCell {
     override var isSelected: Bool {
         didSet {
             if isSelected {
-                colorView.layer.borderColor = ColorSystem.primaryGreen.cgColor
+                colorView.layer.borderColor = ColorSystem.mainText.cgColor
                 colorView.layer.borderWidth = Constants.selectedBorderWidth
             } else {
                 if colorView.backgroundColor == .white || colorView.backgroundColor?.isLight == true {

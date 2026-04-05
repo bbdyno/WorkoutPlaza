@@ -87,14 +87,14 @@ private final class WalkthroughArtworkView: UIView {
             title: "Running",
             mainValue: "5.2 km",
             subValue: "3 times · 42 min",
-            color: ColorSystem.primaryBlue
+            color: ColorSystem.mainText
         )
         let climbingCard = makeStatCard(
             emoji: "🧗",
             title: "Climbing",
             mainValue: "12 routes",
             subValue: "2 visits · 8 sent",
-            color: ColorSystem.primaryGreen
+            color: ColorSystem.mainText
         )
         cardsStack.addArrangedSubview(runningCard)
         cardsStack.addArrangedSubview(climbingCard)
@@ -105,12 +105,12 @@ private final class WalkthroughArtworkView: UIView {
         }
 
         let addButton = UIView()
-        addButton.backgroundColor = ColorSystem.primaryBlue.withAlphaComponent(0.12)
+        addButton.backgroundColor = ColorSystem.mainText.withAlphaComponent(0.12)
         addButton.layer.cornerRadius = 10
         containerView.addSubview(addButton)
         contentViews.append(addButton)
 
-        let plusLabel = makeLabel("+ Add Workout", size: 13, weight: .semibold, color: ColorSystem.primaryBlue)
+        let plusLabel = makeLabel("+ Add Workout", size: 13, weight: .semibold, color: ColorSystem.mainText)
         plusLabel.textAlignment = .center
         addButton.addSubview(plusLabel)
         plusLabel.snp.makeConstraints { $0.center.equalToSuperview() }
@@ -211,7 +211,7 @@ private final class WalkthroughArtworkView: UIView {
 
         // Route line on map
         let routeLine = UIView()
-        routeLine.backgroundColor = ColorSystem.primaryBlue.withAlphaComponent(0.4)
+        routeLine.backgroundColor = ColorSystem.mainText.withAlphaComponent(0.4)
         routeLine.layer.cornerRadius = 1.5
         mapView.addSubview(routeLine)
         routeLine.snp.makeConstraints { make in
@@ -284,7 +284,7 @@ private final class WalkthroughArtworkView: UIView {
 
         let barHeights: [CGFloat] = [0.7, 0.85, 0.4, 0.95, 0.6, 0.3, 0.5]
         let days = ["M", "T", "W", "T", "F", "S", "S"]
-        let colors = [ColorSystem.primaryBlue, ColorSystem.primaryGreen]
+        let colors = [ColorSystem.mainText, ColorSystem.subText]
 
         let barsStack = UIStackView()
         barsStack.axis = .horizontal
@@ -359,13 +359,13 @@ final class WalkthroughViewController: UIViewController {
     private let pages: [WalkthroughPage] = [
         WalkthroughPage(
             kind: .record,
-            accentColor: ColorSystem.primaryBlue,
+            accentColor: ColorSystem.mainText,
             titleKey: "walkthrough.page.record.title",
             descriptionKey: "walkthrough.page.record.description"
         ),
         WalkthroughPage(
             kind: .design,
-            accentColor: ColorSystem.primaryGreen,
+            accentColor: ColorSystem.mainText,
             titleKey: "walkthrough.page.design.title",
             descriptionKey: "walkthrough.page.design.description"
         ),
@@ -412,7 +412,7 @@ final class WalkthroughViewController: UIViewController {
 
     private let pageControl: UIPageControl = {
         let control = UIPageControl()
-        control.currentPageIndicatorTintColor = ColorSystem.primaryBlue
+        control.currentPageIndicatorTintColor = ColorSystem.mainText
         control.pageIndicatorTintColor = ColorSystem.divider
         control.isUserInteractionEnabled = false
         return control
@@ -422,7 +422,7 @@ final class WalkthroughViewController: UIViewController {
         let button = UIButton(type: .system)
         button.titleLabel?.font = .systemFont(ofSize: 17, weight: .bold)
         button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = ColorSystem.primaryBlue
+        button.backgroundColor = ColorSystem.mainText
         button.layer.cornerRadius = 14
         button.layer.masksToBounds = true
         return button

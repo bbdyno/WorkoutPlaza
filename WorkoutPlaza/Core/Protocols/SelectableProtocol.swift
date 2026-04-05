@@ -99,7 +99,7 @@ extension Selectable {
         guard selectionBorderLayer == nil else { return }
 
         let borderLayer = CAShapeLayer()
-        borderLayer.strokeColor = ColorSystem.primaryBlue.cgColor
+        borderLayer.strokeColor = ColorSystem.mainText.cgColor
         borderLayer.fillColor = UIColor.clear.cgColor
         borderLayer.lineWidth = 2
         borderLayer.lineDashPattern = [6, 3]
@@ -198,7 +198,7 @@ extension Selectable {
         )
 
         indicatorLayer.path = circlePath.cgPath
-        indicatorLayer.strokeColor = UIColor.systemBlue.cgColor
+        indicatorLayer.strokeColor = ColorSystem.mainText.cgColor
         indicatorLayer.fillColor = UIColor.clear.cgColor
         indicatorLayer.lineWidth = 2
         indicatorLayer.lineDashPattern = [4, 4]

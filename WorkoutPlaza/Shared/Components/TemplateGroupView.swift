@@ -15,7 +15,7 @@ enum WidgetGroupType: String, Codable {
     var borderColor: UIColor {
         switch self {
         case .myRecord:
-            return .systemBlue
+            return ColorSystem.mainText
         case .importedRecord:
             return .systemOrange
         }
@@ -37,7 +37,7 @@ class TemplateGroupView: UIView, Selectable {
 
     // MARK: - Selectable Properties
     var isSelected: Bool = false
-    var currentColor: UIColor = .systemBlue
+    var currentColor: UIColor = ColorSystem.mainText
     var currentFontStyle: FontStyle = .system  // Not directly used, but required by protocol
     var itemIdentifier: String = UUID().uuidString
     var resizeHandles: [ResizeHandleView] = []

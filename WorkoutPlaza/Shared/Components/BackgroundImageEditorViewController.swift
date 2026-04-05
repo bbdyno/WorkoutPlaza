@@ -70,7 +70,7 @@ class BackgroundImageEditorViewController: UIViewController {
         slider.minimumValue = 0.0
         slider.maximumValue = 1.0
         slider.value = 0.5
-        slider.minimumTrackTintColor = ColorSystem.primaryGreen
+        slider.minimumTrackTintColor = ColorSystem.mainText
         slider.maximumTrackTintColor = ColorSystem.divider
         return slider
     }()
@@ -190,7 +190,7 @@ class BackgroundImageEditorViewController: UIViewController {
     }
     
     private func setupGuideLayer() {
-        guideLayer.strokeColor = ColorSystem.primaryGreen.cgColor
+        guideLayer.strokeColor = ColorSystem.mainText.cgColor
         guideLayer.fillColor = nil
         guideLayer.lineWidth = 2
         guideLayer.lineDashPattern = [6, 4]
@@ -205,7 +205,7 @@ class BackgroundImageEditorViewController: UIViewController {
 
         // Toggle
         overlayToggle.isOn = false
-        overlayToggle.onTintColor = ColorSystem.primaryGreen
+        overlayToggle.onTintColor = ColorSystem.mainText
         overlayToggle.addTarget(self, action: #selector(overlayToggleChanged), for: .valueChanged)
         overlayControlsContainer.addSubview(overlayLabel)
         overlayControlsContainer.addSubview(overlayToggle)
@@ -508,7 +508,7 @@ class CustomColorCell: UICollectionViewCell {
     private let iconImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.image = UIImage(systemName: "eyedropper.halffull")
-        imageView.tintColor = ColorSystem.primaryGreen
+        imageView.tintColor = ColorSystem.mainText
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
@@ -538,7 +538,7 @@ class CustomColorCell: UICollectionViewCell {
     override var isSelected: Bool {
         didSet {
             if isSelected {
-                contentView.layer.borderColor = ColorSystem.primaryGreen.cgColor
+                contentView.layer.borderColor = ColorSystem.mainText.cgColor
                 contentView.layer.borderWidth = 2
             } else {
                 contentView.layer.borderColor = ColorSystem.divider.cgColor
