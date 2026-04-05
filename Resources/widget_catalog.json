@@ -1,0 +1,332 @@
+{
+  "version": "1.0",
+  "categories": [
+    {
+      "id": "running",
+      "name": { "ko": "러닝", "en": "Running" },
+      "widgets": [
+        {
+          "id": "distance.text",
+          "dataType": "distance",
+          "layout": "text",
+          "name": { "ko": "거리", "en": "Distance" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "distance"
+        },
+        {
+          "id": "distance.compact",
+          "dataType": "distance",
+          "layout": "textUnified",
+          "name": { "ko": "거리 (간결)", "en": "Distance (Compact)" },
+          "description": { "ko": "컴팩트", "en": "Compact" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "distance"
+        },
+        {
+          "id": "distance.icon",
+          "dataType": "distance",
+          "layout": "icon",
+          "name": { "ko": "거리 (아이콘)", "en": "Distance (Icon)" },
+          "description": { "ko": "아이콘", "en": "Icon" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "distance"
+        },
+        {
+          "id": "duration.text",
+          "dataType": "duration",
+          "layout": "text",
+          "name": { "ko": "시간", "en": "Duration" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "duration"
+        },
+        {
+          "id": "duration.compact",
+          "dataType": "duration",
+          "layout": "textUnified",
+          "name": { "ko": "시간 (간결)", "en": "Duration (Compact)" },
+          "description": { "ko": "컴팩트", "en": "Compact" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "duration"
+        },
+        {
+          "id": "duration.icon",
+          "dataType": "duration",
+          "layout": "icon",
+          "name": { "ko": "시간 (아이콘)", "en": "Duration (Icon)" },
+          "description": { "ko": "아이콘", "en": "Icon" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "duration"
+        },
+        {
+          "id": "pace.text",
+          "dataType": "pace",
+          "layout": "text",
+          "name": { "ko": "페이스", "en": "Pace" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "pace"
+        },
+        {
+          "id": "pace.compact",
+          "dataType": "pace",
+          "layout": "textUnified",
+          "name": { "ko": "페이스 (간결)", "en": "Pace (Compact)" },
+          "description": { "ko": "컴팩트", "en": "Compact" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "pace"
+        },
+        {
+          "id": "pace.icon",
+          "dataType": "pace",
+          "layout": "icon",
+          "name": { "ko": "페이스 (아이콘)", "en": "Pace (Icon)" },
+          "description": { "ko": "아이콘", "en": "Icon" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "pace"
+        },
+        {
+          "id": "speed.text",
+          "dataType": "speed",
+          "layout": "text",
+          "name": { "ko": "속도", "en": "Speed" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "speed"
+        },
+        {
+          "id": "speed.compact",
+          "dataType": "speed",
+          "layout": "textUnified",
+          "name": { "ko": "속도 (간결)", "en": "Speed (Compact)" },
+          "description": { "ko": "컴팩트", "en": "Compact" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "speed"
+        },
+        {
+          "id": "speed.icon",
+          "dataType": "speed",
+          "layout": "icon",
+          "name": { "ko": "속도 (아이콘)", "en": "Speed (Icon)" },
+          "description": { "ko": "아이콘", "en": "Icon" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "speed"
+        },
+        {
+          "id": "calories.text",
+          "dataType": "calories",
+          "layout": "text",
+          "name": { "ko": "칼로리", "en": "Calories" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "calories"
+        },
+        {
+          "id": "calories.compact",
+          "dataType": "calories",
+          "layout": "textUnified",
+          "name": { "ko": "칼로리 (간결)", "en": "Calories (Compact)" },
+          "description": { "ko": "컴팩트", "en": "Compact" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "calories"
+        },
+        {
+          "id": "calories.icon",
+          "dataType": "calories",
+          "layout": "icon",
+          "name": { "ko": "칼로리 (아이콘)", "en": "Calories (Icon)" },
+          "description": { "ko": "아이콘", "en": "Icon" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "calories"
+        },
+        {
+          "id": "heartRate.text",
+          "dataType": "heartRate",
+          "layout": "text",
+          "name": { "ko": "심박수", "en": "Heart Rate" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.heartbeat",
+          "singletonGroup": "heartRate"
+        },
+        {
+          "id": "heartRate.compact",
+          "dataType": "heartRate",
+          "layout": "textUnified",
+          "name": { "ko": "심박수 (간결)", "en": "Heart Rate (Compact)" },
+          "description": { "ko": "컴팩트", "en": "Compact" },
+          "iconName": "icon.heartbeat",
+          "singletonGroup": "heartRate"
+        },
+        {
+          "id": "heartRate.icon",
+          "dataType": "heartRate",
+          "layout": "icon",
+          "name": { "ko": "심박수 (아이콘)", "en": "Heart Rate (Icon)" },
+          "description": { "ko": "아이콘", "en": "Icon" },
+          "iconName": "icon.heartbeat",
+          "singletonGroup": "heartRate"
+        },
+        {
+          "id": "date.text",
+          "dataType": "date",
+          "layout": "text",
+          "name": { "ko": "날짜", "en": "Date" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "date"
+        },
+        {
+          "id": "date.icon",
+          "dataType": "date",
+          "layout": "icon",
+          "name": { "ko": "날짜 (아이콘)", "en": "Date (Icon)" },
+          "description": { "ko": "아이콘", "en": "Icon" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "date"
+        },
+        {
+          "id": "routeMap",
+          "dataType": "routeMap",
+          "layout": "text",
+          "name": { "ko": "경로", "en": "Route Map" },
+          "description": { "ko": "GPS 경로", "en": "GPS Route" },
+          "iconName": "icon.map.pin.fill",
+          "singletonGroup": "routeMap"
+        },
+        {
+          "id": "location",
+          "dataType": "location",
+          "layout": "text",
+          "name": { "ko": "위치", "en": "Location" },
+          "description": { "ko": "출발 위치", "en": "Start Location" },
+          "iconName": "icon.map.pin.line",
+          "singletonGroup": "location"
+        },
+        {
+          "id": "currentDateTime",
+          "dataType": "currentDateTime",
+          "layout": "text",
+          "name": { "ko": "현재 시각", "en": "Current Time" },
+          "description": { "ko": "현재 날짜/시간", "en": "Current Date/Time" },
+          "iconName": "icon.person.run",
+          "singletonGroup": "currentDateTime"
+        },
+        {
+          "id": "text",
+          "dataType": "text",
+          "layout": "text",
+          "name": { "ko": "텍스트", "en": "Text" },
+          "description": { "ko": "자유 텍스트 입력", "en": "Custom Text" },
+          "iconName": "icon.text.aa",
+          "singletonGroup": null
+        },
+        {
+          "id": "composite",
+          "dataType": "composite",
+          "layout": "text",
+          "name": { "ko": "복합 위젯", "en": "Composite" },
+          "description": { "ko": "제목 + 내용", "en": "Title + Content" },
+          "iconName": "icon.grid.four",
+          "singletonGroup": null
+        },
+        {
+          "id": "speechBubble",
+          "dataType": "speechBubble",
+          "layout": "text",
+          "name": { "ko": "말풍선", "en": "Speech Bubble" },
+          "description": { "ko": "8종 스타일", "en": "8 Styles" },
+          "iconName": "icon.text.aa",
+          "singletonGroup": null
+        }
+      ]
+    },
+    {
+      "id": "climbing",
+      "name": { "ko": "클라이밍", "en": "Climbing" },
+      "widgets": [
+        {
+          "id": "climbingSession.text",
+          "dataType": "climbingSession",
+          "layout": "text",
+          "name": { "ko": "세션 기록", "en": "Session" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.mountains",
+          "singletonGroup": "climbingSession"
+        },
+        {
+          "id": "climbingGym.text",
+          "dataType": "climbingGym",
+          "layout": "text",
+          "name": { "ko": "체육관", "en": "Gym" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.mountains",
+          "singletonGroup": "climbingGym"
+        },
+        {
+          "id": "climbingDiscipline.text",
+          "dataType": "climbingDiscipline",
+          "layout": "text",
+          "name": { "ko": "종목", "en": "Discipline" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.mountains",
+          "singletonGroup": "climbingDiscipline"
+        },
+        {
+          "id": "climbingRoutesByColor",
+          "dataType": "climbingRoutesByColor",
+          "layout": "text",
+          "name": { "ko": "색상별 루트", "en": "Routes by Color" },
+          "description": { "ko": "차트", "en": "Chart" },
+          "iconName": "icon.mountains",
+          "singletonGroup": "climbingRoutesByColor"
+        },
+        {
+          "id": "gymLogo",
+          "dataType": "gymLogo",
+          "layout": "text",
+          "name": { "ko": "체육관 로고", "en": "Gym Logo" },
+          "description": { "ko": "이미지", "en": "Image" },
+          "iconName": "icon.mountains",
+          "singletonGroup": "gymLogo"
+        },
+        {
+          "id": "date.text",
+          "dataType": "date",
+          "layout": "text",
+          "name": { "ko": "날짜", "en": "Date" },
+          "description": { "ko": "텍스트", "en": "Text" },
+          "iconName": "icon.mountains",
+          "singletonGroup": "date"
+        },
+        {
+          "id": "text",
+          "dataType": "text",
+          "layout": "text",
+          "name": { "ko": "텍스트", "en": "Text" },
+          "description": { "ko": "자유 텍스트 입력", "en": "Custom Text" },
+          "iconName": "icon.text.aa",
+          "singletonGroup": null
+        },
+        {
+          "id": "composite",
+          "dataType": "composite",
+          "layout": "text",
+          "name": { "ko": "복합 위젯", "en": "Composite" },
+          "description": { "ko": "제목 + 내용", "en": "Title + Content" },
+          "iconName": "icon.grid.four",
+          "singletonGroup": null
+        },
+        {
+          "id": "speechBubble",
+          "dataType": "speechBubble",
+          "layout": "text",
+          "name": { "ko": "말풍선", "en": "Speech Bubble" },
+          "description": { "ko": "8종 스타일", "en": "8 Styles" },
+          "iconName": "icon.text.aa",
+          "singletonGroup": null
+        }
+      ]
+    }
+  ]
+}

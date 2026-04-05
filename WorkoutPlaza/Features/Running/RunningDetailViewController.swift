@@ -163,13 +163,25 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             }
         )
 
-        // Widgets
+        // Widgets — driven by WidgetCatalog
         var widgetItems: [ToolSheetItem] = []
         let hasData = workoutData != nil || importedWorkoutData != nil || externalWorkout != nil
-        let hasRoute = workoutData?.hasRoute ?? importedWorkoutData?.hasRoute ?? (externalWorkout?.workoutData.route.isEmpty == false)
 
-        for type in SingleWidgetType.allCases {
-            let added = !canAddWidget(type)
+        let catalogWidgets = WidgetCatalogManager.shared.widgets(for: .running)
+
+        for definition in catalogWidgets {
+            // Speech Bubble has special handling — append it separately at the end
+            if definition.dataType.caseInsensitiveCompare(WidgetType.speechBubble.rawValue) == .orderedSame {
+                continue
+            }
+
+            let added: Bool
+            if let group = definition.singletonGroup {
+                added = isWidgetGroupOnCanvas(group)
+            } else {
+                added = false
+            }
+
             let enabled: Bool
             if !hasData {
                 enabled = false
@@ -177,36 +189,20 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
                 enabled = !added
             }
 
-            let widgetType: WidgetType
-            switch type {
-            case .routeMap: widgetType = .routeMap
-            case .distance: widgetType = .distance
-            case .duration: widgetType = .duration
-            case .pace: widgetType = .pace
-            case .speed: widgetType = .speed
-            case .calories: widgetType = .calories
-            case .heartRate: widgetType = .heartRate
-            case .date: widgetType = .date
-            case .currentDateTime: widgetType = .currentDateTime
-            case .text: widgetType = .text
-            case .location: widgetType = .location
-            case .composite: widgetType = .composite
-            }
-
             widgetItems.append(ToolSheetItem(
-                title: widgetType.displayName,
-                description: type.displayName,
-                iconName: widgetType.iconName,
+                title: definition.localizedName,
+                description: definition.localizedDescription,
+                iconName: definition.iconName,
                 isEnabled: enabled,
                 isAdded: added,
-                previewProvider: widgetType.previewProvider,
+                previewProvider: definition.widgetType?.previewProvider,
                 action: { [weak self] in
-                    self?.addSingleWidgetFromAvailableData(type)
+                    self?.addWidgetFromCatalog(definition)
                 }
             ))
         }
 
-        // Speech Bubble widget (shared)
+        // Speech Bubble widget (shared) — kept last with special handling
         widgetItems.append(ToolSheetItem(
             title: WidgetType.speechBubble.displayName,
             description: WidgetType.speechBubble.displayName,

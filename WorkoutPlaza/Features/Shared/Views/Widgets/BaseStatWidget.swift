@@ -132,23 +132,9 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
         applyContentAlignment(contentAlignment)
     }
 
-    // MARK: - Display Mode Toggle
-
-    func toggleDisplayMode() {
-        guard widgetIconName != nil else { return }
-        switch displayMode {
-        case .text:
-            displayMode = .textUnified
-        case .textUnified:
-            displayMode = .icon
-        case .icon:
-            displayMode = .text
-        }
-        applyDisplayMode()
-    }
+    // MARK: - Display Mode (Fixed at creation)
 
     func setDisplayMode(_ mode: WidgetDisplayMode) {
-        guard widgetIconName != nil else { return }
         displayMode = mode
         applyDisplayMode()
     }
@@ -522,11 +508,7 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
-        if isSelected && widgetIconName != nil {
-            toggleDisplayMode()
-        } else {
-            selectionDelegate?.itemWasSelected(self)
-        }
+        selectionDelegate?.itemWasSelected(self)
     }
 
     // MARK: - Selectable Methods

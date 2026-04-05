@@ -131,6 +131,7 @@ struct WidgetItem: Codable {
     let color: String?  // Hex color string
     let font: String?   // Font style name
     let payload: String? // Widget-specific JSON payload
+    let layout: String?  // WidgetDisplayMode rawValue (version 3.0+)
 
     // Ratio-based positioning (version 2.0+)
     let positionRatio: PositionRatio?
@@ -143,6 +144,12 @@ struct WidgetItem: Codable {
 
     // Rotation (version 2.2+)
     let rotation: CGFloat?  // Rotation in radians
+
+    /// 위젯의 디스플레이 모드 (구버전 호환: nil이면 .text)
+    var displayMode: WidgetDisplayMode {
+        guard let layout = layout else { return .text }
+        return WidgetDisplayMode(rawValue: layout) ?? .text
+    }
 
     struct Position: Codable {
         let x: CGFloat
@@ -187,8 +194,38 @@ struct WidgetItem: Codable {
         self.groupType = groupType
         self.ownerName = ownerName
         self.rotation = rotation
+        self.layout = nil
 
         // Legacy fields (will be calculated when needed)
+        self.position = Position(x: 0, y: 0)
+        self.size = Size(width: 0, height: 0)
+    }
+
+    // Initializer for ratio-based items with layout (version 3.0)
+    init(
+        type: WidgetType,
+        positionRatio: PositionRatio,
+        sizeRatio: SizeRatio,
+        color: String? = nil,
+        font: String? = nil,
+        payload: String? = nil,
+        layout: String? = nil,
+        groupId: String? = nil,
+        groupType: WidgetGroupType? = nil,
+        ownerName: String? = nil,
+        rotation: CGFloat? = nil
+    ) {
+        self.type = type
+        self.positionRatio = positionRatio
+        self.sizeRatio = sizeRatio
+        self.color = color
+        self.font = font
+        self.payload = payload
+        self.layout = layout
+        self.groupId = groupId
+        self.groupType = groupType
+        self.ownerName = ownerName
+        self.rotation = rotation
         self.position = Position(x: 0, y: 0)
         self.size = Size(width: 0, height: 0)
     }
@@ -211,6 +248,7 @@ struct WidgetItem: Codable {
         self.color = color
         self.font = font
         self.payload = payload
+        self.layout = nil
         self.groupId = groupId
         self.groupType = groupType
         self.ownerName = ownerName

@@ -116,6 +116,7 @@ let project = Project(
                 "WorkoutPlaza/Base.lproj/**",
                 "WorkoutPlaza/Fonts/**",
                 "Resources/**/*.strings",
+                "Resources/**/*.json",
                 "WorkoutPlaza/GoogleService-Info.plist"
             ],
             entitlements: "WorkoutPlaza/WorkoutPlaza.entitlements",

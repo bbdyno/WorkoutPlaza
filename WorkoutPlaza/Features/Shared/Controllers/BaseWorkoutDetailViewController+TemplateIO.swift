@@ -391,5 +391,10 @@ extension BaseWorkoutDetailViewController {
         if let fontName = item.font, let fontStyle = FontStyle(rawValue: fontName) {
             widget.applyFont(fontStyle)
         }
+
+        // Apply display mode from template item
+        if let statWidget = widget as? BaseStatWidget {
+            statWidget.setDisplayMode(item.displayMode)
+        }
     }
 }
