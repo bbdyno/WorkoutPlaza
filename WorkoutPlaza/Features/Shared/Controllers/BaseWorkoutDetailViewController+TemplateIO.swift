@@ -392,9 +392,9 @@ extension BaseWorkoutDetailViewController {
             widget.applyFont(fontStyle)
         }
 
-        // Apply display mode from template item
+        // Apply display mode from the WidgetType's inherent mode
         if let statWidget = widget as? BaseStatWidget {
-            statWidget.setDisplayMode(item.displayMode)
+            statWidget.setDisplayMode(item.type.inherentDisplayMode)
         }
     }
 }

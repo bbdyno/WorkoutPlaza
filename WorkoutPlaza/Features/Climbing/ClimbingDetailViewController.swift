@@ -535,7 +535,14 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             w.initialSize = frame.size
             widget = w
 
-        case .routeMap, .distance, .duration, .pace, .speed, .calories, .heartRate, .location:
+        case .routeMap, .distance, .distanceCompact, .distanceIcon,
+             .duration, .durationCompact, .durationIcon,
+             .pace, .paceCompact, .paceIcon,
+             .speed, .speedCompact, .speedIcon,
+             .calories, .caloriesCompact, .caloriesIcon,
+             .heartRate, .heartRateCompact, .heartRateIcon,
+             .dateCompact, .dateIcon,
+             .location:
             return nil
         }
 

@@ -428,64 +428,71 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             }
             widget = mapView
 
-        case .distance:
+        case .distance, .distanceCompact, .distanceIcon:
             let w = DistanceWidget()
             w.configure(distance: source.distance)
             let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(frame.size, widgetType: .distance)
             w.frame = CGRect(origin: frame.origin, size: normalizedSize)
             w.initialSize = normalizedSize
             applyItemStyles(to: w, item: item)
+            w.setDisplayMode(item.type.inherentDisplayMode)
             widget = w
 
-        case .duration:
+        case .duration, .durationCompact, .durationIcon:
             let w = DurationWidget()
             w.configure(duration: source.duration)
             let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(frame.size, widgetType: .duration)
             w.frame = CGRect(origin: frame.origin, size: normalizedSize)
             w.initialSize = normalizedSize
             applyItemStyles(to: w, item: item)
+            w.setDisplayMode(item.type.inherentDisplayMode)
             widget = w
 
-        case .pace:
+        case .pace, .paceCompact, .paceIcon:
             let w = PaceWidget()
             w.configure(pace: source.pace)
             let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(frame.size, widgetType: .pace)
             w.frame = CGRect(origin: frame.origin, size: normalizedSize)
             w.initialSize = normalizedSize
             applyItemStyles(to: w, item: item)
+            w.setDisplayMode(item.type.inherentDisplayMode)
             widget = w
 
-        case .speed:
+        case .speed, .speedCompact, .speedIcon:
             let w = SpeedWidget()
             w.configure(speed: source.avgSpeed)
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
+            w.setDisplayMode(item.type.inherentDisplayMode)
             widget = w
 
-        case .calories:
+        case .calories, .caloriesCompact, .caloriesIcon:
             let w = CaloriesWidget()
             w.configure(calories: source.calories)
             let normalizedSize = WidgetSizeNormalizer.normalizeRunningCompactStatSize(frame.size, widgetType: .calories)
             w.frame = CGRect(origin: frame.origin, size: normalizedSize)
             w.initialSize = normalizedSize
             applyItemStyles(to: w, item: item)
+            w.setDisplayMode(item.type.inherentDisplayMode)
             widget = w
 
-        case .heartRate:
+        case .heartRate, .heartRateCompact, .heartRateIcon:
             let w = HeartRateWidget()
             w.configure(heartRate: source.avgHeartRate)
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
+            w.setDisplayMode(item.type.inherentDisplayMode)
             widget = w
 
-        case .date:
+        case .date, .dateCompact, .dateIcon:
             let w = DateWidget()
             w.configure(startDate: source.startDate)
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
+            w.setDisplayMode(item.type.inherentDisplayMode)
             widget = w
 
         case .text:
@@ -583,12 +590,6 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
                let alignableWidget = widget as? WidgetContentAlignable {
                 alignableWidget.applyContentAlignment(alignment)
             }
-        }
-        // Restore display mode (text/icon)
-        if let statWidget = widget as? BaseStatWidget,
-           let modeRaw = savedState.displayMode,
-           let mode = WidgetDisplayMode(rawValue: modeRaw) {
-            statWidget.setDisplayMode(mode)
         }
     }
 

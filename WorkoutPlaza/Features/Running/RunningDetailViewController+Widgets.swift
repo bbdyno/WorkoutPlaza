@@ -383,16 +383,22 @@ extension RunningDetailViewController {
 
     /// Create a widget from a catalog definition, applying the correct display mode.
     internal func addWidgetFromCatalog(_ definition: CatalogWidgetItem) {
-        guard let singleWidgetType = SingleWidgetType(rawValue: definition.dataType) else {
+        guard let widgetType = definition.widgetType else {
             WPLog.warning("Unknown catalog dataType: \(definition.dataType)")
             return
         }
+        // Use baseType for SingleWidgetType lookup (same widget class)
+        guard let singleType = SingleWidgetType(rawValue: widgetType.baseType.rawValue) ??
+              SingleWidgetType.allCases.first(where: { $0.rawValue.caseInsensitiveCompare(widgetType.baseType.rawValue) == .orderedSame }) else {
+            WPLog.warning("No SingleWidgetType for baseType: \(widgetType.baseType.rawValue)")
+            return
+        }
 
-        addSingleWidgetFromAvailableData(singleWidgetType)
+        addSingleWidgetFromAvailableData(singleType)
 
-        // Apply the display mode from the catalog definition to the newly added widget
+        // Apply inherent display mode from the specific WidgetType
         if let lastWidget = widgets.last as? BaseStatWidget {
-            lastWidget.setDisplayMode(definition.displayMode)
+            lastWidget.setDisplayMode(widgetType.inherentDisplayMode)
         }
     }
 

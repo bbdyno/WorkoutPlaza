@@ -603,17 +603,13 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 widgetPayload = bubbleWidget.payload.encoded()
             }
 
-            // Stat widgets - save color and display mode
-            var displayMode: String?
+            // Stat widgets - save color
             if let statWidget = widget as? BaseStatWidget {
                 textColor = statWidget.currentColor.toHex()
                 statFontScale = statWidget.calculateScaleFactor()
                 statTitleBaseFontSize = statWidget.baseFontSizes["title"] ?? LayoutConstants.titleFontSize
                 statValueBaseFontSize = statWidget.baseFontSizes["value"] ?? LayoutConstants.valueFontSize
                 statUnitBaseFontSize = statWidget.baseFontSizes["unit"] ?? LayoutConstants.unitFontSize
-                if statWidget.widgetIconName != nil && statWidget.displayMode != .text {
-                    displayMode = statWidget.displayMode.rawValue
-                }
             }
 
             // Get rotation from Selectable widgets
@@ -646,7 +642,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 workoutDate: workoutDate,
                 numericValue: nil,
                 additionalText: additionalText,
-                displayMode: displayMode,
+                displayMode: nil,
                 contentAlignment: contentAlignment,
                 widgetPayload: widgetPayload
             )

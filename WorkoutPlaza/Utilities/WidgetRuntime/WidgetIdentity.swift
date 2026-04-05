@@ -35,14 +35,14 @@ enum WidgetIdentity {
     nonisolated static func definitionID(for widgetType: WidgetType) -> WidgetDefinitionID {
         switch widgetType {
         case .routeMap: return .routeMap
-        case .distance: return .distance
-        case .duration: return .duration
-        case .pace: return .pace
-        case .speed: return .speed
-        case .calories: return .calories
-        case .heartRate: return .heartRate
+        case .distance, .distanceCompact, .distanceIcon: return .distance
+        case .duration, .durationCompact, .durationIcon: return .duration
+        case .pace, .paceCompact, .paceIcon: return .pace
+        case .speed, .speedCompact, .speedIcon: return .speed
+        case .calories, .caloriesCompact, .caloriesIcon: return .calories
+        case .heartRate, .heartRateCompact, .heartRateIcon: return .heartRate
         case .location: return .location
-        case .date: return .date
+        case .date, .dateCompact, .dateIcon: return .date
         case .currentDateTime: return .currentDateTime
         case .text: return .text
         case .composite: return .composite

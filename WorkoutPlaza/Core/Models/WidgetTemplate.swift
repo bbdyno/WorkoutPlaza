@@ -261,7 +261,7 @@ struct WidgetItem: Codable {
 }
 
 enum WidgetType: String, Codable, CaseIterable {
-    // Running Widgets
+    // Running Widgets — Text (default)
     case routeMap = "RouteMap"
     case distance = "Distance"
     case duration = "Duration"
@@ -275,6 +275,24 @@ enum WidgetType: String, Codable, CaseIterable {
     case currentDateTime = "CurrentDateTime"
     case composite = "Composite"
 
+    // Running Widgets — Compact
+    case distanceCompact = "DistanceCompact"
+    case durationCompact = "DurationCompact"
+    case paceCompact = "PaceCompact"
+    case speedCompact = "SpeedCompact"
+    case caloriesCompact = "CaloriesCompact"
+    case heartRateCompact = "HeartRateCompact"
+    case dateCompact = "DateCompact"
+
+    // Running Widgets — Icon
+    case distanceIcon = "DistanceIcon"
+    case durationIcon = "DurationIcon"
+    case paceIcon = "PaceIcon"
+    case speedIcon = "SpeedIcon"
+    case caloriesIcon = "CaloriesIcon"
+    case heartRateIcon = "HeartRateIcon"
+    case dateIcon = "DateIcon"
+
     // Shared Decorative Widgets
     case speechBubble = "SpeechBubble"
 
@@ -285,8 +303,41 @@ enum WidgetType: String, Codable, CaseIterable {
     case climbingRoutesByColor = "ClimbingRoutesByColor"
     case gymLogo = "GymLogo"
 
-    var displayName: String {
+    /// 레이아웃 변형의 기본 타입 (e.g. .distanceCompact → .distance)
+    var baseType: WidgetType {
         switch self {
+        case .distanceCompact, .distanceIcon: return .distance
+        case .durationCompact, .durationIcon: return .duration
+        case .paceCompact, .paceIcon: return .pace
+        case .speedCompact, .speedIcon: return .speed
+        case .caloriesCompact, .caloriesIcon: return .calories
+        case .heartRateCompact, .heartRateIcon: return .heartRate
+        case .dateCompact, .dateIcon: return .date
+        default: return self
+        }
+    }
+
+    /// 타입에 내재된 레이아웃 모드
+    var inherentDisplayMode: WidgetDisplayMode {
+        switch self {
+        case .distanceCompact, .durationCompact, .paceCompact, .speedCompact,
+             .caloriesCompact, .heartRateCompact, .dateCompact:
+            return .textUnified
+        case .distanceIcon, .durationIcon, .paceIcon, .speedIcon,
+             .caloriesIcon, .heartRateIcon, .dateIcon:
+            return .icon
+        default:
+            return .text
+        }
+    }
+
+    /// 같은 데이터를 공유하는 타입 그룹인지 (싱글턴 체크용)
+    var singletonGroup: WidgetType {
+        return baseType
+    }
+
+    var displayName: String {
+        switch baseType {
         case .routeMap: return WorkoutPlazaStrings.Widget.Route.map
         case .distance: return WorkoutPlazaStrings.Widget.distance
         case .duration: return WorkoutPlazaStrings.Widget.duration
@@ -305,11 +356,12 @@ enum WidgetType: String, Codable, CaseIterable {
         case .climbingSession: return WorkoutPlazaStrings.Widget.Climbing.session
         case .climbingRoutesByColor: return WorkoutPlazaStrings.Widget.Climbing.Routes.By.color
         case .gymLogo: return WorkoutPlazaStrings.Widget.Gym.logo
+        default: return baseType.displayName
         }
     }
 
     var iconName: String {
-        switch self {
+        switch baseType {
         case .routeMap: return "map"
         case .distance: return "icon.person.run"
         case .duration: return "timer"
@@ -328,17 +380,20 @@ enum WidgetType: String, Codable, CaseIterable {
         case .climbingSession: return "checkmark.circle"
         case .climbingRoutesByColor: return "list.bullet.circle"
         case .gymLogo: return "photo.circle"
+        default: return baseType.iconName
         }
     }
 
     var supportedSports: [SportType] {
-        switch self {
+        switch baseType {
         case .routeMap, .distance, .duration, .pace, .speed, .calories, .heartRate, .location:
             return [.running]
         case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo:
             return [.climbing]
         case .date, .text, .composite, .currentDateTime, .speechBubble:
             return SportType.allCases
+        default:
+            return baseType.supportedSports
         }
     }
 
@@ -404,7 +459,16 @@ enum WidgetType: String, Codable, CaseIterable {
     /// 샘플 데이터로 실제 위젯을 렌더링하는 미리보기 클로저. nil이면 아이콘 모드 유지.
     var previewProvider: (() -> UIView)? {
         let size = CGSize(width: 140, height: 65)
+        // Compact/icon variants delegate to catalog-based preview
         switch self {
+        case .distanceCompact, .distanceIcon,
+             .durationCompact, .durationIcon,
+             .paceCompact, .paceIcon,
+             .speedCompact, .speedIcon,
+             .caloriesCompact, .caloriesIcon,
+             .heartRateCompact, .heartRateIcon,
+             .dateCompact, .dateIcon:
+            return nil
         case .distance:
             return {
                 let w = DistanceWidget()

@@ -370,11 +370,6 @@ extension BaseWorkoutDetailViewController {
                 alignableWidget.applyContentAlignment(alignment)
             }
         }
-        if let statWidget = widget as? BaseStatWidget,
-           let modeRaw = savedState.displayMode,
-           let mode = WidgetDisplayMode(rawValue: modeRaw) {
-            statWidget.setDisplayMode(mode)
-        }
     }
 
 

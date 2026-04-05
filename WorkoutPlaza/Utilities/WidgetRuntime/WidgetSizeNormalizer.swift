@@ -203,7 +203,12 @@ enum WidgetSizeNormalizer {
 
     static func isRunningCompactStat(_ widgetType: WidgetType) -> Bool {
         switch widgetType {
-        case .distance, .duration, .pace, .speed, .calories, .heartRate:
+        case .distance, .distanceCompact, .distanceIcon,
+             .duration, .durationCompact, .durationIcon,
+             .pace, .paceCompact, .paceIcon,
+             .speed, .speedCompact, .speedIcon,
+             .calories, .caloriesCompact, .caloriesIcon,
+             .heartRate, .heartRateCompact, .heartRateIcon:
             return true
         default:
             return false
@@ -212,7 +217,12 @@ enum WidgetSizeNormalizer {
 
     private static func isRunningStat(_ widgetType: WidgetType) -> Bool {
         switch widgetType {
-        case .distance, .duration, .pace, .speed, .calories, .heartRate:
+        case .distance, .distanceCompact, .distanceIcon,
+             .duration, .durationCompact, .durationIcon,
+             .pace, .paceCompact, .paceIcon,
+             .speed, .speedCompact, .speedIcon,
+             .calories, .caloriesCompact, .caloriesIcon,
+             .heartRate, .heartRateCompact, .heartRateIcon:
             return true
         default:
             return false
@@ -225,7 +235,12 @@ enum WidgetSizeNormalizer {
 
     private static func defaultRunningStatSize(for widgetType: WidgetType) -> CGSize {
         switch widgetType {
-        case .distance, .duration, .pace, .speed, .calories, .heartRate:
+        case .distance, .distanceCompact, .distanceIcon,
+             .duration, .durationCompact, .durationIcon,
+             .pace, .paceCompact, .paceIcon,
+             .speed, .speedCompact, .speedIcon,
+             .calories, .caloriesCompact, .caloriesIcon,
+             .heartRate, .heartRateCompact, .heartRateIcon:
             return compactDefaultSize
         default:
             return regularDefaultSize

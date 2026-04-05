@@ -7,7 +7,7 @@
       "widgets": [
         {
           "id": "distance.text",
-          "dataType": "distance",
+          "dataType": "Distance",
           "layout": "text",
           "name": { "ko": "거리", "en": "Distance" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -16,7 +16,7 @@
         },
         {
           "id": "distance.compact",
-          "dataType": "distance",
+          "dataType": "DistanceCompact",
           "layout": "textUnified",
           "name": { "ko": "거리 (간결)", "en": "Distance (Compact)" },
           "description": { "ko": "컴팩트", "en": "Compact" },
@@ -25,7 +25,7 @@
         },
         {
           "id": "distance.icon",
-          "dataType": "distance",
+          "dataType": "DistanceIcon",
           "layout": "icon",
           "name": { "ko": "거리 (아이콘)", "en": "Distance (Icon)" },
           "description": { "ko": "아이콘", "en": "Icon" },
@@ -34,7 +34,7 @@
         },
         {
           "id": "duration.text",
-          "dataType": "duration",
+          "dataType": "Duration",
           "layout": "text",
           "name": { "ko": "시간", "en": "Duration" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -43,7 +43,7 @@
         },
         {
           "id": "duration.compact",
-          "dataType": "duration",
+          "dataType": "DurationCompact",
           "layout": "textUnified",
           "name": { "ko": "시간 (간결)", "en": "Duration (Compact)" },
           "description": { "ko": "컴팩트", "en": "Compact" },
@@ -52,7 +52,7 @@
         },
         {
           "id": "duration.icon",
-          "dataType": "duration",
+          "dataType": "DurationIcon",
           "layout": "icon",
           "name": { "ko": "시간 (아이콘)", "en": "Duration (Icon)" },
           "description": { "ko": "아이콘", "en": "Icon" },
@@ -61,7 +61,7 @@
         },
         {
           "id": "pace.text",
-          "dataType": "pace",
+          "dataType": "Pace",
           "layout": "text",
           "name": { "ko": "페이스", "en": "Pace" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -70,7 +70,7 @@
         },
         {
           "id": "pace.compact",
-          "dataType": "pace",
+          "dataType": "PaceCompact",
           "layout": "textUnified",
           "name": { "ko": "페이스 (간결)", "en": "Pace (Compact)" },
           "description": { "ko": "컴팩트", "en": "Compact" },
@@ -79,7 +79,7 @@
         },
         {
           "id": "pace.icon",
-          "dataType": "pace",
+          "dataType": "PaceIcon",
           "layout": "icon",
           "name": { "ko": "페이스 (아이콘)", "en": "Pace (Icon)" },
           "description": { "ko": "아이콘", "en": "Icon" },
@@ -88,7 +88,7 @@
         },
         {
           "id": "speed.text",
-          "dataType": "speed",
+          "dataType": "Speed",
           "layout": "text",
           "name": { "ko": "속도", "en": "Speed" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -97,7 +97,7 @@
         },
         {
           "id": "speed.compact",
-          "dataType": "speed",
+          "dataType": "SpeedCompact",
           "layout": "textUnified",
           "name": { "ko": "속도 (간결)", "en": "Speed (Compact)" },
           "description": { "ko": "컴팩트", "en": "Compact" },
@@ -106,7 +106,7 @@
         },
         {
           "id": "speed.icon",
-          "dataType": "speed",
+          "dataType": "SpeedIcon",
           "layout": "icon",
           "name": { "ko": "속도 (아이콘)", "en": "Speed (Icon)" },
           "description": { "ko": "아이콘", "en": "Icon" },
@@ -115,7 +115,7 @@
         },
         {
           "id": "calories.text",
-          "dataType": "calories",
+          "dataType": "Calories",
           "layout": "text",
           "name": { "ko": "칼로리", "en": "Calories" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -124,7 +124,7 @@
         },
         {
           "id": "calories.compact",
-          "dataType": "calories",
+          "dataType": "CaloriesCompact",
           "layout": "textUnified",
           "name": { "ko": "칼로리 (간결)", "en": "Calories (Compact)" },
           "description": { "ko": "컴팩트", "en": "Compact" },
@@ -133,7 +133,7 @@
         },
         {
           "id": "calories.icon",
-          "dataType": "calories",
+          "dataType": "CaloriesIcon",
           "layout": "icon",
           "name": { "ko": "칼로리 (아이콘)", "en": "Calories (Icon)" },
           "description": { "ko": "아이콘", "en": "Icon" },
@@ -142,7 +142,7 @@
         },
         {
           "id": "heartRate.text",
-          "dataType": "heartRate",
+          "dataType": "HeartRate",
           "layout": "text",
           "name": { "ko": "심박수", "en": "Heart Rate" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -151,7 +151,7 @@
         },
         {
           "id": "heartRate.compact",
-          "dataType": "heartRate",
+          "dataType": "HeartRateCompact",
           "layout": "textUnified",
           "name": { "ko": "심박수 (간결)", "en": "Heart Rate (Compact)" },
           "description": { "ko": "컴팩트", "en": "Compact" },
@@ -160,7 +160,7 @@
         },
         {
           "id": "heartRate.icon",
-          "dataType": "heartRate",
+          "dataType": "HeartRateIcon",
           "layout": "icon",
           "name": { "ko": "심박수 (아이콘)", "en": "Heart Rate (Icon)" },
           "description": { "ko": "아이콘", "en": "Icon" },
@@ -169,7 +169,7 @@
         },
         {
           "id": "date.text",
-          "dataType": "date",
+          "dataType": "Date",
           "layout": "text",
           "name": { "ko": "날짜", "en": "Date" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -178,7 +178,7 @@
         },
         {
           "id": "date.icon",
-          "dataType": "date",
+          "dataType": "DateIcon",
           "layout": "icon",
           "name": { "ko": "날짜 (아이콘)", "en": "Date (Icon)" },
           "description": { "ko": "아이콘", "en": "Icon" },
@@ -187,7 +187,7 @@
         },
         {
           "id": "routeMap",
-          "dataType": "routeMap",
+          "dataType": "RouteMap",
           "layout": "text",
           "name": { "ko": "경로", "en": "Route Map" },
           "description": { "ko": "GPS 경로", "en": "GPS Route" },
@@ -196,7 +196,7 @@
         },
         {
           "id": "location",
-          "dataType": "location",
+          "dataType": "Location",
           "layout": "text",
           "name": { "ko": "위치", "en": "Location" },
           "description": { "ko": "출발 위치", "en": "Start Location" },
@@ -205,7 +205,7 @@
         },
         {
           "id": "currentDateTime",
-          "dataType": "currentDateTime",
+          "dataType": "CurrentDateTime",
           "layout": "text",
           "name": { "ko": "현재 시각", "en": "Current Time" },
           "description": { "ko": "현재 날짜/시간", "en": "Current Date/Time" },
@@ -214,7 +214,7 @@
         },
         {
           "id": "text",
-          "dataType": "text",
+          "dataType": "Text",
           "layout": "text",
           "name": { "ko": "텍스트", "en": "Text" },
           "description": { "ko": "자유 텍스트 입력", "en": "Custom Text" },
@@ -223,7 +223,7 @@
         },
         {
           "id": "composite",
-          "dataType": "composite",
+          "dataType": "Composite",
           "layout": "text",
           "name": { "ko": "복합 위젯", "en": "Composite" },
           "description": { "ko": "제목 + 내용", "en": "Title + Content" },
@@ -232,7 +232,7 @@
         },
         {
           "id": "speechBubble",
-          "dataType": "speechBubble",
+          "dataType": "SpeechBubble",
           "layout": "text",
           "name": { "ko": "말풍선", "en": "Speech Bubble" },
           "description": { "ko": "8종 스타일", "en": "8 Styles" },
@@ -247,7 +247,7 @@
       "widgets": [
         {
           "id": "climbingSession.text",
-          "dataType": "climbingSession",
+          "dataType": "ClimbingSession",
           "layout": "text",
           "name": { "ko": "세션 기록", "en": "Session" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -256,7 +256,7 @@
         },
         {
           "id": "climbingGym.text",
-          "dataType": "climbingGym",
+          "dataType": "ClimbingGym",
           "layout": "text",
           "name": { "ko": "체육관", "en": "Gym" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -265,7 +265,7 @@
         },
         {
           "id": "climbingDiscipline.text",
-          "dataType": "climbingDiscipline",
+          "dataType": "ClimbingDiscipline",
           "layout": "text",
           "name": { "ko": "종목", "en": "Discipline" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -274,7 +274,7 @@
         },
         {
           "id": "climbingRoutesByColor",
-          "dataType": "climbingRoutesByColor",
+          "dataType": "ClimbingRoutesByColor",
           "layout": "text",
           "name": { "ko": "색상별 루트", "en": "Routes by Color" },
           "description": { "ko": "차트", "en": "Chart" },
@@ -283,7 +283,7 @@
         },
         {
           "id": "gymLogo",
-          "dataType": "gymLogo",
+          "dataType": "GymLogo",
           "layout": "text",
           "name": { "ko": "체육관 로고", "en": "Gym Logo" },
           "description": { "ko": "이미지", "en": "Image" },
@@ -292,7 +292,7 @@
         },
         {
           "id": "date.text",
-          "dataType": "date",
+          "dataType": "Date",
           "layout": "text",
           "name": { "ko": "날짜", "en": "Date" },
           "description": { "ko": "텍스트", "en": "Text" },
@@ -301,7 +301,7 @@
         },
         {
           "id": "text",
-          "dataType": "text",
+          "dataType": "Text",
           "layout": "text",
           "name": { "ko": "텍스트", "en": "Text" },
           "description": { "ko": "자유 텍스트 입력", "en": "Custom Text" },
@@ -310,7 +310,7 @@
         },
         {
           "id": "composite",
-          "dataType": "composite",
+          "dataType": "Composite",
           "layout": "text",
           "name": { "ko": "복합 위젯", "en": "Composite" },
           "description": { "ko": "제목 + 내용", "en": "Title + Content" },
@@ -319,7 +319,7 @@
         },
         {
           "id": "speechBubble",
-          "dataType": "speechBubble",
+          "dataType": "SpeechBubble",
           "layout": "text",
           "name": { "ko": "말풍선", "en": "Speech Bubble" },
           "description": { "ko": "8종 스타일", "en": "8 Styles" },

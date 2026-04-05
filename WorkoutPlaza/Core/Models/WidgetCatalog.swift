@@ -58,7 +58,7 @@ struct CatalogWidgetItem: Codable {
     /// 카탈로그 항목의 레이아웃(text/compact/icon)을 반영한 프리뷰 생성
     var previewProvider: (() -> UIView)? {
         guard let type = widgetType else { return nil }
-        let mode = displayMode
+        let mode = type.inherentDisplayMode
         let size: CGSize
         switch mode {
         case .icon:
@@ -69,7 +69,7 @@ struct CatalogWidgetItem: Codable {
             size = CGSize(width: 140, height: 65)
         }
 
-        switch type {
+        switch type.baseType {
         case .distance:
             return { Self.makeStatPreview(DistanceWidget(), distance: 5230, mode: mode, size: size) }
         case .duration:
