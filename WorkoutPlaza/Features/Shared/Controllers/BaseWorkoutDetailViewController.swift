@@ -1074,11 +1074,29 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
 
     @objc dynamic func shareImage() {
-        // Hide UI elements that shouldn't be in the final image
+        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+
+        actionSheet.addAction(UIAlertAction(title: "이미지 공유", style: .default) { [weak self] _ in
+            self?.shareAsImage()
+        })
+
+        actionSheet.addAction(UIAlertAction(title: "레이아웃 내보내기", style: .default) { [weak self] _ in
+            self?.exportCurrentLayout()
+        })
+
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+
+        if let popover = actionSheet.popoverPresentationController {
+            popover.sourceView = shareImageButton
+            popover.sourceRect = shareImageButton.bounds
+        }
+        present(actionSheet, animated: true)
+    }
+
+    private func shareAsImage() {
         selectionManager.deselectAll()
         instructionLabel.isHidden = true
 
-        // Capture after a short delay to ensure UI updates
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self = self else { return }
 
@@ -1086,7 +1104,6 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 self.presentShareSheet(image: image)
             }
 
-            // Restore UI
             self.instructionLabel.isHidden = false
         }
     }

@@ -103,7 +103,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             ))
         }
 
-        // Market / Import / Export as header actions
+        // Market / Import as header actions
         var templateActions: [ToolSheetHeaderAction] = []
 
         let marketConfig = FeaturePackManager.shared.templateMarketButtonConfig(for: getSportType())
@@ -117,13 +117,19 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
 
         templateActions.append(
             ToolSheetHeaderAction(title: WorkoutPlazaStrings.Climbing.import, iconName: "icon.download") { [weak self] in
+                guard FeatureGate.canAccess(FeatureGate.proTemplates) else {
+                    let proVC = ProUpgradeViewController()
+                    proVC.triggerFeature = "template_import"
+                    let nav = UINavigationController(rootViewController: proVC)
+                    nav.modalPresentationStyle = .pageSheet
+                    if let sheet = nav.sheetPresentationController {
+                        sheet.detents = [.large()]
+                        sheet.prefersGrabberVisible = true
+                    }
+                    self?.present(nav, animated: true)
+                    return
+                }
                 self?.importTemplate()
-            }
-        )
-
-        templateActions.append(
-            ToolSheetHeaderAction(title: WorkoutPlazaStrings.Climbing.export, iconName: "icon.share") { [weak self] in
-                self?.exportCurrentLayout()
             }
         )
 

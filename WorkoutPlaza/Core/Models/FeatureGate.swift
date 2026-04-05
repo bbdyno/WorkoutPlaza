@@ -41,8 +41,8 @@ enum FeatureGate {
 
     // MARK: - Templates
 
-    /// Pro 전용 템플릿
-    static var proTemplates: Bool { false }
+    /// Pro 전용 템플릿 불러오기
+    static var proTemplates: Bool { true }
 
     // MARK: - Export
 
