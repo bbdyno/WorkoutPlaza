@@ -237,6 +237,9 @@ enum WidgetType: String, Codable, CaseIterable {
     case currentDateTime = "CurrentDateTime"
     case composite = "Composite"
 
+    // Shared Decorative Widgets
+    case speechBubble = "SpeechBubble"
+
     // Climbing Widgets
     case climbingGym = "ClimbingGym"
     case climbingDiscipline = "ClimbingDiscipline"
@@ -258,6 +261,7 @@ enum WidgetType: String, Codable, CaseIterable {
         case .location: return WorkoutPlazaStrings.Widget.location
         case .currentDateTime: return WorkoutPlazaStrings.Widget.Current.datetime
         case .composite: return WorkoutPlazaStrings.Widget.composite
+        case .speechBubble: return NSLocalizedString("widget.speechBubble", comment: "말풍선")
         case .climbingGym: return WorkoutPlazaStrings.Widget.Climbing.gym
         case .climbingDiscipline: return WorkoutPlazaStrings.Widget.Climbing.discipline
         case .climbingSession: return WorkoutPlazaStrings.Widget.Climbing.session
@@ -280,6 +284,7 @@ enum WidgetType: String, Codable, CaseIterable {
         case .location: return "location"
         case .currentDateTime: return "clock"
         case .composite: return "square.grid.2x2"
+        case .speechBubble: return "message.fill"
         case .climbingGym: return "building.2"
         case .climbingDiscipline: return "figure.climbing"
         case .climbingSession: return "checkmark.circle"
@@ -294,7 +299,7 @@ enum WidgetType: String, Codable, CaseIterable {
             return [.running]
         case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo:
             return [.climbing]
-        case .date, .text, .composite, .currentDateTime:
+        case .date, .text, .composite, .currentDateTime, .speechBubble:
             return SportType.allCases
         }
     }
@@ -531,6 +536,25 @@ enum WidgetType: String, Codable, CaseIterable {
                     title: WorkoutPlazaStrings.Widget.composite,
                     primaryText: "5.20 km",
                     secondaryText: "42:30"
+                ))
+                return w
+            }
+        case .speechBubble:
+            return {
+                let bubbleSize = CGSize(width: 140, height: 80)
+                let w = SpeechBubbleWidget()
+                w.frame = CGRect(origin: .zero, size: bubbleSize)
+                w.initialSize = bubbleSize
+                let lang = Locale.current.language.languageCode?.identifier ?? "en"
+                w.configure(payload: SpeechBubblePayload(
+                    text: lang == "ko" ? "오늘도 달렸다!" : "Great run!",
+                    style: .roundedBubble,
+                    bubbleColorHex: "#FFFFFF",
+                    borderColorHex: "#222222",
+                    borderWidth: 2,
+                    textColorHex: "#111111",
+                    fontStyleRaw: FontStyle.system.rawValue,
+                    fontSize: 13
                 ))
                 return w
             }

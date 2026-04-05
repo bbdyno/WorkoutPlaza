@@ -22,6 +22,7 @@ enum WidgetDefinitionID: String, Codable, CaseIterable {
     case text = "builtin.shared.text"
     case textPath = "builtin.shared.text_path"
     case composite = "builtin.shared.composite"
+    case speechBubble = "builtin.shared.speech_bubble"
 
     case climbingGym = "builtin.climbing.gym"
     case climbingDiscipline = "builtin.climbing.discipline"
@@ -45,6 +46,7 @@ enum WidgetIdentity {
         case .currentDateTime: return .currentDateTime
         case .text: return .text
         case .composite: return .composite
+        case .speechBubble: return .speechBubble
         case .climbingGym: return .climbingGym
         case .climbingDiscipline: return .climbingDiscipline
         case .climbingSession: return .climbingSession
@@ -68,6 +70,7 @@ enum WidgetIdentity {
         case .text: return .text
         case .textPath: return .text
         case .composite: return .composite
+        case .speechBubble: return .speechBubble
         case .climbingGym: return .climbingGym
         case .climbingDiscipline: return .climbingDiscipline
         case .climbingSession: return .climbingSession
@@ -91,6 +94,7 @@ enum WidgetIdentity {
         case is TextWidget: return .text
         case is TextPathWidget: return .textPath
         case is CompositeWidget: return .composite
+        case is SpeechBubbleWidget: return .speechBubble
         case is ClimbingGymWidget: return .climbingGym
         case is ClimbingDisciplineWidget: return .climbingDiscipline
         case is ClimbingSessionWidget: return .climbingSession
@@ -115,6 +119,7 @@ enum WidgetIdentity {
         case .text: return "TextWidget"
         case .textPath: return "TextPathWidget"
         case .composite: return "CompositeWidget"
+        case .speechBubble: return "SpeechBubbleWidget"
         case .climbingGym: return "ClimbingGymWidget"
         case .climbingDiscipline: return "ClimbingDisciplineWidget"
         case .climbingSession: return "ClimbingSessionWidget"
@@ -138,6 +143,7 @@ enum WidgetIdentity {
         case "TextWidget": return .text
         case "TextPathWidget": return .textPath
         case "CompositeWidget": return .composite
+        case "SpeechBubbleWidget": return .speechBubble
         case "ClimbingGymWidget": return .climbingGym
         case "ClimbingDisciplineWidget": return .climbingDiscipline
         case "ClimbingSessionWidget": return .climbingSession

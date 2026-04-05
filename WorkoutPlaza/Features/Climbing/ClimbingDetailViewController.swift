@@ -225,6 +225,14 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             actionSheet.addAction(action)
         }
 
+        // Speech Bubble (always available)
+        actionSheet.addAction(UIAlertAction(
+            title: WidgetType.speechBubble.displayName,
+            style: .default
+        ) { [weak self] _ in
+            self?.showSpeechBubbleStylePicker()
+        })
+
         actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         if let popover = actionSheet.popoverPresentationController {
@@ -513,6 +521,18 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .speechBubble:
+            let w = SpeechBubbleWidget()
+            if let payload = SpeechBubblePayload.decoded(from: item.payload) {
+                w.configure(payload: payload)
+            } else {
+                w.configure(payload: .default)
+            }
+            w.bubbleDelegate = self
+            w.frame = frame
+            w.initialSize = frame.size
             widget = w
 
         case .routeMap, .distance, .duration, .pace, .speed, .calories, .heartRate, .location:

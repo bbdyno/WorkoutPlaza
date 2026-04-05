@@ -208,6 +208,18 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             ))
         }
 
+        // Speech Bubble widget (shared)
+        widgetItems.append(ToolSheetItem(
+            title: WidgetType.speechBubble.displayName,
+            description: WidgetType.speechBubble.displayName,
+            iconName: WidgetType.speechBubble.iconName,
+            isEnabled: hasData,
+            isAdded: false,
+            action: { [weak self] in
+                self?.showSpeechBubbleStylePicker()
+            }
+        ))
+
         return (templateItems, widgetItems, templateActions)
     }
 
@@ -528,6 +540,18 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
             w.frame = frame
             w.initialSize = frame.size
             applyItemStyles(to: w, item: item)
+            widget = w
+
+        case .speechBubble:
+            let w = SpeechBubbleWidget()
+            if let payload = SpeechBubblePayload.decoded(from: item.payload) {
+                w.configure(payload: payload)
+            } else {
+                w.configure(payload: .default)
+            }
+            w.bubbleDelegate = self
+            w.frame = frame
+            w.initialSize = frame.size
             widget = w
 
         case .climbingGym, .climbingDiscipline, .climbingSession, .climbingRoutesByColor, .gymLogo:

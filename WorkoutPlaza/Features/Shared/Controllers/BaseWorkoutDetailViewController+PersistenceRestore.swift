@@ -191,6 +191,11 @@ extension BaseWorkoutDetailViewController {
                 }
             }
 
+            if let bubbleWidget = widget as? SpeechBubbleWidget,
+               let payload = SpeechBubblePayload.decoded(from: savedWidget.widgetPayload) {
+                bubbleWidget.updatePayload(payload)
+            }
+
             if let alignmentRaw = savedWidget.contentAlignment,
                let alignment = WidgetContentAlignment(rawValue: alignmentRaw),
                let alignableWidget = widget as? WidgetContentAlignable {

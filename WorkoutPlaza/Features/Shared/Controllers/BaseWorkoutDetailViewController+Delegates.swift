@@ -362,3 +362,37 @@ extension BaseWorkoutDetailViewController {
         present(alert, animated: true)
     }
 }
+
+// MARK: - SpeechBubbleWidgetDelegate
+extension BaseWorkoutDetailViewController {
+    func speechBubbleWidgetDidRequestEdit(_ widget: SpeechBubbleWidget) {
+        let editVC = SpeechBubbleEditViewController()
+        editVC.initialPayload = widget.payload
+        editVC.editDelegate = self
+        editVC.editingWidget = widget
+
+        let nav = UINavigationController(rootViewController: editVC)
+        nav.modalPresentationStyle = .pageSheet
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(nav, animated: true)
+    }
+}
+
+// MARK: - SpeechBubbleEditDelegate
+extension BaseWorkoutDetailViewController {
+    func speechBubbleEdit(_ vc: SpeechBubbleEditViewController, didUpdate payload: SpeechBubblePayload) {
+        guard let widget = vc.editingWidget else { return }
+        widget.updatePayload(payload)
+        hasUnsavedChanges = true
+    }
+}
+
+// MARK: - SpeechBubbleStylePickerDelegate
+extension BaseWorkoutDetailViewController {
+    func stylePickerDidSelect(style: SpeechBubbleStyle) {
+        addSpeechBubbleWidget(style: style)
+    }
+}

@@ -10,7 +10,7 @@ import SnapKit
 import UniformTypeIdentifiers
 import PhotosUI
 
-class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, UIGestureRecognizerDelegate, TextWidgetDelegate, CompositeWidgetDelegate {
+class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, UIGestureRecognizerDelegate, TextWidgetDelegate, CompositeWidgetDelegate, SpeechBubbleWidgetDelegate, SpeechBubbleEditDelegate, SpeechBubbleStylePickerDelegate {
 
     // MARK: - Constants (Light Mode for Card Design)
     enum Constants {
@@ -599,6 +599,12 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 widgetPayload = compositeWidget.encodedPayloadString()
             }
 
+            if let bubbleWidget = widget as? SpeechBubbleWidget {
+                text = bubbleWidget.payload.text
+                textColor = bubbleWidget.payload.textColorHex
+                widgetPayload = bubbleWidget.payload.encoded()
+            }
+
             // Stat widgets - save color and display mode
             var displayMode: String?
             if let statWidget = widget as? BaseStatWidget {
@@ -803,6 +809,18 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             applyCommonWidgetStyles(to: widget, from: savedWidget)
             return widget
 
+        case .speechBubble:
+            let widget = SpeechBubbleWidget()
+            if let payload = SpeechBubblePayload.decoded(from: savedWidget.widgetPayload) {
+                widget.configure(payload: payload)
+            } else {
+                var defaultPayload = SpeechBubblePayload.default
+                if let text = savedWidget.text { defaultPayload.text = text }
+                widget.configure(payload: defaultPayload)
+            }
+            widget.bubbleDelegate = self
+            return widget
+
         default:
             // Subclasses should handle specific widget types
             return nil
@@ -827,6 +845,61 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     @objc dynamic func refreshTemplateLibrary() {
         // Override in subclasses when template list needs async refresh.
+    }
+
+    // MARK: - Speech Bubble
+
+    func showSpeechBubbleStylePicker() {
+        let picker = SpeechBubbleStylePickerViewController()
+        picker.delegate = self
+        let nav = UINavigationController(rootViewController: picker)
+        nav.modalPresentationStyle = .pageSheet
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(nav, animated: true)
+    }
+
+    func addSpeechBubbleWidget(style: SpeechBubbleStyle) {
+        let sampleText: String = {
+            let lang = Locale.current.language.languageCode?.identifier ?? "en"
+            return lang == "ko" ? "오늘도 달렸다!" : "Great run!"
+        }()
+
+        let payload = SpeechBubblePayload(
+            text: sampleText,
+            style: style,
+            bubbleColorHex: "#FFFFFF",
+            borderColorHex: "#222222",
+            borderWidth: 2,
+            textColorHex: "#111111",
+            fontStyleRaw: FontStyle.system.rawValue,
+            fontSize: 16
+        )
+
+        let size = CGSize(width: 160, height: 120)
+        let center = CGPoint(
+            x: contentView.bounds.midX - size.width / 2,
+            y: contentView.bounds.midY - size.height / 2
+        )
+
+        let widget = SpeechBubbleWidget()
+        widget.frame = CGRect(origin: center, size: size)
+        widget.initialSize = size
+        widget.configure(payload: payload)
+        widget.bubbleDelegate = self
+        widget.selectionDelegate = self
+
+        contentView.addSubview(widget)
+        contentView.bringSubviewToFront(widget)
+        widgets.append(widget)
+        selectionManager.registerItem(widget)
+        selectionManager.selectItem(widget)
+        hasUnsavedChanges = true
+
+        // 바로 편집 VC 열기
+        speechBubbleWidgetDidRequestEdit(widget)
     }
 
     @objc dynamic func shareImage() {

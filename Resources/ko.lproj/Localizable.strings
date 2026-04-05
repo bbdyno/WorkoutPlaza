@@ -644,6 +644,27 @@
 // Tip Supporter Badge
 "tip.supporter.badge" = "후원자";
 
+// Speech Bubble Widget
+"widget.speechBubble" = "말풍선";
+"bubble.default.text" = "오늘도 달렸다!";
+"bubble.picker.title" = "말풍선 선택";
+"bubble.edit.title" = "말풍선 편집";
+"bubble.edit.text" = "텍스트";
+"bubble.edit.font" = "폰트";
+"bubble.edit.colors" = "색상";
+"bubble.edit.textColor" = "글자 색";
+"bubble.edit.bgColor" = "배경 색";
+"bubble.edit.borderColor" = "테두리 색";
+"bubble.edit.borderWidth" = "테두리 굵기";
+"bubble.style.rounded" = "말풍선";
+"bubble.style.roundedLeft" = "말풍선 (왼쪽)";
+"bubble.style.roundedRight" = "말풍선 (오른쪽)";
+"bubble.style.oval" = "타원 말풍선";
+"bubble.style.square" = "각진 말풍선";
+"bubble.style.thought" = "생각 풍선";
+"bubble.style.shout" = "외침 풍선";
+"bubble.style.noTail" = "박스";
+
 // GPX Import
 "gpx.error.invalid" = "유효하지 않은 GPX 파일입니다.";
 "gpx.error.noRoute" = "GPX 파일에 경로 데이터가 없습니다.";

@@ -643,6 +643,27 @@
 "tip.thanks.large.title" = "New kicks, new runs!";
 "tip.thanks.large.message" = "I'm truly moved by your generous support.\nI'll do my best to make WorkoutPlaza even better.";
 
+// Speech Bubble Widget
+"widget.speechBubble" = "Speech Bubble";
+"bubble.default.text" = "Great run!";
+"bubble.picker.title" = "Choose Bubble Style";
+"bubble.edit.title" = "Edit Bubble";
+"bubble.edit.text" = "Text";
+"bubble.edit.font" = "Font";
+"bubble.edit.colors" = "Colors";
+"bubble.edit.textColor" = "Text Color";
+"bubble.edit.bgColor" = "Background Color";
+"bubble.edit.borderColor" = "Border Color";
+"bubble.edit.borderWidth" = "Border Width";
+"bubble.style.rounded" = "Bubble";
+"bubble.style.roundedLeft" = "Bubble (Left)";
+"bubble.style.roundedRight" = "Bubble (Right)";
+"bubble.style.oval" = "Oval Bubble";
+"bubble.style.square" = "Square Bubble";
+"bubble.style.thought" = "Thought Bubble";
+"bubble.style.shout" = "Shout Bubble";
+"bubble.style.noTail" = "Box";
+
 // GPX Import
 "gpx.error.invalid" = "Invalid GPX file.";
 "gpx.error.noRoute" = "No route data found in the GPX file.";
