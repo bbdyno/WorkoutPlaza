@@ -402,6 +402,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Pro 구매 상태 변경 시 워터마크 실시간 반영
         NotificationCenter.default.addObserver(self, selector: #selector(handlePurchaseStatusChanged), name: .wpPurchaseStatusDidChange, object: nil)
 
+        // Undo 스택 초기화
+        undoStack.removeAll()
+        undoButton.isEnabled = false
+
         // Initial button state
         setupShareMenu()
         updateToolbarItemsState()
