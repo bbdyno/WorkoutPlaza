@@ -297,10 +297,14 @@ class TemplateGroupView: UIView, Selectable {
         switch gesture.state {
         case .began:
             initialCenter = view.center
-            // Select this group immediately when drag starts
             if !isSelected {
                 selectionDelegate?.itemWasSelected(self)
             }
+            NotificationCenter.default.post(
+                name: .widgetDidMove,
+                object: self,
+                userInfo: [WidgetMoveNotificationUserInfoKey.phase: WidgetMovePhase.began.rawValue]
+            )
 
         case .changed:
             let translation = gesture.translation(in: superview)

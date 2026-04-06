@@ -20,6 +20,7 @@ extension Notification.Name {
 }
 
 enum WidgetMovePhase: String {
+    case began
     case changed
     case ended
 }

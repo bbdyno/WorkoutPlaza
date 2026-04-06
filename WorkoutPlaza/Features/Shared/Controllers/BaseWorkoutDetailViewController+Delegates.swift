@@ -159,6 +159,7 @@ extension BaseWorkoutDetailViewController: SelectionDelegate {
 // MARK: - UIColorPickerViewControllerDelegate
 extension BaseWorkoutDetailViewController: UIColorPickerViewControllerDelegate {
     func colorPickerViewControllerDidFinish(_ viewController: UIColorPickerViewController) {
+        pushUndoSnapshot()
         let selectedColor = viewController.selectedColor
 
         // Check if in multi-select mode (includes group selection)

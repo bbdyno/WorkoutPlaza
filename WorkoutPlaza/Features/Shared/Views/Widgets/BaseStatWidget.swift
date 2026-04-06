@@ -455,6 +455,11 @@ class BaseStatWidget: UIView, Selectable, WidgetContentAlignable {
             if !isSelected {
                 selectionDelegate?.itemWasSelected(self)
             }
+            NotificationCenter.default.post(
+                name: .widgetDidMove,
+                object: self,
+                userInfo: [WidgetMoveNotificationUserInfoKey.phase: WidgetMovePhase.began.rawValue]
+            )
 
         case .changed:
             let translation = gesture.translation(in: superview)

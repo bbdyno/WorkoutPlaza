@@ -174,6 +174,7 @@ extension BaseWorkoutDetailViewController {
     }
 
     private func performDelete() {
+        pushUndoSnapshot()
         guard let selectedItem = selectionManager.currentlySelectedItem else { return }
         let selectedView = selectedItem as UIView
 
@@ -339,6 +340,7 @@ extension BaseWorkoutDetailViewController {
     }
 
     private func applyFontToSelection(_ fontStyle: FontStyle) {
+        pushUndoSnapshot()
         let selectedItems = selectionManager.getSelectedItems()
         let applyFontAndPersist: (Selectable) -> Void = { selectable in
             selectable.applyFont(fontStyle)

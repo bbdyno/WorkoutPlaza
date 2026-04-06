@@ -160,13 +160,17 @@ extension BaseWorkoutDetailViewController {
     
     // MARK: - Notifications
     @objc func handleWidgetDidMove(_ notification: Notification) {
-        hasUnsavedChanges = true
-
         guard let movedView = (notification.object as? UIView) ?? (selectionManager.currentlySelectedItem as UIView?),
               movedView.superview === contentView else { return }
 
         let phaseRaw = notification.userInfo?[WidgetMoveNotificationUserInfoKey.phase] as? String
         let phase = WidgetMovePhase(rawValue: phaseRaw ?? WidgetMovePhase.ended.rawValue) ?? .ended
+
+        if phase == .began {
+            pushUndoSnapshot()
+        }
+
+        hasUnsavedChanges = true
         applyCenterStickySnap(to: movedView, phase: phase)
         applyWidgetAlignmentSnap(to: movedView, phase: phase)
     }
