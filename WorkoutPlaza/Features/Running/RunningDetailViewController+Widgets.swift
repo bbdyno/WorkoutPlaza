@@ -15,7 +15,7 @@ extension RunningDetailViewController {
     // MARK: - Widget Configuration
 
     internal func configureWithWorkoutData() {
-        // Check workoutData first, then importedWorkoutData, then externalWorkout
+        isRestoringState = true
         if let data = workoutData {
             configureWithHealthKitData(data)
         } else if let imported = importedWorkoutData {
@@ -23,6 +23,9 @@ extension RunningDetailViewController {
         } else if let external = externalWorkout {
             configureWithExternalWorkout(external)
         }
+        isRestoringState = false
+        undoStack.removeAll()
+        undoButton.isEnabled = false
     }
 
     private func configureWithHealthKitData(_ data: WorkoutData) {

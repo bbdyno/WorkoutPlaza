@@ -61,14 +61,15 @@ extension BaseWorkoutDetailViewController {
     
     @objc dynamic func loadSavedDesign() {
         let workoutId = getWorkoutId()
-        
+
         guard let design = CardPersistenceManager.shared.loadDesign(for: workoutId) else {
             WPLog.debug("No saved design found for \(workoutId)")
-            // Reset flag even if no saved design (initial state should be "no changes")
             hasUnsavedChanges = false
+            isRestoringState = false
             return
         }
-        
+
+        isRestoringState = true
         WPLog.info("Loading saved design for \(workoutId)")
         
         // Restore Aspect Ratio (항상 3:4)
@@ -276,6 +277,9 @@ extension BaseWorkoutDetailViewController {
 
         // Reset unsaved changes flag since we just loaded the saved state
         hasUnsavedChanges = false
+        isRestoringState = false
+        undoStack.removeAll()
+        undoButton.isEnabled = false
     }
 
 

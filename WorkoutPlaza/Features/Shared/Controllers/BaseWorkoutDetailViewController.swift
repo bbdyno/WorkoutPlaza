@@ -86,13 +86,14 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     var centerGuideHideWorkItem: DispatchWorkItem?
     var alignGuideHideWorkItem: DispatchWorkItem?
     var restoreCanvasTransform: RestoreCanvasTransform = .identity
+    var isRestoringState: Bool = false
 
     // Alignment guide views
     var _alignmentGuideViews: [UIView]?
     var _spacingLabels: [UIView]?
 
     // Undo
-    private var undoStack: [SavedCardDesign] = []
+    var undoStack: [SavedCardDesign] = []
     private let maxUndoSteps = 20
 
     // Background State
@@ -529,6 +530,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     /// 현재 캔버스 상태를 undo 스택에 저장 (변경 직전에 호출)
     func pushUndoSnapshot() {
+        guard !isRestoringState else { return }
         guard let snapshot = createCurrentSnapshot() else { return }
         undoStack.append(snapshot)
         if undoStack.count > maxUndoSteps {
