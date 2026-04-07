@@ -96,9 +96,7 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
                     self?.createWidget(for: item, frame: frame)
                 }),
                 action: { [weak self] in
-                    self?.presentedViewController?.dismiss(animated: true) {
-                        self?.applyWidgetTemplate(template)
-                    }
+                    self?.applyWidgetTemplate(template)
                 }
             ))
         }

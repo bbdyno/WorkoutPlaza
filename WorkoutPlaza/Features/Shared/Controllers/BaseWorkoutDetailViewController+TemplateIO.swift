@@ -74,11 +74,11 @@ extension BaseWorkoutDetailViewController {
         }
 
         // STEP 5: Create all widgets in the new canvas
+        var skippedWidgets: [String] = []
+
         for item in template.items {
-            // Use ratio-based positioning (version 2.0+) or fallback to legacy
             let frame = TemplateManager.absoluteFrame(from: item, canvasSize: canvasSize, templateCanvasSize: templateCanvasSize)
 
-            // Try to create widget using subclass implementation
             if let widget = createWidget(for: item, frame: frame) {
                 contentView.addSubview(widget)
                 widgets.append(widget)
@@ -87,17 +87,31 @@ extension BaseWorkoutDetailViewController {
                     selectable.selectionDelegate = self
                     selectionManager.registerItem(selectable)
 
-                    // Apply rotation if available
                     if let rotation = item.rotation {
                         selectable.rotation = rotation
                         widget.transform = CGAffineTransform(rotationAngle: rotation)
                     }
                 }
+            } else {
+                skippedWidgets.append(item.type.displayName)
             }
         }
 
         instructionLabel.text = WorkoutPlazaStrings.Ui.Drag.Widgets.instruction
         WPLog.info("Applied template directly: \(template.name)")
+
+        if !skippedWidgets.isEmpty {
+            let names = skippedWidgets.joined(separator: ", ")
+            let alert = CustomAlertViewController(
+                title: NSLocalizedString("template.applied", comment: ""),
+                message: String(format: NSLocalizedString("template.skipped.widgets", comment: ""), names),
+                iconName: "icon.check.circle.fill",
+                actions: [
+                    CustomAlertAction(title: WorkoutPlazaStrings.Common.ok, iconName: nil, style: .cancel, handler: nil)
+                ]
+            )
+            present(alert, animated: true)
+        }
     }
     
     @objc dynamic func importTemplate() {

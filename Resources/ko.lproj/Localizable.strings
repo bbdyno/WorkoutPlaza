@@ -714,3 +714,7 @@
 "route.gpx.no.route" = "GPX 파일에 경로 데이터가 포함되어 있지 않습니다.";
 "route.gpx.parse.failed" = "GPX 파싱 실패";
 
+// Template Apply
+"template.applied" = "템플릿 적용 완료";
+"template.skipped.widgets" = "데이터가 없어 일부 위젯을 표시할 수 없습니다: %@";
+

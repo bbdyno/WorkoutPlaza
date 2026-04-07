@@ -713,5 +713,9 @@
 "route.gpx.no.route" = "The GPX file does not contain route data.";
 "route.gpx.parse.failed" = "GPX Parse Failed";
 
+// Template Apply
+"template.applied" = "Template Applied";
+"template.skipped.widgets" = "Some widgets could not be displayed due to missing data: %@";
+
 // Tip Supporter Badge
 "tip.supporter.badge" = "Supporter";
