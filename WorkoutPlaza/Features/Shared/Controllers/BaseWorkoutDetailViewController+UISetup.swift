@@ -529,15 +529,8 @@ extension BaseWorkoutDetailViewController {
         return button
     }
     
-    func showToast(_ message: String) {
-        toastLabel.text = "  \(message)  "
-        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseIn) {
-            self.toastLabel.alpha = 1.0
-        } completion: { _ in
-            UIView.animate(withDuration: 0.3, delay: 2.0, options: .curveEaseOut) {
-                self.toastLabel.alpha = 0
-            }
-        }
+    func showToast(_ message: String, style: ToastView.Style = .info) {
+        ToastView.show(in: view, message: message, style: style)
     }
     
     func setupDefaultBackground() {

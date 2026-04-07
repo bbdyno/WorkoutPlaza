@@ -511,11 +511,17 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         }
 
         if hasUnsavedChanges {
-            let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Cancel.title, message: WorkoutPlazaStrings.Alert.Unsaved.changes, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.cancel, style: .cancel))
-            alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Button.exit, style: .destructive) { _ in
-                closeAction()
-            })
+            let alert = CustomAlertViewController(
+                title: WorkoutPlazaStrings.Alert.Cancel.title,
+                message: WorkoutPlazaStrings.Alert.Unsaved.changes,
+                iconName: "icon.x.circle.fill",
+                actions: [
+                    CustomAlertAction(title: WorkoutPlazaStrings.Button.exit, iconName: nil, style: .primary) {
+                        closeAction()
+                    },
+                    CustomAlertAction(title: WorkoutPlazaStrings.Button.cancel, iconName: nil, style: .cancel, handler: nil)
+                ]
+            )
             present(alert, animated: true)
         } else {
             closeAction()
@@ -541,7 +547,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     @objc func performUndo() {
         guard let snapshot = undoStack.popLast() else {
-            showToast(NSLocalizedString("undo.empty", comment: ""))
+            showToast(NSLocalizedString("undo.empty", comment: ""), style: .info)
             return
         }
 
@@ -559,7 +565,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         hasUnsavedChanges = true
         undoButton.isEnabled = !undoStack.isEmpty
-        showToast(NSLocalizedString("undo.done", comment: ""))
+        showToast(NSLocalizedString("undo.done", comment: ""), style: .success)
     }
 
     /// 현재 캔버스 → SavedCardDesign 스냅샷 (이미지 제외)

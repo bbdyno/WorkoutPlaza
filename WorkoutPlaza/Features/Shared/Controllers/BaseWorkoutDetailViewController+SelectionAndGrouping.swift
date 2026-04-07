@@ -99,12 +99,13 @@ extension BaseWorkoutDetailViewController {
     }
 
     private func showGroupConflictAlert(reason: String) {
-        let alert = UIAlertController(
+        let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Base.Group.Conflict.title,
             message: reason,
-            preferredStyle: .alert
+            actions: [
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.ok, iconName: nil, style: .cancel, handler: nil)
+            ]
         )
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 
@@ -158,17 +159,17 @@ extension BaseWorkoutDetailViewController {
     @objc func deleteSelectedItem() {
         guard selectionManager.currentlySelectedItem != nil else { return }
 
-        let alert = UIAlertController(
+        let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Base.Item.Delete.title,
             message: WorkoutPlazaStrings.Base.Item.Delete.message,
-            preferredStyle: .alert
+            iconName: "icon.trash",
+            actions: [
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.delete, iconName: nil, style: .primary) { [weak self] in
+                    self?.performDelete()
+                },
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.cancel, iconName: nil, style: .cancel, handler: nil)
+            ]
         )
-
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { [weak self] _ in
-            self?.performDelete()
-        })
-
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         present(alert, animated: true)
     }
@@ -377,20 +378,19 @@ extension BaseWorkoutDetailViewController {
     }
 
     func showDimOverlayOption() {
-        let alert = UIAlertController(
+        let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Base.Dim.Effect.title,
             message: WorkoutPlazaStrings.Base.Dim.Effect.message,
-            preferredStyle: .alert
+            actions: [
+                CustomAlertAction(title: WorkoutPlazaStrings.Base.Dim.add, iconName: nil, style: .primary) { [weak self] in
+                    self?.dimOverlay.isHidden = false
+                    self?.hasUnsavedChanges = true
+                },
+                CustomAlertAction(title: WorkoutPlazaStrings.Base.Dim.skip, iconName: nil, style: .cancel) { [weak self] in
+                    self?.dimOverlay.isHidden = true
+                }
+            ]
         )
-
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Base.Dim.add, style: .default) { [weak self] _ in
-            self?.dimOverlay.isHidden = false
-            self?.hasUnsavedChanges = true
-        })
-
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Base.Dim.skip, style: .cancel) { [weak self] _ in
-            self?.dimOverlay.isHidden = true
-        })
 
         present(alert, animated: true)
     }

@@ -323,19 +323,20 @@ class CardDetailViewController: UIViewController {
     }
 
     @objc private func deleteTapped() {
-        let alert = UIAlertController(
+        let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Card.Delete.title,
             message: WorkoutPlazaStrings.Card.Delete.message,
-            preferredStyle: .alert
+            iconName: "icon.trash",
+            actions: [
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.delete, iconName: nil, style: .primary) { [weak self] in
+                    guard let self = self else { return }
+                    WorkoutCardManager.shared.deleteCard(self.card)
+                    self.onDelete?()
+                    self.navigationController?.popViewController(animated: true)
+                },
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.cancel, iconName: nil, style: .cancel, handler: nil)
+            ]
         )
-
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { [weak self] _ in
-            guard let self = self else { return }
-            WorkoutCardManager.shared.deleteCard(self.card)
-            self.onDelete?()
-            self.navigationController?.popViewController(animated: true)
-        })
 
         present(alert, animated: true)
     }

@@ -695,20 +695,20 @@ extension HomeDashboardViewController: ClimbingInputDelegate {
     }
 
     private func showCardCreationAlert(for session: ClimbingData) {
-        let alert = UIAlertController(
+        let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Alert.Save.completed,
             message: WorkoutPlazaStrings.Home.Climbing.Saved.message,
-            preferredStyle: .alert
+            iconName: "icon.check.circle.fill",
+            actions: [
+                CustomAlertAction(title: WorkoutPlazaStrings.Home.Create.card, iconName: nil, style: .primary) { [weak self] in
+                    guard let self = self else { return }
+                    let detailVC = ClimbingDetailViewController()
+                    detailVC.climbingData = session
+                    self.presentWorkoutDetail(detailVC)
+                },
+                CustomAlertAction(title: WorkoutPlazaStrings.Home.later, iconName: nil, style: .cancel, handler: nil)
+            ]
         )
-
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Home.Create.card, style: .default) { [weak self] _ in
-            guard let self = self else { return }
-            let detailVC = ClimbingDetailViewController()
-            detailVC.climbingData = session
-            self.presentWorkoutDetail(detailVC)
-        })
-
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Home.later, style: .cancel))
 
         present(alert, animated: true)
     }

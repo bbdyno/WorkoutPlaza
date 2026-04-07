@@ -338,29 +338,6 @@ final class ProUpgradeViewController: UIViewController {
     }
 
     private func showToast(_ message: String) {
-        let toast = UILabel()
-        toast.text = message
-        toast.font = AppFont.bodySemiBold(14)
-        toast.textColor = .white
-        toast.backgroundColor = UIColor.black.withAlphaComponent(0.75)
-        toast.textAlignment = .center
-        toast.layer.cornerRadius = 8
-        toast.clipsToBounds = true
-        toast.alpha = 0
-
-        view.addSubview(toast)
-        toast.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-            make.width.lessThanOrEqualToSuperview().offset(-40)
-            make.height.equalTo(40)
-        }
-        view.layoutIfNeeded()
-
-        UIView.animate(withDuration: 0.3) { toast.alpha = 1 } completion: { _ in
-            UIView.animate(withDuration: 0.3, delay: 2.0) { toast.alpha = 0 } completion: { _ in
-                toast.removeFromSuperview()
-            }
-        }
+        ToastView.show(in: view, message: message, style: .info)
     }
 }

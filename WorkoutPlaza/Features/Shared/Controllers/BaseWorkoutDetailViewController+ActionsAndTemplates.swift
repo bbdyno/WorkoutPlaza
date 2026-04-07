@@ -92,12 +92,24 @@ extension BaseWorkoutDetailViewController {
         activityViewController.completionWithItemsHandler = { [weak self] activityType, completed, returnedItems, error in
             if completed && activityType == .saveToCameraRoll {
                 // Image was saved to camera roll
-                let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.completed, message: WorkoutPlazaStrings.Alert.Image.saved, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
+                let alert = CustomAlertViewController(
+                    title: WorkoutPlazaStrings.Alert.Save.completed,
+                    message: WorkoutPlazaStrings.Alert.Image.saved,
+                    iconName: "icon.check.circle.fill",
+                    actions: [
+                        CustomAlertAction(title: WorkoutPlazaStrings.Common.ok, iconName: nil, style: .cancel, handler: nil)
+                    ]
+                )
                 self?.present(alert, animated: true)
             } else if let error = error {
-                let alert = UIAlertController(title: WorkoutPlazaStrings.Alert.Save.failed, message: error.localizedDescription, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
+                let alert = CustomAlertViewController(
+                    title: WorkoutPlazaStrings.Alert.Save.failed,
+                    message: error.localizedDescription,
+                    iconName: "icon.x.circle.fill",
+                    actions: [
+                        CustomAlertAction(title: WorkoutPlazaStrings.Common.ok, iconName: nil, style: .cancel, handler: nil)
+                    ]
+                )
                 self?.present(alert, animated: true)
             }
         }

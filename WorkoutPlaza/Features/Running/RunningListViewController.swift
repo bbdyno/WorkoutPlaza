@@ -245,12 +245,14 @@ class RunningListViewController: UIViewController {
     }
 
     private func showImportError(_ error: Error) {
-        let alert = UIAlertController(
+        let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Alert.Import.failed,
             message: error.localizedDescription,
-            preferredStyle: .alert
+            iconName: "icon.x.circle.fill",
+            actions: [
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.ok, iconName: nil, style: .cancel, handler: nil)
+            ]
         )
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 
@@ -493,20 +495,19 @@ class RunningListViewController: UIViewController {
     
     private func showAuthorizationError() {
         loadingIndicator.stopAnimating()
-        
-        let alert = UIAlertController(
+
+        let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Permission.Healthkit.title,
             message: WorkoutPlazaStrings.Permission.Healthkit.message,
-            preferredStyle: .alert
+            actions: [
+                CustomAlertAction(title: WorkoutPlazaStrings.Permission.Open.settings, iconName: nil, style: .primary) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                },
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.cancel, iconName: nil, style: .cancel, handler: nil)
+            ]
         )
-        
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Permission.Open.settings, style: .default) { _ in
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
-            }
-        })
-        
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         present(alert, animated: true)
     }
@@ -578,17 +579,17 @@ extension RunningListViewController: UITableViewDelegate, UITableViewDataSource 
     }
 
     private func confirmDeleteExternalWorkout(_ workout: ExternalWorkout, at indexPath: IndexPath) {
-        let alert = UIAlertController(
+        let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Running.Delete.record,
             message: WorkoutPlazaStrings.Running.Delete.Record.message,
-            preferredStyle: .alert
+            iconName: "icon.trash",
+            actions: [
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.delete, iconName: nil, style: .primary) {
+                    ExternalWorkoutManager.shared.deleteWorkout(id: workout.id)
+                },
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.cancel, iconName: nil, style: .cancel, handler: nil)
+            ]
         )
-
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.delete, style: .destructive) { _ in
-            ExternalWorkoutManager.shared.deleteWorkout(id: workout.id)
-        })
-
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
 
         present(alert, animated: true)
     }
@@ -649,12 +650,14 @@ extension RunningListViewController: UITableViewDelegate, UITableViewDataSource 
     }
 
     private func showShareError(_ error: Error) {
-        let alert = UIAlertController(
+        let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Share.failed,
             message: error.localizedDescription,
-            preferredStyle: .alert
+            iconName: "icon.x.circle.fill",
+            actions: [
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.ok, iconName: nil, style: .cancel, handler: nil)
+            ]
         )
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 }
@@ -693,12 +696,14 @@ extension RunningListViewController: ImportWorkoutViewControllerDelegate {
 
     private func showImportSuccess(workoutType: WorkoutType) {
         let typeName = workoutType.sportType?.displayName ?? WorkoutPlazaStrings.Workout.generic
-        let alert = UIAlertController(
+        let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Import.complete,
             message: WorkoutPlazaStrings.Import.Success.message(typeName),
-            preferredStyle: .alert
+            iconName: "icon.check.circle.fill",
+            actions: [
+                CustomAlertAction(title: WorkoutPlazaStrings.Common.ok, iconName: nil, style: .cancel, handler: nil)
+            ]
         )
-        alert.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.ok, style: .default))
         present(alert, animated: true)
     }
 }

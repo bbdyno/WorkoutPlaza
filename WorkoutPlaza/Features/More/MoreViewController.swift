@@ -484,40 +484,7 @@ class MoreViewController: UIViewController {
     }
 
     private func showToast(_ message: String) {
-        activeToastLabel?.removeFromSuperview()
-        activeToastLabel = nil
-
-        let toast = UILabel()
-        toast.text = message
-        toast.font = AppFont.bodySemiBold(14)
-        toast.textColor = .white
-        toast.backgroundColor = UIColor.black.withAlphaComponent(0.7)
-        toast.textAlignment = .center
-        toast.layer.cornerRadius = 8
-        toast.clipsToBounds = true
-        toast.alpha = 0
-        activeToastLabel = toast
-
-        view.addSubview(toast)
-        toast.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-            make.width.equalTo(200)
-            make.height.equalTo(40)
-        }
-
-        UIView.animate(withDuration: 0.3) {
-            toast.alpha = 1
-        } completion: { _ in
-            UIView.animate(withDuration: 0.3, delay: 2.0) {
-                toast.alpha = 0
-            } completion: { _ in
-                toast.removeFromSuperview()
-                if self.activeToastLabel === toast {
-                    self.activeToastLabel = nil
-                }
-            }
-        }
+        ToastView.show(in: view, message: message, style: .info)
     }
 }
 
