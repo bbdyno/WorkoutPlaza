@@ -144,6 +144,14 @@
 "template.detailed.stats.description" = "Route + Distance + Duration + Pace + Speed + Calories";
 "template.minimal" = "Minimal";
 "template.minimal.description" = "Route + Distance + Duration";
+"template.strava.style" = "Strava Style";
+"template.strava.style.description" = "Distance + Pace + Time vertical centered";
+"template.side.by.side" = "Side by Side";
+"template.side.by.side.description" = "Left route + Right stats";
+"template.bottom.bar" = "Bottom Bar";
+"template.bottom.bar.description" = "Horizontal bottom bar layout";
+"template.full.route" = "Full Route";
+"template.full.route.description" = "Large route + compact bottom stats";
 "template.default.climbing" = "Default Climbing";
 "template.default.climbing.description" = "Gym + Discipline + Session";
 "template.detailed.climbing" = "Detailed Climbing";

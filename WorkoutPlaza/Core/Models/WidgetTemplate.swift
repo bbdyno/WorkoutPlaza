@@ -908,11 +908,175 @@ extension WidgetTemplate {
         canvasSize: CanvasSize(width: 414, height: 552)
     )
 
+    // MARK: - Strava Style (세로 중앙 정렬)
+    // 거리 / 페이스 / 시간이 카드 중앙에 세로로 정렬
+    static let stravaStyle = WidgetTemplate(
+        name: NSLocalizedString("template.strava.style", comment: ""),
+        description: NSLocalizedString("template.strava.style.description", comment: ""),
+        version: "2.0",
+        sportType: .running,
+        items: [
+            WidgetItem(
+                type: .distanceCompact,
+                positionRatio: WidgetItem.PositionRatio(x: 0.15, y: 0.25),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.70, height: 0.13),
+                color: nil,
+                font: "System"
+            ),
+            WidgetItem(
+                type: .paceCompact,
+                positionRatio: WidgetItem.PositionRatio(x: 0.15, y: 0.42),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.70, height: 0.13),
+                color: nil,
+                font: "System"
+            ),
+            WidgetItem(
+                type: .durationCompact,
+                positionRatio: WidgetItem.PositionRatio(x: 0.15, y: 0.59),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.70, height: 0.13),
+                color: nil,
+                font: "System"
+            )
+        ],
+        canvasSize: CanvasSize(width: 414, height: 552)
+    )
+
+    // MARK: - Side by Side (경로 + 세로 스탯)
+    // 왼쪽 절반 경로, 오른쪽 절반에 거리/시간/페이스 세로 배치
+    static let sideBySide = WidgetTemplate(
+        name: NSLocalizedString("template.side.by.side", comment: ""),
+        description: NSLocalizedString("template.side.by.side.description", comment: ""),
+        version: "2.0",
+        sportType: .running,
+        items: [
+            WidgetItem(
+                type: .routeMap,
+                positionRatio: WidgetItem.PositionRatio(x: 0.05, y: 0.08),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.45, height: 0.60),
+                color: "#FFFFFF",
+                font: nil
+            ),
+            WidgetItem(
+                type: .distanceCompact,
+                positionRatio: WidgetItem.PositionRatio(x: 0.54, y: 0.10),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.40, height: 0.12),
+                color: nil,
+                font: "System"
+            ),
+            WidgetItem(
+                type: .durationCompact,
+                positionRatio: WidgetItem.PositionRatio(x: 0.54, y: 0.28),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.40, height: 0.12),
+                color: nil,
+                font: "System"
+            ),
+            WidgetItem(
+                type: .paceCompact,
+                positionRatio: WidgetItem.PositionRatio(x: 0.54, y: 0.46),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.40, height: 0.12),
+                color: nil,
+                font: "System"
+            ),
+            WidgetItem(
+                type: .date,
+                positionRatio: WidgetItem.PositionRatio(x: 0.54, y: 0.62),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.40, height: 0.10),
+                color: nil,
+                font: "System"
+            )
+        ],
+        canvasSize: CanvasSize(width: 414, height: 552)
+    )
+
+    // MARK: - Bottom Bar (하단 가로 일렬)
+    // 상단은 비워두고(사진 영역), 하단에 거리/시간/페이스 가로 배치
+    static let bottomBar = WidgetTemplate(
+        name: NSLocalizedString("template.bottom.bar", comment: ""),
+        description: NSLocalizedString("template.bottom.bar.description", comment: ""),
+        version: "2.0",
+        sportType: .running,
+        items: [
+            WidgetItem(
+                type: .distance,
+                positionRatio: WidgetItem.PositionRatio(x: 0.05, y: 0.75),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.28, height: 0.15),
+                color: nil,
+                font: "System"
+            ),
+            WidgetItem(
+                type: .duration,
+                positionRatio: WidgetItem.PositionRatio(x: 0.36, y: 0.75),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.28, height: 0.15),
+                color: nil,
+                font: "System"
+            ),
+            WidgetItem(
+                type: .pace,
+                positionRatio: WidgetItem.PositionRatio(x: 0.67, y: 0.75),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.28, height: 0.15),
+                color: nil,
+                font: "System"
+            )
+        ],
+        canvasSize: CanvasSize(width: 414, height: 552)
+    )
+
+    // MARK: - Full Route (경로 최대 + 하단 컴팩트)
+    // 경로가 캔버스 대부분을 차지, 하단에 아이콘 스타일 스탯
+    static let fullRoute = WidgetTemplate(
+        name: NSLocalizedString("template.full.route", comment: ""),
+        description: NSLocalizedString("template.full.route.description", comment: ""),
+        version: "2.0",
+        sportType: .running,
+        items: [
+            WidgetItem(
+                type: .routeMap,
+                positionRatio: WidgetItem.PositionRatio(x: 0.05, y: 0.03),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.90, height: 0.65),
+                color: "#FFFFFF",
+                font: nil
+            ),
+            WidgetItem(
+                type: .distanceIcon,
+                positionRatio: WidgetItem.PositionRatio(x: 0.05, y: 0.72),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.28, height: 0.10),
+                color: nil,
+                font: "System"
+            ),
+            WidgetItem(
+                type: .durationIcon,
+                positionRatio: WidgetItem.PositionRatio(x: 0.36, y: 0.72),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.28, height: 0.10),
+                color: nil,
+                font: "System"
+            ),
+            WidgetItem(
+                type: .paceIcon,
+                positionRatio: WidgetItem.PositionRatio(x: 0.67, y: 0.72),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.28, height: 0.10),
+                color: nil,
+                font: "System"
+            ),
+            WidgetItem(
+                type: .date,
+                positionRatio: WidgetItem.PositionRatio(x: 0.05, y: 0.85),
+                sizeRatio: WidgetItem.SizeRatio(width: 0.90, height: 0.08),
+                color: nil,
+                font: "System"
+            )
+        ],
+        canvasSize: CanvasSize(width: 414, height: 552)
+    )
+
     // Default built-in templates
     static let allBuiltInTemplates: [WidgetTemplate] = [
         .basicRunning,
         .detailedStats,
         .minimal,
+        .stravaStyle,
+        .sideBySide,
+        .bottomBar,
+        .fullRoute,
         .basicClimbing,
         .detailedClimbing
     ]

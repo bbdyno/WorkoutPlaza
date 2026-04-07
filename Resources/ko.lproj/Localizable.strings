@@ -142,6 +142,14 @@
 "template.detailed.stats.description" = "경로 + 거리 + 시간 + 페이스 + 속도 + 칼로리";
 "template.minimal" = "미니멀";
 "template.minimal.description" = "경로 + 거리 + 시간";
+"template.strava.style" = "스트라바 스타일";
+"template.strava.style.description" = "거리 + 페이스 + 시간 세로 중앙 정렬";
+"template.side.by.side" = "사이드 바이 사이드";
+"template.side.by.side.description" = "왼쪽 경로 + 오른쪽 기록";
+"template.bottom.bar" = "하단 바";
+"template.bottom.bar.description" = "하단 가로 일렬 배치";
+"template.full.route" = "풀 루트";
+"template.full.route.description" = "경로 최대 + 하단 컴팩트 스탯";
 "template.default.climbing" = "기본 클라이밍";
 "template.default.climbing.description" = "짐 + 종목 + 세션 기록";
 "template.detailed.climbing" = "상세 클라이밍";
