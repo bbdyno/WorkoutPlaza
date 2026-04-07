@@ -1085,7 +1085,11 @@ extension WidgetTemplate {
     static let runningTemplates: [WidgetTemplate] = [
         .basicRunning,
         .detailedStats,
-        .minimal
+        .minimal,
+        .stravaStyle,
+        .sideBySide,
+        .bottomBar,
+        .fullRoute
     ]
 
     // Climbing templates
