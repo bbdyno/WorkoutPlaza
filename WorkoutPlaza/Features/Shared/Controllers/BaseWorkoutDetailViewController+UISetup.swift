@@ -327,10 +327,7 @@ extension BaseWorkoutDetailViewController {
     }
 
     func setupTextPathFloatingPanels() {
-        let availableColors: [UIColor] = [
-            .white, .systemYellow, .systemOrange, .systemPink,
-            .systemRed, .systemGreen, .systemBlue, .systemPurple
-        ]
+        let availableColors = ColorSystem.monochromePalette
 
         let availableFonts: [(name: String, font: UIFont)] = [
             (WorkoutPlazaStrings.Ui.Font.default, .boldSystemFont(ofSize: 20)),

@@ -1036,7 +1036,7 @@ extension RunningDetailViewController {
         if !importedData.ownerName.isEmpty {
             let ownerWidget = TextWidget()
             ownerWidget.configure(text: WorkoutPlazaStrings.Import.Owner.record(importedData.ownerName))
-            ownerWidget.applyColor(.systemOrange)
+            ownerWidget.applyColor(ColorSystem.primaryGreen)
             ownerWidget.textDelegate = self
             let ownerSize = CGSize(width: 200 * scaleFactor, height: 40 * scaleFactor)
             ownerWidget.frame = CGRect(x: startX, y: currentY, width: ownerSize.width, height: ownerSize.height)
@@ -1226,7 +1226,7 @@ extension RunningDetailViewController {
         if !importedData.ownerName.isEmpty {
             let ownerWidget = TextWidget()
             ownerWidget.configure(text: WorkoutPlazaStrings.Import.Owner.record(importedData.ownerName))
-            ownerWidget.applyColor(.systemOrange)
+            ownerWidget.applyColor(ColorSystem.primaryGreen)
             ownerWidget.textDelegate = self
             let ownerSize = CGSize(width: 200, height: 40)
             ownerWidget.frame = CGRect(x: margin, y: startY, width: ownerSize.width, height: ownerSize.height)

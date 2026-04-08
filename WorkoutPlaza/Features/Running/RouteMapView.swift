@@ -12,7 +12,7 @@ class RouteMapView: UIView, Selectable {
 
     // MARK: - Selectable Properties
     var isSelected: Bool = false
-    var currentColor: UIColor = .systemBlue {
+    var currentColor: UIColor = ColorSystem.mainText {
         didSet {
             lineColor = currentColor
             routeLayer.strokeColor = lineColor.cgColor
@@ -34,7 +34,7 @@ class RouteMapView: UIView, Selectable {
     // Movement properties
     private var initialCenter: CGPoint = .zero
 
-    var lineColor: UIColor = .systemBlue {
+    var lineColor: UIColor = ColorSystem.mainText {
         didSet {
             routeLayer.strokeColor = lineColor.cgColor
         }

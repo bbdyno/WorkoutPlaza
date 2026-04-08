@@ -417,16 +417,7 @@ class TextPathDrawingOverlay: UIView {
     private var selectedFont: UIFont = .boldSystemFont(ofSize: 20)
     private var selectedFontSize: CGFloat = 20
 
-    private let availableColors: [UIColor] = [
-        .white,
-        .systemYellow,
-        .systemOrange,
-        .systemPink,
-        .systemRed,
-        .systemGreen,
-        .systemBlue,
-        .systemPurple
-    ]
+    private let availableColors = ColorSystem.monochromePalette
 
     private let availableFonts: [(name: String, font: UIFont)] = [
         (WorkoutPlazaStrings.Ui.Font.default, .boldSystemFont(ofSize: 20)),

@@ -27,16 +27,15 @@ class ColorPaletteView: UIView {
     weak var delegate: ColorPaletteDelegate?
 
     private let presetColors: [UIColor] = [
-        .white,
-        .black,
         ColorSystem.primaryBlue,
         ColorSystem.primaryGreen,
-        .systemRed,
-        .systemOrange,
-        .systemYellow,
-        .systemPurple,
-        .systemPink,
-        .systemIndigo
+        UIColor(white: 0.18, alpha: 1),
+        UIColor(white: 0.32, alpha: 1),
+        UIColor(white: 0.46, alpha: 1),
+        UIColor(white: 0.62, alpha: 1),
+        UIColor(white: 0.78, alpha: 1),
+        UIColor(white: 0.9, alpha: 1),
+        .white
     ]
 
     private var collectionView: UICollectionView!

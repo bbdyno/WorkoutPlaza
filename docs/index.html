@@ -9,7 +9,7 @@
   <meta property="og:description" content="Track climbing and running, build poster-like workout cards, and keep your data local-first.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="assets/workoutplaza-icon.png">
-  <meta name="theme-color" content="#0d1324">
+  <meta name="theme-color" content="#111111">
   <meta name="apple-itunes-app" content="app-id=6758429244">
   <link rel="icon" href="assets/workoutplaza-icon.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,8 +20,6 @@
 </head>
 <body>
   <div class="bg-mesh"></div>
-  <div class="bg-orb bg-orb-one"></div>
-  <div class="bg-orb bg-orb-two"></div>
   <div class="bg-grid"></div>
 
   <header class="site-header">
@@ -85,13 +83,22 @@
       <div class="hero-stage" aria-hidden="true">
         <div class="hero-device-stack">
           <figure class="hero-device hero-device-primary">
-            <img src="assets/screens/home-framed.png" alt="WorkoutPlaza home screen framed mockup">
+            <div class="device-mockup">
+              <img class="device-frame" src="assets/device-mockup.svg" alt="" aria-hidden="true">
+              <img class="device-shot" src="assets/screens/home-framed.png" alt="WorkoutPlaza home screen mockup">
+            </div>
           </figure>
           <figure class="hero-device hero-device-secondary">
-            <img src="assets/screens/statistics-all-framed.png" alt="WorkoutPlaza statistics screen framed mockup">
+            <div class="device-mockup">
+              <img class="device-frame" src="assets/device-mockup.svg" alt="" aria-hidden="true">
+              <img class="device-shot" src="assets/screens/statistics-all-framed.png" alt="WorkoutPlaza statistics screen mockup">
+            </div>
           </figure>
           <figure class="hero-device hero-device-tertiary">
-            <img src="assets/screens/saved-card-detail-framed.png" alt="WorkoutPlaza saved card detail framed mockup">
+            <div class="device-mockup">
+              <img class="device-frame" src="assets/device-mockup.svg" alt="" aria-hidden="true">
+              <img class="device-shot" src="assets/screens/saved-card-detail-framed.png" alt="WorkoutPlaza saved card detail mockup">
+            </div>
           </figure>
           <aside class="hero-note">
             <span data-i18n="hero_note_label">Why it feels different</span>
@@ -130,7 +137,7 @@
       <div class="section-heading">
         <p class="eyebrow" data-i18n="screens_eyebrow">REAL APP SCREENS</p>
         <h2 data-i18n="screens_title">The product now carries the same visual system end to end</h2>
-        <p data-i18n="screens_sub">These are simulator captures from the current build, using the redesigned app chrome and framed for presentation.</p>
+        <p data-i18n="screens_sub">These are simulator captures from the current build, framed directly from the redesigned monochrome app.</p>
       </div>
 
       <div class="screen-gallery">
@@ -138,9 +145,12 @@
           <div class="screen-copy">
             <span class="screen-label" data-i18n="screen_1_label">Dashboard</span>
             <h3 data-i18n="screen_1_title">Home with the new card-first chrome</h3>
-            <p data-i18n="screen_1_desc">Hero metrics, glass surfaces, and cleaner hierarchy make the app feel more like a studio than a logbook.</p>
+            <p data-i18n="screen_1_desc">Hero metrics, monochrome surfaces, and cleaner hierarchy make the app feel more like a studio than a logbook.</p>
           </div>
-          <img src="assets/screens/home-framed.png" alt="WorkoutPlaza home screen framed mockup">
+          <div class="device-mockup screen-device">
+            <img class="device-frame" src="assets/device-mockup.svg" alt="" aria-hidden="true">
+            <img class="device-shot" src="assets/screens/home-framed.png" alt="WorkoutPlaza home screen mockup">
+          </div>
         </article>
 
         <article class="screen-card">
@@ -149,7 +159,10 @@
             <h3 data-i18n="screen_2_title">Readable yearly and all-time stats</h3>
             <p data-i18n="screen_2_desc">Updated chart spacing and the new shell keep dense performance data visually controlled.</p>
           </div>
-          <img src="assets/screens/statistics-all-framed.png" alt="WorkoutPlaza statistics screen framed mockup">
+          <div class="device-mockup screen-device">
+            <img class="device-frame" src="assets/device-mockup.svg" alt="" aria-hidden="true">
+            <img class="device-shot" src="assets/screens/statistics-all-framed.png" alt="WorkoutPlaza statistics screen mockup">
+          </div>
         </article>
 
         <article class="screen-card">
@@ -158,7 +171,10 @@
             <h3 data-i18n="screen_3_title">Poster output stays central</h3>
             <p data-i18n="screen_3_desc">Saved card detail screens keep the composition work front and center instead of burying it under utility UI.</p>
           </div>
-          <img src="assets/screens/saved-card-detail-framed.png" alt="WorkoutPlaza saved card detail framed mockup">
+          <div class="device-mockup screen-device">
+            <img class="device-frame" src="assets/device-mockup.svg" alt="" aria-hidden="true">
+            <img class="device-shot" src="assets/screens/saved-card-detail-framed.png" alt="WorkoutPlaza saved card detail mockup">
+          </div>
         </article>
 
         <article class="screen-card">
@@ -167,7 +183,10 @@
             <h3 data-i18n="screen_4_title">Climbing entry matches the same system</h3>
             <p data-i18n="screen_4_desc">The form views inherit the same palette, surfaces, and spacing tokens instead of falling back to generic defaults.</p>
           </div>
-          <img src="assets/screens/climbing-input-framed.png" alt="WorkoutPlaza climbing input screen framed mockup">
+          <div class="device-mockup screen-device">
+            <img class="device-frame" src="assets/device-mockup.svg" alt="" aria-hidden="true">
+            <img class="device-shot" src="assets/screens/climbing-input-framed.png" alt="WorkoutPlaza climbing input screen mockup">
+          </div>
         </article>
 
         <article class="screen-card">
@@ -176,7 +195,10 @@
             <h3 data-i18n="screen_5_title">Detail pages feel sharper, not heavier</h3>
             <p data-i18n="screen_5_desc">Running details now sit in the same visual language, so the system reads as one product across every flow.</p>
           </div>
-          <img src="assets/screens/running-detail-framed.png" alt="WorkoutPlaza running detail screen framed mockup">
+          <div class="device-mockup screen-device">
+            <img class="device-frame" src="assets/device-mockup.svg" alt="" aria-hidden="true">
+            <img class="device-shot" src="assets/screens/running-detail-framed.png" alt="WorkoutPlaza running detail screen mockup">
+          </div>
         </article>
       </div>
     </section>

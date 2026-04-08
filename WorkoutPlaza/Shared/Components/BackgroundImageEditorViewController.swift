@@ -90,10 +90,7 @@ class BackgroundImageEditorViewController: UIViewController {
     private var overlayColor: UIColor = .black
     private var overlayOpacity: CGFloat = 0.5
 
-    private let presetColors: [UIColor] = [
-        .black, .white, .systemBlue, .systemRed,
-        .systemGreen, .systemYellow, .systemPurple, .systemOrange
-    ]
+    private let presetColors = ColorSystem.monochromePalette
 
     private var instructionLabel: UILabel!
 

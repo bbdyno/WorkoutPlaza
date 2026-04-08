@@ -712,7 +712,7 @@ extension WidgetTemplate {
                 type: .routeMap,
                 positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.05),
                 sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.40),
-                color: "#007AFF",
+                color: "#111111",
                 font: nil
             ),
             WidgetItem(
@@ -750,7 +750,7 @@ extension WidgetTemplate {
                 type: .routeMap,
                 positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.05),
                 sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.35),
-                color: "#007AFF",
+                color: "#111111",
                 font: nil
             ),
             WidgetItem(
@@ -802,7 +802,7 @@ extension WidgetTemplate {
                 type: .routeMap,
                 positionRatio: WidgetItem.PositionRatio(x: 0.07, y: 0.08),
                 sizeRatio: WidgetItem.SizeRatio(width: 0.86, height: 0.50),
-                color: "#007AFF",
+                color: "#111111",
                 font: nil
             ),
             WidgetItem(

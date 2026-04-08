@@ -53,11 +53,11 @@ final class TipThankYouViewController: UIViewController {
         var particleColors: [UIColor] {
             switch self {
             case .small:
-                return [.systemOrange, .systemYellow, UIColor(white: 0.9, alpha: 1)]
+                return [ColorSystem.primaryGreen, UIColor(white: 0.72, alpha: 1), UIColor(white: 0.9, alpha: 1)]
             case .medium:
                 return [UIColor(white: 0.95, alpha: 1), UIColor(white: 0.85, alpha: 1), .systemGray4]
             case .large:
-                return [ColorSystem.primaryBlue, ColorSystem.primaryGreen, .systemYellow, .systemPink, .white]
+                return [ColorSystem.primaryBlue, ColorSystem.primaryGreen, UIColor(white: 0.6, alpha: 1), UIColor(white: 0.82, alpha: 1), .white]
             }
         }
 

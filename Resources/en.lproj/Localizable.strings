@@ -303,10 +303,10 @@
 "textpath.draw" = "Draw";
 
 // Background
-"background.gradient.blue" = "Blue Gradient";
-"background.gradient.purple" = "Purple Gradient";
-"background.gradient.orange" = "Orange Gradient";
-"background.gradient.green" = "Green Gradient";
+"background.gradient.blue" = "Ink Gradient";
+"background.gradient.purple" = "Charcoal Gradient";
+"background.gradient.orange" = "Silver Gradient";
+"background.gradient.green" = "Stone Gradient";
 "background.dark" = "Dark";
 "background.minimal" = "Minimal";
 "background.random" = "Random";

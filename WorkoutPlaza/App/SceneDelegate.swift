@@ -21,10 +21,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // Use Tab Bar Controller as root
         let tabBarController = MainTabBarController()
-        tabBarController.suppressInitialWalkthrough = connectionOptions.urlContexts.isEmpty == false
+        tabBarController.suppressInitialWalkthrough = connectionOptions.urlContexts.isEmpty == false || AppShowcaseManager.isEnabled
         window?.rootViewController = tabBarController
 
         window?.makeKeyAndVisible()
+
+        if AppShowcaseManager.isEnabled {
+            AppShowcaseManager.configure(window: window)
+        }
 
         // Handle URL if app was launched with one
         if let urlContext = connectionOptions.urlContexts.first {

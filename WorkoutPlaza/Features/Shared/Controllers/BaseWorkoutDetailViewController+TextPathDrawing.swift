@@ -297,7 +297,7 @@ extension BaseWorkoutDetailViewController {
         
         // Highlight source button
         resetTextPathMainButtonsState()
-        sourceButton.layer.borderColor = UIColor.systemYellow.cgColor
+        sourceButton.layer.borderColor = ColorSystem.mainText.withAlphaComponent(0.4).cgColor
         
         // Remake constraints: Center horizontally with padding, bottom to button top
         panel.snp.remakeConstraints { make in
@@ -319,10 +319,7 @@ extension BaseWorkoutDetailViewController {
 
     @objc func textPathColorButtonTapped(_ sender: UIButton) {
         textPathSelectedColorIndex = sender.tag
-        let availableColors: [UIColor] = [
-            .white, .systemYellow, .systemOrange, .systemPink,
-            .systemRed, .systemGreen, .systemBlue, .systemPurple
-        ]
+        let availableColors = ColorSystem.monochromePalette
         textPathSelectedColor = availableColors[sender.tag]
         UIView.animate(withDuration: 0.2) {
             self.updateTextPathColorSelection()

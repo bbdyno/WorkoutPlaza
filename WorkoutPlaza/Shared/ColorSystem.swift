@@ -8,44 +8,45 @@
 import UIKit
 
 /// 블랙 & 화이트 기반 모노크롬 디자인 시스템
-/// 스포츠별 액센트 컬러(Blue/Green)로 포인트를 주는 미니멀 컬러 시스템
+/// 흑백과 그레이 톤으로 깊이만 만들고, 운동 타입은 명도 차이로만 구분한다.
 enum ColorSystem {
 
-    private static let blue = UIColor(hex: "#1459F5") ?? .systemBlue
-    private static let blueStrong = UIColor(hex: "#0E3BB8") ?? .systemBlue
-    private static let mint = UIColor(hex: "#13BFA0") ?? .systemTeal
-    private static let bg = UIColor(hex: "#F4F7FB") ?? .systemBackground
-    private static let bgAccent = UIColor(hex: "#DBE8FF") ?? .secondarySystemBackground
+    private static let ink = UIColor(hex: "#111111") ?? .black
+    private static let charcoal = UIColor(hex: "#343434") ?? .darkGray
+    private static let graphite = UIColor(hex: "#5E5E5A") ?? .systemGray
+    private static let stone = UIColor(hex: "#A6A69D") ?? .lightGray
+    private static let bg = UIColor(hex: "#F5F4EF") ?? .systemBackground
+    private static let bgAccent = UIColor(hex: "#ECEBE5") ?? .secondarySystemBackground
     private static let surface = UIColor.white
-    private static let surfaceSoft = UIColor(hex: "#ECF2FF") ?? .secondarySystemBackground
-    private static let text = UIColor(hex: "#0F172A") ?? .label
-    private static let textSoft = UIColor(hex: "#516077") ?? .secondaryLabel
-    private static let line = UIColor(hex: "#D7E2F1") ?? .separator
-    private static let danger = UIColor(hex: "#E35D6A") ?? .systemRed
-    private static let warn = UIColor(hex: "#F59E0B") ?? .systemOrange
+    private static let surfaceSoft = UIColor(hex: "#EFEDE7") ?? .secondarySystemBackground
+    private static let text = UIColor(hex: "#111111") ?? .label
+    private static let textSoft = UIColor(hex: "#6A6963") ?? .secondaryLabel
+    private static let line = UIColor(hex: "#D9D7CF") ?? .separator
+    private static let danger = UIColor(hex: "#B24C4C") ?? .systemRed
+    private static let warn = UIColor(hex: "#7A7972") ?? .systemGray
 
     // MARK: - Core Brand Colors
 
-    /// Primary Blue (Running): 청량하고 에너지 넘치는 블루
+    /// Running Accent: 잉크 블랙
     static var primaryBlue: UIColor {
-        blue
+        ink
     }
 
-    /// Primary Green (Climbing): 성취감과 자연을 상징하는 민트 그린
+    /// Climbing Accent: 차콜 그레이
     static var primaryGreen: UIColor {
-        mint
+        charcoal
     }
 
     // MARK: - Common Control Tint
 
-    /// 공통 컨트롤 틴트: 블랙 (라이트) / 화이트 (다크)
+    /// 공통 컨트롤 틴트: 잉크 블랙
     static var controlTint: UIColor {
-        blueStrong
+        ink
     }
 
     // MARK: - Interface & Typography
 
-    /// Background: 순백 (라이트) / 순흑 (다크)
+    /// Background: 따뜻한 오프화이트
     static var background: UIColor {
         bg
     }
@@ -69,7 +70,7 @@ enum ColorSystem {
         line
     }
 
-    /// Card Background: 연한 그레이 #F5F5F5 (라이트) / 진한 그레이 #1A1A1A (다크)
+    /// Card Background: 순백
     static var cardBackground: UIColor {
         surface
     }
@@ -95,19 +96,18 @@ enum ColorSystem {
     static let standardShadow = UIColor.black.withAlphaComponent(0.1)
 
     static var frostedFill: UIColor {
-        UIColor.white.withAlphaComponent(0.72)
+        UIColor.white.withAlphaComponent(0.78)
     }
 
     // MARK: - Gradient
 
-    /// Brand Gradient Layer: 135도 그라데이션 (Blue → Green)
-    /// - Returns: 앱의 상징적인 그라데이션 레이어
+    /// Brand Gradient Layer: 잉크 블랙에서 실버 그레이로 이어지는 모노톤 그라데이션
     static func brandGradientLayer() -> CAGradientLayer {
         let gradientLayer = CAGradientLayer()
         gradientLayer.colors = [
             primaryBlue.cgColor,
-            blueStrong.cgColor,
-            primaryGreen.cgColor
+            primaryGreen.cgColor,
+            stone.cgColor
         ]
         gradientLayer.startPoint = CGPoint(x: 0, y: 0.1)
         gradientLayer.endPoint = CGPoint(x: 1, y: 1)
@@ -116,7 +116,20 @@ enum ColorSystem {
 
     /// Brand Gradient Colors: UIColor 배열로 반환
     static var brandGradientColors: [UIColor] {
-        return [primaryBlue, primaryGreen]
+        [primaryBlue, primaryGreen, stone]
+    }
+
+    static var monochromePalette: [UIColor] {
+        [
+            .white,
+            primaryBlue,
+            UIColor(white: 0.18, alpha: 1),
+            UIColor(white: 0.32, alpha: 1),
+            UIColor(white: 0.48, alpha: 1),
+            UIColor(white: 0.64, alpha: 1),
+            UIColor(white: 0.78, alpha: 1),
+            UIColor(white: 0.9, alpha: 1)
+        ]
     }
 
     // MARK: - Sport Type Colors
@@ -135,27 +148,27 @@ enum ColorSystem {
 
     // MARK: - Handle Colors
 
-    /// Rotation Handle: 회전 핸들용 블루
+    /// Rotation Handle: 회전 핸들용 블랙
     static let rotationHandle = primaryBlue
 
-    /// Resize Handle: 크기조절 핸들용 그린
+    /// Resize Handle: 크기조절 핸들용 차콜
     static let resizeHandle = primaryGreen
 
     // MARK: - Sample Route Colors (위젯 미리보기용)
 
-    /// 샘플 루트 빨강: 높은 난이도
+    /// 샘플 루트 진한 톤
     static var sampleRouteRed: UIColor {
-        UIColor(hex: "#E55B5B") ?? .systemRed
+        primaryBlue
     }
 
-    /// 샘플 루트 주황: 중간 난이도
+    /// 샘플 루트 중간 톤
     static var sampleRouteOrange: UIColor {
-        UIColor(hex: "#FF9B45") ?? .systemOrange
+        primaryGreen
     }
 
-    /// 샘플 루트 초록: 낮은 난이도
+    /// 샘플 루트 밝은 톤
     static var sampleRouteGreen: UIColor {
-        UIColor(hex: "#7ACB7A") ?? .systemGreen
+        stone
     }
 
     // MARK: - Semantic Colors
@@ -177,7 +190,7 @@ enum ColorSystem {
 
     /// Info: 정보, 안내
     static var info: UIColor {
-        primaryBlue
+        mainText
     }
 
 }
@@ -360,30 +373,24 @@ enum AppChrome {
     }
 
     static func installAmbientBackground(in view: UIView) {
-        guard view.subviews.contains(where: { $0 is AmbientBackgroundView }) == false else { return }
-
-        let backgroundView = AmbientBackgroundView()
-        view.insertSubview(backgroundView, at: 0)
-        backgroundView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
-            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
+        view.subviews
+            .compactMap { $0 as? AmbientBackgroundView }
+            .forEach { $0.removeFromSuperview() }
     }
 
     static func stylePrimaryButton(_ button: UIButton, cornerRadius: CGFloat = 20) {
         button.layer.cornerRadius = cornerRadius
         button.layer.cornerCurve = .continuous
         button.layer.masksToBounds = false
-        button.backgroundColor = .clear
-        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = ColorSystem.mainText
+        button.layer.borderWidth = 1
+        button.layer.borderColor = ColorSystem.mainText.cgColor
+        button.setTitleColor(ColorSystem.background, for: .normal)
         button.titleLabel?.font = AppFont.bodyBold(16)
-        button.layer.shadowColor = ColorSystem.primaryBlue.withAlphaComponent(0.36).cgColor
+        button.layer.shadowColor = ColorSystem.mainText.withAlphaComponent(0.08).cgColor
         button.layer.shadowOpacity = 1
-        button.layer.shadowOffset = CGSize(width: 0, height: 12)
-        button.layer.shadowRadius = 24
+        button.layer.shadowOffset = CGSize(width: 0, height: 8)
+        button.layer.shadowRadius = 18
     }
 
     static func applyPrimaryGradient(to view: UIView, cornerRadius: CGFloat) {
@@ -391,19 +398,8 @@ enum AppChrome {
         view.layer.sublayers?
             .filter { $0.name == layerName }
             .forEach { $0.removeFromSuperlayer() }
-
-        let gradient = CAGradientLayer()
-        gradient.name = layerName
-        gradient.frame = view.bounds
-        gradient.cornerRadius = cornerRadius
-        gradient.colors = [
-            ColorSystem.primaryBlue.cgColor,
-            ColorSystem.primaryBlue.withAlphaComponent(0.92).cgColor,
-            ColorSystem.primaryGreen.cgColor
-        ]
-        gradient.startPoint = CGPoint(x: 0, y: 0.1)
-        gradient.endPoint = CGPoint(x: 1, y: 1)
-        view.layer.insertSublayer(gradient, at: 0)
+        view.layer.cornerRadius = cornerRadius
+        view.backgroundColor = ColorSystem.mainText
     }
 }
 
@@ -426,8 +422,8 @@ final class AmbientBackgroundView: UIView {
         topOrb.addSubview(topBlur)
         bottomOrb.addSubview(bottomBlur)
 
-        topOrb.backgroundColor = ColorSystem.primaryBlue.withAlphaComponent(0.18)
-        bottomOrb.backgroundColor = ColorSystem.primaryGreen.withAlphaComponent(0.16)
+        topOrb.backgroundColor = ColorSystem.mainText.withAlphaComponent(0.08)
+        bottomOrb.backgroundColor = ColorSystem.primaryGreen.withAlphaComponent(0.12)
         topOrb.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
         bottomOrb.transform = CGAffineTransform(scaleX: 0.92, y: 0.92)
     }
@@ -441,7 +437,7 @@ final class AmbientBackgroundView: UIView {
         gradientLayer.colors = [
             ColorSystem.backgroundAccent.cgColor,
             ColorSystem.background.cgColor,
-            UIColor.white.cgColor
+            ColorSystem.cardBackground.cgColor
         ]
         gradientLayer.startPoint = CGPoint(x: 0.08, y: 0)
         gradientLayer.endPoint = CGPoint(x: 0.92, y: 1)

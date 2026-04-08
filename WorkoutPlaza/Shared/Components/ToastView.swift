@@ -89,8 +89,8 @@ final class ToastView: UIView {
 
     private func overlayColor(for style: Style) -> UIColor {
         switch style {
-        case .success: return UIColor.systemGreen.withAlphaComponent(0.15)
-        case .error: return UIColor.systemRed.withAlphaComponent(0.15)
+        case .success: return ColorSystem.primaryGreen.withAlphaComponent(0.18)
+        case .error: return ColorSystem.error.withAlphaComponent(0.18)
         case .info: return UIColor.white.withAlphaComponent(0.05)
         }
     }

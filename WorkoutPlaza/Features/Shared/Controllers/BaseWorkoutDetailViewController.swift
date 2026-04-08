@@ -33,9 +33,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     enum Constants {
         static let canvasBackgroundColor = UIColor.white
         static let canvasBorderColor = ColorSystem.divider.cgColor
-        static let centerGuideColor = UIColor.systemYellow.withAlphaComponent(0.5)
+        static let centerGuideColor = ColorSystem.mainText.withAlphaComponent(0.18)
         static let centerGuideThickness: CGFloat = 1
-        static let alignGuideColor = UIColor.systemCyan.withAlphaComponent(0.7)
+        static let alignGuideColor = ColorSystem.primaryGreen.withAlphaComponent(0.35)
         static let centerSnapThreshold: CGFloat = 10
         static let centerGuideDisplayDuration: TimeInterval = 0.7
 
@@ -1280,12 +1280,12 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Background.options, message: nil, preferredStyle: .actionSheet)
 
         let templates: [(name: String, style: BackgroundTemplateView.TemplateStyle, colors: [UIColor])] = [
-            (WorkoutPlazaStrings.Background.Gradient.blue, .gradient1, [UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0), UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)]),
-            (WorkoutPlazaStrings.Background.Gradient.purple, .gradient2, [UIColor(red: 0.5, green: 0.2, blue: 0.8, alpha: 1.0), UIColor(red: 0.8, green: 0.3, blue: 0.9, alpha: 1.0)]),
-            (WorkoutPlazaStrings.Background.Gradient.orange, .gradient3, [UIColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1.0), UIColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)]),
-            (WorkoutPlazaStrings.Background.Gradient.green, .gradient4, [UIColor(red: 0.2, green: 0.7, blue: 0.5, alpha: 1.0), UIColor(red: 0.4, green: 0.9, blue: 0.6, alpha: 1.0)]),
-            (WorkoutPlazaStrings.Background.dark, .dark, [UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0), UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)]),
-            (WorkoutPlazaStrings.Background.minimal, .minimal, [.white])
+            (WorkoutPlazaStrings.Background.Gradient.blue, .gradient1, BackgroundTemplateView.defaultColors(for: .gradient1)),
+            (WorkoutPlazaStrings.Background.Gradient.purple, .gradient2, BackgroundTemplateView.defaultColors(for: .gradient2)),
+            (WorkoutPlazaStrings.Background.Gradient.orange, .gradient3, BackgroundTemplateView.defaultColors(for: .gradient3)),
+            (WorkoutPlazaStrings.Background.Gradient.green, .gradient4, BackgroundTemplateView.defaultColors(for: .gradient4)),
+            (WorkoutPlazaStrings.Background.dark, .dark, BackgroundTemplateView.defaultColors(for: .dark)),
+            (WorkoutPlazaStrings.Background.minimal, .minimal, BackgroundTemplateView.defaultColors(for: .minimal))
         ]
 
         for template in templates {

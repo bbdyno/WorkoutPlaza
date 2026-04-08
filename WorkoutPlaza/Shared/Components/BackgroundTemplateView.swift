@@ -10,10 +10,10 @@ import UIKit
 class BackgroundTemplateView: UIView {
     
     enum TemplateStyle: String, CaseIterable {
-        case gradient1  // 브랜드 그라데이션 (Blue → Green)
-        case gradient2  // 퍼플 그라데이션
-        case gradient3  // 오렌지 그라데이션
-        case gradient4  // 그린 그라데이션
+        case gradient1  // 브랜드 모노톤 그라데이션
+        case gradient2  // 딥 차콜 그라데이션
+        case gradient3  // 라이트 실버 그라데이션
+        case gradient4  // 스톤 그라데이션
         case minimal    // 미니멀 화이트
         case dark       // 다크 모드
         case custom     // 커스텀 그라데이션
@@ -43,6 +43,39 @@ class BackgroundTemplateView: UIView {
         super.layoutSubviews()
         gradientLayer.frame = bounds
     }
+
+    static func defaultColors(for style: TemplateStyle) -> [UIColor] {
+        switch style {
+        case .gradient1:
+            return ColorSystem.brandGradientColors
+        case .gradient2:
+            return [
+                UIColor(hex: "#161616") ?? .black,
+                UIColor(hex: "#3A3A3A") ?? .darkGray,
+                UIColor(hex: "#6B6B6B") ?? .gray
+            ]
+        case .gradient3:
+            return [
+                UIColor(hex: "#D8D8D3") ?? .lightGray,
+                UIColor(hex: "#F1F0EA") ?? .white
+            ]
+        case .gradient4:
+            return [
+                UIColor(hex: "#6A6963") ?? .gray,
+                UIColor(hex: "#A9A89F") ?? .lightGray,
+                UIColor(hex: "#DDDDD5") ?? .white
+            ]
+        case .minimal:
+            return [ColorSystem.background]
+        case .dark:
+            return [
+                UIColor(hex: "#101010") ?? .black,
+                UIColor(hex: "#222222") ?? .darkGray
+            ]
+        case .custom:
+            return []
+        }
+    }
     
     func applyTemplate(_ style: TemplateStyle) {
         currentStyle = style
@@ -50,37 +83,28 @@ class BackgroundTemplateView: UIView {
         switch style {
         case .gradient1:
             applyGradient(
-                colors: ColorSystem.brandGradientColors,
+                colors: Self.defaultColors(for: .gradient1),
                 startPoint: CGPoint(x: 0, y: 0),
                 endPoint: CGPoint(x: 1, y: 1)
             )
             
         case .gradient2:
             applyGradient(
-                colors: [
-                    UIColor(red: 0.5, green: 0.2, blue: 0.8, alpha: 1.0),
-                    UIColor(red: 0.8, green: 0.3, blue: 0.9, alpha: 1.0)
-                ],
+                colors: Self.defaultColors(for: .gradient2),
                 startPoint: CGPoint(x: 0, y: 0),
                 endPoint: CGPoint(x: 1, y: 1)
             )
             
         case .gradient3:
             applyGradient(
-                colors: [
-                    UIColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1.0),
-                    UIColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)
-                ],
+                colors: Self.defaultColors(for: .gradient3),
                 startPoint: CGPoint(x: 0, y: 0),
                 endPoint: CGPoint(x: 1, y: 1)
             )
             
         case .gradient4:
             applyGradient(
-                colors: [
-                    UIColor(red: 0.2, green: 0.7, blue: 0.5, alpha: 1.0),
-                    UIColor(red: 0.4, green: 0.9, blue: 0.6, alpha: 1.0)
-                ],
+                colors: Self.defaultColors(for: .gradient4),
                 startPoint: CGPoint(x: 0, y: 0),
                 endPoint: CGPoint(x: 1, y: 1)
             )
@@ -91,10 +115,7 @@ class BackgroundTemplateView: UIView {
             
         case .dark:
             applyGradient(
-                colors: [
-                    UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0),
-                    UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
-                ],
+                colors: Self.defaultColors(for: .dark),
                 startPoint: CGPoint(x: 0, y: 0),
                 endPoint: CGPoint(x: 1, y: 1)
             )
@@ -142,29 +163,17 @@ class BackgroundTemplateView: UIView {
     func getCurrentColors() -> [UIColor] {
         switch currentStyle {
         case .gradient1:
-            return ColorSystem.brandGradientColors
+            return Self.defaultColors(for: .gradient1)
         case .gradient2:
-            return [
-                UIColor(red: 0.5, green: 0.2, blue: 0.8, alpha: 1.0),
-                UIColor(red: 0.8, green: 0.3, blue: 0.9, alpha: 1.0)
-            ]
+            return Self.defaultColors(for: .gradient2)
         case .gradient3:
-            return [
-                UIColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1.0),
-                UIColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)
-            ]
+            return Self.defaultColors(for: .gradient3)
         case .gradient4:
-            return [
-                UIColor(red: 0.2, green: 0.7, blue: 0.5, alpha: 1.0),
-                UIColor(red: 0.4, green: 0.9, blue: 0.6, alpha: 1.0)
-            ]
+            return Self.defaultColors(for: .gradient4)
         case .minimal:
-            return [.white]
+            return Self.defaultColors(for: .minimal)
         case .dark:
-            return [
-                UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0),
-                UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
-            ]
+            return Self.defaultColors(for: .dark)
         case .custom:
             return customColors ?? []
         }
