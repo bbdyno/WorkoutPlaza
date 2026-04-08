@@ -112,6 +112,11 @@ class RunningListViewController: UIViewController {
         refreshData()
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        AppChrome.applyPrimaryGradient(to: importFloatingButton, cornerRadius: 26)
+    }
+
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
@@ -259,6 +264,7 @@ class RunningListViewController: UIViewController {
     private func setupUI() {
         title = WorkoutPlazaStrings.Running.Record.title
         view.backgroundColor = ColorSystem.background
+        AppChrome.installAmbientBackground(in: view)
         navigationItem.largeTitleDisplayMode = .never
 
         // 닫기 버튼 추가
@@ -289,16 +295,16 @@ class RunningListViewController: UIViewController {
         segmentedControl.addTarget(self, action: #selector(sourceFilterChanged), for: .valueChanged)
 
         segmentedControl.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(12)
             make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(32)
+            make.height.equalTo(36)
         }
 
         view.addSubview(tableView)
         view.addSubview(loadingIndicator)
         view.addSubview(emptyLabel)
 
-        tableView.backgroundColor = ColorSystem.background
+        tableView.backgroundColor = .clear
         tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 80, right: 0)
 
         tableView.snp.makeConstraints { make in
@@ -323,6 +329,7 @@ class RunningListViewController: UIViewController {
             make.centerX.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-16)
         }
+        AppChrome.stylePrimaryButton(importFloatingButton, cornerRadius: 26)
     }
 
     @objc private func dismissSheet() {
@@ -713,15 +720,17 @@ class WorkoutCell: UITableViewCell {
 
     private let cardContainer: UIView = {
         let view = UIView()
-        view.backgroundColor = ColorSystem.cardBackground
+        view.backgroundColor = ColorSystem.frostedFill
         view.layer.cornerRadius = 20
         view.layer.cornerCurve = .continuous
         view.layer.masksToBounds = false
+        view.layer.borderWidth = 1
+        view.layer.borderColor = ColorSystem.divider.cgColor
 
         // Improved shadow
-        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowColor = ColorSystem.cardShadow.cgColor
         view.layer.shadowOffset = CGSize(width: 0, height: 4)
-        view.layer.shadowOpacity = 0.06
+        view.layer.shadowOpacity = 1
         view.layer.shadowRadius = 16
         view.layer.shouldRasterize = true
         view.layer.rasterizationScale = UIScreen.main.scale
@@ -737,7 +746,7 @@ class WorkoutCell: UITableViewCell {
 
     private let dateLabel: UILabel = {
         let label = UILabel()
-        label.font = AppFont.bodyBold(20)
+        label.font = AppFont.title(20)
         label.textColor = ColorSystem.mainText
         return label
     }()
@@ -751,7 +760,7 @@ class WorkoutCell: UITableViewCell {
 
     private let distanceLabel: UILabel = {
         let label = UILabel()
-        label.font = AppFont.mono(28)
+        label.font = AppFont.display(28)
         label.textColor = ColorSystem.mainText
         return label
     }()

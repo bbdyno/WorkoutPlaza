@@ -12,26 +12,43 @@ import PhotosUI
 
 class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, UIGestureRecognizerDelegate, TextWidgetDelegate, CompositeWidgetDelegate, SpeechBubbleWidgetDelegate, SpeechBubbleEditDelegate, SpeechBubbleStylePickerDelegate {
 
+    enum InlineToastStyle {
+        case info
+        case success
+        case error
+
+        var backgroundColor: UIColor {
+            switch self {
+            case .info:
+                return ColorSystem.toastBackground
+            case .success:
+                return ColorSystem.primaryGreen.withAlphaComponent(0.92)
+            case .error:
+                return ColorSystem.error.withAlphaComponent(0.92)
+            }
+        }
+    }
+
     // MARK: - Constants (Light Mode for Card Design)
     enum Constants {
         static let canvasBackgroundColor = UIColor.white
-        static let canvasBorderColor = UIColor(white: 0.9, alpha: 1.0).cgColor
+        static let canvasBorderColor = ColorSystem.divider.cgColor
         static let centerGuideColor = UIColor.systemYellow.withAlphaComponent(0.5)
         static let centerGuideThickness: CGFloat = 1
         static let alignGuideColor = UIColor.systemCyan.withAlphaComponent(0.7)
         static let centerSnapThreshold: CGFloat = 10
         static let centerGuideDisplayDuration: TimeInterval = 0.7
 
-        static let toolbarBackgroundColor = UIColor.white.withAlphaComponent(0.95)
+        static let toolbarBackgroundColor = ColorSystem.frostedFill
         static let multiSelectToolbarBackgroundColor = UIColor.white.withAlphaComponent(0.98)
-        static let multiSelectBorderColor = ColorSystem.mainText.withAlphaComponent(0.5).cgColor
+        static let multiSelectBorderColor = ColorSystem.divider.cgColor
 
         static let toastBackgroundColor = ColorSystem.toastBackground
 
         static let textPathDrawingToolbarBackgroundColor = UIColor.black.withAlphaComponent(0.85)
         static let textPathDrawingOverlayColor = UIColor.black.withAlphaComponent(0.2)
 
-        static let dimOverlayColor = UIColor.black.withAlphaComponent(0.3)
+        static let dimOverlayColor = ColorSystem.mainText.withAlphaComponent(0.18)
 
         static let defaultBackgroundColor = UIColor.white
         
@@ -197,8 +214,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     lazy var instructionLabel: UILabel = {
         let label = UILabel()
         label.text = NSLocalizedString("ui.drag.widgets.instruction", comment: "")
-        label.textColor = .lightGray
-        label.font = .systemFont(ofSize: 14)
+        label.textColor = ColorSystem.subText
+        label.font = AppFont.body(14)
         label.textAlignment = .center
         label.numberOfLines = 0
         return label
@@ -227,10 +244,12 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         let view = UIView()
         view.backgroundColor = Constants.toolbarBackgroundColor
         view.layer.cornerRadius = 30
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = 0.3
-        view.layer.shadowOffset = CGSize(width: 0, height: 4)
-        view.layer.shadowRadius = 8
+        view.layer.borderWidth = 1
+        view.layer.borderColor = ColorSystem.divider.cgColor
+        view.layer.shadowColor = ColorSystem.cardShadow.cgColor
+        view.layer.shadowOpacity = 1
+        view.layer.shadowOffset = CGSize(width: 0, height: 10)
+        view.layer.shadowRadius = 20
         view.isHidden = true // Initially hidden
         return view
     }()
@@ -241,10 +260,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         view.layer.cornerRadius = 25
         view.layer.borderWidth = 1
         view.layer.borderColor = Constants.multiSelectBorderColor
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = 0.3
-        view.layer.shadowOffset = CGSize(width: 0, height: 4)
-        view.layer.shadowRadius = 8
+        view.layer.shadowColor = ColorSystem.cardShadow.cgColor
+        view.layer.shadowOpacity = 1
+        view.layer.shadowOffset = CGSize(width: 0, height: 10)
+        view.layer.shadowRadius = 20
         view.isHidden = true
         return view
     }()
@@ -421,14 +440,20 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         originalScrollEdgeAppearance = navigationController?.navigationBar.scrollEdgeAppearance
         originalTintColor = navigationController?.navigationBar.tintColor
 
-        // Configure navigation bar to match the white background
+        // Configure navigation bar to match the lighter editing chrome
         let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = ColorSystem.background.withAlphaComponent(0.88)
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialLight)
         appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [
+            .foregroundColor: ColorSystem.mainText,
+            .font: AppFont.bodyBold(17)
+        ]
 
         navigationController?.navigationBar.standardAppearance = appearance
         navigationController?.navigationBar.scrollEdgeAppearance = appearance
-        navigationController?.navigationBar.tintColor = ColorSystem.mainText
+        navigationController?.navigationBar.tintColor = ColorSystem.primaryBlue
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -460,6 +485,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     func setupUI() {
         view.backgroundColor = ColorSystem.background
+        AppChrome.installAmbientBackground(in: view)
         navigationItem.largeTitleDisplayMode = .never
         
         setupNavigationButtons()

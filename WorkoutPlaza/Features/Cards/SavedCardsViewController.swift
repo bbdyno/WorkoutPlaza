@@ -23,7 +23,7 @@ class SavedCardsViewController: UIViewController {
         layout.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
 
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.backgroundColor = .systemBackground
+        cv.backgroundColor = .clear
         cv.register(CardCell.self, forCellWithReuseIdentifier: "CardCell")
         cv.dataSource = self
         cv.delegate = self
@@ -34,7 +34,7 @@ class SavedCardsViewController: UIViewController {
         let label = UILabel()
         label.text = WorkoutPlazaStrings.Saved.Cards.Empty.message
         label.font = AppFont.body(16)
-        label.textColor = .secondaryLabel
+        label.textColor = ColorSystem.subText
         label.textAlignment = .center
         label.numberOfLines = 0
         label.isHidden = true
@@ -56,7 +56,8 @@ class SavedCardsViewController: UIViewController {
     // MARK: - Setup
 
     private func setupUI() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = ColorSystem.background
+        AppChrome.installAmbientBackground(in: view)
         title = WorkoutPlazaStrings.More.Saved.cards
 
         navigationItem.largeTitleDisplayMode = .never
@@ -151,14 +152,14 @@ private class CardCell: UICollectionViewCell {
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
         iv.layer.cornerRadius = Constants.thumbnailCornerRadius
-        iv.backgroundColor = .secondarySystemBackground
+        iv.backgroundColor = ColorSystem.cardBackgroundHighlight
         return iv
     }()
 
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.font = AppFont.bodySemiBold(13)
-        label.textColor = .label
+        label.textColor = ColorSystem.mainText
         label.numberOfLines = 1
         return label
     }()
@@ -166,14 +167,14 @@ private class CardCell: UICollectionViewCell {
     private let dateLabel: UILabel = {
         let label = UILabel()
         label.font = AppFont.body(11)
-        label.textColor = .secondaryLabel
+        label.textColor = ColorSystem.subText
         return label
     }()
 
     private let sportTypeIcon: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFit
-        iv.tintColor = .secondaryLabel
+        iv.tintColor = ColorSystem.subText
         return iv
     }()
 
@@ -187,6 +188,11 @@ private class CardCell: UICollectionViewCell {
     }
 
     private func setupUI() {
+        contentView.backgroundColor = ColorSystem.frostedFill
+        contentView.layer.cornerRadius = 18
+        contentView.layer.cornerCurve = .continuous
+        contentView.layer.borderWidth = 1
+        contentView.layer.borderColor = ColorSystem.divider.cgColor
         contentView.addSubview(thumbnailImageView)
         contentView.addSubview(sportTypeIcon)
         contentView.addSubview(titleLabel)

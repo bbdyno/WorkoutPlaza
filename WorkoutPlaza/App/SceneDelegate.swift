@@ -16,23 +16,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
         window = UIWindow(windowScene: windowScene)
-        window?.overrideUserInterfaceStyle = .dark
-
-        // Global navigation bar font
-        let navAppearance = UINavigationBarAppearance()
-        navAppearance.configureWithOpaqueBackground()
-        navAppearance.backgroundColor = ColorSystem.background
-        navAppearance.titleTextAttributes = [
-            .foregroundColor: ColorSystem.mainText,
-            .font: AppFont.bodyBold(17)
-        ]
-        navAppearance.largeTitleTextAttributes = [
-            .foregroundColor: ColorSystem.mainText,
-            .font: AppFont.bodyBold(34)
-        ]
-        UINavigationBar.appearance().standardAppearance = navAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
-        UINavigationBar.appearance().tintColor = ColorSystem.mainText
+        window?.overrideUserInterfaceStyle = .light
+        AppChrome.installGlobalAppearance()
 
         // Use Tab Bar Controller as root
         let tabBarController = MainTabBarController()

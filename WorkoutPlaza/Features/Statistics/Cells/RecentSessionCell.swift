@@ -19,22 +19,24 @@ class RecentSessionCell: UICollectionViewCell {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = ColorSystem.cardBackground
+        contentView.backgroundColor = ColorSystem.frostedFill
         contentView.layer.cornerRadius = 16
         contentView.layer.cornerCurve = .continuous
+        contentView.layer.borderWidth = 1
+        contentView.layer.borderColor = ColorSystem.divider.cgColor
 
         iconContainer.layer.cornerRadius = 20
         iconContainer.addSubview(iconImageView)
         iconImageView.contentMode = .scaleAspectFit
         iconImageView.tintColor = .white
 
-        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        titleLabel.font = AppFont.title(16)
         titleLabel.textColor = ColorSystem.mainText
 
-        subtitleLabel.font = .systemFont(ofSize: 14)
+        subtitleLabel.font = AppFont.body(14)
         subtitleLabel.textColor = ColorSystem.subText
 
-        dateLabel.font = .systemFont(ofSize: 12)
+        dateLabel.font = AppFont.micro(11)
         dateLabel.textColor = ColorSystem.subText
 
         let textStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])

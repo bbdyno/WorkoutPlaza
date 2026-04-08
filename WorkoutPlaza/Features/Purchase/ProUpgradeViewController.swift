@@ -40,7 +40,7 @@ final class ProUpgradeViewController: UIViewController {
     private let titleLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "Lifetime Pro"
-        lbl.font = AppFont.bodyBold(28)
+        lbl.font = AppFont.display(30)
         lbl.textAlignment = .center
         lbl.textColor = ColorSystem.mainText
         return lbl
@@ -58,8 +58,10 @@ final class ProUpgradeViewController: UIViewController {
 
     private let featuresCard: UIView = {
         let v = UIView()
-        v.backgroundColor = .secondarySystemGroupedBackground
+        v.backgroundColor = ColorSystem.frostedFill
         v.layer.cornerRadius = 20
+        v.layer.borderWidth = 1
+        v.layer.borderColor = ColorSystem.divider.cgColor
         return v
     }()
 
@@ -119,6 +121,7 @@ final class ProUpgradeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = ColorSystem.background
+        AppChrome.installAmbientBackground(in: view)
         title = "Pro"
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .close,
@@ -127,8 +130,13 @@ final class ProUpgradeViewController: UIViewController {
         )
 
         setupLayout()
-        applyGradientToBuyButton()
+        AppChrome.stylePrimaryButton(buyButton, cornerRadius: 24)
         loadProductPrice()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        AppChrome.applyPrimaryGradient(to: buyButton, cornerRadius: 24)
     }
 
     // MARK: - Layout
@@ -241,18 +249,6 @@ final class ProUpgradeViewController: UIViewController {
         return row
     }
 
-    private func applyGradientToBuyButton() {
-        let gradient = CAGradientLayer()
-        gradient.colors = [ColorSystem.mainText.cgColor, ColorSystem.mainText.cgColor]
-        gradient.startPoint = CGPoint(x: 0, y: 0.5)
-        gradient.endPoint   = CGPoint(x: 1, y: 0.5)
-        gradient.cornerRadius = 24
-
-        buyButton.layoutIfNeeded()
-        gradient.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width - 40, height: 56)
-        buyButton.layer.insertSublayer(gradient, at: 0)
-    }
-
     private func loadProductPrice() {
         Task {
             if PurchaseManager.shared.products.isEmpty {
@@ -338,6 +334,34 @@ final class ProUpgradeViewController: UIViewController {
     }
 
     private func showToast(_ message: String) {
-        ToastView.show(in: view, message: message, style: .info)
+        let label = UILabel()
+        label.text = message
+        label.font = AppFont.bodySemiBold(13)
+        label.textColor = .white
+        label.backgroundColor = ColorSystem.toastBackground
+        label.textAlignment = .center
+        label.layer.cornerRadius = 14
+        label.layer.masksToBounds = true
+        label.alpha = 0
+
+        view.addSubview(label)
+        label.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+            make.leading.greaterThanOrEqualToSuperview().offset(24)
+            make.trailing.lessThanOrEqualToSuperview().offset(-24)
+        }
+
+        UIView.animate(withDuration: 0.2) {
+            label.alpha = 1
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            UIView.animate(withDuration: 0.2, animations: {
+                label.alpha = 0
+            }, completion: { _ in
+                label.removeFromSuperview()
+            })
+        }
     }
 }

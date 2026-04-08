@@ -68,10 +68,12 @@ class StatisticsViewController: UIViewController {
 
     private func setupUI() {
         view.backgroundColor = ColorSystem.background
+        AppChrome.installAmbientBackground(in: view)
         navigationController?.navigationBar.prefersLargeTitles = false
         title = WorkoutPlazaStrings.Statistics.title
 
         view.addSubview(collectionView)
+        collectionView.contentInset = UIEdgeInsets(top: 4, left: 0, bottom: 24, right: 0)
 
         collectionView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)

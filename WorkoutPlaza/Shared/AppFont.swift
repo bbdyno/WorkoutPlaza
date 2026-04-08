@@ -10,6 +10,17 @@ import UIKit
 
 enum AppFont {
 
+    static func display(_ size: CGFloat) -> UIFont {
+        UIFont(name: "PaytoneOne-Regular", size: size)
+            ?? UIFont(name: "Montserrat-Bold", size: size)
+            ?? .systemFont(ofSize: size, weight: .heavy)
+    }
+
+    static func title(_ size: CGFloat) -> UIFont {
+        UIFont(name: "Montserrat-Bold", size: size)
+            ?? .systemFont(ofSize: size, weight: .bold)
+    }
+
     // MARK: - Body (Pretendard)
 
     static func body(_ size: CGFloat) -> UIFont {
@@ -54,5 +65,10 @@ enum AppFont {
     static func monoRegular(_ size: CGFloat) -> UIFont {
         UIFont(name: "Montserrat-Regular", size: size)
             ?? .monospacedDigitSystemFont(ofSize: size, weight: .regular)
+    }
+
+    static func micro(_ size: CGFloat) -> UIFont {
+        UIFont(name: "SpaceMono-Regular", size: size)
+            ?? .monospacedSystemFont(ofSize: size, weight: .regular)
     }
 }

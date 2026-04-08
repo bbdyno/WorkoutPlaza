@@ -171,13 +171,15 @@ class MoreViewController: UIViewController {
 
     private func setupUI() {
         view.backgroundColor = ColorSystem.background
+        AppChrome.installAmbientBackground(in: view)
         navigationController?.navigationBar.prefersLargeTitles = false
         title = WorkoutPlazaStrings.Tab.more
 
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.backgroundColor = ColorSystem.background
+        tableView.backgroundColor = .clear
         tableView.separatorColor = ColorSystem.divider
+        tableView.sectionHeaderTopPadding = 8
 
         view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
@@ -484,7 +486,43 @@ class MoreViewController: UIViewController {
     }
 
     private func showToast(_ message: String) {
-        ToastView.show(in: view, message: message, style: .info)
+        activeToastLabel?.removeFromSuperview()
+
+        let label = UILabel()
+        label.text = message
+        label.font = AppFont.bodySemiBold(13)
+        label.textColor = .white
+        label.backgroundColor = ColorSystem.toastBackground
+        label.textAlignment = .center
+        label.layer.cornerRadius = 14
+        label.layer.masksToBounds = true
+        label.alpha = 0
+        label.numberOfLines = 0
+
+        view.addSubview(label)
+        label.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
+            make.leading.greaterThanOrEqualToSuperview().offset(24)
+            make.trailing.lessThanOrEqualToSuperview().offset(-24)
+        }
+
+        activeToastLabel = label
+        UIView.animate(withDuration: 0.2) {
+            label.alpha = 1
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self, weak label] in
+            guard let label else { return }
+            UIView.animate(withDuration: 0.2, animations: {
+                label.alpha = 0
+            }, completion: { _ in
+                label.removeFromSuperview()
+                if self?.activeToastLabel === label {
+                    self?.activeToastLabel = nil
+                }
+            })
+        }
     }
 }
 
@@ -553,7 +591,10 @@ extension MoreViewController: UITableViewDataSource {
         }
 
         cell.contentConfiguration = config
-        cell.backgroundColor = .secondarySystemGroupedBackground
+        cell.backgroundColor = ColorSystem.frostedFill
+        cell.layer.cornerRadius = 16
+        cell.layer.cornerCurve = .continuous
+        cell.layer.masksToBounds = true
         return cell
     }
 }
@@ -578,7 +619,10 @@ private final class TipProductCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .secondarySystemGroupedBackground
+        backgroundColor = ColorSystem.frostedFill
+        layer.cornerRadius = 16
+        layer.cornerCurve = .continuous
+        layer.masksToBounds = true
 
         iconLabel.font  = AppFont.body(22)
         iconLabel.textAlignment = .center

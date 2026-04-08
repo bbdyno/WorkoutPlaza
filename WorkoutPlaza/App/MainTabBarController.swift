@@ -63,12 +63,22 @@ class MainTabBarController: UITabBarController {
 
     private func setupAppearance() {
         let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = ColorSystem.background
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = ColorSystem.background.withAlphaComponent(0.84)
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialLight)
+        appearance.shadowColor = .clear
 
         let itemAppearance = UITabBarItemAppearance()
-        itemAppearance.normal.titleTextAttributes = [.font: AppFont.bodySemiBold(10)]
-        itemAppearance.selected.titleTextAttributes = [.font: AppFont.bodyBold(10)]
+        itemAppearance.normal.titleTextAttributes = [
+            .font: AppFont.micro(10),
+            .foregroundColor: ColorSystem.subText
+        ]
+        itemAppearance.selected.titleTextAttributes = [
+            .font: AppFont.bodyBold(10),
+            .foregroundColor: ColorSystem.primaryBlue
+        ]
+        itemAppearance.normal.iconColor = ColorSystem.subText
+        itemAppearance.selected.iconColor = ColorSystem.primaryBlue
         appearance.stackedLayoutAppearance = itemAppearance
 
         tabBar.standardAppearance = appearance
@@ -76,8 +86,11 @@ class MainTabBarController: UITabBarController {
             tabBar.scrollEdgeAppearance = appearance
         }
 
-        tabBar.tintColor = ColorSystem.mainText
+        tabBar.tintColor = ColorSystem.primaryBlue
         tabBar.unselectedItemTintColor = ColorSystem.subText
+        tabBar.layer.cornerRadius = 24
+        tabBar.layer.cornerCurve = .continuous
+        tabBar.layer.masksToBounds = true
     }
 
     private func presentInitialWalkthroughIfNeeded() {

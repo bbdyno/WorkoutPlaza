@@ -15,9 +15,11 @@ class CalendarCell: UICollectionViewCell {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = ColorSystem.cardBackground
+        contentView.backgroundColor = ColorSystem.frostedFill
         contentView.layer.cornerRadius = 16
         contentView.layer.cornerCurve = .continuous
+        contentView.layer.borderWidth = 1
+        contentView.layer.borderColor = ColorSystem.divider.cgColor
 
         contentView.addSubview(calendarView)
         calendarView.snp.makeConstraints { make in

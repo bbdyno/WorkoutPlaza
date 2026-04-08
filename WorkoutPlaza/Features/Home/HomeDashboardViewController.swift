@@ -150,15 +150,18 @@ class HomeDashboardViewController: UIViewController {
         logoMaskImageView.frame = logoContainerView.bounds
         subtitleGradientLayer.frame = subtitleContainerView.bounds
         subtitleLabel.frame = subtitleContainerView.bounds
+        AppChrome.applyPrimaryGradient(to: addWorkoutButton, cornerRadius: 28)
     }
 
     // MARK: - Setup
 
     private func setupUI() {
         view.backgroundColor = ColorSystem.background
+        AppChrome.installAmbientBackground(in: view)
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentStackView)
+        scrollView.backgroundColor = .clear
 
         scrollView.snp.makeConstraints { make in
             make.edges.equalTo(view.safeAreaLayoutGuide)
@@ -171,6 +174,11 @@ class HomeDashboardViewController: UIViewController {
 
         // Header Section
         let headerContainer = UIView()
+        let eyebrowLabel = UILabel()
+        eyebrowLabel.text = "PERSONAL WORKOUT POSTER"
+        eyebrowLabel.font = AppFont.micro(12)
+        eyebrowLabel.textColor = ColorSystem.primaryBlue
+        eyebrowLabel.textAlignment = .center
 
         logoContainerView.layer.addSublayer(logoGradientLayer)
         logoContainerView.mask = logoMaskImageView
@@ -178,14 +186,20 @@ class HomeDashboardViewController: UIViewController {
         subtitleContainerView.layer.addSublayer(subtitleGradientLayer)
         subtitleContainerView.mask = subtitleLabel
 
+        headerContainer.addSubview(eyebrowLabel)
         headerContainer.addSubview(logoContainerView)
         headerContainer.addSubview(subtitleContainerView)
 
-        logoContainerView.snp.makeConstraints { make in
+        eyebrowLabel.snp.makeConstraints { make in
             make.top.equalToSuperview()
             make.centerX.equalToSuperview()
-            make.height.equalTo(36)
-            make.width.equalTo(150)
+        }
+
+        logoContainerView.snp.makeConstraints { make in
+            make.top.equalTo(eyebrowLabel.snp.bottom).offset(12)
+            make.centerX.equalToSuperview()
+            make.height.equalTo(42)
+            make.width.equalTo(172)
         }
 
         subtitleContainerView.snp.makeConstraints { make in
@@ -199,7 +213,7 @@ class HomeDashboardViewController: UIViewController {
         // Weekly Summary Section
         let weeklySectionLabel = UILabel()
         weeklySectionLabel.text = WorkoutPlazaStrings.Home.This.week
-        weeklySectionLabel.font = AppFont.bodySemiBold(20)
+        weeklySectionLabel.font = AppFont.display(24)
         weeklySectionLabel.textColor = ColorSystem.mainText
 
         contentStackView.addArrangedSubview(weeklySectionLabel)
@@ -217,7 +231,7 @@ class HomeDashboardViewController: UIViewController {
 
         let sectionLabel = UILabel()
         sectionLabel.text = WorkoutPlazaStrings.Home.Recent.records
-        sectionLabel.font = AppFont.bodySemiBold(20)
+        sectionLabel.font = AppFont.display(24)
         sectionLabel.textColor = ColorSystem.mainText
 
         sectionHeaderView.addSubview(sectionLabel)
@@ -242,12 +256,20 @@ class HomeDashboardViewController: UIViewController {
             make.height.equalTo(56)
         }
         addWorkoutButton.addTarget(self, action: #selector(addWorkoutTapped), for: .touchUpInside)
+        AppChrome.stylePrimaryButton(addWorkoutButton, cornerRadius: 28)
 
         contentStackView.addArrangedSubview(addWorkoutButton)
         contentStackView.setCustomSpacing(20, after: recordsStackView)
     }
 
     private func setupWeeklySummaryCards() {
+        [runningWeeklyCard, climbingWeeklyCard].forEach {
+            $0.backgroundColor = ColorSystem.frostedFill
+            $0.layer.borderWidth = 1
+            $0.layer.borderColor = ColorSystem.divider.cgColor
+            $0.layer.applyCardShadow()
+        }
+
         // Running Card
         let runningHeader = UIStackView()
         runningHeader.axis = .horizontal
@@ -262,13 +284,13 @@ class HomeDashboardViewController: UIViewController {
 
         let runningTitleLabel = UILabel()
         runningTitleLabel.text = WorkoutPlazaStrings.Workout.running
-        runningTitleLabel.font = AppFont.bodySemiBold(13)
-        runningTitleLabel.textColor = ColorSystem.subText
+        runningTitleLabel.font = AppFont.micro(12)
+        runningTitleLabel.textColor = ColorSystem.primaryBlue
 
         runningHeader.addArrangedSubview(runningIcon)
         runningHeader.addArrangedSubview(runningTitleLabel)
 
-        runningWeeklyDistanceLabel.font = AppFont.stat(28)
+        runningWeeklyDistanceLabel.font = AppFont.display(30)
         runningWeeklyDistanceLabel.textColor = ColorSystem.mainText
         runningWeeklyDistanceLabel.text = "0.0 km"
 
@@ -316,13 +338,13 @@ class HomeDashboardViewController: UIViewController {
 
         let climbingTitleLabel = UILabel()
         climbingTitleLabel.text = WorkoutPlazaStrings.Workout.climbing
-        climbingTitleLabel.font = AppFont.bodySemiBold(13)
-        climbingTitleLabel.textColor = ColorSystem.subText
+        climbingTitleLabel.font = AppFont.micro(12)
+        climbingTitleLabel.textColor = ColorSystem.primaryGreen
 
         climbingHeader.addArrangedSubview(climbingIcon)
         climbingHeader.addArrangedSubview(climbingTitleLabel)
 
-        climbingWeeklyRoutesLabel.font = AppFont.stat(22)
+        climbingWeeklyRoutesLabel.font = AppFont.display(24)
         climbingWeeklyRoutesLabel.textColor = ColorSystem.mainText
         climbingWeeklyRoutesLabel.text = WorkoutPlazaStrings.Zero.routes
 
@@ -476,9 +498,11 @@ class HomeDashboardViewController: UIViewController {
 
     private func createPlaceholderView() -> UIView {
         let placeholder = UIView()
-        placeholder.backgroundColor = ColorSystem.cardBackground
+        placeholder.backgroundColor = ColorSystem.frostedFill
         placeholder.layer.cornerRadius = 20
         placeholder.layer.cornerCurve = .continuous
+        placeholder.layer.borderWidth = 1
+        placeholder.layer.borderColor = ColorSystem.divider.cgColor
 
         let placeholderLabel = UILabel()
         placeholderLabel.text = WorkoutPlazaStrings.Home.No.records
@@ -500,9 +524,11 @@ class HomeDashboardViewController: UIViewController {
 
     private func createRecordView(for workout: (sportType: SportType, data: Any, date: Date), index: Int) -> UIView {
         let containerView = UIView()
-        containerView.backgroundColor = ColorSystem.cardBackground
+        containerView.backgroundColor = ColorSystem.frostedFill
         containerView.layer.cornerRadius = 20
         containerView.layer.cornerCurve = .continuous
+        containerView.layer.borderWidth = 1
+        containerView.layer.borderColor = ColorSystem.divider.cgColor
 
         let iconImageView = UIImageView()
         iconImageView.image = UIImage(named: workout.sportType.iconName)

@@ -15,7 +15,7 @@ class GraphChartCell: UICollectionViewCell {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .semibold)
+        label.font = AppFont.title(18)
         label.textColor = ColorSystem.mainText
         return label
     }()
@@ -30,9 +30,11 @@ class GraphChartCell: UICollectionViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupUI() {
-        contentView.backgroundColor = ColorSystem.cardBackground
+        contentView.backgroundColor = ColorSystem.frostedFill
         contentView.layer.cornerRadius = 16
         contentView.layer.cornerCurve = .continuous
+        contentView.layer.borderWidth = 1
+        contentView.layer.borderColor = ColorSystem.divider.cgColor
 
         contentView.addSubview(titleLabel)
         contentView.addSubview(chartView)
