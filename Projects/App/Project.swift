@@ -1,5 +1,11 @@
 import ProjectDescription
 
+private let teamID: SettingValue = "M79H9K226Y"
+private let debugProvisioningProfileName: SettingValue = "WorkoutPlaza App Provisioning"
+private let debugProvisioningProfileUUID: SettingValue = "7a672c61-38dc-4008-a0ae-3d17c038f7b0"
+private let releaseProvisioningProfileName: SettingValue = "WorkoutPlaza App Distribution Provisioning"
+private let releaseProvisioningProfileUUID: SettingValue = "9fd5c43e-57b4-4f12-86da-e2888b5dbfc9"
+
 let project = Project(
     name: "WorkoutPlazaApp",
     organizationName: "bbdyno",
@@ -7,7 +13,7 @@ let project = Project(
         base: [
             "IPHONEOS_DEPLOYMENT_TARGET": "18.0",
             "SWIFT_VERSION": "5.0",
-            "DEVELOPMENT_TEAM": "M79H9K226Y",
+            "DEVELOPMENT_TEAM": teamID,
             "MARKETING_VERSION": "1.0.1",
             "CURRENT_PROJECT_VERSION": "2026.02.19.1",
             "SWIFT_APPROACHABLE_CONCURRENCY": "YES",
@@ -120,8 +126,6 @@ let project = Project(
             ],
             entitlements: "../../WorkoutPlaza/WorkoutPlaza.entitlements",
             dependencies: [
-                .project(target: "RunningKit", path: "../RunningKit"),
-                .project(target: "WorkoutPlazaWatch", path: "../WatchApp"),
                 .external(name: "SnapKit"),
                 .external(name: "FirebaseRemoteConfig"),
                 .external(name: "FirebaseAnalytics")
@@ -144,15 +148,17 @@ let project = Project(
                 configurations: [
                     .debug(name: "Debug", settings: [
                         "CODE_SIGN_STYLE": "Manual",
-                        "CODE_SIGN_IDENTITY": "iPhone Developer",
-                        "PROVISIONING_PROFILE_SPECIFIER": "WorkoutPlaza App Provisioning",
-                        "DEVELOPMENT_TEAM": "M79H9K226Y"
+                        "CODE_SIGN_IDENTITY": "Apple Development",
+                        "PROVISIONING_PROFILE": debugProvisioningProfileUUID,
+                        "PROVISIONING_PROFILE_SPECIFIER": debugProvisioningProfileName,
+                        "DEVELOPMENT_TEAM": teamID
                     ]),
                     .release(name: "Release", settings: [
                         "CODE_SIGN_STYLE": "Manual",
                         "CODE_SIGN_IDENTITY": "Apple Distribution",
-                        "PROVISIONING_PROFILE_SPECIFIER": "WorkoutPlaza App Distribution Provisioning",
-                        "DEVELOPMENT_TEAM": "M79H9K226Y"
+                        "PROVISIONING_PROFILE": releaseProvisioningProfileUUID,
+                        "PROVISIONING_PROFILE_SPECIFIER": releaseProvisioningProfileName,
+                        "DEVELOPMENT_TEAM": teamID
                     ])
                 ]
             )
@@ -165,8 +171,7 @@ let project = Project(
             infoPlist: .default,
             sources: ["../../WorkoutPlazaTests/**/*.swift"],
             dependencies: [
-                .target(name: "WorkoutPlaza"),
-                .project(target: "RunningKit", path: "../RunningKit")
+                .target(name: "WorkoutPlaza")
             ]
         ),
         .target(

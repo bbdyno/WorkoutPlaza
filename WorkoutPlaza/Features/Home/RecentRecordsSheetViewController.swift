@@ -10,6 +10,7 @@ import SnapKit
 
 protocol RecentRecordsSheetDelegate: AnyObject {
     func recentRecordsSheet(_ sheet: RecentRecordsSheetViewController, didSelectWorkoutAt index: Int)
+    func recentRecordsSheetDidDeleteRecord(_ sheet: RecentRecordsSheetViewController)
 }
 
 class RecentRecordsSheetViewController: UIViewController {
@@ -45,6 +46,16 @@ class RecentRecordsSheetViewController: UIViewController {
         tv.separatorStyle = .none
         tv.showsVerticalScrollIndicator = false
         return tv
+    }()
+
+    private let emptyStateLabel: UILabel = {
+        let label = UILabel()
+        label.text = WorkoutPlazaStrings.Home.No.records
+        label.font = AppFont.bodySemiBold(14)
+        label.textColor = ColorSystem.subText
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        return label
     }()
 
     // MARK: - Lifecycle
@@ -84,6 +95,7 @@ class RecentRecordsSheetViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "RecordCell")
+        updateEmptyState()
     }
 
     // MARK: - Actions
@@ -175,6 +187,77 @@ class RecentRecordsSheetViewController: UIViewController {
             make.centerY.equalToSuperview()
         }
     }
+
+    private func updateEmptyState() {
+        tableView.backgroundView = workouts.isEmpty ? emptyStateLabel : nil
+    }
+
+    private func isDeletable(_ workout: (sportType: SportType, data: Any, date: Date)) -> Bool {
+        switch workout.sportType {
+        case .running:
+            return workout.data is ExternalWorkout
+        case .climbing:
+            return workout.data is ClimbingData
+        }
+    }
+
+    private func presentDeleteConfirmation(for indexPath: IndexPath) {
+        let workout = workouts[indexPath.row]
+
+        if let externalWorkout = workout.data as? ExternalWorkout {
+            let alert = CustomAlertViewController(
+                title: WorkoutPlazaStrings.Running.Delete.record,
+                message: WorkoutPlazaStrings.Running.Delete.Record.message,
+                iconName: "icon.trash",
+                actions: [
+                    CustomAlertAction(title: WorkoutPlazaStrings.Common.delete, iconName: nil, style: .primary) { [weak self] in
+                        self?.deleteExternalWorkout(externalWorkout, at: indexPath)
+                    },
+                    CustomAlertAction(title: WorkoutPlazaStrings.Common.cancel, iconName: nil, style: .cancel, handler: nil)
+                ]
+            )
+            present(alert, animated: true)
+            return
+        }
+
+        if let session = workout.data as? ClimbingData {
+            let alert = CustomAlertViewController(
+                title: WorkoutPlazaStrings.Statistics.Delete.Climbing.title,
+                message: WorkoutPlazaStrings.Statistics.Delete.Climbing.message,
+                iconName: "icon.trash",
+                actions: [
+                    CustomAlertAction(title: WorkoutPlazaStrings.Common.delete, iconName: nil, style: .primary) { [weak self] in
+                        self?.deleteClimbingSession(session, at: indexPath)
+                    },
+                    CustomAlertAction(title: WorkoutPlazaStrings.Common.cancel, iconName: nil, style: .cancel, handler: nil)
+                ]
+            )
+            present(alert, animated: true)
+        }
+    }
+
+    private func deleteExternalWorkout(_ workout: ExternalWorkout, at indexPath: IndexPath) {
+        ExternalWorkoutManager.shared.deleteWorkout(id: workout.id)
+        removeWorkout(at: indexPath)
+    }
+
+    private func deleteClimbingSession(_ session: ClimbingData, at indexPath: IndexPath) {
+        ClimbingDataManager.shared.deleteSession(id: session.id)
+        removeWorkout(at: indexPath)
+    }
+
+    private func removeWorkout(at indexPath: IndexPath) {
+        workouts.remove(at: indexPath.row)
+        updateEmptyState()
+
+        if workouts.isEmpty {
+            tableView.reloadData()
+        } else {
+            tableView.deleteRows(at: [indexPath], with: .automatic)
+        }
+
+        delegate?.recentRecordsSheetDidDeleteRecord(self)
+    }
 }
 
 // MARK: - UITableViewDataSource & UITableViewDelegate
@@ -200,5 +283,24 @@ extension RecentRecordsSheetViewController: UITableViewDataSource, UITableViewDe
             guard let self = self else { return }
             self.delegate?.recentRecordsSheet(self, didSelectWorkoutAt: indexPath.row)
         }
+    }
+
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        isDeletable(workouts[indexPath.row])
+    }
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let workout = workouts[indexPath.row]
+        guard isDeletable(workout) else { return nil }
+
+        let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completionHandler in
+            self?.presentDeleteConfirmation(for: indexPath)
+            completionHandler(true)
+        }
+        deleteAction.image = UIImage(named: "icon.trash")
+
+        let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
+        configuration.performsFirstActionWithFullSwipe = false
+        return configuration
     }
 }

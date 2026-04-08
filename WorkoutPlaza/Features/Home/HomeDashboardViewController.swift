@@ -740,4 +740,11 @@ extension HomeDashboardViewController: RecentRecordsSheetDelegate {
             }
         }
     }
+
+    func recentRecordsSheetDidDeleteRecord(_ sheet: RecentRecordsSheetViewController) {
+        climbingSessions = ClimbingDataManager.shared.loadSessions()
+        externalRunningWorkouts = ExternalWorkoutManager.shared.getAllWorkouts().filter { $0.workoutData.type == .running }
+        updateWeeklySummary()
+        updateRecentRecords()
+    }
 }
