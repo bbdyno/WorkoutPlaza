@@ -53,6 +53,12 @@ class BarChartView: UIView {
     private var isLongPressing = false
     private var currentLongPressIndex: Int?
 
+    private struct YAxisConfiguration {
+        let upperBound: Double
+        let step: Double
+        let values: [Double]
+    }
+
     // MARK: - Init
 
     override init(frame: CGRect) {
@@ -132,15 +138,10 @@ class BarChartView: UIView {
         guard !dataPoints.isEmpty else { return }
 
         let barCount = CGFloat(dataPoints.count)
+        let yAxis = makeYAxisConfiguration(for: maxValue, availableHeight: max(chartContainerView.bounds.height, 120))
 
-        let yMax = max(maxValue, 10)
-        let yScale = ceil(yMax / 10) * 10
-        let numYSteps = Int(yScale / 10)
-
-        for i in 0...numYSteps {
-            let yValue = i * 10
-
-            let yRatio = CGFloat(yValue) / CGFloat(yScale)
+        for yValue in yAxis.values {
+            let yRatio = CGFloat(yValue / yAxis.upperBound)
 
             let gridLine = UIView()
             chartContainerView.addSubview(gridLine)
@@ -169,7 +170,7 @@ class BarChartView: UIView {
             yLabel.font = AppFont.statRegular(10)
             yLabel.textColor = ColorSystem.subText
             yLabel.textAlignment = .right
-            yLabel.text = "\(yValue)km"
+            yLabel.text = formatYAxisValue(yValue)
             yAxisContainerView.addSubview(yLabel)
             yAxisLabels.append(yLabel)
 
@@ -211,7 +212,7 @@ class BarChartView: UIView {
                 make.bottom.equalToSuperview()
                 make.width.equalToSuperview().dividedBy(barCount).offset(-barSpacing)
                 make.leading.equalToSuperview().offset(indexFloat * (chartContainerView.bounds.width / barCount) + barSpacing / 2)
-                let heightRatio = dataPoint.value / yScale
+                let heightRatio = dataPoint.value / yAxis.upperBound
                 make.height.equalTo(chartContainerView).multipliedBy(max(heightRatio, 0.02))
             }
 
@@ -331,6 +332,56 @@ class BarChartView: UIView {
     private func clearHighlight() {
         highlightedBarView?.layer.borderWidth = 0
         highlightedBarView = nil
+    }
+
+    private func makeYAxisConfiguration(for maxValue: Double, availableHeight: CGFloat) -> YAxisConfiguration {
+        let safeMaxValue = max(maxValue, 1)
+        let maxTickCount = max(3, min(5, Int(availableHeight / 44)))
+        let rawStep = safeMaxValue / Double(maxTickCount - 1)
+        let step = max(niceStep(for: rawStep), 1)
+        let upperBound = max(step, ceil(safeMaxValue / step) * step)
+
+        var values: [Double] = []
+        var current: Double = 0
+        while current <= upperBound + (step * 0.001) {
+            values.append(current)
+            current += step
+        }
+
+        return YAxisConfiguration(upperBound: upperBound, step: step, values: values)
+    }
+
+    private func niceStep(for rawStep: Double) -> Double {
+        guard rawStep > 0 else { return 1 }
+
+        let magnitude = pow(10.0, floor(log10(rawStep)))
+        let normalized = rawStep / magnitude
+
+        let niceNormalized: Double
+        switch normalized {
+        case ..<1.5:
+            niceNormalized = 1
+        case ..<3:
+            niceNormalized = 2
+        case ..<7:
+            niceNormalized = 5
+        default:
+            niceNormalized = 10
+        }
+
+        return niceNormalized * magnitude
+    }
+
+    private func formatYAxisValue(_ value: Double) -> String {
+        if value >= 1000 {
+            return String(format: "%.1fk", value / 1000)
+        }
+
+        if value == floor(value) {
+            return "\(Int(value))km"
+        }
+
+        return String(format: "%.1fkm", value)
     }
 
     // MARK: - Layout

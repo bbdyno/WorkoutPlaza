@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WorkoutPlaza - Build and Share Workout Cards</title>
-  <meta name="description" content="WorkoutPlaza is a card-based workout journal for climbing and running. Track sessions, design cards, and share your progress.">
-  <meta property="og:title" content="WorkoutPlaza - Build and Share Workout Cards">
-  <meta property="og:description" content="Track climbing and running workouts, design beautiful cards, and keep your data on-device.">
+  <title>WorkoutPlaza - Card-first workout storytelling</title>
+  <meta name="description" content="WorkoutPlaza is a card-first workout journal for running and climbing. Track sessions, compose posters, and share your training story with style.">
+  <meta property="og:title" content="WorkoutPlaza - Card-first workout storytelling">
+  <meta property="og:description" content="Track climbing and running, build poster-like workout cards, and keep your data local-first.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="assets/workoutplaza-icon.png">
-  <meta name="theme-color" content="#0b1220">
+  <meta name="theme-color" content="#0d1324">
   <meta name="apple-itunes-app" content="app-id=6758429244">
   <link rel="icon" href="assets/workoutplaza-icon.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,8 +19,10 @@
   <script defer src="assets/app.js"></script>
 </head>
 <body>
+  <div class="bg-mesh"></div>
   <div class="bg-orb bg-orb-one"></div>
   <div class="bg-orb bg-orb-two"></div>
+  <div class="bg-grid"></div>
 
   <header class="site-header">
     <nav class="nav container">
@@ -30,7 +32,8 @@
       </a>
 
       <div class="nav-right">
-        <a href="#features" data-i18n="nav_features">Features</a>
+        <a href="#system" data-i18n="nav_system">System</a>
+        <a href="#workflow" data-i18n="nav_workflow">Workflow</a>
         <a href="#support" data-i18n="nav_support">Support</a>
         <a class="nav-store" href="https://apps.apple.com/app/id6758429244" target="_blank" rel="noreferrer" data-i18n="nav_store">App Store</a>
 
@@ -48,128 +51,202 @@
   <main id="top">
     <section class="hero container reveal">
       <div class="hero-copy">
-        <p class="badge" data-i18n="hero_badge">Now on the App Store</p>
+        <p class="eyebrow" data-i18n="hero_eyebrow">CARD-FIRST WORKOUT JOURNAL</p>
+        <p class="hero-badge" data-i18n="hero_badge">Built for runners and climbers who care about presentation.</p>
         <h1>
-          <span data-i18n="hero_title_1">Build Workout Cards</span>
-          <span class="gradient" data-i18n="hero_title_2">that feel like your story.</span>
+          <span data-i18n="hero_title_1">Turn every session</span>
+          <span class="gradient-text" data-i18n="hero_title_2">into a poster worth keeping.</span>
         </h1>
         <p class="hero-sub" data-i18n="hero_sub">
-          Track climbing and running sessions, design visuals with templates, and share your progress in one clean flow.
-        </p>
-        <p class="hero-desc" data-i18n="hero_desc">
-          Local-first by default. HealthKit sync when you want it.
+          Track workouts, compose visual cards, and publish progress with a cleaner, sharper flow than a generic fitness log.
         </p>
 
         <div class="cta-row">
           <a class="btn btn-primary" href="https://apps.apple.com/app/id6758429244" target="_blank" rel="noreferrer" data-i18n="cta_appstore">Download on App Store</a>
           <a class="btn btn-secondary" href="https://github.com/bbdyno/WorkoutPlaza" target="_blank" rel="noreferrer" data-i18n="cta_github">View on GitHub</a>
-          <a class="btn btn-tertiary" href="#support" data-i18n="cta_support">Support Development</a>
         </div>
 
-        <ul class="trust-row">
-          <li data-i18n="trust_1">Running + Climbing</li>
-          <li data-i18n="trust_2">Template-based Cards</li>
-          <li data-i18n="trust_3">On-device Data</li>
-        </ul>
-      </div>
-
-      <div class="hero-art" aria-hidden="true">
-        <div class="phone-frame floating">
-          <div class="phone-notch"></div>
-          <div class="phone-content">
-            <img src="assets/workoutplaza-icon.png" alt="" class="app-icon">
-            <h3>WorkoutPlaza</h3>
-            <p data-i18n="mock_sub">Card studio for your workouts</p>
-            <div class="mini-stats">
-              <span data-i18n="mock_stat_1">Route count</span>
-              <span data-i18n="mock_stat_2">Distance</span>
-              <span data-i18n="mock_stat_3">Duration</span>
-            </div>
+        <div class="hero-meta">
+          <div class="meta-card">
+            <span class="meta-label" data-i18n="meta_1_label">Sports</span>
+            <strong data-i18n="meta_1_value">Running + Climbing</strong>
+          </div>
+          <div class="meta-card">
+            <span class="meta-label" data-i18n="meta_2_label">Storage</span>
+            <strong data-i18n="meta_2_value">Local-first by default</strong>
+          </div>
+          <div class="meta-card">
+            <span class="meta-label" data-i18n="meta_3_label">Output</span>
+            <strong data-i18n="meta_3_value">Poster-like workout cards</strong>
           </div>
         </div>
       </div>
+
+      <div class="hero-stage" aria-hidden="true">
+        <div class="hero-stack">
+          <article class="showcase-card showcase-card-back">
+            <div class="showcase-topline">
+              <span>CLIMBING SESSION</span>
+              <span>WEEK 14</span>
+            </div>
+            <div class="showcase-value">18 routes</div>
+            <div class="showcase-subgrid">
+              <div><small>Sent</small><strong>11</strong></div>
+              <div><small>Gym</small><strong>The Climb</strong></div>
+            </div>
+          </article>
+
+          <article class="showcase-card showcase-card-front">
+            <div class="showcase-phonebar"></div>
+            <div class="showcase-body">
+              <div class="showcase-brand">
+                <img src="assets/workoutplaza-icon.png" alt="">
+                <div>
+                  <p>WorkoutPlaza</p>
+                  <span data-i18n="mock_sub">Card studio for your workouts</span>
+                </div>
+              </div>
+
+              <div class="showcase-hero">
+                <div>
+                  <small data-i18n="mock_metric_1">Distance</small>
+                  <strong>12.4 km</strong>
+                </div>
+                <div>
+                  <small data-i18n="mock_metric_2">Duration</small>
+                  <strong>58:21</strong>
+                </div>
+              </div>
+
+              <div class="route-preview">
+                <div class="route-line route-line-a"></div>
+                <div class="route-line route-line-b"></div>
+              </div>
+
+              <div class="mini-stats">
+                <span data-i18n="mock_stat_1">Pace widget</span>
+                <span data-i18n="mock_stat_2">Map layer</span>
+                <span data-i18n="mock_stat_3">Text styling</span>
+              </div>
+            </div>
+          </article>
+
+          <aside class="hero-note">
+            <span data-i18n="hero_note_label">Why it feels different</span>
+            <p data-i18n="hero_note_body">Not a dashboard pretending to be social. It starts from the card and works backward into your workflow.</p>
+          </aside>
+        </div>
+      </div>
     </section>
 
-    <section id="features" class="section container reveal">
-      <div class="section-head">
-        <h2 data-i18n="features_title">Everything for card-style workout journaling</h2>
-        <p data-i18n="features_sub">From tracking to visual composition, built for creators who train.</p>
+    <section class="section container reveal">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="proof_eyebrow">WHAT YOU GET</p>
+        <h2 data-i18n="proof_title">A tighter system for tracking, composing, and sharing</h2>
       </div>
 
-      <div class="feature-grid">
-        <article class="feature-card">
-          <h3 data-i18n="f1_title">Dual-Sport Tracking</h3>
-          <p data-i18n="f1_desc">Log running and climbing in one timeline with sport-specific widgets and summaries.</p>
+      <div class="proof-grid">
+        <article class="proof-panel">
+          <span class="panel-index">01</span>
+          <h3 data-i18n="proof_1_title">Structured workout capture</h3>
+          <p data-i18n="proof_1_desc">Store baseline records for running and climbing without losing sport-specific detail.</p>
         </article>
-
-        <article class="feature-card">
-          <h3 data-i18n="f2_title">Card Builder</h3>
-          <p data-i18n="f2_desc">Compose distance, pace, routes, map, and notes with drag-and-resize editing.</p>
+        <article class="proof-panel">
+          <span class="panel-index">02</span>
+          <h3 data-i18n="proof_2_title">Poster-style layout builder</h3>
+          <p data-i18n="proof_2_desc">Arrange widgets, typography, map layers, and background treatments with intentional composition.</p>
         </article>
-
-        <article class="feature-card">
-          <h3 data-i18n="f3_title">Template Presets</h3>
-          <p data-i18n="f3_desc">Apply reusable layouts fast and keep your style consistent across every workout.</p>
-        </article>
-
-        <article class="feature-card">
-          <h3 data-i18n="f4_title">HealthKit Sync</h3>
-          <p data-i18n="f4_desc">Pull workouts from HealthKit and keep route data connected to your cards.</p>
-        </article>
-
-        <article class="feature-card">
-          <h3 data-i18n="f5_title">Import & Share</h3>
-          <p data-i18n="f5_desc">Export workout packages, import shared records, and collaborate with teammates.</p>
-        </article>
-
-        <article class="feature-card">
-          <h3 data-i18n="f6_title">Privacy by Design</h3>
-          <p data-i18n="f6_desc">Core data stays on your device. You decide when and how anything is shared.</p>
+        <article class="proof-panel">
+          <span class="panel-index">03</span>
+          <h3 data-i18n="proof_3_title">Local-first ownership</h3>
+          <p data-i18n="proof_3_desc">Your training data stays on-device until you decide to export or share a package.</p>
         </article>
       </div>
     </section>
 
-    <section class="section section-alt reveal">
-      <div class="container">
-        <div class="section-head">
-          <h2 data-i18n="flow_title">How WorkoutPlaza fits your routine</h2>
+    <section id="system" class="section section-surface reveal">
+      <div class="container system-layout">
+        <div class="section-heading">
+          <p class="eyebrow" data-i18n="system_eyebrow">DESIGN SYSTEM</p>
+          <h2 data-i18n="system_title">Built around cards, not generic fitness charts</h2>
+          <p data-i18n="system_sub">WorkoutPlaza combines recording, composition, and export into one system so the final output actually looks deliberate.</p>
         </div>
 
-        <div class="flow-grid">
-          <article class="flow-step">
-            <span>01</span>
-            <h3 data-i18n="flow_1_title">Track</h3>
-            <p data-i18n="flow_1_desc">Record your run or climbing session and sync baseline data from HealthKit.</p>
+        <div class="feature-grid">
+          <article class="feature-card feature-card-accent">
+            <div class="feature-pill" data-i18n="f1_pill">Tracking</div>
+            <h3 data-i18n="f1_title">Dual-sport records</h3>
+            <p data-i18n="f1_desc">Log running and climbing side by side with tailored widgets, summary logic, and recents.</p>
           </article>
 
-          <article class="flow-step">
-            <span>02</span>
-            <h3 data-i18n="flow_2_title">Design</h3>
-            <p data-i18n="flow_2_desc">Build a visual card using widgets, templates, custom backgrounds, and typography.</p>
+          <article class="feature-card">
+            <div class="feature-pill" data-i18n="f2_pill">Builder</div>
+            <h3 data-i18n="f2_title">Composable workout cards</h3>
+            <p data-i18n="f2_desc">Distance, pace, route, date, gym, text, and map blocks can be arranged into poster-like layouts.</p>
           </article>
 
-          <article class="flow-step">
-            <span>03</span>
-            <h3 data-i18n="flow_3_title">Share</h3>
-            <p data-i18n="flow_3_desc">Save cards, export your workout package, and publish progress where you want.</p>
+          <article class="feature-card">
+            <div class="feature-pill" data-i18n="f3_pill">Templates</div>
+            <h3 data-i18n="f3_title">Reusable presets</h3>
+            <p data-i18n="f3_desc">Move faster with repeatable structures instead of rebuilding every composition from zero.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-pill" data-i18n="f4_pill">Sync</div>
+            <h3 data-i18n="f4_title">HealthKit import</h3>
+            <p data-i18n="f4_desc">Pull workouts from HealthKit when you want richer context without turning the app into a sync dependency.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-pill" data-i18n="f5_pill">Share</div>
+            <h3 data-i18n="f5_title">Export and exchange</h3>
+            <p data-i18n="f5_desc">Send workout packages, import shared files, and keep design fidelity intact across devices.</p>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-pill" data-i18n="f6_pill">Privacy</div>
+            <h3 data-i18n="f6_title">Device-owned by default</h3>
+            <p data-i18n="f6_desc">No forced account flow. Your records remain local until you choose to publish them.</p>
           </article>
         </div>
+      </div>
+    </section>
+
+    <section id="workflow" class="section container reveal">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="workflow_eyebrow">WORKFLOW</p>
+        <h2 data-i18n="workflow_title">From session to shareable card in three moves</h2>
+      </div>
+
+      <div class="workflow-grid">
+        <article class="workflow-step">
+          <span>01</span>
+          <h3 data-i18n="flow_1_title">Track</h3>
+          <p data-i18n="flow_1_desc">Capture a run or climbing session, then keep the useful metadata instead of noise.</p>
+        </article>
+        <article class="workflow-step">
+          <span>02</span>
+          <h3 data-i18n="flow_2_title">Compose</h3>
+          <p data-i18n="flow_2_desc">Use widgets, templates, typography, and backgrounds to build a card with hierarchy.</p>
+        </article>
+        <article class="workflow-step">
+          <span>03</span>
+          <h3 data-i18n="flow_3_title">Share</h3>
+          <p data-i18n="flow_3_desc">Save the design, export a workout package, and publish progress where it belongs.</p>
+        </article>
       </div>
     </section>
 
     <section id="support" class="section container reveal">
-      <div class="section-head">
-        <h2 data-i18n="support_title">Support the developer</h2>
-        <p data-i18n="support_sub">WorkoutPlaza is developed independently. Support helps keep updates shipping.</p>
-      </div>
+      <div class="support-shell">
+        <div class="support-copy">
+          <p class="eyebrow" data-i18n="support_eyebrow">INDEPENDENTLY BUILT</p>
+          <h2 data-i18n="support_title">Support the developer behind WorkoutPlaza</h2>
+          <p data-i18n="support_sub">The app is developed independently. Support helps fund polish, maintenance, and more ambitious releases.</p>
+          <a class="btn btn-primary" href="https://buymeacoffee.com/bbdyno" target="_blank" rel="noreferrer" data-i18n="support_coffee_btn">Open Support Page</a>
+        </div>
 
-      <div class="support-grid">
-        <article class="support-card center">
-          <h3 data-i18n="support_coffee_title">Buy Me a Coffee</h3>
-          <a href="https://buymeacoffee.com/bbdyno" target="_blank" rel="noreferrer" class="coffee-link" data-i18n="support_coffee_btn">Open Support Page</a>
-        </article>
-
-        <article class="support-card">
+        <div class="support-panel">
           <h3 data-i18n="support_crypto_title">Crypto Donation</h3>
           <div class="wallet">
             <p>BTC</p>
@@ -181,7 +258,18 @@
             <code id="ethAddress">0x5f35523757d0e672fa3ffbc0f1d50d35fd6b2571</code>
             <button class="copy-btn" data-copy-target="ethAddress" data-i18n="copy_btn">Copy</button>
           </div>
-        </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container reveal">
+      <div class="closing-banner">
+        <p class="eyebrow" data-i18n="closing_eyebrow">READY TO START</p>
+        <h2 data-i18n="closing_title">Make your workout archive look intentional.</h2>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://apps.apple.com/app/id6758429244" target="_blank" rel="noreferrer" data-i18n="cta_appstore">Download on App Store</a>
+          <a class="btn btn-secondary" href="https://github.com/bbdyno/WorkoutPlaza" target="_blank" rel="noreferrer" data-i18n="cta_github">View on GitHub</a>
+        </div>
       </div>
     </section>
   </main>

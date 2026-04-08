@@ -3,47 +3,94 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WorkoutPlaza Terms</title>
+  <title>WorkoutPlaza Terms of Use</title>
+  <meta name="description" content="WorkoutPlaza terms of use.">
+  <link rel="icon" href="assets/workoutplaza-icon.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/app.js"></script>
 </head>
-<body>
-  <main class="section container" style="padding-top: 56px;">
-    <h1>WorkoutPlaza Terms of Use</h1>
-    <p>Effective date: February 11, 2026</p>
+<body class="legal-page">
+  <div class="bg-mesh"></div>
+  <div class="bg-orb bg-orb-one"></div>
+  <div class="bg-orb bg-orb-two"></div>
+  <div class="bg-grid"></div>
 
-    <h2>1. Service Scope</h2>
-    <p>WorkoutPlaza is provided as-is for recording, editing, and sharing workout-related content.</p>
+  <main class="legal-main container">
+    <div class="legal-nav">
+      <a class="brand" href="index.html" aria-label="WorkoutPlaza home">
+        <img src="assets/workoutplaza-icon.png" alt="WorkoutPlaza icon">
+        <span>WorkoutPlaza</span>
+      </a>
 
-    <h2>2. User Responsibility</h2>
-    <p>You are responsible for any content you create, export, or share using the app.</p>
+      <div class="nav-right">
+        <a class="legal-back" href="index.html" data-i18n="nav_back_home">Back to Home</a>
+        <label class="lang-wrap" for="langSelect">
+          <span class="visually-hidden" data-i18n="lang_label">Language</span>
+          <select id="langSelect" aria-label="Language selector">
+            <option value="en">English</option>
+            <option value="ko">한국어</option>
+          </select>
+        </label>
+      </div>
+    </div>
 
-    <h2>3. Availability</h2>
-    <p>Features may change or be discontinued at any time without prior notice.</p>
+    <section class="legal-shell reveal">
+      <div class="legal-header">
+        <p class="eyebrow" data-i18n="legal_terms_eyebrow">TERMS OF USE</p>
+        <h1 data-i18n="legal_terms_title">Simple terms for a local-first workout app.</h1>
+        <p class="legal-meta" data-i18n="legal_terms_meta">Effective date: February 11, 2026</p>
+      </div>
 
-    <h2>4. Contact</h2>
-    <p>For inquiries, email <a href="mailto:della.kimko@gmail.com">della.kimko@gmail.com</a>.</p>
+      <div class="legal-grid">
+        <article class="legal-card">
+          <h2 data-i18n="legal_terms_1_title">1. Service scope</h2>
+          <p data-i18n="legal_terms_1_desc">WorkoutPlaza is provided as-is for recording, editing, and sharing workout-related content.</p>
+        </article>
 
-    <hr style="margin: 32px 0; border: 0; border-top: 1px solid #dbe5f3;">
+        <article class="legal-card">
+          <h2 data-i18n="legal_terms_2_title">2. User responsibility</h2>
+          <p data-i18n="legal_terms_2_desc">You are responsible for any content you create, export, or share through the app.</p>
+        </article>
 
-    <h1>워크아웃플라자 이용약관</h1>
-    <p>시행일: 2026년 2월 11일</p>
+        <article class="legal-card">
+          <h2 data-i18n="legal_terms_3_title">3. Availability</h2>
+          <p data-i18n="legal_terms_3_desc">Features may change, improve, or be discontinued at any time without prior notice.</p>
+        </article>
 
-    <h2>1. 서비스 범위</h2>
-    <p>WorkoutPlaza는 운동 기록 작성, 편집, 공유 기능을 제공하며 현 상태 그대로 제공됩니다.</p>
+        <article class="legal-card">
+          <h2 data-i18n="legal_terms_4_title">4. Contact</h2>
+          <p>
+            <span data-i18n="legal_terms_4_desc">For questions about these terms, contact della.kimko@gmail.com.</span>
+            <br>
+            <a class="legal-back" href="mailto:della.kimko@gmail.com">della.kimko@gmail.com</a>
+          </p>
+        </article>
+      </div>
 
-    <h2>2. 사용자 책임</h2>
-    <p>앱에서 생성, 내보내기, 공유한 콘텐츠에 대한 책임은 사용자에게 있습니다.</p>
-
-    <h2>3. 서비스 변경</h2>
-    <p>기능은 사전 공지 없이 변경되거나 종료될 수 있습니다.</p>
-
-    <h2>4. 문의</h2>
-    <p>문의: <a href="mailto:della.kimko@gmail.com">della.kimko@gmail.com</a></p>
-
-    <p style="margin-top: 28px;"><a href="index.html">Back to Home</a></p>
+      <div class="legal-divider"></div>
+      <p class="legal-footer" data-i18n="legal_terms_footer">Continuing to use WorkoutPlaza means you accept the current terms of use.</p>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>
+        <p class="footer-brand">WorkoutPlaza</p>
+        <p data-i18n="footer_rights">© 2026 WorkoutPlaza. All rights reserved.</p>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://github.com/bbdyno" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="mailto:della.kimko@gmail.com" data-i18n="footer_contact">Contact</a>
+        <a href="terms.html" data-i18n="footer_terms">Terms</a>
+        <a href="privacy.html" data-i18n="footer_privacy">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
