@@ -90,16 +90,10 @@ final class ProUpgradeViewController: UIViewController {
         return lbl
     }()
 
-    private let buyButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle(NSLocalizedString("pro.upgrade.buy", comment: ""), for: .normal)
-        btn.titleLabel?.font = AppFont.bodyBold(17)
-        btn.setTitleColor(.white, for: .normal)
-        btn.layer.cornerRadius = 24
-        btn.layer.cornerCurve = .continuous
-        btn.clipsToBounds = true
-        return btn
-    }()
+    private lazy var buyButton = WPPrimaryButton(
+        title: NSLocalizedString("pro.upgrade.buy", comment: ""),
+        cornerRadius: 24
+    )
 
     private let restoreButton: UIButton = {
         let btn = UIButton(type: .system)
@@ -120,8 +114,7 @@ final class ProUpgradeViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = ColorSystem.background
-        AppChrome.installAmbientBackground(in: view)
+        WPDesign.applyScreenBackground(to: view)
         title = "Pro"
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .close,
@@ -130,13 +123,7 @@ final class ProUpgradeViewController: UIViewController {
         )
 
         setupLayout()
-        AppChrome.stylePrimaryButton(buyButton, cornerRadius: 24)
         loadProductPrice()
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        AppChrome.applyPrimaryGradient(to: buyButton, cornerRadius: 24)
     }
 
     // MARK: - Layout
@@ -202,7 +189,6 @@ final class ProUpgradeViewController: UIViewController {
         // Buy button
         buyButton.addSubview(loadingIndicator)
         loadingIndicator.snp.makeConstraints { make in make.center.equalToSuperview() }
-        buyButton.snp.makeConstraints { make in make.height.equalTo(56) }
         buyButton.addTarget(self, action: #selector(buyTapped), for: .touchUpInside)
         contentStack.addArrangedSubview(buyButton)
         contentStack.setCustomSpacing(12, after: buyButton)
@@ -214,6 +200,7 @@ final class ProUpgradeViewController: UIViewController {
 
     private func makeFeatureRow(icon: String, title: String, desc: String) -> UIView {
         let row = UIView()
+        WPSurface.apply(to: row, style: .muted, cornerRadius: WPDesign.Radius.md)
 
         let iconView = UIImageView(image: UIImage(named: icon) ?? UIImage(systemName: icon))
         iconView.tintColor = ColorSystem.mainText
@@ -237,13 +224,19 @@ final class ProUpgradeViewController: UIViewController {
         row.addSubview(iconView)
         row.addSubview(textStack)
 
+        row.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(70)
+        }
+
         iconView.snp.makeConstraints { make in
-            make.leading.centerY.equalToSuperview()
+            make.leading.equalToSuperview().offset(14)
+            make.centerY.equalToSuperview()
             make.size.equalTo(24)
         }
         textStack.snp.makeConstraints { make in
             make.leading.equalTo(iconView.snp.trailing).offset(14)
-            make.trailing.top.bottom.equalToSuperview()
+            make.trailing.equalToSuperview().offset(-14)
+            make.top.bottom.equalToSuperview().inset(12)
         }
 
         return row

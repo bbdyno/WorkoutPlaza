@@ -112,12 +112,7 @@ class RunningStatsCell: UICollectionViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupUI() {
-        contentView.backgroundColor = ColorSystem.frostedFill
-        contentView.layer.cornerRadius = 20
-        contentView.layer.cornerCurve = .continuous
-        contentView.layer.borderWidth = 1
-        contentView.layer.borderColor = ColorSystem.divider.cgColor
-        contentView.layer.applyCardShadow()
+        WPSurface.apply(to: contentView)
 
         // Sport Picker Button
         contentView.addSubview(sportPickerButton)

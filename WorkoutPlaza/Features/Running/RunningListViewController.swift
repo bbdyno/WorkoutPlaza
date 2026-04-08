@@ -71,27 +71,12 @@ class RunningListViewController: UIViewController {
         return sc
     }()
 
-    private let importFloatingButton: UIButton = {
-        let button = UIButton(type: .system)
-
-        var config = UIButton.Configuration.filled()
-        config.baseBackgroundColor = ColorSystem.mainText
-        config.baseForegroundColor = ColorSystem.background
-        config.cornerStyle = .capsule
-        config.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20)
-
-        config.image = UIImage(named: "icon.download")
-        config.imagePadding = 8
-        config.title = WorkoutPlazaStrings.Import.external
-
-        button.configuration = config
-
-        // Shadow
-        button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOffset = CGSize(width: 0, height: 4)
-        button.layer.shadowOpacity = 0.3
-        button.layer.shadowRadius = 8
-
+    private lazy var importFloatingButton: WPPrimaryButton = {
+        let button = WPPrimaryButton(title: WorkoutPlazaStrings.Import.external, cornerRadius: 26)
+        button.setImage(UIImage(named: "icon.download"), for: .normal)
+        button.tintColor = .white
+        button.semanticContentAttribute = .forceLeftToRight
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -8, bottom: 0, right: 0)
         return button
     }()
     
@@ -114,7 +99,6 @@ class RunningListViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        AppChrome.applyPrimaryGradient(to: importFloatingButton, cornerRadius: 26)
     }
 
     deinit {
@@ -263,8 +247,7 @@ class RunningListViewController: UIViewController {
 
     private func setupUI() {
         title = WorkoutPlazaStrings.Running.Record.title
-        view.backgroundColor = ColorSystem.background
-        AppChrome.installAmbientBackground(in: view)
+        WPDesign.applyScreenBackground(to: view)
         navigationItem.largeTitleDisplayMode = .never
 
         // 닫기 버튼 추가
@@ -329,7 +312,6 @@ class RunningListViewController: UIViewController {
             make.centerX.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-16)
         }
-        AppChrome.stylePrimaryButton(importFloatingButton, cornerRadius: 26)
     }
 
     @objc private func dismissSheet() {
@@ -720,18 +702,8 @@ class WorkoutCell: UITableViewCell {
 
     private let cardContainer: UIView = {
         let view = UIView()
-        view.backgroundColor = ColorSystem.frostedFill
-        view.layer.cornerRadius = 20
-        view.layer.cornerCurve = .continuous
+        WPSurface.apply(to: view)
         view.layer.masksToBounds = false
-        view.layer.borderWidth = 1
-        view.layer.borderColor = ColorSystem.divider.cgColor
-
-        // Improved shadow
-        view.layer.shadowColor = ColorSystem.cardShadow.cgColor
-        view.layer.shadowOffset = CGSize(width: 0, height: 4)
-        view.layer.shadowOpacity = 1
-        view.layer.shadowRadius = 16
         view.layer.shouldRasterize = true
         view.layer.rasterizationScale = UIScreen.main.scale
         return view

@@ -56,8 +56,7 @@ class SavedCardsViewController: UIViewController {
     // MARK: - Setup
 
     private func setupUI() {
-        view.backgroundColor = ColorSystem.background
-        AppChrome.installAmbientBackground(in: view)
+        WPDesign.applyScreenBackground(to: view)
         title = WorkoutPlazaStrings.More.Saved.cards
 
         navigationItem.largeTitleDisplayMode = .never
@@ -188,11 +187,7 @@ private class CardCell: UICollectionViewCell {
     }
 
     private func setupUI() {
-        contentView.backgroundColor = ColorSystem.frostedFill
-        contentView.layer.cornerRadius = 18
-        contentView.layer.cornerCurve = .continuous
-        contentView.layer.borderWidth = 1
-        contentView.layer.borderColor = ColorSystem.divider.cgColor
+        WPSurface.apply(to: contentView, cornerRadius: 18)
         contentView.addSubview(thumbnailImageView)
         contentView.addSubview(sportTypeIcon)
         contentView.addSubview(titleLabel)

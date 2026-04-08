@@ -170,8 +170,7 @@ class MoreViewController: UIViewController {
     }
 
     private func setupUI() {
-        view.backgroundColor = ColorSystem.background
-        AppChrome.installAmbientBackground(in: view)
+        WPDesign.applyScreenBackground(to: view)
         navigationController?.navigationBar.prefersLargeTitles = false
         title = WorkoutPlazaStrings.Tab.more
 
@@ -591,9 +590,7 @@ extension MoreViewController: UITableViewDataSource {
         }
 
         cell.contentConfiguration = config
-        cell.backgroundColor = ColorSystem.frostedFill
-        cell.layer.cornerRadius = 16
-        cell.layer.cornerCurve = .continuous
+        WPSurface.apply(to: cell, cornerRadius: WPDesign.Radius.md)
         cell.layer.masksToBounds = true
         return cell
     }
@@ -619,9 +616,7 @@ private final class TipProductCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = ColorSystem.frostedFill
-        layer.cornerRadius = 16
-        layer.cornerCurve = .continuous
+        WPSurface.apply(to: self, cornerRadius: WPDesign.Radius.md)
         layer.masksToBounds = true
 
         iconLabel.font  = AppFont.body(22)

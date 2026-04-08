@@ -30,11 +30,7 @@ class GraphChartCell: UICollectionViewCell {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupUI() {
-        contentView.backgroundColor = ColorSystem.frostedFill
-        contentView.layer.cornerRadius = 16
-        contentView.layer.cornerCurve = .continuous
-        contentView.layer.borderWidth = 1
-        contentView.layer.borderColor = ColorSystem.divider.cgColor
+        WPSurface.apply(to: contentView, cornerRadius: WPDesign.Radius.md)
 
         contentView.addSubview(titleLabel)
         contentView.addSubview(chartView)

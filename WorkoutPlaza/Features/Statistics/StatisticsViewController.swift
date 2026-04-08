@@ -67,8 +67,7 @@ class StatisticsViewController: UIViewController {
     // MARK: - Setup
 
     private func setupUI() {
-        view.backgroundColor = ColorSystem.background
-        AppChrome.installAmbientBackground(in: view)
+        WPDesign.applyScreenBackground(to: view)
         navigationController?.navigationBar.prefersLargeTitles = false
         title = WorkoutPlazaStrings.Statistics.title
 

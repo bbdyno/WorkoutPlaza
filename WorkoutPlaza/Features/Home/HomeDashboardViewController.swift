@@ -92,20 +92,7 @@ class HomeDashboardViewController: UIViewController {
         return stack
     }()
 
-    private let addWorkoutButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle(WorkoutPlazaStrings.Button.Add.workout, for: .normal)
-        button.titleLabel?.font = AppFont.bodySemiBold(16)
-        button.backgroundColor = ColorSystem.mainText
-        button.setTitleColor(ColorSystem.background, for: .normal)
-        button.layer.cornerRadius = 24
-        button.layer.cornerCurve = .continuous
-        button.layer.shadowColor = ColorSystem.mainText.cgColor
-        button.layer.shadowOpacity = 0.3
-        button.layer.shadowOffset = CGSize(width: 0, height: 4)
-        button.layer.shadowRadius = 8
-        return button
-    }()
+    private lazy var addWorkoutButton = WPPrimaryButton(title: WorkoutPlazaStrings.Button.Add.workout)
 
     // Weekly summary labels - Running
     private let runningWeeklyDistanceLabel = UILabel()
@@ -150,14 +137,12 @@ class HomeDashboardViewController: UIViewController {
         logoMaskImageView.frame = logoContainerView.bounds
         subtitleGradientLayer.frame = subtitleContainerView.bounds
         subtitleLabel.frame = subtitleContainerView.bounds
-        AppChrome.applyPrimaryGradient(to: addWorkoutButton, cornerRadius: 28)
     }
 
     // MARK: - Setup
 
     private func setupUI() {
-        view.backgroundColor = ColorSystem.background
-        AppChrome.installAmbientBackground(in: view)
+        WPDesign.applyScreenBackground(to: view)
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentStackView)
@@ -174,10 +159,7 @@ class HomeDashboardViewController: UIViewController {
 
         // Header Section
         let headerContainer = UIView()
-        let eyebrowLabel = UILabel()
-        eyebrowLabel.text = "PERSONAL WORKOUT POSTER"
-        eyebrowLabel.font = AppFont.micro(12)
-        eyebrowLabel.textColor = ColorSystem.primaryBlue
+        let eyebrowLabel = WPDesign.makeLabel(style: .eyebrow, text: "PERSONAL WORKOUT POSTER")
         eyebrowLabel.textAlignment = .center
 
         logoContainerView.layer.addSublayer(logoGradientLayer)
@@ -211,13 +193,13 @@ class HomeDashboardViewController: UIViewController {
         contentStackView.setCustomSpacing(24, after: headerContainer)
 
         // Weekly Summary Section
-        let weeklySectionLabel = UILabel()
-        weeklySectionLabel.text = WorkoutPlazaStrings.Home.This.week
-        weeklySectionLabel.font = AppFont.display(24)
-        weeklySectionLabel.textColor = ColorSystem.mainText
+        let weeklyHeaderView = WPSectionHeaderView(
+            title: WorkoutPlazaStrings.Home.This.week,
+            subtitle: "Running and climbing snapshot"
+        )
 
-        contentStackView.addArrangedSubview(weeklySectionLabel)
-        contentStackView.setCustomSpacing(12, after: weeklySectionLabel)
+        contentStackView.addArrangedSubview(weeklyHeaderView)
+        contentStackView.setCustomSpacing(12, after: weeklyHeaderView)
 
         setupWeeklySummaryCards()
         contentStackView.addArrangedSubview(weeklySummaryStack)
@@ -227,24 +209,11 @@ class HomeDashboardViewController: UIViewController {
         contentStackView.setCustomSpacing(24, after: weeklySummaryStack)
 
         // Recent Records Section Header
-        let sectionHeaderView = UIView()
-
-        let sectionLabel = UILabel()
-        sectionLabel.text = WorkoutPlazaStrings.Home.Recent.records
-        sectionLabel.font = AppFont.display(24)
-        sectionLabel.textColor = ColorSystem.mainText
-
-        sectionHeaderView.addSubview(sectionLabel)
-        sectionHeaderView.addSubview(recordsToggleButton)
-
-        sectionLabel.snp.makeConstraints { make in
-            make.leading.top.bottom.equalToSuperview()
-        }
-
-        recordsToggleButton.snp.makeConstraints { make in
-            make.trailing.centerY.equalToSuperview()
-        }
-
+        let sectionHeaderView = WPSectionHeaderView(
+            title: WorkoutPlazaStrings.Home.Recent.records,
+            subtitle: "Latest activity across every sport"
+        )
+        sectionHeaderView.setTrailingView(recordsToggleButton)
         recordsToggleButton.addTarget(self, action: #selector(showAllRecords), for: .touchUpInside)
 
         contentStackView.addArrangedSubview(sectionHeaderView)
@@ -252,23 +221,14 @@ class HomeDashboardViewController: UIViewController {
         contentStackView.addArrangedSubview(recordsStackView)
 
         // Add Workout Button
-        addWorkoutButton.snp.makeConstraints { make in
-            make.height.equalTo(56)
-        }
         addWorkoutButton.addTarget(self, action: #selector(addWorkoutTapped), for: .touchUpInside)
-        AppChrome.stylePrimaryButton(addWorkoutButton, cornerRadius: 28)
 
         contentStackView.addArrangedSubview(addWorkoutButton)
         contentStackView.setCustomSpacing(20, after: recordsStackView)
     }
 
     private func setupWeeklySummaryCards() {
-        [runningWeeklyCard, climbingWeeklyCard].forEach {
-            $0.backgroundColor = ColorSystem.frostedFill
-            $0.layer.borderWidth = 1
-            $0.layer.borderColor = ColorSystem.divider.cgColor
-            $0.layer.applyCardShadow()
-        }
+        [runningWeeklyCard, climbingWeeklyCard].forEach { WPSurface.apply(to: $0) }
 
         // Running Card
         let runningHeader = UIStackView()
@@ -282,10 +242,7 @@ class HomeDashboardViewController: UIViewController {
         runningIcon.contentMode = .scaleAspectFit
         runningIcon.snp.makeConstraints { make in make.width.height.equalTo(16) }
 
-        let runningTitleLabel = UILabel()
-        runningTitleLabel.text = WorkoutPlazaStrings.Workout.running
-        runningTitleLabel.font = AppFont.micro(12)
-        runningTitleLabel.textColor = ColorSystem.primaryBlue
+        let runningTitleLabel = WPDesign.makeLabel(style: .eyebrow, text: WorkoutPlazaStrings.Workout.running, color: ColorSystem.primaryBlue)
 
         runningHeader.addArrangedSubview(runningIcon)
         runningHeader.addArrangedSubview(runningTitleLabel)
@@ -336,10 +293,7 @@ class HomeDashboardViewController: UIViewController {
         climbingIcon.contentMode = .scaleAspectFit
         climbingIcon.snp.makeConstraints { make in make.width.height.equalTo(16) }
 
-        let climbingTitleLabel = UILabel()
-        climbingTitleLabel.text = WorkoutPlazaStrings.Workout.climbing
-        climbingTitleLabel.font = AppFont.micro(12)
-        climbingTitleLabel.textColor = ColorSystem.primaryGreen
+        let climbingTitleLabel = WPDesign.makeLabel(style: .eyebrow, text: WorkoutPlazaStrings.Workout.climbing, color: ColorSystem.primaryGreen)
 
         climbingHeader.addArrangedSubview(climbingIcon)
         climbingHeader.addArrangedSubview(climbingTitleLabel)
