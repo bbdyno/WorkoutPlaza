@@ -212,18 +212,21 @@ class CustomGradientPickerViewController: UIViewController {
     private func setupUI() {
         title = WorkoutPlazaStrings.Gradient.Custom.title
         view.backgroundColor = .systemBackground
-
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .cancel,
+        let closeButton = UIBarButtonItem(
+            title: WorkoutPlazaStrings.Button.close,
+            style: .done,
             target: self,
             action: #selector(cancelTapped)
         )
+        closeButton.tintColor = .white
+        navigationItem.rightBarButtonItem = closeButton
 
         // Bottom container (fixed)
         view.addSubview(bottomContainer)
         bottomContainer.snp.makeConstraints { make in
-            make.leading.trailing.bottom.equalToSuperview()
-            make.height.equalTo(100)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide)
+            make.height.equalTo(82)
         }
 
         bottomContainer.addSubview(applyButton)
@@ -247,6 +250,8 @@ class CustomGradientPickerViewController: UIViewController {
             make.edges.equalToSuperview().inset(20)
             make.width.equalToSuperview().offset(-40)
         }
+        scrollView.contentInset.bottom = 20
+        scrollView.verticalScrollIndicatorInsets.bottom = 20
 
         // Preview container
         let previewContainer = UIView()

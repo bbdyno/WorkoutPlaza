@@ -97,12 +97,14 @@ class ToolSheetViewController: UIViewController {
     private func setupNavigationBar() {
         view.backgroundColor = .systemBackground
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
+        let closeButton = UIBarButtonItem(
             title: WorkoutPlazaStrings.Button.close,
             style: .done,
             target: self,
             action: #selector(closeTapped)
         )
+        closeButton.tintColor = .white
+        navigationItem.rightBarButtonItem = closeButton
 
         if !toolbarActions.isEmpty {
             navigationItem.leftBarButtonItems = toolbarActions.enumerated().map { index, action in
@@ -246,6 +248,7 @@ private class ToolSheetCell: UICollectionViewCell {
 
     static let reuseIdentifier = "ToolSheetCell"
     private static let previewImageCache = NSCache<NSString, UIImage>()
+    private let previewBackgroundColor = UIColor(red: 0.12, green: 0.12, blue: 0.13, alpha: 1.0)
 
     private let iconImageView: UIImageView = {
         let iv = UIImageView()
@@ -283,7 +286,11 @@ private class ToolSheetCell: UICollectionViewCell {
 
     private let previewContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = .clear
+        view.backgroundColor = UIColor(red: 0.12, green: 0.12, blue: 0.13, alpha: 1.0)
+        view.layer.cornerRadius = 12
+        view.layer.cornerCurve = .continuous
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
         view.clipsToBounds = true
         view.isHidden = true
         return view
@@ -403,11 +410,12 @@ private class ToolSheetCell: UICollectionViewCell {
             descriptionLabel.isHidden = true
             previewContainerView.isHidden = false
             previewImageView.isHidden = false
+            previewContainerView.backgroundColor = previewBackgroundColor
 
             // 2열일 때 미리보기 영역을 더 크게
             let previewHeight: CGFloat = columnCount == 2 ? 140 : 56
             previewHeightConstraint.constant = previewHeight
-            let previewInset: CGFloat = columnCount == 2 ? 18 : 0
+            let previewInset: CGFloat = columnCount == 2 ? 14 : 8
             previewImageTopConstraint.constant = previewInset
             previewImageLeadingConstraint.constant = previewInset
             previewImageTrailingConstraint.constant = -previewInset
@@ -449,6 +457,7 @@ private class ToolSheetCell: UICollectionViewCell {
             descriptionLabel.isHidden = false
             descriptionLabel.text = item.description
             previewContainerView.isHidden = true
+            previewContainerView.backgroundColor = previewBackgroundColor
             previewImageView.isHidden = true
             previewImageView.image = nil
 

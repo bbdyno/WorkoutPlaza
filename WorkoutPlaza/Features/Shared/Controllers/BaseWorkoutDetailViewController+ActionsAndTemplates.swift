@@ -203,12 +203,17 @@ extension BaseWorkoutDetailViewController {
     func presentCustomGradientPickerDefault() {
         let picker = CustomGradientPickerViewController()
         picker.delegate = self
+        let nav = UINavigationController(rootViewController: picker)
+        nav.modalPresentationStyle = .pageSheet
 
-        if let sheet = picker.sheetPresentationController {
-            sheet.detents = [.medium()]
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.selectedDetentIdentifier = .large
+            sheet.prefersGrabberVisible = true
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         }
 
-        present(picker, animated: true)
+        present(nav, animated: true)
     }
 
     func iconForGradientDefault(colors: [UIColor]) -> UIImage? {
@@ -220,18 +225,41 @@ extension BaseWorkoutDetailViewController {
             let path = UIBezierPath(ovalIn: rect)
             path.addClip()
 
-            if colors.count > 1 {
-                let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors.map { $0.cgColor } as CFArray, locations: [0, 1])!
-                context.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
-            } else {
-                colors.first?.setFill()
+            if colors.isEmpty {
+                ColorSystem.mainText.setFill()
+                path.fill()
+                return
+            }
+
+            if colors.count == 1 {
+                colors[0].setFill()
                 path.fill()
 
-                if colors.first == .white {
+                if colors[0] == .white {
                     UIColor.systemGray4.setStroke()
                     path.lineWidth = 1
                     path.stroke()
                 }
+                return
+            }
+
+            let cgColors = colors.map(\.cgColor) as CFArray
+            let lastIndex = max(colors.count - 1, 1)
+            let locations = (0..<colors.count).map { CGFloat($0) / CGFloat(lastIndex) }
+            if let gradient = CGGradient(
+                colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                colors: cgColors,
+                locations: locations
+            ) {
+                context.cgContext.drawLinearGradient(
+                    gradient,
+                    start: .zero,
+                    end: CGPoint(x: size.width, y: size.height),
+                    options: []
+                )
+            } else {
+                colors[0].setFill()
+                path.fill()
             }
         }
 

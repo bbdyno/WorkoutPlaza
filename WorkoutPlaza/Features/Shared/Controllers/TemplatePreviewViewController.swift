@@ -139,12 +139,14 @@ class TemplatePreviewViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = ColorSystem.background
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
+        let closeButton = UIBarButtonItem(
             title: WorkoutPlazaStrings.Button.close,
             style: .done,
             target: self,
             action: #selector(closeTapped)
         )
+        closeButton.tintColor = .white
+        navigationItem.rightBarButtonItem = closeButton
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentStackView)

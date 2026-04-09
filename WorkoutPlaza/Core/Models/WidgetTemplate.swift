@@ -93,7 +93,7 @@ struct WidgetTemplate: Codable {
     func thumbnailProvider(widgetFactory: @escaping (WidgetItem, CGRect) -> UIView?) -> (() -> UIView) {
         return { [self] in
             let canvasView = UIView()
-            canvasView.backgroundColor = ColorSystem.cardBackground
+            canvasView.backgroundColor = UIColor(red: 0.12, green: 0.12, blue: 0.13, alpha: 1.0)
             canvasView.clipsToBounds = true
             canvasView.layer.cornerRadius = 8
 
