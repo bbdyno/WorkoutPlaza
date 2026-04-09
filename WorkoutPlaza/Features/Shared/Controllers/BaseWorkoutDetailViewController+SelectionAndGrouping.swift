@@ -262,9 +262,21 @@ extension BaseWorkoutDetailViewController {
             return
         }
 
+        colorPickerWasMultiSelectMode = selectionManager.isMultiSelectMode
+        if !selectedItems.isEmpty {
+            colorPickerTargetIdentifiers = selectedItems.map(\.itemIdentifier)
+        } else if let selectedItem = selectionManager.currentlySelectedItem {
+            colorPickerTargetIdentifiers = [selectedItem.itemIdentifier]
+        } else {
+            colorPickerTargetIdentifiers = []
+        }
+
         let colorPicker = UIColorPickerViewController()
         colorPicker.selectedColor = currentColor
+        colorPicker.supportsAlpha = false
         colorPicker.delegate = self
+        colorPickerHasPushedUndoSnapshot = false
+        isColorPickerActive = true
         present(colorPicker, animated: true)
     }
 
@@ -403,6 +415,10 @@ extension BaseWorkoutDetailViewController {
     }
 
     @objc func handleBackgroundTap(_ gesture: UITapGestureRecognizer) {
+        if isColorPickerActive || Date() < ignoreCanvasTapUntil {
+            return
+        }
+
         let location = gesture.location(in: contentView)
 
         if handleForegroundSelectionTapIfNeeded(at: location) {

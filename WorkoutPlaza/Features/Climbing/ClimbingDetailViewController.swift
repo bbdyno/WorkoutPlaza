@@ -228,10 +228,10 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
                     iconName: "icon.check.circle.fill",
                     actions: [
                         CustomAlertAction(title: NSLocalizedString("share.image", comment: ""), iconName: "icon.image", style: .primary) {
-                            self.shareAsImage()
+                            self.shareAsImage(closeDetailOnCompletion: true)
                         },
                         CustomAlertAction(title: NSLocalizedString("share.sticker", comment: ""), iconName: "icon.download", style: .secondary) {
-                            self.shareAsSticker()
+                            self.shareAsSticker(closeDetailOnCompletion: true)
                         },
                         CustomAlertAction(title: WorkoutPlazaStrings.Common.done, iconName: nil, style: .cancel) {
                             self.closeDetailScreen()

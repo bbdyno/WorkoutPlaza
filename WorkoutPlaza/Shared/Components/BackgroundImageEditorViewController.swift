@@ -196,11 +196,7 @@ class BackgroundImageEditorViewController: UIViewController {
         instructionLabel.textColor = ColorSystem.subText
         instructionLabel.font = AppFont.body(14)
         instructionLabel.textAlignment = .center
-        instructionLabel.backgroundColor = ColorSystem.cardBackground.withAlphaComponent(0.92)
-        instructionLabel.layer.borderWidth = 1
-        instructionLabel.layer.borderColor = ColorSystem.divider.cgColor
-        instructionLabel.layer.cornerRadius = 8
-        instructionLabel.clipsToBounds = true
+        instructionLabel.backgroundColor = .clear
 
         view.addSubview(instructionLabel)
         instructionLabel.snp.makeConstraints { make in
