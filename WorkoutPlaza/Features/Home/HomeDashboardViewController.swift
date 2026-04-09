@@ -92,6 +92,8 @@ class HomeDashboardViewController: UIViewController {
         return stack
     }()
 
+    private let homeAdBannerSlotView = WPAdBannerSlotView(placement: .homeBanner)
+
     private lazy var addWorkoutButton = WPPrimaryButton(title: WorkoutPlazaStrings.Button.Add.workout)
 
     // Weekly summary labels - Running
@@ -117,18 +119,24 @@ class HomeDashboardViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupNotifications()
         loadAllData()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        refreshAdBanner()
         loadAllData()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewDidLayoutSubviews() {
@@ -208,6 +216,13 @@ class HomeDashboardViewController: UIViewController {
         }
         contentStackView.setCustomSpacing(24, after: weeklySummaryStack)
 
+        contentStackView.addArrangedSubview(homeAdBannerSlotView)
+        homeAdBannerSlotView.snp.makeConstraints { make in
+            make.height.equalTo(76)
+        }
+        contentStackView.setCustomSpacing(24, after: homeAdBannerSlotView)
+        refreshAdBanner()
+
         // Recent Records Section Header
         let sectionHeaderView = WPSectionHeaderView(
             title: WorkoutPlazaStrings.Home.Recent.records,
@@ -225,6 +240,29 @@ class HomeDashboardViewController: UIViewController {
 
         contentStackView.addArrangedSubview(addWorkoutButton)
         contentStackView.setCustomSpacing(20, after: recordsStackView)
+    }
+
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMonetizationChanged),
+            name: .wpPurchaseStatusDidChange,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMonetizationChanged),
+            name: .wpFeaturePackDidChange,
+            object: nil
+        )
+    }
+
+    @objc private func handleMonetizationChanged() {
+        refreshAdBanner()
+    }
+
+    private func refreshAdBanner() {
+        _ = homeAdBannerSlotView.refreshState()
     }
 
     private func setupWeeklySummaryCards() {

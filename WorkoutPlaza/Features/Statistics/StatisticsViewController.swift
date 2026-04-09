@@ -47,16 +47,21 @@ class StatisticsViewController: UIViewController {
         return cv
     }()
 
+    private let statisticsAdBannerSlotView = WPAdBannerSlotView(placement: .statisticsBanner)
+    private var statisticsAdBannerHeightConstraint: Constraint?
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupNotificationObservers()
+        refreshAdBanner()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        refreshAdBanner()
         refreshData()
     }
 
@@ -72,11 +77,19 @@ class StatisticsViewController: UIViewController {
         title = WorkoutPlazaStrings.Statistics.title
 
         view.addSubview(collectionView)
+        view.addSubview(statisticsAdBannerSlotView)
         collectionView.contentInset = UIEdgeInsets(top: 4, left: 0, bottom: 24, right: 0)
 
         collectionView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(statisticsAdBannerSlotView.snp.top)
+        }
+
+        statisticsAdBannerSlotView.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).inset(12)
+            statisticsAdBannerHeightConstraint = make.height.equalTo(0).constraint
         }
     }
 
@@ -181,10 +194,31 @@ class StatisticsViewController: UIViewController {
             name: UIApplication.didBecomeActiveNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMonetizationChanged),
+            name: .wpPurchaseStatusDidChange,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMonetizationChanged),
+            name: .wpFeaturePackDidChange,
+            object: nil
+        )
     }
 
     @objc private func handleAppDidBecomeActive() {
         refreshData()
+    }
+
+    @objc private func handleMonetizationChanged() {
+        refreshAdBanner()
+    }
+
+    private func refreshAdBanner() {
+        let height = statisticsAdBannerSlotView.refreshState()
+        statisticsAdBannerHeightConstraint?.update(offset: height)
     }
 
     // MARK: - Data Loading

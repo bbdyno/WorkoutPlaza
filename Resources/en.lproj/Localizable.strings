@@ -656,6 +656,13 @@
 "pro.feature.export.title" = "Premium Export";
 "pro.feature.export.desc" = "Save transparent stickers, high-res images, and clean outputs without watermarks";
 
+// Ads
+"ads.slot.title" = "Ad Slot";
+"ads.slot.subtitle.home" = "Home banner placement";
+"ads.slot.subtitle.statistics" = "Statistics banner placement";
+"ads.slot.debug.missingUnitID" = "AdMob ad unit ID has not been configured yet.";
+"ads.slot.debug.ready" = "Ad ID is configured. SDK hookup is the remaining step.";
+
 // More — Pro Banner
 "more.pro.upgrade.cell" = "Start Pro Subscription";
 "more.pro.upgrade.subtitle" = "Remove ads, unlock unlimited Vision, and access premium export tools.";

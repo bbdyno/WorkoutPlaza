@@ -25,6 +25,8 @@ final class FeaturePackManager {
     enum FeatureKey: String {
         case templateMarket = "template_market"
         case widgetMarket = "widget_market"
+        case adsHomeBanner = "ads_home_banner"
+        case adsStatisticsBanner = "ads_statistics_banner"
     }
 
     struct FeaturePack: Codable {
@@ -37,7 +39,9 @@ final class FeaturePackManager {
             updatedAt: "1970-01-01T00:00:00Z",
             features: [
                 FeatureKey.templateMarket.rawValue: .disabled,
-                FeatureKey.widgetMarket.rawValue: .disabled
+                FeatureKey.widgetMarket.rawValue: .disabled,
+                FeatureKey.adsHomeBanner.rawValue: .disabled,
+                FeatureKey.adsStatisticsBanner.rawValue: .disabled
             ]
         )
     }
@@ -80,6 +84,7 @@ final class FeaturePackManager {
             let remoteJSON = self.remoteConfig.configValue(forKey: self.featurePackKey).stringValue
             if self.parseFeaturePack(jsonString: remoteJSON) != nil {
                 self.cacheFeaturePack(jsonString: remoteJSON)
+                NotificationCenter.default.post(name: .wpFeaturePackDidChange, object: nil)
             }
 
             WPLog.info("feature_pack fetchAndActivate status:", status.rawValue)
@@ -117,6 +122,10 @@ final class FeaturePackManager {
             destination: destination,
             url: url
         )
+    }
+
+    func isAdPlacementEnabled(_ placement: AdPlacement) -> Bool {
+        isEnabled(placement.featureKey)
     }
 
     private func trimmedPayloadValue(_ value: String?) -> String? {
@@ -429,4 +438,8 @@ final class FeaturePackManager {
         }
         return parsed.isEmpty ? [0] : parsed
     }
+}
+
+extension Notification.Name {
+    static let wpFeaturePackDidChange = Notification.Name("wpFeaturePackDidChange")
 }

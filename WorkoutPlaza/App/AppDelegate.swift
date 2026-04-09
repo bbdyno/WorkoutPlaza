@@ -28,6 +28,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
             // Remote Config 자동 업데이트 설정
             setupRemoteConfig()
+            AdManager.shared.startIfNeeded()
             
             // Analytics App Open Logging
             AnalyticsManager.shared.logAppOpen()
