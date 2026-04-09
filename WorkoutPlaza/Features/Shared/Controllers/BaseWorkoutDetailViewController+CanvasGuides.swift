@@ -118,6 +118,9 @@ extension BaseWorkoutDetailViewController {
         } else if backgroundImageView.image != nil, backgroundImageView.frame == .zero {
             // Initial frame if no transform set yet
             backgroundImageView.frame = CGRect(origin: .zero, size: newCanvasSize)
+            if foregroundSelectionPreviewView.image != nil {
+                foregroundSelectionPreviewView.frame = backgroundImageView.frame
+            }
             if foregroundSubjectImageView.image != nil {
                 foregroundSubjectImageView.frame = backgroundImageView.frame
             }
@@ -156,6 +159,9 @@ extension BaseWorkoutDetailViewController {
         
         // Apply frame
         backgroundImageView.frame = CGRect(x: x, y: y, width: scaledWidth, height: scaledHeight)
+        if foregroundSelectionPreviewView.image != nil {
+            foregroundSelectionPreviewView.frame = backgroundImageView.frame
+        }
         if foregroundSubjectImageView.image != nil {
             foregroundSubjectImageView.frame = backgroundImageView.frame
         }
@@ -180,6 +186,7 @@ extension BaseWorkoutDetailViewController {
         hasUnsavedChanges = true
         applyCenterStickySnap(to: movedView, phase: phase)
         applyWidgetAlignmentSnap(to: movedView, phase: phase)
+        refreshCanvasOverlayZOrder()
     }
 
     private func applyCenterStickySnap(to movedView: UIView, phase: WidgetMovePhase) {

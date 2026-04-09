@@ -12,6 +12,7 @@ extension BaseWorkoutDetailViewController {
 
     func setupCommonViews() {
         view.addSubview(instructionLabel)
+        view.addSubview(visionSelectionBanner)
         view.addSubview(canvasContainerView)
         canvasContainerView.addSubview(scrollView)
         scrollView.addSubview(contentView)
@@ -19,6 +20,7 @@ extension BaseWorkoutDetailViewController {
         contentView.addSubview(backgroundTemplateView)
         contentView.addSubview(backgroundImageView)
         contentView.addSubview(dimOverlay)
+        contentView.addSubview(foregroundSelectionPreviewView)
         contentView.addSubview(foregroundSubjectImageView)
         contentView.addSubview(watermarkImageView)
         contentView.addSubview(textPathDrawingOverlayView)
@@ -35,6 +37,9 @@ extension BaseWorkoutDetailViewController {
         view.addSubview(textPathColorPanel)
         view.addSubview(textPathFontPanel)
         view.addSubview(textPathSizePanel)
+
+        visionSelectionBanner.addSubview(visionSelectionStatusLabel)
+        visionSelectionBanner.addSubview(visionSelectionCancelButton)
 
         setupTopRightToolbar()
         setupBottomFloatingToolbar()
@@ -54,6 +59,25 @@ extension BaseWorkoutDetailViewController {
         instructionLabel.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(Constants.Layout.instructionTopOffset)
             make.leading.trailing.equalToSuperview().inset(Constants.Layout.horizontalPadding)
+        }
+
+        visionSelectionCancelButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        visionSelectionStatusLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        visionSelectionBanner.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(Constants.Layout.instructionTopOffset)
+            make.leading.equalToSuperview().inset(Constants.Layout.horizontalPadding)
+            make.trailing.lessThanOrEqualTo(topRightToolbar.snp.leading).offset(-12)
+        }
+
+        visionSelectionStatusLabel.snp.makeConstraints { make in
+            make.leading.top.bottom.equalToSuperview().inset(14)
+            make.trailing.equalTo(visionSelectionCancelButton.snp.leading).offset(-12)
+        }
+
+        visionSelectionCancelButton.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(14)
+            make.centerY.equalToSuperview()
         }
         
         canvasContainerView.snp.makeConstraints { make in
@@ -121,7 +145,9 @@ extension BaseWorkoutDetailViewController {
             make.centerX.equalToSuperview()
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(Constants.Layout.multiSelectToolbarBottomOffset)
             make.height.equalTo(Constants.Layout.multiSelectToolbarHeight)
-            make.width.equalTo(Constants.Layout.multiSelectToolbarWidth)
+            make.width.equalTo(Constants.Layout.multiSelectToolbarWidth).priority(.high)
+            make.leading.greaterThanOrEqualToSuperview().offset(16)
+            make.trailing.lessThanOrEqualToSuperview().inset(16)
         }
         
         toastLabel.snp.makeConstraints { make in
@@ -492,25 +518,27 @@ extension BaseWorkoutDetailViewController {
     func setupMultiSelectToolbarConfig() {
         let stack = UIStackView(arrangedSubviews: [groupButton, ungroupButton])
         stack.axis = .horizontal
-        stack.spacing = 16
+        stack.spacing = 12
         
         multiSelectToolbar.addSubview(multiSelectCountLabel)
         multiSelectToolbar.addSubview(stack)
         multiSelectToolbar.addSubview(cancelMultiSelectButton)
         
         multiSelectCountLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(20)
+            make.leading.equalToSuperview().offset(18)
             make.centerY.equalToSuperview()
         }
         
         stack.snp.makeConstraints { make in
-            make.center.equalToSuperview()
+            make.centerY.equalToSuperview()
+            make.leading.greaterThanOrEqualTo(multiSelectCountLabel.snp.trailing).offset(12)
+            make.trailing.lessThanOrEqualTo(cancelMultiSelectButton.snp.leading).offset(-12)
+            make.centerX.equalToSuperview().offset(8)
         }
         
         cancelMultiSelectButton.snp.makeConstraints { make in
             make.trailing.equalToSuperview().inset(10)
             make.centerY.equalToSuperview()
-            make.size.equalTo(34)
         }
     }
     
@@ -553,6 +581,8 @@ extension BaseWorkoutDetailViewController {
     func setupDefaultBackground() {
         backgroundTemplateView.applyTemplate(.gradient1)
         backgroundImageView.isHidden = true
+        foregroundSelectionPreviewView.image = nil
+        foregroundSelectionPreviewView.isHidden = true
         foregroundSubjectImageView.image = nil
         foregroundSubjectImageView.isHidden = true
         updateVisionButtonState()

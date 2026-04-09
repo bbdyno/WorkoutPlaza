@@ -405,6 +405,14 @@ extension BaseWorkoutDetailViewController {
     @objc func handleBackgroundTap(_ gesture: UITapGestureRecognizer) {
         let location = gesture.location(in: contentView)
 
+        if handleForegroundSelectionTapIfNeeded(at: location) {
+            return
+        }
+
+        if isVisionSelectionModeActive {
+            return
+        }
+
         // Check if tapped on any widget or route map
         for widget in widgets {
             if widget.frame.contains(location) {
@@ -423,6 +431,21 @@ extension BaseWorkoutDetailViewController {
         selectionManager.deselectAll()
     }
 
+    private func handleForegroundSelectionTapIfNeeded(at location: CGPoint) -> Bool {
+        guard pendingForegroundSelectionSession != nil else { return false }
+        guard backgroundImageView.frame.contains(location) else {
+            showToast(NSLocalizedString("vision.foreground.tapTarget", comment: ""))
+            return true
+        }
+
+        let normalizedPoint = CGPoint(
+            x: (location.x - backgroundImageView.frame.minX) / backgroundImageView.frame.width,
+            y: (location.y - backgroundImageView.frame.minY) / backgroundImageView.frame.height
+        )
+        applyForegroundSelection(at: normalizedPoint)
+        return true
+    }
+
     func setupLongPressGesture() {
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
         longPressGesture.minimumPressDuration = 0.5
@@ -431,6 +454,7 @@ extension BaseWorkoutDetailViewController {
 
     @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began else { return }
+        guard isVisionSelectionModeActive == false else { return }
 
         let location = gesture.location(in: contentView)
 
@@ -478,13 +502,25 @@ extension BaseWorkoutDetailViewController {
     // MARK: - Multi-Select Toolbar Helpers
 
     func showMultiSelectToolbar() {
+        guard isVisionSelectionModeActive == false else {
+            self.multiSelectToolbar.isHidden = true
+            self.multiSelectToolbar.alpha = 0.0
+            self.bottomFloatingToolbar.isHidden = true
+            self.bottomFloatingToolbar.alpha = 0.0
+            return
+        }
         self.multiSelectToolbar.isHidden = false
         self.multiSelectToolbar.alpha = 1.0
-        self.bottomFloatingToolbar.alpha = 0.0
-        self.bottomFloatingToolbar.isHidden = true
     }
 
     func hideMultiSelectToolbar() {
+        guard isVisionSelectionModeActive == false else {
+            self.multiSelectToolbar.isHidden = true
+            self.multiSelectToolbar.alpha = 0.0
+            self.bottomFloatingToolbar.isHidden = true
+            self.bottomFloatingToolbar.alpha = 0.0
+            return
+        }
         self.multiSelectToolbar.isHidden = true
         self.multiSelectToolbar.alpha = 0.0
 
@@ -519,6 +555,20 @@ extension BaseWorkoutDetailViewController {
     }
 
     func updateToolbarItemsState() {
+        guard isVisionSelectionModeActive == false else {
+            bottomFloatingToolbar.isHidden = true
+            bottomFloatingToolbar.alpha = 0.0
+            multiSelectToolbar.isHidden = true
+            multiSelectToolbar.alpha = 0.0
+            colorPickerButton.isEnabled = false
+            fontPickerButton.isEnabled = false
+            alignmentButton.isEnabled = false
+            alignmentButton.isHidden = true
+            deleteItemButton.isEnabled = false
+            updateVisionButtonState()
+            return
+        }
+
         let hasSelection = selectionManager.hasSelection
 
         UIView.animate(withDuration: 0.25) {

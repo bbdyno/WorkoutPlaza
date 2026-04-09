@@ -19,6 +19,7 @@ extension BaseWorkoutDetailViewController: UIScrollViewDelegate {
 extension BaseWorkoutDetailViewController: SelectionManagerDelegate {
     func selectionManager(_ manager: SelectionManager, didSelect item: Selectable) {
         updateToolbarItemsState()
+        refreshCanvasOverlayZOrder()
         
         // If a group is selected, show toolbar but DO NOT auto-enter multi-select mode
         // This allows user to switch selection by tapping another widget
@@ -35,6 +36,7 @@ extension BaseWorkoutDetailViewController: SelectionManagerDelegate {
     
     func selectionManager(_ manager: SelectionManager, didDeselect item: Selectable) {
         updateToolbarItemsState()
+        refreshCanvasOverlayZOrder()
         
         // Check current selection state
         let selectedItems = manager.getSelectedItems()
@@ -51,11 +53,13 @@ extension BaseWorkoutDetailViewController: SelectionManagerDelegate {
     func selectionManagerDidDeselectAll(_ manager: SelectionManager) {
         updateToolbarItemsState()
         hideMultiSelectToolbar()
+        refreshCanvasOverlayZOrder()
     }
     
     func selectionManager(_ manager: SelectionManager, didSelectMultiple items: [Selectable]) {
         updateToolbarItemsState()
         updateMultiSelectToolbarState()
+        refreshCanvasOverlayZOrder()
     }
     
     func selectionManager(_ manager: SelectionManager, didEnterMultiSelectMode: Bool) {
@@ -266,8 +270,13 @@ extension BaseWorkoutDetailViewController {
             backgroundSubjectSegmentationTask?.cancel()
         }
         backgroundSubjectSegmentationRequestID = UUID()
+        pendingForegroundSelectionSession = nil
+        hideForegroundSelectionPreview()
         foregroundSubjectImageView.image = nil
         foregroundSubjectImageView.isHidden = true
+        setCanvasItemInteractionEnabled(true)
+        setVisionSelectionModeActive(false)
+        resetInstructionMessage()
     }
 
     @objc func showVisionOptions() {
@@ -288,12 +297,13 @@ extension BaseWorkoutDetailViewController {
         })
 
         actionSheet.addAction(UIAlertAction(title: NSLocalizedString("vision.menu.foreground", comment: ""), style: .default) { [weak self] _ in
-            self?.performVisionCutout(.foreground, from: image)
+            self?.prepareForegroundSelection(for: image)
         })
 
         if foregroundSubjectImageView.isHidden == false {
             actionSheet.addAction(UIAlertAction(title: NSLocalizedString("vision.menu.clear", comment: ""), style: .destructive) { [weak self] _ in
                 self?.clearForegroundSubjectOverlay()
+                self?.hasUnsavedChanges = true
             })
         }
 
@@ -345,6 +355,107 @@ extension BaseWorkoutDetailViewController {
                     self.foregroundSubjectImageView.isHidden = true
                     WPLog.warning("Vision cutout failed:", error.localizedDescription)
                     self.showToast(mode.notFoundMessage)
+                }
+            }
+        }
+    }
+
+    func prepareForegroundSelection(for image: UIImage) {
+        clearForegroundSubjectOverlay()
+        setVisionSelectionModeActive(true, message: NSLocalizedString("vision.foreground.preparing", comment: ""))
+
+        let requestID = UUID()
+        backgroundSubjectSegmentationRequestID = requestID
+
+        backgroundSubjectSegmentationTask = Task { [weak self] in
+            guard let self else { return }
+
+            do {
+                let session = try await VisionCutoutService.shared.prepareForegroundSelection(from: image)
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    guard self.backgroundSubjectSegmentationRequestID == requestID else { return }
+
+                    guard let session else {
+                        self.setVisionSelectionModeActive(false)
+                        self.resetInstructionMessage()
+                        self.showToast(NSLocalizedString("vision.foreground.notFound", comment: ""))
+                        return
+                    }
+
+                    self.selectionManager.deselectAll()
+                    self.pendingForegroundSelectionSession = session
+                    self.setCanvasItemInteractionEnabled(false)
+                    self.updateVisionSelectionMessage(NSLocalizedString("vision.foreground.tapTarget", comment: ""))
+                    self.showForegroundSelectionPreview(session.previewImage)
+                }
+            } catch {
+                await MainActor.run {
+                    guard self.backgroundSubjectSegmentationRequestID == requestID else { return }
+                    self.setVisionSelectionModeActive(false)
+                    self.resetInstructionMessage()
+                    WPLog.warning("Vision foreground selection preparation failed:", error.localizedDescription)
+                    self.showToast(NSLocalizedString("vision.foreground.notFound", comment: ""))
+                }
+            }
+        }
+    }
+
+    func applyForegroundSelection(at normalizedPoint: CGPoint) {
+        guard let session = pendingForegroundSelectionSession else { return }
+        updateVisionSelectionMessage(NSLocalizedString("vision.foreground.applying", comment: ""))
+
+        let requestID = UUID()
+        backgroundSubjectSegmentationRequestID = requestID
+
+        backgroundSubjectSegmentationTask = Task { [weak self] in
+            guard let self else { return }
+
+            do {
+                let result = try await VisionCutoutService.shared.extractForegroundInstance(
+                    from: session,
+                    normalizedPoint: normalizedPoint
+                )
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    guard self.backgroundSubjectSegmentationRequestID == requestID else { return }
+
+                    guard let result else {
+                        self.updateVisionSelectionMessage(NSLocalizedString("vision.foreground.tapTarget", comment: ""))
+                        self.showToast(NSLocalizedString("vision.foreground.invalidSelection", comment: ""))
+                        return
+                    }
+
+                    self.showForegroundSelectionPreview(result.previewImage)
+                    UIView.animate(withDuration: 0.18, animations: {
+                        self.foregroundSelectionPreviewView.alpha = 0.95
+                    }) { _ in
+                        UIView.animate(withDuration: 0.18, delay: 0.22, options: [.curveEaseInOut]) {
+                            self.foregroundSelectionPreviewView.alpha = 0
+                        } completion: { _ in
+                            self.hideForegroundSelectionPreview()
+                        }
+                    }
+
+                    self.pendingForegroundSelectionSession = nil
+                    self.setCanvasItemInteractionEnabled(true)
+                    self.setVisionSelectionModeActive(false, hidePreview: false)
+                    self.resetInstructionMessage()
+                    self.foregroundSubjectImageView.image = result.cutoutImage
+                    self.foregroundSubjectImageView.isHidden = false
+                    self.foregroundSubjectImageView.frame = self.backgroundImageView.frame
+                    self.hasUnsavedChanges = true
+                    self.refreshCanvasOverlayZOrder()
+                    self.showToast(NSLocalizedString("vision.foreground.applied", comment: ""), style: .success)
+                }
+            } catch {
+                await MainActor.run {
+                    guard self.backgroundSubjectSegmentationRequestID == requestID else { return }
+                    self.updateVisionSelectionMessage(NSLocalizedString("vision.foreground.tapTarget", comment: ""))
+                    WPLog.warning("Vision foreground selection failed:", error.localizedDescription)
+                    self.showToast(NSLocalizedString("vision.foreground.invalidSelection", comment: ""))
                 }
             }
         }

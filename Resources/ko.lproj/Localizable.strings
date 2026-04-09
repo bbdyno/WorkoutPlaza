@@ -724,9 +724,13 @@
 "background.subject.notFound" = "사람을 찾지 못했어요";
 "vision.menu.title" = "Vision 도구";
 "vision.menu.person" = "사람 컷아웃";
-"vision.menu.foreground" = "전경 컷아웃";
+"vision.menu.foreground" = "전경 선택";
 "vision.menu.clear" = "컷아웃 제거";
 "vision.background.required" = "먼저 배경 사진을 추가해 주세요";
+"vision.foreground.preparing" = "대상을 찾는 중...";
+"vision.foreground.tapTarget" = "추출할 대상을 탭해 주세요";
+"vision.foreground.applying" = "선택한 대상을 적용하는 중...";
 "vision.foreground.detecting" = "전경을 감지하는 중...";
 "vision.foreground.applied" = "전경 컷아웃을 적용했어요";
 "vision.foreground.notFound" = "전경을 찾지 못했어요";
+"vision.foreground.invalidSelection" = "감지된 대상을 탭해 주세요";

@@ -723,12 +723,16 @@
 "background.subject.notFound" = "No person detected";
 "vision.menu.title" = "Vision Tools";
 "vision.menu.person" = "Extract Person";
-"vision.menu.foreground" = "Extract Foreground";
+"vision.menu.foreground" = "Select Foreground";
 "vision.menu.clear" = "Remove Cutout";
 "vision.background.required" = "Add a background photo first";
+"vision.foreground.preparing" = "Finding subjects...";
+"vision.foreground.tapTarget" = "Tap the object you want to extract";
+"vision.foreground.applying" = "Applying selection...";
 "vision.foreground.detecting" = "Detecting foreground...";
 "vision.foreground.applied" = "Foreground cutout applied";
 "vision.foreground.notFound" = "No foreground detected";
+"vision.foreground.invalidSelection" = "Tap a detected object";
 
 // Tip Supporter Badge
 "tip.supporter.badge" = "Supporter";

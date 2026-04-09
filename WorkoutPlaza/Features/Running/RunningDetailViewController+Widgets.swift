@@ -1258,44 +1258,7 @@ extension RunningDetailViewController {
 
     // MARK: - Background Customization
     @objc override internal func changeTemplate() {
-        let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Background.options, message: nil, preferredStyle: .actionSheet)
-
-        let templates: [(name: String, style: BackgroundTemplateView.TemplateStyle, colors: [UIColor])] = [
-            (WorkoutPlazaStrings.Background.Gradient.blue, .gradient1, [UIColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1.0), UIColor(red: 0.4, green: 0.6, blue: 1.0, alpha: 1.0)]),
-            (WorkoutPlazaStrings.Background.Gradient.purple, .gradient2, [UIColor(red: 0.5, green: 0.2, blue: 0.8, alpha: 1.0), UIColor(red: 0.8, green: 0.3, blue: 0.9, alpha: 1.0)]),
-            (WorkoutPlazaStrings.Background.Gradient.orange, .gradient3, [UIColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1.0), UIColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 1.0)]),
-            (WorkoutPlazaStrings.Background.Gradient.green, .gradient4, [UIColor(red: 0.2, green: 0.7, blue: 0.5, alpha: 1.0), UIColor(red: 0.4, green: 0.9, blue: 0.6, alpha: 1.0)]),
-            (WorkoutPlazaStrings.Background.dark, .dark, [UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0), UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)]),
-            (WorkoutPlazaStrings.Background.minimal, .minimal, [.white])
-        ]
-
-        for template in templates {
-            let action = UIAlertAction(title: template.name, style: .default) { [weak self] _ in
-                self?.applyTemplate(template.style)
-            }
-            action.setValue(iconForGradient(colors: template.colors), forKey: "image")
-            actionSheet.addAction(action)
-        }
-
-        // Random
-        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.random, style: .default) { [weak self] _ in
-            self?.backgroundTemplateView.applyRandomTemplate()
-        })
-
-        // Custom
-        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.Custom.gradient, style: .default) { [weak self] _ in
-            self?.presentCustomGradientPicker()
-        })
-
-        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
-
-        // iPad support
-        if let popover = actionSheet.popoverPresentationController {
-            popover.sourceView = backgroundTemplateButton
-            popover.sourceRect = backgroundTemplateButton.bounds
-        }
-
-        present(actionSheet, animated: true)
+        super.changeTemplate()
     }
 
     internal func presentCustomGradientPicker() {
@@ -1346,29 +1309,7 @@ extension RunningDetailViewController {
     
     // MARK: - 사진 선택
     @objc override internal func selectPhoto() {
-        let actionSheet = UIAlertController(title: WorkoutPlazaStrings.Alert.Background.select, message: nil, preferredStyle: .actionSheet)
-        
-        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.Select.photo, style: .default) { [weak self] _ in
-            self?.presentPhotoPicker()
-        })
-        
-        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.Use.template, style: .default) { [weak self] _ in
-            self?.useTemplate()
-        })
-        
-        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.remove, style: .destructive) { [weak self] _ in
-            self?.removeBackground()
-        })
-        
-        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
-
-        // iPad 지원
-        if let popover = actionSheet.popoverPresentationController {
-            popover.sourceView = selectPhotoButton
-            popover.sourceRect = selectPhotoButton.bounds
-        }
-
-        present(actionSheet, animated: true)
+        super.selectPhoto()
     }
 
     internal func presentPhotoPicker() {

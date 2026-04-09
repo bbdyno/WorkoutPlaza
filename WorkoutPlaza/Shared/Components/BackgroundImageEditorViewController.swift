@@ -36,6 +36,9 @@ class BackgroundImageEditorViewController: UIViewController {
         static let opacitySliderTopOffset: CGFloat = 10
         static let opacityLabelWidth: CGFloat = 50
         static let colorSwatchSize: CGFloat = 32
+        static let canvasHorizontalInset: CGFloat = 24
+        static let canvasBottomInset: CGFloat = 20
+        static let canvasTopSpacing: CGFloat = 20
     }
 
     // MARK: - Properties
@@ -113,10 +116,29 @@ class BackgroundImageEditorViewController: UIViewController {
         setupImage()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = ColorSystem.background.withAlphaComponent(0.88)
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialLight)
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [
+            .foregroundColor: ColorSystem.mainText,
+            .font: AppFont.bodyBold(17)
+        ]
+
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.tintColor = ColorSystem.mainText
+    }
+
     // MARK: - Setup
     private func setupUI() {
         title = WorkoutPlazaStrings.Background.Editor.title
-        view.backgroundColor = ColorSystem.background
+        WPDesign.applyScreenBackground(to: view)
+        navigationItem.largeTitleDisplayMode = .never
 
         // Cancel button
         navigationItem.leftBarButtonItem = UIBarButtonItem(
@@ -137,7 +159,11 @@ class BackgroundImageEditorViewController: UIViewController {
         containerView.frame = CGRect(origin: .zero, size: canvasSize)
         containerView.center = view.center
         containerView.clipsToBounds = true
-        containerView.backgroundColor = .clear
+        containerView.backgroundColor = ColorSystem.cardBackgroundHighlight
+        containerView.layer.cornerRadius = 28
+        containerView.layer.cornerCurve = .continuous
+        containerView.layer.borderWidth = 1
+        containerView.layer.borderColor = ColorSystem.divider.cgColor
         
         // Scroll View
         scrollView.delegate = self
@@ -168,9 +194,11 @@ class BackgroundImageEditorViewController: UIViewController {
         instructionLabel = UILabel()
         instructionLabel.text = WorkoutPlazaStrings.Background.Editor.instruction
         instructionLabel.textColor = ColorSystem.subText
-        instructionLabel.font = .systemFont(ofSize: 14)
+        instructionLabel.font = AppFont.body(14)
         instructionLabel.textAlignment = .center
-//        instructionLabel.backgroundColor = ColorSystem.cardBackground.withAlphaComponent(0.95)
+        instructionLabel.backgroundColor = ColorSystem.cardBackground.withAlphaComponent(0.92)
+        instructionLabel.layer.borderWidth = 1
+        instructionLabel.layer.borderColor = ColorSystem.divider.cgColor
         instructionLabel.layer.cornerRadius = 8
         instructionLabel.clipsToBounds = true
 
@@ -196,8 +224,7 @@ class BackgroundImageEditorViewController: UIViewController {
 
     private func setupOverlayControls() {
         // Container setup
-        overlayControlsContainer.backgroundColor = ColorSystem.cardBackground.withAlphaComponent(0.95)
-        overlayControlsContainer.layer.cornerRadius = 16
+        WPSurface.apply(to: overlayControlsContainer, style: .card, cornerRadius: 20)
         view.addSubview(overlayControlsContainer)
 
         // Toggle
@@ -427,9 +454,11 @@ class BackgroundImageEditorViewController: UIViewController {
         
         // Scale container to fit screen if needed
         let safeArea = view.safeAreaLayoutGuide.layoutFrame
+        let canvasTop = overlayControlsContainer.frame.maxY + Constants.canvasTopSpacing
+        let availableHeight = max(0, safeArea.maxY - canvasTop - Constants.canvasBottomInset)
         let availableSize = CGSize(
-            width: safeArea.width - 40,
-            height: safeArea.height - 200 // Increased space for overlay controls
+            width: safeArea.width - (Constants.canvasHorizontalInset * 2),
+            height: availableHeight
         )
 
         let scaleX = availableSize.width / canvasSize.width
@@ -437,7 +466,10 @@ class BackgroundImageEditorViewController: UIViewController {
         let scale = min(1.0, min(scaleX, scaleY))
 
         containerView.transform = CGAffineTransform(scaleX: scale, y: scale)
-        containerView.center = CGPoint(x: safeArea.midX, y: safeArea.midY + 60) // Offset for overlay controls
+        let scaledHeight = canvasSize.height * scale
+        let centeredY = canvasTop + (availableHeight / 2)
+        let minimumY = canvasTop + (scaledHeight / 2)
+        containerView.center = CGPoint(x: safeArea.midX, y: max(centeredY, minimumY))
 
         centerImage()
         updateOverlayView()

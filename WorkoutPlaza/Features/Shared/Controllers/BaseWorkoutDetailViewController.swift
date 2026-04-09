@@ -72,9 +72,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             static let bottomToolbarHeight: CGFloat = 60
             static let bottomToolbarPadding = UIEdgeInsets(top: 8, left: 20, bottom: 8, right: 20)
             
-            static let multiSelectToolbarBottomOffset: CGFloat = -80
-            static let multiSelectToolbarHeight: CGFloat = 50
-            static let multiSelectToolbarWidth: CGFloat = 320
+            static let multiSelectToolbarBottomOffset: CGFloat = -92
+            static let multiSelectToolbarHeight: CGFloat = 56
+            static let multiSelectToolbarWidth: CGFloat = 336
             
             static let toastTopOffset: CGFloat = 60
             static let toastHeight: CGFloat = 40
@@ -117,6 +117,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     var backgroundTransform: BackgroundTransform?
     var backgroundSubjectSegmentationTask: Task<Void, Never>?
     var backgroundSubjectSegmentationRequestID = UUID()
+    var pendingForegroundSelectionSession: VisionForegroundSelectionSession?
+    var isVisionSelectionModeActive = false
 
     // Navigation Bar State (for restoration)
     private var originalStandardAppearance: UINavigationBarAppearance?
@@ -214,6 +216,16 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         imageView.isUserInteractionEnabled = false
         return imageView
     }()
+
+    lazy var foregroundSelectionPreviewView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.isHidden = true
+        imageView.backgroundColor = .clear
+        imageView.isUserInteractionEnabled = false
+        return imageView
+    }()
     
     lazy var dimOverlay: UIView = {
         let view = UIView()
@@ -231,6 +243,45 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         label.textAlignment = .center
         label.numberOfLines = 0
         return label
+    }()
+
+    lazy var visionSelectionBanner: UIView = {
+        let view = UIView()
+        view.backgroundColor = ColorSystem.cardBackground.withAlphaComponent(0.96)
+        view.layer.cornerRadius = 18
+        view.layer.cornerCurve = .continuous
+        view.layer.borderWidth = 1
+        view.layer.borderColor = ColorSystem.divider.cgColor
+        view.layer.shadowColor = ColorSystem.cardShadow.cgColor
+        view.layer.shadowOpacity = 1
+        view.layer.shadowOffset = CGSize(width: 0, height: 8)
+        view.layer.shadowRadius = 18
+        view.isHidden = true
+        view.alpha = 0
+        return view
+    }()
+
+    lazy var visionSelectionStatusLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = ColorSystem.mainText
+        label.font = AppFont.bodySemiBold(14)
+        label.numberOfLines = 2
+        return label
+    }()
+
+    lazy var visionSelectionCancelButton: UIButton = {
+        var config = UIButton.Configuration.filled()
+        config.title = WorkoutPlazaStrings.Common.cancel
+        config.baseBackgroundColor = ColorSystem.mainText
+        config.baseForegroundColor = ColorSystem.background
+        config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
+
+        let button = UIButton(type: .system)
+        button.configuration = config
+        button.layer.cornerRadius = 12
+        button.layer.cornerCurve = .continuous
+        button.addTarget(self, action: #selector(cancelVisionSelectionMode), for: .touchUpInside)
+        return button
     }()
     
     lazy var watermarkImageView: UIImageView = {
@@ -268,10 +319,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     
     lazy var multiSelectToolbar: UIView = {
         let view = UIView()
-        view.backgroundColor = Constants.multiSelectToolbarBackgroundColor
-        view.layer.cornerRadius = 25
+        view.backgroundColor = Constants.toolbarBackgroundColor
+        view.layer.cornerRadius = 28
+        view.layer.cornerCurve = .continuous
         view.layer.borderWidth = 1
-        view.layer.borderColor = Constants.multiSelectBorderColor
+        view.layer.borderColor = ColorSystem.divider.cgColor
         view.layer.shadowColor = ColorSystem.cardShadow.cgColor
         view.layer.shadowOpacity = 1
         view.layer.shadowOffset = CGSize(width: 0, height: 10)
@@ -283,8 +335,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     lazy var multiSelectCountLabel: UILabel = {
         let label = UILabel()
         label.text = WorkoutPlazaStrings.Base.Multi.Select.count(0)
-        label.textColor = .white
-        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.textColor = ColorSystem.mainText
+        label.font = AppFont.bodySemiBold(13)
         return label
     }()
     
@@ -306,7 +358,20 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     lazy var groupButton: UIButton = createToolbarButton(systemName: "icon.grid.four", action: #selector(groupSelectedWidgets))
     lazy var ungroupButton: UIButton = createToolbarButton(systemName: "icon.grid.four", action: #selector(ungroupSelectedWidget))
-    lazy var cancelMultiSelectButton: UIButton = createToolbarButton(systemName: "icon.x", action: #selector(exitMultiSelectMode))
+    lazy var cancelMultiSelectButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(named: "icon.x") ?? UIImage(systemName: "xmark"), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor(white: 0.3, alpha: 0.8)
+        button.layer.cornerRadius = 20
+        button.layer.cornerCurve = .continuous
+        button.clipsToBounds = true
+        button.addTarget(self, action: #selector(exitMultiSelectMode), for: .touchUpInside)
+        button.snp.makeConstraints { make in
+            make.size.equalTo(40)
+        }
+        return button
+    }()
 
     lazy var toastLabel: UILabel = {
         let label = UILabel()
@@ -983,6 +1048,9 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         if foregroundSubjectImageView.isHidden == false {
             contentView.bringSubviewToFront(foregroundSubjectImageView)
         }
+        if foregroundSelectionPreviewView.isHidden == false {
+            contentView.bringSubviewToFront(foregroundSelectionPreviewView)
+        }
         contentView.bringSubviewToFront(watermarkImageView)
         contentView.bringSubviewToFront(textPathDrawingOverlayView)
         contentView.bringSubviewToFront(verticalCenterGuideView)
@@ -990,9 +1058,78 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
 
     func updateVisionButtonState() {
-        let canUseVision = backgroundImageView.isHidden == false && backgroundImageView.image != nil
+        let canUseVision = backgroundImageView.isHidden == false
+            && backgroundImageView.image != nil
+            && isVisionSelectionModeActive == false
         visionButton.isEnabled = canUseVision
         visionButton.alpha = canUseVision ? 1.0 : 0.45
+    }
+
+    func setCanvasItemInteractionEnabled(_ isEnabled: Bool) {
+        widgets.forEach { $0.isUserInteractionEnabled = isEnabled }
+        templateGroups.forEach { $0.isUserInteractionEnabled = isEnabled }
+    }
+
+    func resetInstructionMessage() {
+        instructionLabel.text = NSLocalizedString("ui.drag.widgets.instruction", comment: "")
+    }
+
+    func setVisionSelectionModeActive(_ isActive: Bool, message: String? = nil, hidePreview: Bool = true) {
+        visionSelectionBanner.layer.removeAllAnimations()
+        isVisionSelectionModeActive = isActive
+        scrollView.isScrollEnabled = !isActive
+        topRightToolbar.isUserInteractionEnabled = !isActive
+        topRightToolbar.alpha = isActive ? 0.22 : 1.0
+        navigationItem.leftBarButtonItem?.isEnabled = !isActive
+        navigationItem.rightBarButtonItem?.isEnabled = !isActive
+        updateVisionButtonState()
+
+        if isActive {
+            selectionManager.deselectAll()
+            bottomFloatingToolbar.isHidden = true
+            bottomFloatingToolbar.alpha = 0
+            multiSelectToolbar.isHidden = true
+            multiSelectToolbar.alpha = 0
+            visionSelectionStatusLabel.text = nil
+            visionSelectionBanner.alpha = 0
+            visionSelectionBanner.isHidden = true
+            instructionLabel.isHidden = false
+            instructionLabel.text = message
+            return
+        }
+
+        visionSelectionStatusLabel.text = nil
+        visionSelectionBanner.alpha = 0
+        visionSelectionBanner.isHidden = true
+        instructionLabel.isHidden = false
+        if hidePreview {
+            hideForegroundSelectionPreview()
+        }
+        updateToolbarItemsState()
+    }
+
+    func updateVisionSelectionMessage(_ message: String) {
+        guard isVisionSelectionModeActive else { return }
+        instructionLabel.text = message
+    }
+
+    func showForegroundSelectionPreview(_ image: UIImage) {
+        foregroundSelectionPreviewView.image = image
+        foregroundSelectionPreviewView.frame = backgroundImageView.frame
+        foregroundSelectionPreviewView.alpha = 0.42
+        foregroundSelectionPreviewView.isHidden = false
+        refreshCanvasOverlayZOrder()
+    }
+
+    func hideForegroundSelectionPreview() {
+        foregroundSelectionPreviewView.layer.removeAllAnimations()
+        foregroundSelectionPreviewView.image = nil
+        foregroundSelectionPreviewView.alpha = 0
+        foregroundSelectionPreviewView.isHidden = true
+    }
+
+    @objc func cancelVisionSelectionMode() {
+        clearForegroundSubjectOverlay()
     }
     
     @objc dynamic func saveWorkoutCard(image: UIImage) {
