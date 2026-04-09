@@ -78,9 +78,13 @@ iOSInjectionProject/
 *.xcodeproj
 *.xcworkspace
 Derived/
+.derivedData/
 .tuist-bin/
 .tuist-version
 **/Generate Project.xcscheme
+
+# Generated media
+app-store-screens/
 
 # Provisioning Profiles (keep out of git for security)
 *.mobileprovision
