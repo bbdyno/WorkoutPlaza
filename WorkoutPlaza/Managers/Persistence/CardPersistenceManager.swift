@@ -13,6 +13,7 @@ struct SavedCardDesign: Codable {
     let backgroundType: BackgroundType
     let backgroundColor: String? // Hex code or identifier
     let backgroundImageData: Data?
+    let foregroundSubjectImageData: Data?
     let widgets: [SavedWidgetState]
     let canvasSize: CGSize
     let aspectRatio: AspectRatio

@@ -118,6 +118,9 @@ extension BaseWorkoutDetailViewController {
         } else if backgroundImageView.image != nil, backgroundImageView.frame == .zero {
             // Initial frame if no transform set yet
             backgroundImageView.frame = CGRect(origin: .zero, size: newCanvasSize)
+            if foregroundSubjectImageView.image != nil {
+                foregroundSubjectImageView.frame = backgroundImageView.frame
+            }
         }
 
         // Store current size for next comparison
@@ -153,6 +156,10 @@ extension BaseWorkoutDetailViewController {
         
         // Apply frame
         backgroundImageView.frame = CGRect(x: x, y: y, width: scaledWidth, height: scaledHeight)
+        if foregroundSubjectImageView.image != nil {
+            foregroundSubjectImageView.frame = backgroundImageView.frame
+        }
+        refreshCanvasOverlayZOrder()
         
         WPLog.debug("Applied Background Frame: \(backgroundImageView.frame)")
     }

@@ -64,6 +64,7 @@ extension BaseWorkoutDetailViewController {
         selectionManager.registerItem(group)
 
         contentView.addSubview(group)
+        refreshCanvasOverlayZOrder()
         templateGroups.append(group)
         hasUnsavedChanges = true
 
@@ -157,7 +158,8 @@ extension BaseWorkoutDetailViewController {
     }
 
     @objc func deleteSelectedItem() {
-        guard selectionManager.currentlySelectedItem != nil else { return }
+        let selectedItems = selectedItemsForEditActions()
+        guard !selectedItems.isEmpty else { return }
 
         let alert = CustomAlertViewController(
             title: WorkoutPlazaStrings.Base.Item.Delete.title,
@@ -165,7 +167,7 @@ extension BaseWorkoutDetailViewController {
             iconName: "icon.trash",
             actions: [
                 CustomAlertAction(title: WorkoutPlazaStrings.Common.delete, iconName: nil, style: .primary) { [weak self] in
-                    self?.performDelete()
+                    self?.performDelete(selectedItems)
                 },
                 CustomAlertAction(title: WorkoutPlazaStrings.Common.cancel, iconName: nil, style: .cancel, handler: nil)
             ]
@@ -174,26 +176,31 @@ extension BaseWorkoutDetailViewController {
         present(alert, animated: true)
     }
 
-    private func performDelete() {
+    private func performDelete(_ selectedItems: [Selectable]) {
+        guard !selectedItems.isEmpty else { return }
         pushUndoSnapshot()
-        guard let selectedItem = selectionManager.currentlySelectedItem else { return }
-        let selectedView = selectedItem as UIView
+        let selectedViews = selectedItems.map { $0 as UIView }
 
         // Remove from selection manager
         selectionManager.deselectAll()
-        selectionManager.unregisterItem(selectedItem)
+        selectedItems.forEach { selectionManager.unregisterItem($0) }
 
         // Remove from widgets or templateGroups array
-        widgets.removeAll { $0 === selectedView }
-        templateGroups.removeAll { $0 === selectedView }
+        for selectedView in selectedViews {
+            widgets.removeAll { $0 === selectedView }
+            templateGroups.removeAll { $0 === selectedView }
+        }
         hasUnsavedChanges = true
+        hideMultiSelectToolbar()
 
         // Remove from view hierarchy
         UIView.animate(withDuration: 0.25, animations: {
-            selectedView.alpha = 0
-            selectedView.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+            selectedViews.forEach {
+                $0.alpha = 0
+                $0.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+            }
         }) { _ in
-            selectedView.removeFromSuperview()
+            selectedViews.forEach { $0.removeFromSuperview() }
         }
 
         updateToolbarItemsState()
@@ -529,5 +536,6 @@ extension BaseWorkoutDetailViewController {
         alignmentButton.isHidden = !hasAlignableSelection
         updateToolbarButtonIcon(alignmentButton, systemName: selectedAlignment.symbolName)
         deleteItemButton.isEnabled = hasSelection
+        updateVisionButtonState()
     }
 }

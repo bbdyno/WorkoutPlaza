@@ -172,17 +172,21 @@ extension BaseWorkoutDetailViewController {
     func useTemplateDefault() {
         backgroundImageView.isHidden = true
         backgroundTemplateView.isHidden = false
+        clearForegroundSubjectOverlay()
         dimOverlay.isHidden = true
         hasUnsavedChanges = true
+        updateVisionButtonState()
         updateWatermarkColorForBackground()
     }
 
     func removeBackgroundDefault() {
         backgroundImageView.isHidden = true
         backgroundTemplateView.isHidden = true
+        clearForegroundSubjectOverlay()
         dimOverlay.isHidden = true
         view.backgroundColor = .systemGroupedBackground
         hasUnsavedChanges = true
+        updateVisionButtonState()
         updateWatermarkColorForBackground()
     }
 
@@ -228,9 +232,11 @@ extension BaseWorkoutDetailViewController {
     func applyTemplateDefault(_ style: BackgroundTemplateView.TemplateStyle) {
         backgroundImageView.isHidden = true
         backgroundTemplateView.isHidden = false
+        clearForegroundSubjectOverlay()
         backgroundTemplateView.applyTemplate(style)
         dimOverlay.isHidden = true
         hasUnsavedChanges = true
+        updateVisionButtonState()
         updateWatermarkColorForBackground()
     }
 

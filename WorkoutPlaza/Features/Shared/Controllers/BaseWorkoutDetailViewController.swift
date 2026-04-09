@@ -92,7 +92,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         static let identity = RestoreCanvasTransform(scaleX: 1, scaleY: 1, uniformScale: 1)
     }
-    
+
     // MARK: - Properties
 
     // State
@@ -115,6 +115,8 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
     // Background State
     var backgroundTransform: BackgroundTransform?
+    var backgroundSubjectSegmentationTask: Task<Void, Never>?
+    var backgroundSubjectSegmentationRequestID = UUID()
 
     // Navigation Bar State (for restoration)
     private var originalStandardAppearance: UINavigationBarAppearance?
@@ -202,6 +204,16 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         view.isUserInteractionEnabled = false
         return view
     }()
+
+    lazy var foregroundSubjectImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.isHidden = true
+        imageView.backgroundColor = .clear
+        imageView.isUserInteractionEnabled = false
+        return imageView
+    }()
     
     lazy var dimOverlay: UIView = {
         let view = UIView()
@@ -282,6 +294,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     lazy var addWidgetButton: UIButton = createToolbarButton(systemName: "icon.plus", action: #selector(showAddWidgetMenuBase))
     lazy var shareImageButton: UIButton = createToolbarButton(systemName: "icon.share", action: #selector(shareImage))
     lazy var selectPhotoButton: UIButton = createToolbarButton(systemName: "icon.image", action: #selector(selectPhoto))
+    lazy var visionButton: UIButton = createToolbarButton(systemName: "sparkles", action: #selector(showVisionOptions))
     lazy var textPathButton: UIButton = createToolbarButton(systemName: "icon.pencil", action: #selector(showTextPathInput))
     lazy var backgroundTemplateButton: UIButton = createToolbarButton(systemName: "icon.paint.brush", action: #selector(changeTemplate))
 
@@ -429,6 +442,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         // Initial button state
         setupShareMenu()
         updateToolbarItemsState()
+        updateVisionButtonState()
         updateWatermarkVisibility()
     }
 
@@ -477,6 +491,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     }
     
     deinit {
+        backgroundSubjectSegmentationTask?.cancel()
         centerGuideHideWorkItem?.cancel()
         NotificationCenter.default.removeObserver(self)
     }
@@ -517,25 +532,23 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         topRightToolbar.addArrangedSubview(layoutTemplateButton)
         topRightToolbar.addArrangedSubview(shareImageButton)
         topRightToolbar.addArrangedSubview(selectPhotoButton)
+        topRightToolbar.addArrangedSubview(visionButton)
         topRightToolbar.addArrangedSubview(backgroundTemplateButton)
     }
     
     // MARK: - Actions (Stubs to be overridden or implemented)
     
-    @objc func backButtonTapped() {
-        let closeAction = { [weak self] in
-            guard let self = self else { return }
-            // Check if we are pushed on a stack or presented modally
-            if let nav = self.navigationController, nav.viewControllers.count > 1 {
-                nav.popViewController(animated: true)
-            } else if self.presentingViewController != nil {
-                self.dismiss(animated: true)
-            } else {
-                // Fallback
-                self.navigationController?.popViewController(animated: true)
-            }
+    func closeDetailScreen(animated: Bool = true) {
+        if let nav = navigationController, nav.viewControllers.count > 1 {
+            nav.popViewController(animated: animated)
+        } else if presentingViewController != nil {
+            dismiss(animated: animated)
+        } else {
+            navigationController?.popViewController(animated: animated)
         }
+    }
 
+    @objc func backButtonTapped() {
         if hasUnsavedChanges {
             let alert = CustomAlertViewController(
                 title: WorkoutPlazaStrings.Alert.Cancel.title,
@@ -543,14 +556,14 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 iconName: "icon.x.circle.fill",
                 actions: [
                     CustomAlertAction(title: WorkoutPlazaStrings.Button.exit, iconName: nil, style: .primary) {
-                        closeAction()
+                        self.closeDetailScreen()
                     },
                     CustomAlertAction(title: WorkoutPlazaStrings.Button.cancel, iconName: nil, style: .cancel, handler: nil)
                 ]
             )
             present(alert, animated: true)
         } else {
-            closeAction()
+            closeDetailScreen()
         }
     }
     
@@ -692,6 +705,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         return SavedCardDesign(
             backgroundType: bgType, backgroundColor: nil, backgroundImageData: bgData,
+            foregroundSubjectImageData: foregroundSubjectImageView.image?.pngData(),
             widgets: savedWidgets, canvasSize: contentView.bounds.size,
             aspectRatio: currentAspectRatio, gradientColors: gradientColorsHex,
             gradientStyle: gradientStyleString, groups: savedGroups
@@ -712,6 +726,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 if let selectable = widget as? Selectable {
                     selectionManager.registerItem(selectable)
                 }
+                refreshCanvasOverlayZOrder()
             }
         }
     }
@@ -721,13 +736,21 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             backgroundImageView.image = UIImage(data: data)
             backgroundImageView.isHidden = false
             backgroundTemplateView.isHidden = true
+            foregroundSubjectImageView.image = design.foregroundSubjectImageData.flatMap(UIImage.init(data:))
+            foregroundSubjectImageView.isHidden = foregroundSubjectImageView.image == nil
         } else if design.backgroundType == .gradient {
             backgroundImageView.isHidden = true
             backgroundTemplateView.isHidden = false
+            foregroundSubjectImageView.image = nil
+            foregroundSubjectImageView.isHidden = true
         } else {
             backgroundImageView.isHidden = true
             backgroundTemplateView.isHidden = true
+            foregroundSubjectImageView.image = nil
+            foregroundSubjectImageView.isHidden = true
         }
+        updateVisionButtonState()
+        refreshCanvasOverlayZOrder()
     }
     
     @objc dynamic func saveCurrentDesign(completion: ((Bool) -> Void)? = nil) {
@@ -917,6 +940,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             backgroundType: bgType,
             backgroundColor: nil,
             backgroundImageData: bgData,
+            foregroundSubjectImageData: foregroundSubjectImageView.image?.pngData(),
             widgets: savedWidgets,
             canvasSize: contentView.bounds.size,
             aspectRatio: currentAspectRatio,
@@ -953,6 +977,22 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         return renderer.image { context in
             contentView.layer.render(in: context.cgContext)
         }
+    }
+
+    func refreshCanvasOverlayZOrder() {
+        if foregroundSubjectImageView.isHidden == false {
+            contentView.bringSubviewToFront(foregroundSubjectImageView)
+        }
+        contentView.bringSubviewToFront(watermarkImageView)
+        contentView.bringSubviewToFront(textPathDrawingOverlayView)
+        contentView.bringSubviewToFront(verticalCenterGuideView)
+        contentView.bringSubviewToFront(horizontalCenterGuideView)
+    }
+
+    func updateVisionButtonState() {
+        let canUseVision = backgroundImageView.isHidden == false && backgroundImageView.image != nil
+        visionButton.isEnabled = canUseVision
+        visionButton.alpha = canUseVision ? 1.0 : 0.45
     }
     
     @objc dynamic func saveWorkoutCard(image: UIImage) {
@@ -1121,6 +1161,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         contentView.addSubview(widget)
         contentView.bringSubviewToFront(widget)
+        refreshCanvasOverlayZOrder()
         widgets.append(widget)
         selectionManager.registerItem(widget)
         selectionManager.selectItem(widget)
@@ -1298,8 +1339,10 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
 
         // Random
         actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Background.random, style: .default) { [weak self] _ in
+            self?.clearForegroundSubjectOverlay()
             self?.backgroundTemplateView.applyRandomTemplate()
             self?.hasUnsavedChanges = true
+            self?.updateVisionButtonState()
             self?.updateWatermarkColorForBackground()
         })
 

@@ -233,7 +233,9 @@ class ClimbingDetailViewController: BaseWorkoutDetailViewController {
                         CustomAlertAction(title: NSLocalizedString("share.sticker", comment: ""), iconName: "icon.download", style: .secondary) {
                             self.shareAsSticker()
                         },
-                        CustomAlertAction(title: WorkoutPlazaStrings.Common.done, iconName: nil, style: .cancel, handler: nil)
+                        CustomAlertAction(title: WorkoutPlazaStrings.Common.done, iconName: nil, style: .cancel) {
+                            self.closeDetailScreen()
+                        }
                     ]
                 )
                 self.present(alert, animated: true)

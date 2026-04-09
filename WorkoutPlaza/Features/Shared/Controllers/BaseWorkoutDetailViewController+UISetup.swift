@@ -19,6 +19,7 @@ extension BaseWorkoutDetailViewController {
         contentView.addSubview(backgroundTemplateView)
         contentView.addSubview(backgroundImageView)
         contentView.addSubview(dimOverlay)
+        contentView.addSubview(foregroundSubjectImageView)
         contentView.addSubview(watermarkImageView)
         contentView.addSubview(textPathDrawingOverlayView)
         contentView.addSubview(verticalCenterGuideView)
@@ -46,6 +47,7 @@ extension BaseWorkoutDetailViewController {
         contentView.addGestureRecognizer(tapGesture)
         
         updateCanvasSize()
+        refreshCanvasOverlayZOrder()
     }
     
     func setupConstraints() {
@@ -551,6 +553,9 @@ extension BaseWorkoutDetailViewController {
     func setupDefaultBackground() {
         backgroundTemplateView.applyTemplate(.gradient1)
         backgroundImageView.isHidden = true
+        foregroundSubjectImageView.image = nil
+        foregroundSubjectImageView.isHidden = true
+        updateVisionButtonState()
     }
 
 }

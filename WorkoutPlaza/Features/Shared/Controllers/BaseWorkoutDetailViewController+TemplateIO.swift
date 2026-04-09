@@ -81,6 +81,7 @@ extension BaseWorkoutDetailViewController {
 
             if let widget = createWidget(for: item, frame: frame) {
                 contentView.addSubview(widget)
+                refreshCanvasOverlayZOrder()
                 widgets.append(widget)
 
                 if let selectable = widget as? Selectable {

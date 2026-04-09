@@ -232,6 +232,8 @@ extension BaseWorkoutDetailViewController: BackgroundImageEditorDelegate {
         backgroundTemplateView.isHidden = true
         backgroundTransform = transform
         hasUnsavedChanges = true
+        clearForegroundSubjectOverlay()
+        updateVisionButtonState()
 
         // Apply transform to background image
         applyBackgroundTransform(transform)
@@ -249,10 +251,132 @@ extension BaseWorkoutDetailViewController: CustomGradientPickerDelegate {
     func customGradientPicker(_ picker: CustomGradientPickerViewController, didSelectColors colors: [UIColor], direction: GradientDirection) {
         backgroundImageView.isHidden = true
         backgroundTemplateView.isHidden = false
+        clearForegroundSubjectOverlay()
         dimOverlay.isHidden = true
         backgroundTemplateView.applyCustomGradient(colors: colors, direction: direction)
         hasUnsavedChanges = true
+        updateVisionButtonState()
         updateWatermarkColorForBackground()
+    }
+}
+
+extension BaseWorkoutDetailViewController {
+    func clearForegroundSubjectOverlay(cancelPendingTask: Bool = true) {
+        if cancelPendingTask {
+            backgroundSubjectSegmentationTask?.cancel()
+        }
+        backgroundSubjectSegmentationRequestID = UUID()
+        foregroundSubjectImageView.image = nil
+        foregroundSubjectImageView.isHidden = true
+    }
+
+    @objc func showVisionOptions() {
+        guard backgroundImageView.isHidden == false,
+              let image = backgroundImageView.image else {
+            showToast(NSLocalizedString("vision.background.required", comment: ""))
+            return
+        }
+
+        let actionSheet = UIAlertController(
+            title: NSLocalizedString("vision.menu.title", comment: ""),
+            message: nil,
+            preferredStyle: .actionSheet
+        )
+
+        actionSheet.addAction(UIAlertAction(title: NSLocalizedString("vision.menu.person", comment: ""), style: .default) { [weak self] _ in
+            self?.performVisionCutout(.person, from: image)
+        })
+
+        actionSheet.addAction(UIAlertAction(title: NSLocalizedString("vision.menu.foreground", comment: ""), style: .default) { [weak self] _ in
+            self?.performVisionCutout(.foreground, from: image)
+        })
+
+        if foregroundSubjectImageView.isHidden == false {
+            actionSheet.addAction(UIAlertAction(title: NSLocalizedString("vision.menu.clear", comment: ""), style: .destructive) { [weak self] _ in
+                self?.clearForegroundSubjectOverlay()
+            })
+        }
+
+        actionSheet.addAction(UIAlertAction(title: WorkoutPlazaStrings.Common.cancel, style: .cancel))
+
+        if let popover = actionSheet.popoverPresentationController {
+            popover.sourceView = visionButton
+            popover.sourceRect = visionButton.bounds
+        }
+
+        present(actionSheet, animated: true)
+    }
+
+    func performVisionCutout(_ mode: VisionCutoutMode, from image: UIImage) {
+        clearForegroundSubjectOverlay()
+        showToast(mode.detectingMessage)
+
+        let requestID = UUID()
+        backgroundSubjectSegmentationRequestID = requestID
+
+        backgroundSubjectSegmentationTask = Task { [weak self] in
+            guard let self else { return }
+
+            do {
+                let result = try await VisionCutoutService.shared.extractCutout(from: image, mode: mode)
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    guard self.backgroundSubjectSegmentationRequestID == requestID else { return }
+
+                    switch result {
+                    case .success(let foregroundImage):
+                        self.foregroundSubjectImageView.image = foregroundImage
+                        self.foregroundSubjectImageView.isHidden = false
+                        self.foregroundSubjectImageView.frame = self.backgroundImageView.frame
+                        self.refreshCanvasOverlayZOrder()
+                        self.showToast(mode.appliedMessage, style: .success)
+
+                    case .notFound:
+                        self.foregroundSubjectImageView.image = nil
+                        self.foregroundSubjectImageView.isHidden = true
+                        self.showToast(mode.notFoundMessage)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    guard self.backgroundSubjectSegmentationRequestID == requestID else { return }
+                    self.foregroundSubjectImageView.image = nil
+                    self.foregroundSubjectImageView.isHidden = true
+                    WPLog.warning("Vision cutout failed:", error.localizedDescription)
+                    self.showToast(mode.notFoundMessage)
+                }
+            }
+        }
+    }
+}
+
+private extension VisionCutoutMode {
+    var detectingMessage: String {
+        switch self {
+        case .person:
+            return NSLocalizedString("background.subject.detecting", comment: "")
+        case .foreground:
+            return NSLocalizedString("vision.foreground.detecting", comment: "")
+        }
+    }
+
+    var appliedMessage: String {
+        switch self {
+        case .person:
+            return NSLocalizedString("background.subject.applied", comment: "")
+        case .foreground:
+            return NSLocalizedString("vision.foreground.applied", comment: "")
+        }
+    }
+
+    var notFoundMessage: String {
+        switch self {
+        case .person:
+            return NSLocalizedString("background.subject.notFound", comment: "")
+        case .foreground:
+            return NSLocalizedString("vision.foreground.notFound", comment: "")
+        }
     }
 }
 

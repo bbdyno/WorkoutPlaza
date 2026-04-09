@@ -544,6 +544,7 @@ extension BaseWorkoutDetailViewController {
         widgets.append(widget)
         contentView.addSubview(widget)
         contentView.bringSubviewToFront(widget)
+        refreshCanvasOverlayZOrder()
 
         // Select the new widget
         selectionManager.selectItem(widget)

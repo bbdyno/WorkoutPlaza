@@ -86,9 +86,13 @@ extension BaseWorkoutDetailViewController {
             backgroundImageView.image = UIImage(data: data)
             backgroundImageView.isHidden = false
             backgroundTemplateView.isHidden = true
+            foregroundSubjectImageView.image = design.foregroundSubjectImageData.flatMap(UIImage.init(data:))
+            foregroundSubjectImageView.isHidden = foregroundSubjectImageView.image == nil
         } else if design.backgroundType == .gradient, let styleString = design.gradientStyle {
             backgroundImageView.isHidden = true
             backgroundTemplateView.isHidden = false
+            foregroundSubjectImageView.image = nil
+            foregroundSubjectImageView.isHidden = true
 
             if let style = BackgroundTemplateView.TemplateStyle(rawValue: styleString) {
                 if style == .custom, let colorsHex = design.gradientColors {
@@ -100,6 +104,11 @@ extension BaseWorkoutDetailViewController {
                     backgroundTemplateView.applyTemplate(style)
                 }
             }
+        } else {
+            backgroundImageView.isHidden = true
+            backgroundTemplateView.isHidden = true
+            foregroundSubjectImageView.image = nil
+            foregroundSubjectImageView.isHidden = true
         }
 
         // 1. Build a map of EXISTING widgets by itemIdentifier (if available) or className_index fallback
@@ -252,6 +261,7 @@ extension BaseWorkoutDetailViewController {
                     selectionManager.registerItem(group)
                     
                     contentView.addSubview(group)
+                    refreshCanvasOverlayZOrder()
                     templateGroups.append(group)
                 }
             }
@@ -261,6 +271,7 @@ extension BaseWorkoutDetailViewController {
         for (id, widget) in restoredWidgetsMap {
             if !groupedWidgetIds.contains(id) {
                 contentView.addSubview(widget)
+                refreshCanvasOverlayZOrder()
                 widgets.append(widget)
                 
                 if let selectable = widget as? Selectable {
@@ -273,7 +284,9 @@ extension BaseWorkoutDetailViewController {
         WPLog.info("Design loaded and restored for \(workoutId)")
 
         // Update watermark color based on loaded background
+        updateVisionButtonState()
         updateWatermarkColorForBackground()
+        refreshCanvasOverlayZOrder()
 
         // Reset unsaved changes flag since we just loaded the saved state
         hasUnsavedChanges = false

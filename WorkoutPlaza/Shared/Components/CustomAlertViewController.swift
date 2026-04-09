@@ -23,6 +23,7 @@ final class CustomAlertViewController: UIViewController {
     private let alertMessage: String
     private let iconName: String?
     private let actions: [CustomAlertAction]
+    private let backgroundView = UIView()
 
     init(title: String, message: String, iconName: String? = nil, actions: [CustomAlertAction]) {
         self.alertTitle = title
@@ -42,10 +43,15 @@ final class CustomAlertViewController: UIViewController {
     }
 
     private func setupUI() {
-        // 딤 배경
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        view.backgroundColor = .clear
+        backgroundView.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        view.addSubview(backgroundView)
+        backgroundView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
         let tapDismiss = UITapGestureRecognizer(target: self, action: #selector(dismissAlert))
-        view.addGestureRecognizer(tapDismiss)
+        backgroundView.addGestureRecognizer(tapDismiss)
 
         // 카드 컨테이너
         let card = UIView()

@@ -717,3 +717,16 @@
 // Template Apply
 "template.applied" = "템플릿 적용 완료";
 "template.skipped.widgets" = "데이터가 없어 일부 위젯을 표시할 수 없습니다: %@";
+
+// Background Subject Segmentation
+"background.subject.detecting" = "사람을 감지하는 중...";
+"background.subject.applied" = "사람 컷아웃을 적용했어요";
+"background.subject.notFound" = "사람을 찾지 못했어요";
+"vision.menu.title" = "Vision 도구";
+"vision.menu.person" = "사람 컷아웃";
+"vision.menu.foreground" = "전경 컷아웃";
+"vision.menu.clear" = "컷아웃 제거";
+"vision.background.required" = "먼저 배경 사진을 추가해 주세요";
+"vision.foreground.detecting" = "전경을 감지하는 중...";
+"vision.foreground.applied" = "전경 컷아웃을 적용했어요";
+"vision.foreground.notFound" = "전경을 찾지 못했어요";

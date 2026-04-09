@@ -717,5 +717,18 @@
 "template.applied" = "Template Applied";
 "template.skipped.widgets" = "Some widgets could not be displayed due to missing data: %@";
 
+// Background Subject Segmentation
+"background.subject.detecting" = "Detecting person...";
+"background.subject.applied" = "Person cutout applied";
+"background.subject.notFound" = "No person detected";
+"vision.menu.title" = "Vision Tools";
+"vision.menu.person" = "Extract Person";
+"vision.menu.foreground" = "Extract Foreground";
+"vision.menu.clear" = "Remove Cutout";
+"vision.background.required" = "Add a background photo first";
+"vision.foreground.detecting" = "Detecting foreground...";
+"vision.foreground.applied" = "Foreground cutout applied";
+"vision.foreground.notFound" = "No foreground detected";
+
 // Tip Supporter Badge
 "tip.supporter.badge" = "Supporter";
