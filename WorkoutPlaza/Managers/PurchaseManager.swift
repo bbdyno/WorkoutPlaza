@@ -98,6 +98,10 @@ final class PurchaseManager {
         product(for: ProductID.proYearly) ?? product(for: ProductID.proMonthly)
     }
 
+    var availableProProducts: [Product] {
+        ProductID.proSubscriptions.compactMap { product(for: $0) }
+    }
+
     // MARK: - Purchase
 
     enum PurchaseError: LocalizedError {

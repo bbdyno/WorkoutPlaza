@@ -73,6 +73,19 @@ final class ProUpgradeViewController: UIViewController {
         return sv
     }()
 
+    private let planStack: UIStackView = {
+        let sv = UIStackView()
+        sv.axis = .vertical
+        sv.spacing = 10
+        sv.alignment = .fill
+        return sv
+    }()
+
+    private var selectedProductID: String?
+
+    private lazy var yearlyPlanButton = makePlanButton(productID: PurchaseManager.ProductID.proYearly)
+    private lazy var monthlyPlanButton = makePlanButton(productID: PurchaseManager.ProductID.proMonthly)
+
     private let priceLabel: UILabel = {
         let lbl = UILabel()
         lbl.font = AppFont.stat(22)
@@ -179,6 +192,12 @@ final class ProUpgradeViewController: UIViewController {
         contentStack.addArrangedSubview(featuresCard)
         contentStack.setCustomSpacing(28, after: featuresCard)
 
+        // Plans
+        planStack.addArrangedSubview(yearlyPlanButton)
+        planStack.addArrangedSubview(monthlyPlanButton)
+        contentStack.addArrangedSubview(planStack)
+        contentStack.setCustomSpacing(24, after: planStack)
+
         // Price
         let priceStack = UIStackView(arrangedSubviews: [priceLabel, priceDescLabel])
         priceStack.axis = .vertical
@@ -243,14 +262,45 @@ final class ProUpgradeViewController: UIViewController {
         return row
     }
 
+    private func makePlanButton(productID: String) -> UIButton {
+        let button = UIButton(type: .system)
+        button.accessibilityIdentifier = productID
+        button.layer.cornerRadius = 18
+        button.layer.cornerCurve = .continuous
+        button.layer.borderWidth = 1
+        button.contentHorizontalAlignment = .leading
+        button.titleLabel?.numberOfLines = 0
+        button.addTarget(self, action: #selector(planButtonTapped(_:)), for: .touchUpInside)
+
+        var config = UIButton.Configuration.filled()
+        config.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)
+        config.titleAlignment = .leading
+        config.imagePlacement = .trailing
+        config.imagePadding = 8
+        button.configuration = config
+
+        button.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(78)
+        }
+
+        return button
+    }
+
+    @objc private func planButtonTapped(_ sender: UIButton) {
+        selectedProductID = sender.accessibilityIdentifier
+        updatePlanSelectionUI()
+    }
+
     private func loadProductPrice() {
         Task {
             if PurchaseManager.shared.products.isEmpty {
                 await PurchaseManager.shared.fetchProducts()
             }
-            let product = PurchaseManager.shared.featuredProProduct
-            priceLabel.text = product?.displayPrice ?? "—"
-            priceDescLabel.text = subscriptionDescription(for: product)
+            let defaultProduct = PurchaseManager.shared.featuredProProduct ?? PurchaseManager.shared.availableProProducts.first
+            if selectedProductID == nil {
+                selectedProductID = defaultProduct?.id
+            }
+            updatePlanSelectionUI()
         }
     }
 
@@ -263,6 +313,81 @@ final class ProUpgradeViewController: UIViewController {
         default:
             return NSLocalizedString("pro.upgrade.plan.featured", comment: "")
         }
+    }
+
+    private func updatePlanSelectionUI() {
+        let yearlyProduct = PurchaseManager.shared.product(for: PurchaseManager.ProductID.proYearly)
+        let monthlyProduct = PurchaseManager.shared.product(for: PurchaseManager.ProductID.proMonthly)
+
+        if selectedProductID == nil {
+            selectedProductID = yearlyProduct?.id ?? monthlyProduct?.id
+        }
+
+        configurePlanButton(
+            yearlyPlanButton,
+            title: NSLocalizedString("pro.upgrade.plan.yearly", comment: ""),
+            subtitle: yearlyProduct?.displayPrice ?? "—",
+            badgeTitle: NSLocalizedString("pro.upgrade.plan.recommended", comment: ""),
+            isSelected: selectedProductID == PurchaseManager.ProductID.proYearly
+        )
+
+        configurePlanButton(
+            monthlyPlanButton,
+            title: NSLocalizedString("pro.upgrade.plan.monthly", comment: ""),
+            subtitle: monthlyProduct?.displayPrice ?? "—",
+            badgeTitle: nil,
+            isSelected: selectedProductID == PurchaseManager.ProductID.proMonthly
+        )
+
+        let selectedProduct = selectedProduct()
+        priceLabel.text = selectedProduct?.displayPrice ?? "—"
+        priceDescLabel.text = subscriptionDescription(for: selectedProduct)
+    }
+
+    private func configurePlanButton(
+        _ button: UIButton,
+        title: String,
+        subtitle: String,
+        badgeTitle: String?,
+        isSelected: Bool
+    ) {
+        var config = button.configuration ?? UIButton.Configuration.filled()
+        config.title = title
+        if let badgeTitle {
+            config.subtitle = "\(subtitle) · \(badgeTitle)"
+        } else {
+            config.subtitle = subtitle
+        }
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var updated = incoming
+            updated.font = AppFont.bodySemiBold(16)
+            return updated
+        }
+        config.subtitleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var updated = incoming
+            updated.font = AppFont.body(13)
+            return updated
+        }
+        config.image = badgeTitle == nil ? nil : UIImage(systemName: "checkmark.circle.fill")
+
+        if isSelected {
+            config.baseBackgroundColor = ColorSystem.mainText
+            config.baseForegroundColor = ColorSystem.background
+            button.layer.borderColor = ColorSystem.mainText.cgColor
+        } else {
+            config.baseBackgroundColor = ColorSystem.frostedFill
+            config.baseForegroundColor = ColorSystem.mainText
+            button.layer.borderColor = ColorSystem.divider.cgColor
+        }
+
+        button.configuration = config
+    }
+
+    private func selectedProduct() -> Product? {
+        if let selectedProductID {
+            return PurchaseManager.shared.product(for: selectedProductID)
+        }
+        return PurchaseManager.shared.featuredProProduct
     }
 
     // MARK: - Actions
@@ -278,7 +403,7 @@ final class ProUpgradeViewController: UIViewController {
                 if PurchaseManager.shared.products.isEmpty {
                     await PurchaseManager.shared.fetchProducts()
                 }
-                guard let product = PurchaseManager.shared.featuredProProduct else {
+                guard let product = selectedProduct() ?? PurchaseManager.shared.featuredProProduct else {
                     setLoading(false)
                     showToast(NSLocalizedString("purchase.error.notFound", comment: ""))
                     return

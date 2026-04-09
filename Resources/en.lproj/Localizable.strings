@@ -626,6 +626,7 @@
 "pro.upgrade.plan.featured" = "Featured subscription";
 "pro.upgrade.plan.yearly" = "Yearly subscription";
 "pro.upgrade.plan.monthly" = "Monthly subscription";
+"pro.upgrade.plan.recommended" = "Recommended";
 "pro.upgrade.buy" = "Subscribe";
 "pro.upgrade.restore" = "Restore Purchases";
 "pro.upgrade.pending" = "Your purchase is awaiting approval.";
