@@ -7,6 +7,7 @@
 
 import Foundation
 import StoreKit
+import UIKit
 
 @MainActor
 final class PurchaseManager {
@@ -50,6 +51,32 @@ final class PurchaseManager {
 
     var isSupporter: Bool { totalTipAmount > 0 }
 
+    var hasActiveSubscription: Bool { isPro }
+
+    var currentSubscriptionDisplayName: String {
+        switch activeSubscriptionProductID {
+        case ProductID.proYearly:
+            return NSLocalizedString("pro.upgrade.plan.yearly", comment: "")
+        case ProductID.proMonthly:
+            return NSLocalizedString("pro.upgrade.plan.monthly", comment: "")
+        default:
+            return NSLocalizedString("purchase.subscription.plan.active", comment: "")
+        }
+    }
+
+    var subscriptionStatusDescription: String {
+        #if DEBUG
+        if DevSettings.shared.devOverridePro && !isPro {
+            return NSLocalizedString("purchase.subscription.status.debug", comment: "")
+        }
+        #endif
+
+        guard hasActiveSubscription else {
+            return NSLocalizedString("purchase.subscription.status.free", comment: "")
+        }
+        return currentSubscriptionDisplayName
+    }
+
     var totalTipAmount: Double {
         get { UserDefaults.standard.double(forKey: Keys.totalTip) }
         set { UserDefaults.standard.set(newValue, forKey: Keys.totalTip) }
@@ -58,14 +85,30 @@ final class PurchaseManager {
     // MARK: - Private
 
     private enum Keys {
-        static let isPro     = "purchase.isProActive"
-        static let totalTip  = "purchase.totalTipAmount"
+        static let isPro = "purchase.isProActive"
+        static let totalTip = "purchase.totalTipAmount"
+        static let activeSubscriptionProductID = "purchase.activeSubscriptionProductID"
     }
 
     private var transactionListener: Task<Void, Never>?
+    private(set) var activeSubscriptionProductID: String? {
+        didSet {
+            guard oldValue != activeSubscriptionProductID else { return }
+
+            if let activeSubscriptionProductID {
+                UserDefaults.standard.set(activeSubscriptionProductID, forKey: Keys.activeSubscriptionProductID)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Keys.activeSubscriptionProductID)
+            }
+
+            NotificationCenter.default.post(name: .wpPurchaseStatusDidChange, object: nil)
+            WPLog.info("PurchaseManager: activeSubscriptionProductID →", activeSubscriptionProductID ?? "nil")
+        }
+    }
 
     private init() {
         isPro = UserDefaults.standard.bool(forKey: Keys.isPro)
+        activeSubscriptionProductID = UserDefaults.standard.string(forKey: Keys.activeSubscriptionProductID)
         transactionListener = startTransactionListener()
         Task { await boot() }
     }
@@ -156,19 +199,25 @@ final class PurchaseManager {
         await refreshProStatus()
     }
 
+    func showManageSubscriptions(in scene: UIWindowScene) async throws {
+        try await AppStore.showManageSubscriptions(in: scene)
+    }
+
     // MARK: - Entitlement Refresh
 
     func refreshProStatus() async {
-        var found = false
+        var activeProductIDs = Set<String>()
         for await result in Transaction.currentEntitlements {
             if case .verified(let tx) = result,
                ProductID.proSubscriptions.contains(tx.productID),
                tx.revocationDate == nil {
-                found = true
-                break
+                activeProductIDs.insert(tx.productID)
             }
         }
-        isPro = found
+
+        let activeProductID = ProductID.proSubscriptions.first(where: activeProductIDs.contains)
+        activeSubscriptionProductID = activeProductID
+        isPro = activeProductID != nil
     }
 
     // MARK: - Tip Recording

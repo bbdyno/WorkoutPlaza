@@ -9,16 +9,7 @@ import UIKit
 
 extension BaseWorkoutDetailViewController {
     func presentProUpgradeSheet(triggerFeature: String) {
-        let proVC = ProUpgradeViewController()
-        proVC.triggerFeature = triggerFeature
-
-        let nav = UINavigationController(rootViewController: proVC)
-        nav.modalPresentationStyle = .pageSheet
-        if let sheet = nav.sheetPresentationController {
-            sheet.detents = [.large()]
-            sheet.prefersGrabberVisible = true
-        }
-        present(nav, animated: true)
+        presentProUpgradeFlow(triggerFeature: triggerFeature)
     }
 
     func beginUsageLimitedFlow(

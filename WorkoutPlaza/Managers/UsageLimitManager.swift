@@ -8,7 +8,7 @@
 import Foundation
 import Security
 
-enum UsageLimitedFeature: String, Codable {
+enum UsageLimitedFeature: String, Codable, CaseIterable {
     case visionCutout
     case transparentStickerExport
 
@@ -29,6 +29,15 @@ enum UsageLimitedFeature: String, Codable {
             return "sparkles"
         case .transparentStickerExport:
             return "icon.download"
+        }
+    }
+
+    var settingsTitle: String {
+        switch self {
+        case .visionCutout:
+            return NSLocalizedString("usage.limit.vision.settingsTitle", comment: "")
+        case .transparentStickerExport:
+            return NSLocalizedString("usage.limit.transparentSticker.settingsTitle", comment: "")
         }
     }
 
@@ -105,6 +114,19 @@ final class UsageLimitManager {
         remainingFreeUses(for: feature) > 0
     }
 
+    func statusSummary(for feature: UsageLimitedFeature) -> String {
+        let remainingUses = remainingFreeUses(for: feature)
+        guard remainingUses > 0 else {
+            return NSLocalizedString("usage.limit.status.exhausted", comment: "")
+        }
+
+        return String(
+            format: NSLocalizedString("usage.limit.status.remaining", comment: ""),
+            remainingUses,
+            feature.freeUseLimit
+        )
+    }
+
     @discardableResult
     func consumeSuccessfulUse(for feature: UsageLimitedFeature) -> Int {
         let currentCount = usedCount(for: feature)
@@ -112,6 +134,7 @@ final class UsageLimitManager {
 
         cachedCounts[feature.rawValue] = currentCount + 1
         saveCounts()
+        NotificationCenter.default.post(name: .wpUsageLimitsDidChange, object: nil)
         return remainingFreeUses(for: feature)
     }
 
@@ -119,6 +142,7 @@ final class UsageLimitManager {
     func resetAllForDebug() {
         cachedCounts = [:]
         saveCounts()
+        NotificationCenter.default.post(name: .wpUsageLimitsDidChange, object: nil)
     }
     #endif
 
@@ -175,4 +199,8 @@ final class UsageLimitManager {
         attributes.forEach { addQuery[$0.key] = $0.value }
         SecItemAdd(addQuery as CFDictionary, nil)
     }
+}
+
+extension Notification.Name {
+    static let wpUsageLimitsDidChange = Notification.Name("wpUsageLimitsDidChange")
 }

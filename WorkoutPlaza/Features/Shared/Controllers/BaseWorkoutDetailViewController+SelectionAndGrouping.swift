@@ -307,15 +307,7 @@ extension BaseWorkoutDetailViewController {
                 },
                 action: { [weak self] in
                     if proLocked {
-                        let proVC = ProUpgradeViewController()
-                        proVC.triggerFeature = "pro_font"
-                        let nav = UINavigationController(rootViewController: proVC)
-                        nav.modalPresentationStyle = .pageSheet
-                        if let sheet = nav.sheetPresentationController {
-                            sheet.detents = [.large()]
-                            sheet.prefersGrabberVisible = true
-                        }
-                        self?.present(nav, animated: true)
+                        self?.presentProUpgradeFlow(triggerFeature: "pro_font")
                     } else {
                         self?.applyFontToSelection(fontStyle)
                     }

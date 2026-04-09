@@ -66,11 +66,7 @@ final class SpeechBubbleStylePickerViewController: UIViewController {
     }
 
     private func showProGate() {
-        let proVC = ProUpgradeViewController()
-        proVC.triggerFeature = "speech_bubble_style"
-        let nav = UINavigationController(rootViewController: proVC)
-        nav.modalPresentationStyle = .pageSheet
-        present(nav, animated: true)
+        presentProUpgradeFlow(triggerFeature: "speech_bubble_style")
     }
 }
 

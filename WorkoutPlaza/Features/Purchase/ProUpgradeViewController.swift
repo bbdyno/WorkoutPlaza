@@ -56,6 +56,15 @@ final class ProUpgradeViewController: UIViewController {
         return lbl
     }()
 
+    private let statusLabel: UILabel = {
+        let lbl = UILabel()
+        lbl.font = AppFont.bodySemiBold(13)
+        lbl.textColor = ColorSystem.subText
+        lbl.textAlignment = .center
+        lbl.numberOfLines = 0
+        return lbl
+    }()
+
     private let featuresCard: UIView = {
         let v = UIView()
         v.backgroundColor = ColorSystem.frostedFill
@@ -116,6 +125,15 @@ final class ProUpgradeViewController: UIViewController {
         return btn
     }()
 
+    private let manageButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setTitle(NSLocalizedString("pro.upgrade.manage", comment: ""), for: .normal)
+        btn.titleLabel?.font = AppFont.body(14)
+        btn.setTitleColor(ColorSystem.subText, for: .normal)
+        btn.isHidden = true
+        return btn
+    }()
+
     private let loadingIndicator: UIActivityIndicatorView = {
         let ai = UIActivityIndicatorView(style: .medium)
         ai.hidesWhenStopped = true
@@ -137,6 +155,18 @@ final class ProUpgradeViewController: UIViewController {
 
         setupLayout()
         loadProductPrice()
+        refreshPurchaseUI()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePurchaseStatusChanged),
+            name: .wpPurchaseStatusDidChange,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - Layout
@@ -154,7 +184,7 @@ final class ProUpgradeViewController: UIViewController {
         }
 
         // Header
-        [crownLabel, titleLabel, subtitleLabel].forEach { headerView.addSubview($0) }
+        [crownLabel, titleLabel, subtitleLabel, statusLabel].forEach { headerView.addSubview($0) }
         crownLabel.snp.makeConstraints { make in
             make.top.centerX.equalToSuperview()
         }
@@ -164,6 +194,10 @@ final class ProUpgradeViewController: UIViewController {
         }
         subtitleLabel.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview()
+        }
+        statusLabel.snp.makeConstraints { make in
+            make.top.equalTo(subtitleLabel.snp.bottom).offset(10)
             make.leading.trailing.equalToSuperview()
             make.bottom.equalToSuperview()
         }
@@ -216,6 +250,10 @@ final class ProUpgradeViewController: UIViewController {
         // Restore button
         restoreButton.addTarget(self, action: #selector(restoreTapped), for: .touchUpInside)
         contentStack.addArrangedSubview(restoreButton)
+        contentStack.setCustomSpacing(8, after: restoreButton)
+
+        manageButton.addTarget(self, action: #selector(manageTapped), for: .touchUpInside)
+        contentStack.addArrangedSubview(manageButton)
     }
 
     private func makeFeatureRow(icon: String, title: String, desc: String) -> UIView {
@@ -342,6 +380,7 @@ final class ProUpgradeViewController: UIViewController {
         let selectedProduct = selectedProduct()
         priceLabel.text = selectedProduct?.displayPrice ?? "—"
         priceDescLabel.text = subscriptionDescription(for: selectedProduct)
+        refreshPurchaseUI()
     }
 
     private func configurePlanButton(
@@ -396,6 +435,10 @@ final class ProUpgradeViewController: UIViewController {
         dismiss(animated: true)
     }
 
+    @objc private func handlePurchaseStatusChanged() {
+        refreshPurchaseUI()
+    }
+
     @objc private func buyTapped() {
         setLoading(true)
         Task {
@@ -444,11 +487,29 @@ final class ProUpgradeViewController: UIViewController {
         }
     }
 
+    @objc private func manageTapped() {
+        guard let scene = view.window?.windowScene else { return }
+
+        Task { [weak self] in
+            do {
+                try await PurchaseManager.shared.showManageSubscriptions(in: scene)
+            } catch {
+                self?.showError(error)
+            }
+        }
+    }
+
     private func setLoading(_ loading: Bool) {
         buyButton.setTitle(loading ? "" : NSLocalizedString("pro.upgrade.buy", comment: ""), for: .normal)
         loading ? loadingIndicator.startAnimating() : loadingIndicator.stopAnimating()
         buyButton.isUserInteractionEnabled = !loading
         restoreButton.isUserInteractionEnabled = !loading
+        manageButton.isUserInteractionEnabled = !loading
+    }
+
+    private func refreshPurchaseUI() {
+        statusLabel.text = PurchaseManager.shared.subscriptionStatusDescription
+        manageButton.isHidden = PurchaseManager.shared.hasActiveSubscription == false
     }
 
     private func showSuccess() {

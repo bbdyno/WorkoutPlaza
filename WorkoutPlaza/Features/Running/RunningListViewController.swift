@@ -386,15 +386,7 @@ class RunningListViewController: UIViewController {
     }
 
     private func showProUpgradePrompt(for feature: String) {
-        let proVC = ProUpgradeViewController()
-        proVC.triggerFeature = feature
-        let nav = UINavigationController(rootViewController: proVC)
-        nav.modalPresentationStyle = .pageSheet
-        if let sheet = nav.sheetPresentationController {
-            sheet.detents = [.large()]
-            sheet.prefersGrabberVisible = true
-        }
-        present(nav, animated: true)
+        presentProUpgradeFlow(triggerFeature: feature)
     }
 
     private func importGPXFile(at url: URL) {

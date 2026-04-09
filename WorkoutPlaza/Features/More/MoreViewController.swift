@@ -25,13 +25,24 @@ class MoreViewController: UIViewController {
     private struct MenuItem {
         let title: String
         let icon: String
+        let subtitle: String?
         let badge: String?
-        let action: () -> Void
+        let showsDisclosureIndicator: Bool
+        let action: (() -> Void)?
 
-        init(title: String, icon: String, badge: String? = nil, action: @escaping () -> Void) {
+        init(
+            title: String,
+            icon: String,
+            subtitle: String? = nil,
+            badge: String? = nil,
+            showsDisclosureIndicator: Bool? = nil,
+            action: (() -> Void)? = nil
+        ) {
             self.title = title
             self.icon = icon
+            self.subtitle = subtitle
             self.badge = badge
+            self.showsDisclosureIndicator = showsDisclosureIndicator ?? (action != nil)
             self.action = action
         }
     }
@@ -65,6 +76,26 @@ class MoreViewController: UIViewController {
             name: .wpPurchaseStatusDidChange,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(purchaseStatusChanged),
+            name: .wpUsageLimitsDidChange,
+            object: nil
+        )
+
+        Task { [weak self] in
+            await PurchaseManager.shared.fetchProducts()
+            await PurchaseManager.shared.refreshProStatus()
+            self?.rebuildData()
+        }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        Task { [weak self] in
+            await PurchaseManager.shared.refreshProStatus()
+            self?.rebuildData()
+        }
     }
 
     deinit {
@@ -78,14 +109,65 @@ class MoreViewController: UIViewController {
 
         var configuredSections: [Section] = []
 
-        // ── Pro 배너 (비구매자만 표시) ─────────────────────────────
+        // ── 구독 / 무료 제한 ─────────────────────────────────────
+        var proItems: [MenuItem] = []
+
         if !isPro {
-            configuredSections.append(Section(title: nil, items: [
-                MenuItem(title: NSLocalizedString("more.pro.upgrade.cell", comment: ""),
-                         icon: "crown.fill",
-                         action: { [weak self] in self?.showProUpgrade(trigger: nil) })
-            ]))
+            proItems.append(
+                MenuItem(
+                    title: NSLocalizedString("more.pro.upgrade.cell", comment: ""),
+                    icon: "crown.fill",
+                    subtitle: NSLocalizedString("more.pro.upgrade.subtitle", comment: ""),
+                    action: { [weak self] in self?.showProUpgrade(trigger: nil) }
+                )
+            )
         }
+
+        proItems.append(
+            MenuItem(
+                title: NSLocalizedString("more.pro.status.title", comment: ""),
+                icon: "checkmark.circle",
+                subtitle: PurchaseManager.shared.subscriptionStatusDescription,
+                showsDisclosureIndicator: false
+            )
+        )
+
+        if !isPro {
+            UsageLimitedFeature.allCases.forEach { feature in
+                proItems.append(
+                    MenuItem(
+                        title: feature.settingsTitle,
+                        icon: feature.iconName,
+                        subtitle: UsageLimitManager.shared.statusSummary(for: feature),
+                        showsDisclosureIndicator: false
+                    )
+                )
+            }
+        }
+
+        if PurchaseManager.shared.hasActiveSubscription {
+            proItems.append(
+                MenuItem(
+                    title: NSLocalizedString("more.pro.manage", comment: ""),
+                    icon: "slider.horizontal.3",
+                    subtitle: NSLocalizedString("more.pro.manage.subtitle", comment: ""),
+                    action: { [weak self] in self?.manageSubscriptions() }
+                )
+            )
+        }
+
+        proItems.append(
+            MenuItem(
+                title: NSLocalizedString("more.pro.restore", comment: ""),
+                icon: "arrow.clockwise",
+                subtitle: NSLocalizedString("more.pro.restore.subtitle", comment: ""),
+                action: { [weak self] in self?.restorePurchases() }
+            )
+        )
+
+        configuredSections.append(
+            Section(title: NSLocalizedString("more.pro.section", comment: ""), items: proItems)
+        )
 
         // ── 카드 ──────────────────────────────────────────────────
         configuredSections.append(Section(title: WorkoutPlazaStrings.More.Section.card, items: [
@@ -195,15 +277,7 @@ class MoreViewController: UIViewController {
     // MARK: - Pro Upgrade
 
     private func showProUpgrade(trigger: String?) {
-        let vc = ProUpgradeViewController()
-        vc.triggerFeature = trigger
-        let nav = UINavigationController(rootViewController: vc)
-        nav.modalPresentationStyle = .pageSheet
-        if let sheet = nav.sheetPresentationController {
-            sheet.detents = [.large()]
-            sheet.prefersGrabberVisible = true
-        }
-        present(nav, animated: true)
+        presentProUpgradeFlow(triggerFeature: trigger)
     }
 
     // MARK: - Tips
@@ -256,6 +330,33 @@ class MoreViewController: UIViewController {
             self.showToast(WorkoutPlazaStrings.Toast.Feature.Coming.soon)
         })
         present(alert, animated: true)
+    }
+
+    private func restorePurchases() {
+        Task { [weak self] in
+            do {
+                try await PurchaseManager.shared.restorePurchases()
+                self?.rebuildData()
+                let message = PurchaseManager.shared.isEffectivelyPro
+                    ? NSLocalizedString("more.pro.restore.success", comment: "")
+                    : NSLocalizedString("pro.upgrade.noPurchaseFound", comment: "")
+                self?.showToast(message)
+            } catch {
+                self?.showToast(error.localizedDescription)
+            }
+        }
+    }
+
+    private func manageSubscriptions() {
+        guard let scene = view.window?.windowScene else { return }
+
+        Task { [weak self] in
+            do {
+                try await PurchaseManager.shared.showManageSubscriptions(in: scene)
+            } catch {
+                self?.showToast(error.localizedDescription)
+            }
+        }
     }
 
     private func resetData() {
@@ -556,21 +657,22 @@ extension MoreViewController: UITableViewDataSource {
         var config = cell.defaultContentConfiguration()
         config.text = item.title
         config.textProperties.font = AppFont.bodySemiBold(16)
+        config.secondaryText = item.subtitle
+        config.secondaryTextProperties.font = AppFont.body(13)
+        config.secondaryTextProperties.color = ColorSystem.subText
+        config.secondaryTextProperties.numberOfLines = 2
         config.image = UIImage(named: item.icon) ?? UIImage(systemName: item.icon)
 
         // Pro 업그레이드 셀 강조
         if item.icon == "crown.fill" {
             config.textProperties.color = ColorSystem.mainText
             config.imageProperties.tintColor = ColorSystem.mainText
-            cell.accessoryType = .disclosureIndicator
         } else if item.icon == "icon.trash" {
             config.textProperties.color = .systemRed
             config.imageProperties.tintColor = .systemRed
-            cell.accessoryType = .none
         } else {
             config.textProperties.color = ColorSystem.mainText
             config.imageProperties.tintColor = ColorSystem.mainText
-            cell.accessoryType = .disclosureIndicator
         }
 
         // PRO 배지
@@ -585,11 +687,18 @@ extension MoreViewController: UITableViewDataSource {
             badgeLabel.textAlignment = .center
             badgeLabel.frame = CGRect(x: 0, y: 0, width: 36, height: 20)
             cell.accessoryView = badgeLabel
+            cell.accessoryType = .none
         } else {
             cell.accessoryView = nil
+            if item.icon == "icon.trash" {
+                cell.accessoryType = .none
+            } else {
+                cell.accessoryType = item.showsDisclosureIndicator ? .disclosureIndicator : .none
+            }
         }
 
         cell.contentConfiguration = config
+        cell.selectionStyle = item.action == nil ? .none : .default
         WPSurface.apply(to: cell, cornerRadius: WPDesign.Radius.md)
         cell.layer.masksToBounds = true
         return cell
@@ -601,7 +710,7 @@ extension MoreViewController: UITableViewDataSource {
 extension MoreViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        sections[indexPath.section].items[indexPath.row].action()
+        sections[indexPath.section].items[indexPath.row].action?()
     }
 }
 

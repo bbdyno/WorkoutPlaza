@@ -608,18 +608,25 @@
 "purchase.error.unknown" = "An unknown error occurred.";
 "usage.limit.action.continue" = "Continue";
 "usage.limit.action.upgrade" = "See Pro";
+"usage.limit.status.remaining" = "%d/%d free uses left on this device";
+"usage.limit.status.exhausted" = "All free uses on this device have been used";
 "usage.limit.vision.title" = "Free Vision Trial";
+"usage.limit.vision.settingsTitle" = "Vision Cutout";
 "usage.limit.vision.message.remaining" = "This cutout will use a free trial.\nYou will have %d uses left afterward.";
 "usage.limit.vision.message.last" = "This is your last free Vision use.\nA Pro subscription will be required after this.";
 "usage.limit.vision.exhausted.title" = "Free Vision Trial Ended";
 "usage.limit.vision.exhausted.message" = "You have used all free Vision tries.\nSubscribe to Pro for unlimited access.";
 "usage.limit.transparentSticker.title" = "Free Sticker Trial";
+"usage.limit.transparentSticker.settingsTitle" = "Transparent Sticker Export";
 "usage.limit.transparentSticker.message.remaining" = "This export will use a free trial.\nYou will have %d uses left afterward.";
 "usage.limit.transparentSticker.message.last" = "This is your last free transparent sticker export.\nA Pro subscription will be required after this.";
 "usage.limit.transparentSticker.exhausted.title" = "Free Sticker Trial Ended";
 "usage.limit.transparentSticker.exhausted.message" = "You have used all free transparent sticker exports.\nSubscribe to Pro for unlimited access.";
 
 // Pro Upgrade Sheet
+"purchase.subscription.plan.active" = "Pro subscription active";
+"purchase.subscription.status.free" = "Current plan: Free";
+"purchase.subscription.status.debug" = "Developer Pro override active";
 "pro.upgrade.title" = "Go Pro";
 "pro.upgrade.subtitle" = "Remove ads and unlock unlimited Vision plus premium export tools.";
 "pro.upgrade.oneTime" = "Featured subscription";
@@ -629,6 +636,7 @@
 "pro.upgrade.plan.recommended" = "Recommended";
 "pro.upgrade.buy" = "Subscribe";
 "pro.upgrade.restore" = "Restore Purchases";
+"pro.upgrade.manage" = "Manage Subscription";
 "pro.upgrade.pending" = "Your purchase is awaiting approval.";
 "pro.upgrade.noPurchaseFound" = "No active subscription was found to restore.";
 "pro.upgrade.success.title" = "Welcome to Pro!";
@@ -650,6 +658,14 @@
 
 // More — Pro Banner
 "more.pro.upgrade.cell" = "Start Pro Subscription";
+"more.pro.upgrade.subtitle" = "Remove ads, unlock unlimited Vision, and access premium export tools.";
+"more.pro.section" = "Pro";
+"more.pro.status.title" = "Current Plan";
+"more.pro.manage" = "Manage Subscription";
+"more.pro.manage.subtitle" = "Open the App Store subscription screen.";
+"more.pro.restore" = "Restore Purchases";
+"more.pro.restore.subtitle" = "Check your previously purchased subscription again.";
+"more.pro.restore.success" = "Your active subscription has been restored.";
 
 // More — Tip Section
 "more.tip.section" = "Support Developer";

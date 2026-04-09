@@ -1352,15 +1352,7 @@ extension RunningDetailViewController {
             present(alert, animated: true)
         } else {
             // Free 사용자: Pro 구독 유도
-            let proVC = ProUpgradeViewController()
-            proVC.triggerFeature = "gpx_import"
-            let nav = UINavigationController(rootViewController: proVC)
-            nav.modalPresentationStyle = .pageSheet
-            if let sheet = nav.sheetPresentationController {
-                sheet.detents = [.large()]
-                sheet.prefersGrabberVisible = true
-            }
-            present(nav, animated: true)
+            presentProUpgradeFlow(triggerFeature: "gpx_import")
         }
     }
 

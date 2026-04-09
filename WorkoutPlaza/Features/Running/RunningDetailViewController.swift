@@ -154,15 +154,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
         templateActions.append(
             ToolSheetHeaderAction(title: WorkoutPlazaStrings.Import.action, iconName: "icon.download") { [weak self] in
                 guard FeatureGate.canAccess(FeatureGate.proTemplates) else {
-                    let proVC = ProUpgradeViewController()
-                    proVC.triggerFeature = "template_import"
-                    let nav = UINavigationController(rootViewController: proVC)
-                    nav.modalPresentationStyle = .pageSheet
-                    if let sheet = nav.sheetPresentationController {
-                        sheet.detents = [.large()]
-                        sheet.prefersGrabberVisible = true
-                    }
-                    self?.present(nav, animated: true)
+                    self?.presentProUpgradeFlow(triggerFeature: "template_import")
                     return
                 }
                 self?.importTemplate()
@@ -222,15 +214,7 @@ class RunningDetailViewController: BaseWorkoutDetailViewController {
                 },
                 action: { [weak self] in
                     if proRequired {
-                        let proVC = ProUpgradeViewController()
-                        proVC.triggerFeature = "speech_bubble_style"
-                        let nav = UINavigationController(rootViewController: proVC)
-                        nav.modalPresentationStyle = .pageSheet
-                        if let sheet = nav.sheetPresentationController {
-                            sheet.detents = [.large()]
-                            sheet.prefersGrabberVisible = true
-                        }
-                        self?.present(nav, animated: true)
+                        self?.presentProUpgradeFlow(triggerFeature: "speech_bubble_style")
                     } else {
                         self?.addSpeechBubbleWidget(style: style)
                     }
