@@ -39,7 +39,7 @@ final class ProUpgradeViewController: UIViewController {
 
     private let titleLabel: UILabel = {
         let lbl = UILabel()
-        lbl.text = "Lifetime Pro"
+        lbl.text = NSLocalizedString("pro.upgrade.title", comment: "")
         lbl.font = AppFont.display(30)
         lbl.textAlignment = .center
         lbl.textColor = ColorSystem.mainText
@@ -83,7 +83,7 @@ final class ProUpgradeViewController: UIViewController {
 
     private let priceDescLabel: UILabel = {
         let lbl = UILabel()
-        lbl.text = NSLocalizedString("pro.upgrade.oneTime", comment: "")
+        lbl.text = NSLocalizedString("pro.upgrade.plan.featured", comment: "")
         lbl.font = AppFont.body(13)
         lbl.textColor = ColorSystem.subText
         lbl.textAlignment = .center
@@ -165,10 +165,11 @@ final class ProUpgradeViewController: UIViewController {
         }
 
         let features: [(icon: String, title: String, desc: String)] = [
-            ("paintbrush.fill",        NSLocalizedString("pro.feature.fonts.title", comment: ""),    NSLocalizedString("pro.feature.fonts.desc", comment: "")),
-            ("doc.on.doc.fill",        NSLocalizedString("pro.feature.templates.title", comment: ""), NSLocalizedString("pro.feature.templates.desc", comment: "")),
-            ("eye.slash.fill",         NSLocalizedString("pro.feature.watermark.title", comment: ""), NSLocalizedString("pro.feature.watermark.desc", comment: "")),
-            ("square.and.arrow.up.fill", NSLocalizedString("pro.feature.export.title", comment: ""), NSLocalizedString("pro.feature.export.desc", comment: ""))
+            ("sparkles",                 NSLocalizedString("pro.feature.vision.title", comment: ""),    NSLocalizedString("pro.feature.vision.desc", comment: "")),
+            ("rectangle.on.rectangle.slash", NSLocalizedString("pro.feature.ads.title", comment: ""),   NSLocalizedString("pro.feature.ads.desc", comment: "")),
+            ("doc.on.doc.fill",          NSLocalizedString("pro.feature.templates.title", comment: ""), NSLocalizedString("pro.feature.templates.desc", comment: "")),
+            ("paintbrush.fill",          NSLocalizedString("pro.feature.fonts.title", comment: ""),     NSLocalizedString("pro.feature.fonts.desc", comment: "")),
+            ("square.and.arrow.up.fill", NSLocalizedString("pro.feature.export.title", comment: ""),    NSLocalizedString("pro.feature.export.desc", comment: ""))
         ]
 
         features.forEach { f in
@@ -247,8 +248,20 @@ final class ProUpgradeViewController: UIViewController {
             if PurchaseManager.shared.products.isEmpty {
                 await PurchaseManager.shared.fetchProducts()
             }
-            let product = PurchaseManager.shared.product(for: PurchaseManager.ProductID.lifetimePro)
+            let product = PurchaseManager.shared.featuredProProduct
             priceLabel.text = product?.displayPrice ?? "—"
+            priceDescLabel.text = subscriptionDescription(for: product)
+        }
+    }
+
+    private func subscriptionDescription(for product: Product?) -> String {
+        switch product?.id {
+        case PurchaseManager.ProductID.proYearly:
+            return NSLocalizedString("pro.upgrade.plan.yearly", comment: "")
+        case PurchaseManager.ProductID.proMonthly:
+            return NSLocalizedString("pro.upgrade.plan.monthly", comment: "")
+        default:
+            return NSLocalizedString("pro.upgrade.plan.featured", comment: "")
         }
     }
 
@@ -262,7 +275,16 @@ final class ProUpgradeViewController: UIViewController {
         setLoading(true)
         Task {
             do {
-                let outcome = try await PurchaseManager.shared.purchase(PurchaseManager.ProductID.lifetimePro)
+                if PurchaseManager.shared.products.isEmpty {
+                    await PurchaseManager.shared.fetchProducts()
+                }
+                guard let product = PurchaseManager.shared.featuredProProduct else {
+                    setLoading(false)
+                    showToast(NSLocalizedString("purchase.error.notFound", comment: ""))
+                    return
+                }
+
+                let outcome = try await PurchaseManager.shared.purchase(product.id)
                 setLoading(false)
                 switch outcome {
                 case .success:
@@ -285,7 +307,7 @@ final class ProUpgradeViewController: UIViewController {
             do {
                 try await PurchaseManager.shared.restorePurchases()
                 setLoading(false)
-                if PurchaseManager.shared.isPro {
+                if PurchaseManager.shared.isEffectivelyPro {
                     showSuccess()
                 } else {
                     showToast(NSLocalizedString("pro.upgrade.noPurchaseFound", comment: ""))

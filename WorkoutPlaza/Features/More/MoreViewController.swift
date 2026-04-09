@@ -74,7 +74,7 @@ class MoreViewController: UIViewController {
     // MARK: - Setup
 
     private func rebuildData() {
-        let isPro = PurchaseManager.shared.isPro
+        let isPro = PurchaseManager.shared.isEffectivelyPro
 
         var configuredSections: [Section] = []
 
@@ -241,7 +241,7 @@ class MoreViewController: UIViewController {
     }
 
     private func exportData() {
-        guard PurchaseManager.shared.isPro else {
+        guard PurchaseManager.shared.isEffectivelyPro else {
             showProUpgrade(trigger: "export")
             return
         }

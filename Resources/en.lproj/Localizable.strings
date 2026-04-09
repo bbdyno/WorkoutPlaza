@@ -606,29 +606,49 @@
 "purchase.error.notFound" = "Product information could not be loaded.";
 "purchase.error.verification" = "Purchase verification failed.";
 "purchase.error.unknown" = "An unknown error occurred.";
+"usage.limit.action.continue" = "Continue";
+"usage.limit.action.upgrade" = "See Pro";
+"usage.limit.vision.title" = "Free Vision Trial";
+"usage.limit.vision.message.remaining" = "This cutout will use a free trial.\nYou will have %d uses left afterward.";
+"usage.limit.vision.message.last" = "This is your last free Vision use.\nA Pro subscription will be required after this.";
+"usage.limit.vision.exhausted.title" = "Free Vision Trial Ended";
+"usage.limit.vision.exhausted.message" = "You have used all free Vision tries.\nSubscribe to Pro for unlimited access.";
+"usage.limit.transparentSticker.title" = "Free Sticker Trial";
+"usage.limit.transparentSticker.message.remaining" = "This export will use a free trial.\nYou will have %d uses left afterward.";
+"usage.limit.transparentSticker.message.last" = "This is your last free transparent sticker export.\nA Pro subscription will be required after this.";
+"usage.limit.transparentSticker.exhausted.title" = "Free Sticker Trial Ended";
+"usage.limit.transparentSticker.exhausted.message" = "You have used all free transparent sticker exports.\nSubscribe to Pro for unlimited access.";
 
 // Pro Upgrade Sheet
-"pro.upgrade.subtitle" = "Unlock all premium features forever with a single purchase.";
-"pro.upgrade.oneTime" = "One-time payment · Keep forever";
-"pro.upgrade.buy" = "Buy Now";
+"pro.upgrade.title" = "Go Pro";
+"pro.upgrade.subtitle" = "Remove ads and unlock unlimited Vision plus premium export tools.";
+"pro.upgrade.oneTime" = "Featured subscription";
+"pro.upgrade.plan.featured" = "Featured subscription";
+"pro.upgrade.plan.yearly" = "Yearly subscription";
+"pro.upgrade.plan.monthly" = "Monthly subscription";
+"pro.upgrade.buy" = "Subscribe";
 "pro.upgrade.restore" = "Restore Purchases";
 "pro.upgrade.pending" = "Your purchase is awaiting approval.";
-"pro.upgrade.noPurchaseFound" = "No previous purchases found to restore.";
+"pro.upgrade.noPurchaseFound" = "No active subscription was found to restore.";
 "pro.upgrade.success.title" = "Welcome to Pro!";
 "pro.upgrade.success.message" = "All premium features are now unlocked. Thank you!";
 
 // Pro Features
+"pro.feature.vision.title" = "Unlimited Vision";
+"pro.feature.vision.desc" = "Use person and foreground cutouts without limits, including future advanced Vision tools";
+"pro.feature.ads.title" = "No Ads";
+"pro.feature.ads.desc" = "Keep your dashboard and statistics screens clean without ad placements";
 "pro.feature.fonts.title" = "Premium Fonts";
 "pro.feature.fonts.desc" = "Unlock all fonts including BebasNeue, Explora, RIDIBatang and more";
 "pro.feature.templates.title" = "Premium Templates";
 "pro.feature.templates.desc" = "All built-in templates plus unlimited custom template saves";
 "pro.feature.watermark.title" = "Remove Watermark";
 "pro.feature.watermark.desc" = "Remove the WorkoutPlaza logo from shared cards";
-"pro.feature.export.title" = "Data Export";
-"pro.feature.export.desc" = "Export workout records as files";
+"pro.feature.export.title" = "Premium Export";
+"pro.feature.export.desc" = "Save transparent stickers, high-res images, and clean outputs without watermarks";
 
 // More — Pro Banner
-"more.pro.upgrade.cell" = "Upgrade to Lifetime Pro";
+"more.pro.upgrade.cell" = "Start Pro Subscription";
 
 // More — Tip Section
 "more.tip.section" = "Support Developer";

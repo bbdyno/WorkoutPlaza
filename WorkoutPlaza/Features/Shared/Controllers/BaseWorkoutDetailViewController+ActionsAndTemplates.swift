@@ -80,7 +80,7 @@ extension BaseWorkoutDetailViewController {
         return image
     }
 
-    func presentShareSheet(image: UIImage) {
+    func presentShareSheet(image: UIImage, closeDetailOnCompletion: Bool = false) {
         // 카드 저장
         saveWorkoutCard(image: image)
 
@@ -90,6 +90,15 @@ extension BaseWorkoutDetailViewController {
         )
 
         activityViewController.completionWithItemsHandler = { [weak self] activityType, completed, returnedItems, error in
+            guard let self else { return }
+
+            if completed && error == nil {
+                if closeDetailOnCompletion {
+                    self.closeDetailScreen()
+                    return
+                }
+            }
+
             if completed && activityType == .saveToCameraRoll {
                 // Image was saved to camera roll
                 let alert = CustomAlertViewController(
@@ -100,7 +109,7 @@ extension BaseWorkoutDetailViewController {
                         CustomAlertAction(title: WorkoutPlazaStrings.Common.ok, iconName: nil, style: .cancel, handler: nil)
                     ]
                 )
-                self?.present(alert, animated: true)
+                self.present(alert, animated: true)
             } else if let error = error {
                 let alert = CustomAlertViewController(
                     title: WorkoutPlazaStrings.Alert.Save.failed,
@@ -110,7 +119,7 @@ extension BaseWorkoutDetailViewController {
                         CustomAlertAction(title: WorkoutPlazaStrings.Common.ok, iconName: nil, style: .cancel, handler: nil)
                     ]
                 )
-                self?.present(alert, animated: true)
+                self.present(alert, animated: true)
             }
         }
 
@@ -136,7 +145,7 @@ extension BaseWorkoutDetailViewController {
 
     /// Pro 여부에 따라 워터마크 노출 상태를 업데이트
     func updateWatermarkVisibility() {
-        watermarkImageView.isHidden = PurchaseManager.shared.isPro
+        watermarkImageView.isHidden = PurchaseManager.shared.isEffectivelyPro
     }
 
     @objc func handlePurchaseStatusChanged() {

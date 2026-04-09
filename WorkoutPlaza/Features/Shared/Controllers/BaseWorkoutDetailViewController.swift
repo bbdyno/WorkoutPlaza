@@ -112,6 +112,11 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
     // Undo
     var undoStack: [SavedCardDesign] = []
     private let maxUndoSteps = 20
+    var colorPickerHasPushedUndoSnapshot = false
+    var colorPickerTargetIdentifiers: [String] = []
+    var colorPickerWasMultiSelectMode = false
+    var isColorPickerActive = false
+    var ignoreCanvasTapUntil = Date.distantPast
 
     // Background State
     var backgroundTransform: BackgroundTransform?
@@ -1328,7 +1333,7 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
         shareImageButton.showsMenuAsPrimaryAction = true
     }
 
-    func shareAsImage() {
+    func shareAsImage(closeDetailOnCompletion: Bool = false) {
         selectionManager.deselectAll()
         instructionLabel.isHidden = true
 
@@ -1336,24 +1341,23 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
             guard let self = self else { return }
 
             if let image = self.captureContentView() {
-                self.presentShareSheet(image: image)
+                self.presentShareSheet(image: image, closeDetailOnCompletion: closeDetailOnCompletion)
             }
 
             self.instructionLabel.isHidden = false
         }
     }
 
-    func shareAsSticker() {
-        guard FeatureGate.canAccess(FeatureGate.transparentExport) else {
-            let proVC = ProUpgradeViewController()
-            proVC.triggerFeature = "transparent_export"
-            let nav = UINavigationController(rootViewController: proVC)
-            nav.modalPresentationStyle = .pageSheet
-            if let sheet = nav.sheetPresentationController {
-                sheet.detents = [.large()]
-                sheet.prefersGrabberVisible = true
-            }
-            present(nav, animated: true)
+    func shareAsSticker(closeDetailOnCompletion: Bool = false) {
+        beginUsageLimitedFlow(for: .transparentStickerExport) { [weak self] in
+            self?.performStickerShare(closeDetailOnCompletion: closeDetailOnCompletion)
+        }
+    }
+
+    private func performStickerShare(closeDetailOnCompletion: Bool) {
+        if PurchaseManager.shared.isEffectivelyPro == false,
+           UsageLimitManager.shared.hasRemainingFreeUses(for: .transparentStickerExport) == false {
+            presentProUpgradeSheet(triggerFeature: UsageLimitedFeature.transparentStickerExport.triggerFeature)
             return
         }
 
@@ -1384,6 +1388,27 @@ class BaseWorkoutDetailViewController: UIViewController, TemplateGroupDelegate, 
                 try? pngData.write(to: tempURL)
 
                 let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
+                activityVC.completionWithItemsHandler = { [weak self] _, completed, _, error in
+                    guard let self else { return }
+                    if completed && error == nil {
+                        self.consumeLimitedUsageIfNeeded(for: .transparentStickerExport)
+                        if closeDetailOnCompletion {
+                            self.closeDetailScreen()
+                            return
+                        }
+                    }
+                    if let error {
+                        let alert = CustomAlertViewController(
+                            title: WorkoutPlazaStrings.Alert.Save.failed,
+                            message: error.localizedDescription,
+                            iconName: "icon.x.circle.fill",
+                            actions: [
+                                CustomAlertAction(title: WorkoutPlazaStrings.Common.ok, iconName: nil, style: .cancel, handler: nil)
+                            ]
+                        )
+                        self.present(alert, animated: true)
+                    }
+                }
                 if let popover = activityVC.popoverPresentationController {
                     popover.sourceView = self.shareImageButton
                     popover.sourceRect = self.shareImageButton.bounds

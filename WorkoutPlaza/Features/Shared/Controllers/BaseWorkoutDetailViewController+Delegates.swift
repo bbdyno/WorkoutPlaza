@@ -162,18 +162,33 @@ extension BaseWorkoutDetailViewController: SelectionDelegate {
 
 // MARK: - UIColorPickerViewControllerDelegate
 extension BaseWorkoutDetailViewController: UIColorPickerViewControllerDelegate {
-    func colorPickerViewControllerDidFinish(_ viewController: UIColorPickerViewController) {
-        pushUndoSnapshot()
-        let selectedColor = viewController.selectedColor
+    private func resolvedColorPickerTargets() -> [Selectable] {
+        if !colorPickerTargetIdentifiers.isEmpty {
+            let itemsByIdentifier = Dictionary(uniqueKeysWithValues: selectionManager.getAllItems().map { ($0.itemIdentifier, $0) })
+            let cachedTargets = colorPickerTargetIdentifiers.compactMap { itemsByIdentifier[$0] }
+            if !cachedTargets.isEmpty {
+                return cachedTargets
+            }
+        }
 
-        // Check if in multi-select mode (includes group selection)
         let selectedItems = selectionManager.getSelectedItems()
+        if !selectedItems.isEmpty {
+            return selectedItems
+        }
+
+        if let selectedItem = selectionManager.currentlySelectedItem {
+            return [selectedItem]
+        }
+
+        return []
+    }
+
+    private func applySelectedColorFromPicker(_ selectedColor: UIColor) -> Bool {
+        let selectedItems = resolvedColorPickerTargets()
 
         if !selectedItems.isEmpty {
-            // Apply color to all selected items
             for item in selectedItems {
                 if let group = item as? TemplateGroupView {
-                    // Apply color to all widgets inside the group
                     for widget in group.groupedItems {
                         if let selectable = widget as? Selectable {
                             selectable.applyColor(selectedColor)
@@ -181,17 +196,63 @@ extension BaseWorkoutDetailViewController: UIColorPickerViewControllerDelegate {
                         }
                     }
                 } else {
-                    let mutableItem = item
-                    mutableItem.applyColor(selectedColor)
+                    item.applyColor(selectedColor)
                     ColorPreferences.shared.saveColor(selectedColor, for: item.itemIdentifier)
                 }
             }
-        } else if let selectedItem = selectionManager.currentlySelectedItem {
-            // Single selection mode (fallback)
+            hasUnsavedChanges = true
+            return true
+        }
+
+        if let selectedItem = selectionManager.currentlySelectedItem {
             selectedItem.applyColor(selectedColor)
             ColorPreferences.shared.saveColor(selectedColor, for: selectedItem.itemIdentifier)
+            hasUnsavedChanges = true
+            return true
         }
-        hasUnsavedChanges = true
+
+        return false
+    }
+
+    private func restoreColorPickerSelectionIfNeeded() {
+        guard selectionManager.hasSelection == false else { return }
+
+        let targets = resolvedColorPickerTargets()
+        guard !targets.isEmpty else { return }
+
+        if colorPickerWasMultiSelectMode || targets.count > 1 {
+            selectionManager.selectMultiple(targets)
+        } else if let target = targets.first {
+            selectionManager.selectItem(target)
+        }
+    }
+
+    func colorPickerViewControllerDidSelectColor(_ viewController: UIColorPickerViewController) {
+        guard colorPickerHasPushedUndoSnapshot == false else {
+            _ = applySelectedColorFromPicker(viewController.selectedColor)
+            return
+        }
+
+        pushUndoSnapshot()
+        colorPickerHasPushedUndoSnapshot = true
+        _ = applySelectedColorFromPicker(viewController.selectedColor)
+    }
+
+    func colorPickerViewControllerDidFinish(_ viewController: UIColorPickerViewController) {
+        let selectedColor = viewController.selectedColor
+        if colorPickerHasPushedUndoSnapshot == false {
+            pushUndoSnapshot()
+        }
+        _ = applySelectedColorFromPicker(selectedColor)
+        restoreColorPickerSelectionIfNeeded()
+        colorPickerHasPushedUndoSnapshot = false
+        ignoreCanvasTapUntil = Date().addingTimeInterval(0.35)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            self?.isColorPickerActive = false
+            self?.colorPickerTargetIdentifiers = []
+            self?.colorPickerWasMultiSelectMode = false
+        }
     }
 }
 
@@ -293,11 +354,15 @@ extension BaseWorkoutDetailViewController {
         )
 
         actionSheet.addAction(UIAlertAction(title: NSLocalizedString("vision.menu.person", comment: ""), style: .default) { [weak self] _ in
-            self?.performVisionCutout(.person, from: image)
+            self?.beginUsageLimitedFlow(for: .visionCutout) { [weak self] in
+                self?.performVisionCutout(.person, from: image)
+            }
         })
 
         actionSheet.addAction(UIAlertAction(title: NSLocalizedString("vision.menu.foreground", comment: ""), style: .default) { [weak self] _ in
-            self?.prepareForegroundSelection(for: image)
+            self?.beginUsageLimitedFlow(for: .visionCutout) { [weak self] in
+                self?.prepareForegroundSelection(for: image)
+            }
         })
 
         if foregroundSubjectImageView.isHidden == false {
@@ -339,6 +404,7 @@ extension BaseWorkoutDetailViewController {
                         self.foregroundSubjectImageView.image = foregroundImage
                         self.foregroundSubjectImageView.isHidden = false
                         self.foregroundSubjectImageView.frame = self.backgroundImageView.frame
+                        self.consumeLimitedUsageIfNeeded(for: .visionCutout)
                         self.refreshCanvasOverlayZOrder()
                         self.showToast(mode.appliedMessage, style: .success)
 
@@ -446,6 +512,7 @@ extension BaseWorkoutDetailViewController {
                     self.foregroundSubjectImageView.image = result.cutoutImage
                     self.foregroundSubjectImageView.isHidden = false
                     self.foregroundSubjectImageView.frame = self.backgroundImageView.frame
+                    self.consumeLimitedUsageIfNeeded(for: .visionCutout)
                     self.hasUnsavedChanges = true
                     self.refreshCanvasOverlayZOrder()
                     self.showToast(NSLocalizedString("vision.foreground.applied", comment: ""), style: .success)

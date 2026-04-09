@@ -15,13 +15,15 @@ final class PurchaseManager {
     // MARK: - Product IDs
 
     enum ProductID {
-        static let lifetimePro = "com.workoutplaza.pro.lifetime"
+        static let proMonthly  = "com.workoutplaza.pro.monthly"
+        static let proYearly   = "com.workoutplaza.pro.yearly"
         static let tipSmall    = "com.workoutplaza.tip.small"
         static let tipMedium   = "com.workoutplaza.tip.medium"
         static let tipLarge    = "com.workoutplaza.tip.large"
 
-        static let all: Set<String> = [lifetimePro, tipSmall, tipMedium, tipLarge]
+        static let proSubscriptions: [String] = [proYearly, proMonthly]
         static let tips: [String]   = [tipSmall, tipMedium, tipLarge]
+        static let all: Set<String> = Set(proSubscriptions + tips)
     }
 
     // MARK: - State
@@ -56,7 +58,7 @@ final class PurchaseManager {
     // MARK: - Private
 
     private enum Keys {
-        static let isPro     = "purchase.isLifetimePro"
+        static let isPro     = "purchase.isProActive"
         static let totalTip  = "purchase.totalTipAmount"
     }
 
@@ -90,6 +92,10 @@ final class PurchaseManager {
 
     func product(for id: String) -> Product? {
         products.first { $0.id == id }
+    }
+
+    var featuredProProduct: Product? {
+        product(for: ProductID.proYearly) ?? product(for: ProductID.proMonthly)
     }
 
     // MARK: - Purchase
@@ -152,14 +158,13 @@ final class PurchaseManager {
         var found = false
         for await result in Transaction.currentEntitlements {
             if case .verified(let tx) = result,
-               tx.productID == ProductID.lifetimePro,
+               ProductID.proSubscriptions.contains(tx.productID),
                tx.revocationDate == nil {
                 found = true
                 break
             }
         }
-        if found { isPro = true }
-        // Do NOT set false here — preserves offline / sandbox state
+        isPro = found
     }
 
     // MARK: - Tip Recording
@@ -186,8 +191,8 @@ final class PurchaseManager {
     }
 
     private func process(_ transaction: Transaction) async {
-        if transaction.productID == ProductID.lifetimePro {
-            isPro = transaction.revocationDate == nil
+        if ProductID.proSubscriptions.contains(transaction.productID) {
+            await refreshProStatus()
         }
     }
 
