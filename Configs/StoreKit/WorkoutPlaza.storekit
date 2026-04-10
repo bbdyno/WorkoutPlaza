@@ -1,0 +1,162 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "254E0D2E",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "29.99",
+      "familyShareable" : false,
+      "internalID" : "6761961393",
+      "localizations" : [
+        {
+          "description" : "더 큰 개선을 위한 든든한 응원입니다.",
+          "displayName" : "WorkoutPlaza 러닝화",
+          "locale" : "ko"
+        },
+        {
+          "description" : "A generous boost for bigger improvements.",
+          "displayName" : "WorkoutPlaza Laces",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.workoutplaza.tip.large",
+      "referenceName" : "WorkoutPlaza Tip Large",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "6761961305",
+      "localizations" : [
+        {
+          "description" : "꾸준한 업데이트와 유지보수에 힘을 보태주세요.",
+          "displayName" : "WorkoutPlaza 클라이밍초크",
+          "locale" : "ko"
+        },
+        {
+          "description" : "Help fund steady updates and maintenance.",
+          "displayName" : "WorkoutPlaza Chalk",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.workoutplaza.tip.medium",
+      "referenceName" : "WorkoutPlaza Tip Medium",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "internalID" : "6761960869",
+      "localizations" : [
+        {
+          "description" : "A small thank-you for independent development.",
+          "displayName" : "WorkoutPlaza Coffee",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "독립 개발을 응원하는 작은 한 잔.",
+          "displayName" : "WorkoutPlaza 커피",
+          "locale" : "ko"
+        }
+      ],
+      "productID" : "com.workoutplaza.tip.small",
+      "referenceName" : "WorkoutPlaza Tip Small",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6758429244",
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_developerTeamID" : "M79H9K226Y",
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 797479648.72241604,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "22022971",
+      "localizations" : [
+
+      ],
+      "name" : "WorkoutPlaza Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6761887023",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+
+          ],
+          "productID" : "com.workoutplaza.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "WorkoutPlaza Pro Monthly",
+          "subscriptionGroupID" : "22022971",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6761887199",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+
+          ],
+          "productID" : "com.workoutplaza.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "WorkoutPlaza Pro Yearly",
+          "subscriptionGroupID" : "22022971",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 5,
+    "minor" : 0
+  }
+}

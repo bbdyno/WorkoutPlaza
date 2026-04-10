@@ -1,3 +1,4 @@
+import Foundation
 import ProjectDescription
 
 private let teamID: SettingValue = "M79H9K226Y"
@@ -5,6 +6,14 @@ private let debugProvisioningProfileName: SettingValue = "WorkoutPlaza App Provi
 private let debugProvisioningProfileUUID: SettingValue = "7a672c61-38dc-4008-a0ae-3d17c038f7b0"
 private let releaseProvisioningProfileName: SettingValue = "WorkoutPlaza App Distribution Provisioning"
 private let releaseProvisioningProfileUUID: SettingValue = "9fd5c43e-57b4-4f12-86da-e2888b5dbfc9"
+private let storeKitConfigurationRelativePath = "../../Configs/StoreKit/WorkoutPlaza.storekit"
+private let storeKitConfigurationURL = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .appendingPathComponent(storeKitConfigurationRelativePath)
+    .standardizedFileURL
+private let workoutPlazaRunActionOptions: RunActionOptions = FileManager.default.fileExists(atPath: storeKitConfigurationURL.path)
+    ? .options(storeKitConfigurationPath: .relativeToManifest(storeKitConfigurationRelativePath))
+    : .options()
 
 let project = Project(
     name: "WorkoutPlazaApp",
@@ -14,8 +23,8 @@ let project = Project(
             "IPHONEOS_DEPLOYMENT_TARGET": "18.0",
             "SWIFT_VERSION": "5.0",
             "DEVELOPMENT_TEAM": teamID,
-            "MARKETING_VERSION": "1.0.1",
-            "CURRENT_PROJECT_VERSION": "2026.02.19.1",
+            "MARKETING_VERSION": "1.2.0",
+            "CURRENT_PROJECT_VERSION": "2026.04.10.1",
             "SWIFT_APPROACHABLE_CONCURRENCY": "YES",
             "SWIFT_DEFAULT_ACTOR_ISOLATION": "MainActor",
             "SWIFT_EMIT_LOC_STRINGS": "YES",
@@ -197,7 +206,8 @@ let project = Project(
             ),
             runAction: .runAction(
                 configuration: .debug,
-                executable: "WorkoutPlaza"
+                executable: "WorkoutPlaza",
+                options: workoutPlazaRunActionOptions
             ),
             archiveAction: .archiveAction(configuration: .release),
             profileAction: .profileAction(configuration: .release),

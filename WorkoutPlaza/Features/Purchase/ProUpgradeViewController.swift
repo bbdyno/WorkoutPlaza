@@ -163,6 +163,12 @@ final class ProUpgradeViewController: UIViewController {
             name: .wpPurchaseStatusDidChange,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePurchaseCatalogChanged),
+            name: .wpPurchaseCatalogDidChange,
+            object: nil
+        )
     }
 
     deinit {
@@ -439,6 +445,10 @@ final class ProUpgradeViewController: UIViewController {
         refreshPurchaseUI()
     }
 
+    @objc private func handlePurchaseCatalogChanged() {
+        updatePlanSelectionUI()
+    }
+
     @objc private func buyTapped() {
         setLoading(true)
         Task {
@@ -500,9 +510,20 @@ final class ProUpgradeViewController: UIViewController {
     }
 
     private func setLoading(_ loading: Bool) {
-        buyButton.setTitle(loading ? "" : NSLocalizedString("pro.upgrade.buy", comment: ""), for: .normal)
+        let productAvailable = selectedProduct() != nil
+        let buttonTitle: String
+        if loading {
+            buttonTitle = ""
+        } else if productAvailable {
+            buttonTitle = NSLocalizedString("pro.upgrade.buy", comment: "")
+        } else {
+            buttonTitle = NSLocalizedString("pro.upgrade.unavailable", comment: "")
+        }
+
+        buyButton.setTitle(buttonTitle, for: .normal)
         loading ? loadingIndicator.startAnimating() : loadingIndicator.stopAnimating()
-        buyButton.isUserInteractionEnabled = !loading
+        buyButton.isUserInteractionEnabled = !loading && productAvailable
+        buyButton.alpha = productAvailable ? 1 : 0.65
         restoreButton.isUserInteractionEnabled = !loading
         manageButton.isUserInteractionEnabled = !loading
     }

@@ -668,11 +668,17 @@
 // More — Tip Section
 "more.tip.section" = "개발자 후원";
 "more.tip.section.supporter" = "개발자 후원 ❤️";
+"more.tip.open" = "후원 옵션 보기";
+"more.tip.open.subtitle" = "WorkoutPlaza를 위한 1회성 후원 옵션을 엽니다.";
+"more.tip.open.subtitle.supporter" = "지금까지 이 기기에서 %lld회 후원해주셨습니다. 다시 후원 화면을 열 수 있습니다.";
 
 // Tip Products
-"tip.product.small" = "Recovery Drink";
-"tip.product.medium" = "Liquid Chalk";
-"tip.product.large" = "New Laces";
+"tip.product.small" = "WorkoutPlaza 커피";
+"tip.product.medium" = "WorkoutPlaza 초크";
+"tip.product.large" = "WorkoutPlaza 러닝화";
+"tip.product.small.desc" = "독립 개발을 응원하는 작은 한 잔.";
+"tip.product.medium.desc" = "꾸준한 업데이트와 유지보수에 힘을 보태주세요.";
+"tip.product.large.desc" = "더 큰 개선을 위한 든든한 응원입니다.";
 
 // Tip Thank You — Small
 "tip.thanks.small.title" = "한 잔의 커피 감사해요!";
@@ -688,6 +694,39 @@
 
 // Tip Supporter Badge
 "tip.supporter.badge" = "후원자";
+
+// Support Screen
+"support.screen.nav.title" = "개발자 후원";
+"support.screen.hero.eyebrow" = "OPTIONAL SUPPORT";
+"support.screen.hero.title" = "WorkoutPlaza를 1회성 후원으로 응원해보세요.";
+"support.screen.hero.body" = "후원은 앱 다듬기, 유지보수, 다음 업데이트를 이어가는 데 도움이 됩니다. Pro 구독과는 별도로 운영됩니다.";
+"support.screen.hero.footer" = "후원은 선택 사항이며, 추가 Pro 기능을 잠금 해제하지 않습니다.";
+"support.screen.summary.default.title" = "독립 개발을 계속 이어가고 있습니다";
+"support.screen.summary.default.body" = "WorkoutPlaza가 도움이 되었다면 여기서 1회성 후원을 보낼 수 있습니다.";
+"support.screen.summary.supporter.title" = "이미 WorkoutPlaza를 후원해주고 계십니다";
+"support.screen.summary.supporter.body" = "감사합니다. 이 기기에서 지금까지 총 %lld회 후원해주셨습니다.";
+"support.screen.options.title" = "후원 상품 선택";
+"support.screen.options.subtitle" = "각 상품은 별도의 소비형 인앱결제입니다.";
+"support.screen.notes.title" = "후원 전 확인해주세요";
+"support.screen.notes.item.1" = "후원은 자발적인 선택이며 Pro 구독과 별개입니다.";
+"support.screen.notes.item.2" = "이 상품들은 소비형 결제라서 구독처럼 복원되지 않습니다.";
+"support.screen.notes.item.3" = "실제 상품명과 설명은 App Store Connect 설정을 기준으로 표시됩니다.";
+"support.screen.loading.title" = "후원 상품을 불러오는 중입니다";
+"support.screen.loading.body" = "App Store와 후원 상품 정보를 동기화하고 있습니다.";
+"support.screen.error.title" = "후원 상품을 불러오지 못했습니다";
+"support.screen.error.body" = "상품 상태와 네트워크를 확인한 뒤 다시 시도해주세요.";
+"support.screen.retry" = "다시 시도";
+"support.screen.pending" = "후원 결제가 승인 대기 중입니다.";
+"support.product.button" = "후원하기";
+"support.product.unavailable" = "준비 중";
+"pro.upgrade.unavailable" = "준비 중";
+"dev.iap.section" = "구매 (IAP)";
+"dev.iap.refresh" = "상품/구매 상태 새로고침";
+"dev.iap.openSupport" = "후원 화면 열기";
+"dev.iap.resetSupport" = "후원 로컬 상태 초기화";
+"dev.iap.resetSupport.confirm" = "이 기기의 후원 횟수와 후원 금액 캐시를 초기화합니다.";
+"dev.iap.result.refreshed" = "상품과 구매 상태를 새로고쳤습니다.";
+"dev.iap.result.supportReset" = "이 기기의 후원 로컬 상태를 초기화했습니다.";
 
 // Speech Bubble Widget
 "widget.speechBubble" = "말풍선";

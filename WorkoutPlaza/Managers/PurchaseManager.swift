@@ -15,6 +15,80 @@ final class PurchaseManager {
 
     // MARK: - Product IDs
 
+    enum SupportTier: CaseIterable {
+        case small
+        case medium
+        case large
+
+        var productID: String {
+            switch self {
+            case .small: return ProductID.tipSmall
+            case .medium: return ProductID.tipMedium
+            case .large: return ProductID.tipLarge
+            }
+        }
+
+        var fallbackDisplayName: String {
+            switch self {
+            case .small: return NSLocalizedString("tip.product.small", comment: "")
+            case .medium: return NSLocalizedString("tip.product.medium", comment: "")
+            case .large: return NSLocalizedString("tip.product.large", comment: "")
+            }
+        }
+
+        var fallbackDescription: String {
+            switch self {
+            case .small: return NSLocalizedString("tip.product.small.desc", comment: "")
+            case .medium: return NSLocalizedString("tip.product.medium.desc", comment: "")
+            case .large: return NSLocalizedString("tip.product.large.desc", comment: "")
+            }
+        }
+
+        var showcaseDisplayPrice: String {
+            let prefersKorean = Locale.preferredLanguages.first?.hasPrefix("ko") == true
+
+            switch self {
+            case .small:
+                return prefersKorean ? "￦2,900" : "$1.99"
+            case .medium:
+                return prefersKorean ? "￦6,600" : "$4.99"
+            case .large:
+                return prefersKorean ? "￦14,000" : "$9.99"
+            }
+        }
+    }
+
+    struct SupportProductOption {
+        let tier: SupportTier
+        let storeProduct: Product?
+
+        var id: String { tier.productID }
+        var displayName: String {
+            if AppShowcaseManager.isEnabled {
+                return tier.fallbackDisplayName
+            }
+            return storeProduct?.displayName ?? tier.fallbackDisplayName
+        }
+        var descriptionText: String {
+            if AppShowcaseManager.isEnabled {
+                return tier.fallbackDescription
+            }
+            return storeProduct?.description ?? tier.fallbackDescription
+        }
+        var displayPrice: String {
+            if AppShowcaseManager.isEnabled {
+                return tier.showcaseDisplayPrice
+            }
+
+            if let displayPrice = storeProduct?.displayPrice {
+                return displayPrice
+            }
+
+            return NSLocalizedString("support.product.unavailable", comment: "")
+        }
+        var isAvailable: Bool { storeProduct != nil || AppShowcaseManager.isEnabled }
+    }
+
     enum ProductID {
         static let proMonthly  = "com.workoutplaza.pro.monthly"
         static let proYearly   = "com.workoutplaza.pro.yearly"
@@ -23,7 +97,7 @@ final class PurchaseManager {
         static let tipLarge    = "com.workoutplaza.tip.large"
 
         static let proSubscriptions: [String] = [proYearly, proMonthly]
-        static let tips: [String]   = [tipSmall, tipMedium, tipLarge]
+        static let tips: [String] = SupportTier.allCases.map(\.productID)
         static let all: Set<String> = Set(proSubscriptions + tips)
     }
 
@@ -48,10 +122,14 @@ final class PurchaseManager {
     }
 
     private(set) var products: [Product] = []
+    private(set) var isFetchingProducts = false
+    private(set) var hasAttemptedProductFetch = false
+    private(set) var lastProductFetchError: String?
 
-    var isSupporter: Bool { totalTipAmount > 0 }
+    var isSupporter: Bool { supportPurchaseCount > 0 || totalTipAmount > 0 }
 
     var hasActiveSubscription: Bool { isPro }
+    var hasLoadedProductCatalog: Bool { hasAttemptedProductFetch }
 
     var currentSubscriptionDisplayName: String {
         switch activeSubscriptionProductID {
@@ -82,15 +160,27 @@ final class PurchaseManager {
         set { UserDefaults.standard.set(newValue, forKey: Keys.totalTip) }
     }
 
+    var supportPurchaseCount: Int {
+        get { UserDefaults.standard.integer(forKey: Keys.supportPurchaseCount) }
+        set { UserDefaults.standard.set(newValue, forKey: Keys.supportPurchaseCount) }
+    }
+
+    var availableSupportProducts: [SupportProductOption] {
+        SupportTier.allCases.map { SupportProductOption(tier: $0, storeProduct: product(for: $0.productID)) }
+    }
+
     // MARK: - Private
 
     private enum Keys {
         static let isPro = "purchase.isProActive"
         static let totalTip = "purchase.totalTipAmount"
+        static let supportPurchaseCount = "purchase.supportPurchaseCount"
         static let activeSubscriptionProductID = "purchase.activeSubscriptionProductID"
+        static let processedTipTransactionIDs = "purchase.processedTipTransactionIDs"
     }
 
     private var transactionListener: Task<Void, Never>?
+    private var lastProductsFetchDate: Date?
     private(set) var activeSubscriptionProductID: String? {
         didSet {
             guard oldValue != activeSubscriptionProductID else { return }
@@ -120,17 +210,44 @@ final class PurchaseManager {
     private func boot() async {
         await fetchProducts()
         await refreshProStatus()
+        await processUnfinishedTransactions()
     }
 
     // MARK: - Products
 
-    func fetchProducts() async {
+    func fetchProducts(force: Bool = false) async {
+        if isFetchingProducts {
+            return
+        }
+
+        if force == false,
+           let lastProductsFetchDate,
+           hasAttemptedProductFetch,
+           Date().timeIntervalSince(lastProductsFetchDate) < 30 {
+            return
+        }
+
+        hasAttemptedProductFetch = true
+        isFetchingProducts = true
+        lastProductFetchError = nil
+        NotificationCenter.default.post(name: .wpPurchaseCatalogDidChange, object: nil)
+
+        defer {
+            isFetchingProducts = false
+            NotificationCenter.default.post(name: .wpPurchaseCatalogDidChange, object: nil)
+        }
+
         do {
             products = try await Product.products(for: ProductID.all)
+            lastProductsFetchDate = Date()
+            lastProductFetchError = nil
             WPLog.info("PurchaseManager: fetched \(products.count) products")
         } catch {
+            lastProductFetchError = error.localizedDescription
             WPLog.warning("PurchaseManager: fetchProducts failed —", error.localizedDescription)
         }
+
+        NotificationCenter.default.post(name: .wpPurchaseCatalogDidChange, object: nil)
     }
 
     func product(for id: String) -> Product? {
@@ -143,6 +260,27 @@ final class PurchaseManager {
 
     var availableProProducts: [Product] {
         ProductID.proSubscriptions.compactMap { product(for: $0) }
+    }
+
+    func supportTier(for productID: String) -> SupportTier? {
+        SupportTier.allCases.first { $0.productID == productID }
+    }
+
+    func refreshStoreState(forceProductFetch: Bool = false) async {
+        await fetchProducts(force: forceProductFetch)
+        await refreshProStatus()
+        await processUnfinishedTransactions()
+    }
+
+    func refreshStoreStateIfNeeded() async {
+        let shouldRefreshCatalog: Bool
+        if let lastProductsFetchDate {
+            shouldRefreshCatalog = Date().timeIntervalSince(lastProductsFetchDate) >= 300
+        } else {
+            shouldRefreshCatalog = true
+        }
+
+        await refreshStoreState(forceProductFetch: shouldRefreshCatalog)
     }
 
     // MARK: - Purchase
@@ -220,15 +358,6 @@ final class PurchaseManager {
         isPro = activeProductID != nil
     }
 
-    // MARK: - Tip Recording
-
-    func recordTip(product: Product) {
-        let value = NSDecimalNumber(decimal: product.price).doubleValue
-        totalTipAmount += value > 0 ? value : 1.0
-        NotificationCenter.default.post(name: .wpPurchaseStatusDidChange, object: nil)
-        WPLog.info("PurchaseManager: tip recorded, total →", totalTipAmount)
-    }
-
     // MARK: - Private Helpers
 
     private func startTransactionListener() -> Task<Void, Never> {
@@ -243,9 +372,25 @@ final class PurchaseManager {
         }
     }
 
+    private func processUnfinishedTransactions() async {
+        for await result in Transaction.unfinished {
+            do {
+                let transaction = try verified(result)
+                await process(transaction)
+                await transaction.finish()
+            } catch {
+                WPLog.warning("PurchaseManager: unfinished transaction verification failed —", error.localizedDescription)
+            }
+        }
+    }
+
     private func process(_ transaction: Transaction) async {
         if ProductID.proSubscriptions.contains(transaction.productID) {
             await refreshProStatus()
+        }
+
+        if ProductID.tips.contains(transaction.productID), transaction.revocationDate == nil {
+            recordSupportPurchaseIfNeeded(for: transaction)
         }
     }
 
@@ -255,10 +400,49 @@ final class PurchaseManager {
         case .verified(let v): return v
         }
     }
+
+    private var processedTipTransactionIDs: Set<String> {
+        get { Set(UserDefaults.standard.stringArray(forKey: Keys.processedTipTransactionIDs) ?? []) }
+        set { UserDefaults.standard.set(Array(newValue).sorted(), forKey: Keys.processedTipTransactionIDs) }
+    }
+
+    private func recordSupportPurchaseIfNeeded(for transaction: Transaction) {
+        let transactionKey = String(transaction.id)
+        var processedIDs = processedTipTransactionIDs
+        guard processedIDs.contains(transactionKey) == false else { return }
+
+        processedIDs.insert(transactionKey)
+        processedTipTransactionIDs = processedIDs
+        supportPurchaseCount += 1
+
+        if let product = product(for: transaction.productID) {
+            let value = NSDecimalNumber(decimal: product.price).doubleValue
+            if value > 0 {
+                totalTipAmount += value
+            }
+        }
+
+        NotificationCenter.default.post(name: .wpPurchaseStatusDidChange, object: nil)
+        WPLog.info(
+            "PurchaseManager: support purchase recorded →",
+            transaction.productID,
+            "count:",
+            supportPurchaseCount
+        )
+    }
+
+    func resetSupportStateForDebug() {
+        totalTipAmount = 0
+        supportPurchaseCount = 0
+        processedTipTransactionIDs = []
+        NotificationCenter.default.post(name: .wpPurchaseStatusDidChange, object: nil)
+        WPLog.info("PurchaseManager: support debug state reset")
+    }
 }
 
 // MARK: - Notification
 
 extension Notification.Name {
     static let wpPurchaseStatusDidChange = Notification.Name("wpPurchaseStatusDidChange")
+    static let wpPurchaseCatalogDidChange = Notification.Name("wpPurchaseCatalogDidChange")
 }

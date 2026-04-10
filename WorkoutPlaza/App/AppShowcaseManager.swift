@@ -15,6 +15,11 @@ enum AppShowcaseManager {
         case runningDetail = "running-detail"
         case climbingInput = "climbing-input"
         case savedCardDetail = "saved-card-detail"
+        case developerSupport = "developer-support"
+    }
+
+    private static var prefersKorean: Bool {
+        Locale.preferredLanguages.first?.hasPrefix("ko") == true
     }
 
     static var isEnabled: Bool {
@@ -46,12 +51,15 @@ enum AppShowcaseManager {
 
         let sampleGym = ClimbingGym(
             id: "showcase_the_climb_hannam",
-            name: "The Climb",
+            name: localizedSample(ko: "더클라임", en: "The Climb"),
             logoSource: .none,
             gradeColors: ["#111111", "#3A3A3A", "#6A6963", "#A6A69D", "#D9D7CF"],
             branchColor: "#111111",
             isBuiltIn: false,
-            metadata: .init(region: "Seoul", branch: "Hannam")
+            metadata: .init(
+                region: localizedSample(ko: "서울", en: "Seoul"),
+                branch: localizedSample(ko: "한남", en: "Hannam")
+            )
         )
         ClimbingGymManager.shared.saveGyms([sampleGym])
 
@@ -65,10 +73,10 @@ enum AppShowcaseManager {
 
         let primaryWorkout = runningWorkouts.first?.workoutData
         let cardDate = primaryWorkout?.startDate ?? Date()
-        let cardTitle = "Evening Run Poster"
+        let cardTitle = localizedSample(ko: "저녁 러닝 포스터", en: "Evening Run Poster")
         let cardImage = makeSamplePosterImage(
             title: cardTitle,
-            subtitle: "12.4 km  ·  58 min",
+            subtitle: localizedSample(ko: "12.4 km  ·  58분", en: "12.4 km  ·  58 min"),
             date: cardDate
         )
 
@@ -135,6 +143,16 @@ enum AppShowcaseManager {
 
             let detailViewController = CardDetailViewController(card: card, image: image)
             navigationController.pushViewController(detailViewController, animated: false)
+
+        case .developerSupport:
+            tabBarController.selectedIndex = 2
+            guard let navigationController = tabBarController.selectedViewController as? UINavigationController else {
+                return
+            }
+
+            let supportViewController = DeveloperSupportViewController()
+            supportViewController.hidesBottomBarWhenPushed = true
+            navigationController.pushViewController(supportViewController, animated: false)
         }
     }
 
@@ -363,5 +381,9 @@ enum AppShowcaseManager {
             let dateString = NSAttributedString(string: dateText, attributes: metaAttributes)
             dateString.draw(at: CGPoint(x: 120, y: 1202))
         }
+    }
+
+    private static func localizedSample(ko: String, en: String) -> String {
+        prefersKorean ? ko : en
     }
 }

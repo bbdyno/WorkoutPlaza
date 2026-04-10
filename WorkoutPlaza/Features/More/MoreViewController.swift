@@ -224,10 +224,20 @@ class MoreViewController: UIViewController {
         let tipTitle = PurchaseManager.shared.isSupporter
             ? NSLocalizedString("more.tip.section.supporter", comment: "")
             : NSLocalizedString("more.tip.section", comment: "")
-        configuredSections.append(Section(title: tipTitle, kind: .tips, items: [
-            MenuItem(title: NSLocalizedString("tip.product.small", comment: ""),  icon: "cup.and.saucer",     action: { [weak self] in self?.purchaseTip(PurchaseManager.ProductID.tipSmall) }),
-            MenuItem(title: NSLocalizedString("tip.product.medium", comment: ""), icon: "drop.fill",           action: { [weak self] in self?.purchaseTip(PurchaseManager.ProductID.tipMedium) }),
-            MenuItem(title: NSLocalizedString("tip.product.large", comment: ""),  icon: "shoeprints.fill",     action: { [weak self] in self?.purchaseTip(PurchaseManager.ProductID.tipLarge) })
+        let supportCount = max(PurchaseManager.shared.supportPurchaseCount, PurchaseManager.shared.isSupporter ? 1 : 0)
+        let supportSubtitle = supportCount > 0
+            ? String.localizedStringWithFormat(
+                NSLocalizedString("more.tip.open.subtitle.supporter", comment: ""),
+                supportCount
+            )
+            : NSLocalizedString("more.tip.open.subtitle", comment: "")
+        configuredSections.append(Section(title: tipTitle, items: [
+            MenuItem(
+                title: NSLocalizedString("more.tip.open", comment: ""),
+                icon: "icon.support",
+                subtitle: supportSubtitle,
+                action: { [weak self] in self?.showDeveloperSupport() }
+            )
         ]))
 
         // ── DEBUG ─────────────────────────────────────────────────
@@ -280,31 +290,9 @@ class MoreViewController: UIViewController {
         presentProUpgradeFlow(triggerFeature: trigger)
     }
 
-    // MARK: - Tips
-
-    private func purchaseTip(_ productID: String) {
-        Task {
-            do {
-                let outcome = try await PurchaseManager.shared.purchase(productID)
-                guard case .success(let product) = outcome else { return }
-
-                PurchaseManager.shared.recordTip(product: product)
-
-                let tier: TipThankYouViewController.Tier
-                switch productID {
-                case PurchaseManager.ProductID.tipSmall:  tier = .small
-                case PurchaseManager.ProductID.tipMedium: tier = .medium
-                default:                                   tier = .large
-                }
-
-                let thanksVC = TipThankYouViewController(tier: tier)
-                thanksVC.onDismiss = { [weak self] in self?.rebuildData() }
-                present(thanksVC, animated: true)
-
-            } catch {
-                showToast(error.localizedDescription)
-            }
-        }
+    private func showDeveloperSupport() {
+        let viewController = DeveloperSupportViewController()
+        navigationController?.pushViewController(viewController, animated: true)
     }
 
     // MARK: - Actions

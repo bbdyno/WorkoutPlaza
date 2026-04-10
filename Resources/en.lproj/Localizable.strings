@@ -670,11 +670,17 @@
 // More — Tip Section
 "more.tip.section" = "Support Developer";
 "more.tip.section.supporter" = "Support Developer ❤️";
+"more.tip.open" = "Support Options";
+"more.tip.open.subtitle" = "Open one-time support options for WorkoutPlaza.";
+"more.tip.open.subtitle.supporter" = "Thanks for %lld support purchases. Open the support screen again.";
 
 // Tip Products
-"tip.product.small" = "Recovery Drink";
-"tip.product.medium" = "Liquid Chalk";
-"tip.product.large" = "New Laces";
+"tip.product.small" = "WorkoutPlaza Coffee";
+"tip.product.medium" = "WorkoutPlaza Chalk";
+"tip.product.large" = "WorkoutPlaza Laces";
+"tip.product.small.desc" = "A small thank-you for independent development.";
+"tip.product.medium.desc" = "Help fund steady updates and maintenance.";
+"tip.product.large.desc" = "A generous boost for bigger improvements.";
 
 // Tip Thank You — Small
 "tip.thanks.small.title" = "Thanks for the coffee!";
@@ -687,6 +693,39 @@
 // Tip Thank You — Large
 "tip.thanks.large.title" = "New kicks, new runs!";
 "tip.thanks.large.message" = "I'm truly moved by your generous support.\nI'll do my best to make WorkoutPlaza even better.";
+
+// Support Screen
+"support.screen.nav.title" = "Support";
+"support.screen.hero.eyebrow" = "OPTIONAL SUPPORT";
+"support.screen.hero.title" = "Support WorkoutPlaza with a one-time tip.";
+"support.screen.hero.body" = "Tips help fund polish, maintenance, and future updates while keeping Pro subscriptions separate from simple support.";
+"support.screen.hero.footer" = "This support is optional and does not unlock additional Pro features.";
+"support.screen.summary.default.title" = "Independent development, kept moving";
+"support.screen.summary.default.body" = "If WorkoutPlaza has been useful, you can send a one-time tip here.";
+"support.screen.summary.supporter.title" = "You are already supporting WorkoutPlaza";
+"support.screen.summary.supporter.body" = "Thank you. You have made %lld support purchases so far on this device.";
+"support.screen.options.title" = "Choose a support tier";
+"support.screen.options.subtitle" = "Each option is a separate consumable purchase.";
+"support.screen.notes.title" = "Before you support";
+"support.screen.notes.item.1" = "Support purchases are voluntary and separate from the Pro subscription.";
+"support.screen.notes.item.2" = "These are consumable purchases, so they are not restorable like subscriptions.";
+"support.screen.notes.item.3" = "Use App Store pricing and localization to keep names and descriptions consistent.";
+"support.screen.loading.title" = "Loading support products";
+"support.screen.loading.body" = "Syncing the latest App Store support product information.";
+"support.screen.error.title" = "Support products could not be loaded";
+"support.screen.error.body" = "Check product status and network connection, then try again.";
+"support.screen.retry" = "Try Again";
+"support.screen.pending" = "Your support purchase is pending approval.";
+"support.product.button" = "Send Support";
+"support.product.unavailable" = "Not Available";
+"pro.upgrade.unavailable" = "Not Available";
+"dev.iap.section" = "Purchases (IAP)";
+"dev.iap.refresh" = "Refresh products and purchases";
+"dev.iap.openSupport" = "Open support screen";
+"dev.iap.resetSupport" = "Reset local support state";
+"dev.iap.resetSupport.confirm" = "This resets the cached support count and support amount on this device.";
+"dev.iap.result.refreshed" = "Product and purchase state was refreshed.";
+"dev.iap.result.supportReset" = "Local support state on this device was reset.";
 
 // Speech Bubble Widget
 "widget.speechBubble" = "Speech Bubble";

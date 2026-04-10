@@ -108,7 +108,7 @@ class DeveloperSettingsViewController: UIViewController {
                     self?.showAppSchemeTestPrompt()
                 })
             ]),
-            Section(title: "구매 (IAP)", rows: [
+            Section(title: NSLocalizedString("dev.iap.section", comment: ""), rows: [
                 .toggle(
                     title: "Pro 강제 활성화",
                     isOn: { DevSettings.shared.devOverridePro },
@@ -120,9 +120,50 @@ class DeveloperSettingsViewController: UIViewController {
                                 : "Pro 강제 활성화가 해제되었습니다."
                         )
                     }
+                ),
+                .action(
+                    title: NSLocalizedString("dev.iap.refresh", comment: ""),
+                    isDestructive: false,
+                    action: { [weak self] in
+                        self?.refreshIAPState()
+                    }
+                ),
+                .action(
+                    title: NSLocalizedString("dev.iap.openSupport", comment: ""),
+                    isDestructive: false,
+                    action: { [weak self] in
+                        self?.openSupportScreen()
+                    }
+                ),
+                .action(
+                    title: NSLocalizedString("dev.iap.resetSupport", comment: ""),
+                    isDestructive: true,
+                    action: { [weak self] in
+                        self?.confirmAndRun(
+                            title: NSLocalizedString("dev.iap.resetSupport", comment: ""),
+                            message: NSLocalizedString("dev.iap.resetSupport.confirm", comment: ""),
+                            completionMessage: NSLocalizedString("dev.iap.result.supportReset", comment: "")
+                        ) {
+                            PurchaseManager.shared.resetSupportStateForDebug()
+                        }
+                    }
                 )
             ])
         ]
+    }
+
+    private func refreshIAPState() {
+        Task { [weak self] in
+            await PurchaseManager.shared.refreshStoreState(forceProductFetch: true)
+            await MainActor.run {
+                self?.showActionResultAlert(message: NSLocalizedString("dev.iap.result.refreshed", comment: ""))
+            }
+        }
+    }
+
+    private func openSupportScreen() {
+        let viewController = DeveloperSupportViewController()
+        navigationController?.pushViewController(viewController, animated: true)
     }
 
     private func confirmAndRun(

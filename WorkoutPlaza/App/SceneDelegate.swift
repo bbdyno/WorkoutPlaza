@@ -11,6 +11,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
     private var pendingURL: URL?
+    private var purchaseRefreshTask: Task<Void, Never>?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
@@ -18,6 +19,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(windowScene: windowScene)
         window?.overrideUserInterfaceStyle = .light
         AppChrome.installGlobalAppearance()
+        _ = PurchaseManager.shared
 
         // Use Tab Bar Controller as root
         let tabBarController = MainTabBarController()
@@ -74,9 +76,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
+        purchaseRefreshTask?.cancel()
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
+        purchaseRefreshTask?.cancel()
+        purchaseRefreshTask = Task {
+            await PurchaseManager.shared.refreshStoreStateIfNeeded()
+        }
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
