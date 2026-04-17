@@ -30,7 +30,7 @@
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.workoutplaza.tip.large",
+      "productID" : "com.workoutplaza.tip.item.large",
       "referenceName" : "WorkoutPlaza Tip Large",
       "type" : "Consumable"
     },
@@ -50,7 +50,7 @@
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.workoutplaza.tip.medium",
+      "productID" : "com.workoutplaza.tip.item.medium",
       "referenceName" : "WorkoutPlaza Tip Medium",
       "type" : "Consumable"
     },
@@ -70,7 +70,7 @@
           "locale" : "ko"
         }
       ],
-      "productID" : "com.workoutplaza.tip.small",
+      "productID" : "com.workoutplaza.tip.item.small",
       "referenceName" : "WorkoutPlaza Tip Small",
       "type" : "Consumable"
     }

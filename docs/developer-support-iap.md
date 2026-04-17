@@ -16,9 +16,9 @@ These product identifiers are already wired in code:
 
 | Product Type | Product ID | Reference Name | EN Display Name | EN Description | KO Display Name | KO Description |
 | --- | --- | --- | --- | --- | --- | --- |
-| Consumable | `com.workoutplaza.tip.small` | `WorkoutPlaza Tip Small` | `WorkoutPlaza Coffee` | `A small thank-you for independent development.` | `WorkoutPlaza 커피` | `독립 개발을 응원하는 작은 한 잔.` |
-| Consumable | `com.workoutplaza.tip.medium` | `WorkoutPlaza Tip Medium` | `WorkoutPlaza Chalk` | `Help fund steady updates and maintenance.` | `WorkoutPlaza 초크` | `꾸준한 업데이트와 유지보수에 힘을 보태주세요.` |
-| Consumable | `com.workoutplaza.tip.large` | `WorkoutPlaza Tip Large` | `WorkoutPlaza Laces` | `A generous boost for bigger improvements.` | `WorkoutPlaza 러닝화` | `더 큰 개선을 위한 든든한 응원입니다.` |
+| Consumable | `com.workoutplaza.tip.item.small` | `WorkoutPlaza Tip Small` | `WorkoutPlaza Coffee` | `A small thank-you for independent development.` | `WorkoutPlaza 커피` | `독립 개발을 응원하는 작은 한 잔.` |
+| Consumable | `com.workoutplaza.tip.item.medium` | `WorkoutPlaza Tip Medium` | `WorkoutPlaza Chalk` | `Help fund steady updates and maintenance.` | `WorkoutPlaza 초크` | `꾸준한 업데이트와 유지보수에 힘을 보태주세요.` |
+| Consumable | `com.workoutplaza.tip.item.large` | `WorkoutPlaza Tip Large` | `WorkoutPlaza Laces` | `A generous boost for bigger improvements.` | `WorkoutPlaza 러닝화` | `더 큰 개선을 위한 든든한 응원입니다.` |
 
 Suggested pricing targets:
 - Small: roughly entry-tier support
@@ -39,7 +39,7 @@ Create these three products under `Monetization > In-App Purchases`:
 
 - Type: `Consumable`
 - Reference Name: `WorkoutPlaza Tip Small`
-- Product ID: `com.workoutplaza.tip.small`
+- Product ID: `com.workoutplaza.tip.item.small`
 - Cleared for Sale / Availability: choose the countries or regions where the app is sold
 - Tax Category: `Match to parent app` unless you have a separate tax reason to change it
 
@@ -53,7 +53,7 @@ Localization:
 
 - Type: `Consumable`
 - Reference Name: `WorkoutPlaza Tip Medium`
-- Product ID: `com.workoutplaza.tip.medium`
+- Product ID: `com.workoutplaza.tip.item.medium`
 - Cleared for Sale / Availability: choose the countries or regions where the app is sold
 - Tax Category: `Match to parent app` unless you have a separate tax reason to change it
 
@@ -67,7 +67,7 @@ Localization:
 
 - Type: `Consumable`
 - Reference Name: `WorkoutPlaza Tip Large`
-- Product ID: `com.workoutplaza.tip.large`
+- Product ID: `com.workoutplaza.tip.item.large`
 - Cleared for Sale / Availability: choose the countries or regions where the app is sold
 - Tax Category: `Match to parent app` unless you have a separate tax reason to change it
 

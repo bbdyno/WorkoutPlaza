@@ -92,9 +92,9 @@ final class PurchaseManager {
     enum ProductID {
         static let proMonthly  = "com.workoutplaza.pro.monthly"
         static let proYearly   = "com.workoutplaza.pro.yearly"
-        static let tipSmall    = "com.workoutplaza.tip.small"
-        static let tipMedium   = "com.workoutplaza.tip.medium"
-        static let tipLarge    = "com.workoutplaza.tip.large"
+        static let tipSmall    = "com.workoutplaza.tip.item.small"
+        static let tipMedium   = "com.workoutplaza.tip.item.medium"
+        static let tipLarge    = "com.workoutplaza.tip.item.large"
 
         static let proSubscriptions: [String] = [proYearly, proMonthly]
         static let tips: [String] = SupportTier.allCases.map(\.productID)

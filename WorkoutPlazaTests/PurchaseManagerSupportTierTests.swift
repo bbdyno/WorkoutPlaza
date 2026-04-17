@@ -6,9 +6,9 @@ struct PurchaseManagerSupportTierTests {
     @Test func supportProductIdentifiersStayStable() {
         #expect(
             PurchaseManager.SupportTier.allCases.map(\.productID) == [
-                "com.workoutplaza.tip.small",
-                "com.workoutplaza.tip.medium",
-                "com.workoutplaza.tip.large"
+                "com.workoutplaza.tip.item.small",
+                "com.workoutplaza.tip.item.medium",
+                "com.workoutplaza.tip.item.large"
             ]
         )
     }
