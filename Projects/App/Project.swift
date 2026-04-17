@@ -24,7 +24,7 @@ let project = Project(
             "SWIFT_VERSION": "5.0",
             "DEVELOPMENT_TEAM": teamID,
             "MARKETING_VERSION": "1.2.0",
-            "CURRENT_PROJECT_VERSION": "2026.04.10.1",
+            "CURRENT_PROJECT_VERSION": "2026.04.18.1",
             "SWIFT_APPROACHABLE_CONCURRENCY": "YES",
             "SWIFT_DEFAULT_ACTOR_ISOLATION": "MainActor",
             "SWIFT_EMIT_LOC_STRINGS": "YES",
