@@ -94,3 +94,6 @@ app-store-screens/
 
 # Claude Code
 .claude/
+
+# Firebase
+.firebase/
