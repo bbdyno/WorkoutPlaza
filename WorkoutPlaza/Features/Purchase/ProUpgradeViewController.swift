@@ -134,6 +134,14 @@ final class ProUpgradeViewController: UIViewController {
         return btn
     }()
 
+    private let legalLabel: UILabel = {
+        let lbl = UILabel()
+        lbl.numberOfLines = 0
+        lbl.textAlignment = .center
+        lbl.isUserInteractionEnabled = true
+        return lbl
+    }()
+
     private let loadingIndicator: UIActivityIndicatorView = {
         let ai = UIActivityIndicatorView(style: .medium)
         ai.hidesWhenStopped = true
@@ -260,6 +268,60 @@ final class ProUpgradeViewController: UIViewController {
 
         manageButton.addTarget(self, action: #selector(manageTapped), for: .touchUpInside)
         contentStack.addArrangedSubview(manageButton)
+        contentStack.setCustomSpacing(20, after: manageButton)
+
+        // Legal links
+        configureLegalLabel()
+        legalLabel.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(legalTapped(_:))))
+        contentStack.addArrangedSubview(legalLabel)
+    }
+
+    private static let termsURL = URL(string: "https://workoutplaza-efeae.web.app/terms.html")!
+    private static let privacyURL = URL(string: "https://workoutplaza-efeae.web.app/privacy.html")!
+
+    private var termsRange = NSRange(location: 0, length: 0)
+    private var privacyRange = NSRange(location: 0, length: 0)
+
+    private func configureLegalLabel() {
+        let terms = NSLocalizedString("pro.upgrade.terms", comment: "")
+        let privacy = NSLocalizedString("pro.upgrade.privacy", comment: "")
+        let full = terms + "  ·  " + privacy
+
+        let attr = NSMutableAttributedString(string: full, attributes: [
+            .font: AppFont.body(12),
+            .foregroundColor: ColorSystem.subText
+        ])
+
+        termsRange = (full as NSString).range(of: terms)
+        privacyRange = (full as NSString).range(of: privacy)
+        attr.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: termsRange)
+        attr.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: privacyRange)
+
+        legalLabel.attributedText = attr
+    }
+
+    @objc private func legalTapped(_ gesture: UITapGestureRecognizer) {
+        guard let attributedText = legalLabel.attributedText else { return }
+
+        let textContainer = NSTextContainer(size: legalLabel.bounds.size)
+        textContainer.lineFragmentPadding = 0
+        textContainer.maximumNumberOfLines = legalLabel.numberOfLines
+        textContainer.lineBreakMode = legalLabel.lineBreakMode
+
+        let layoutManager = NSLayoutManager()
+        layoutManager.addTextContainer(textContainer)
+
+        let storage = NSTextStorage(attributedString: attributedText)
+        storage.addLayoutManager(layoutManager)
+
+        let point = gesture.location(in: legalLabel)
+        let index = layoutManager.characterIndex(for: point, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+
+        if NSLocationInRange(index, termsRange) {
+            UIApplication.shared.open(Self.termsURL)
+        } else if NSLocationInRange(index, privacyRange) {
+            UIApplication.shared.open(Self.privacyURL)
+        }
     }
 
     private func makeFeatureRow(icon: String, title: String, desc: String) -> UIView {

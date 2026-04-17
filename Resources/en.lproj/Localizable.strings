@@ -719,6 +719,8 @@
 "support.product.button" = "Send Support";
 "support.product.unavailable" = "Not Available";
 "pro.upgrade.unavailable" = "Not Available";
+"pro.upgrade.terms" = "Terms of Use";
+"pro.upgrade.privacy" = "Privacy Policy";
 "dev.iap.section" = "Purchases (IAP)";
 "dev.iap.refresh" = "Refresh products and purchases";
 "dev.iap.openSupport" = "Open support screen";

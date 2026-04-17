@@ -1,11 +1,11 @@
 {
   "appPolicies" : {
-    "eula" : "",
+    "eula" : "https://workoutplaza-efeae.web.app/terms.html",
     "policies" : [
       {
         "locale" : "en_US",
         "policyText" : "",
-        "policyURL" : ""
+        "policyURL" : "https://workoutplaza-efeae.web.app/privacy.html"
       }
     ]
   },

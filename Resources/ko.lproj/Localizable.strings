@@ -720,6 +720,8 @@
 "support.product.button" = "후원하기";
 "support.product.unavailable" = "준비 중";
 "pro.upgrade.unavailable" = "준비 중";
+"pro.upgrade.terms" = "이용약관";
+"pro.upgrade.privacy" = "개인정보처리방침";
 "dev.iap.section" = "구매 (IAP)";
 "dev.iap.refresh" = "상품/구매 상태 새로고침";
 "dev.iap.openSupport" = "후원 화면 열기";
